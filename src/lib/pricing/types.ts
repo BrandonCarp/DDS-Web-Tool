@@ -38,7 +38,7 @@ export interface PriceResult {
   triple: PriceTriple | null; // all three styles for the resolved size
 }
 
-export type TrackKey = "r12" | "r15" | "low_headroom" | "r20" | "r32" | "no_tracks";
+export type TrackKey = "r10" | "r12" | "r15" | "low_headroom" | "r20" | "r32" | "no_tracks";
 export type SpringKey = "extension" | "torsion";
 export type LockKey = "none" | "slide" | "lockbar" | "lockbar_installed";
 

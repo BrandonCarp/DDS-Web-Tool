@@ -8,6 +8,19 @@
 html, body { margin: 0; padding: 0; }
 .tool-shell { min-height: 100vh; }
 
+/* UI SCALE — enlarge the whole residential tool on screen. .tool-shell .wrap keeps its
+   max-width (+ box-sizing:border-box), so on large screens the tool fills more of the space
+   and on narrower ones it auto-shrinks instead of overflowing. The min-height calc keeps the
+   shell exactly one viewport tall so the zoom doesn't add empty scroll below short content.
+   To resize the whole tool, change the zoom value (1 = original); for a perfect fit keep the
+   calc divisor equal to it. Screen only — printed quotes are unaffected. */
+@media screen {
+  .tool-shell {
+    zoom: 1.22;
+    min-height: calc(100vh / 1.22);
+  }
+}
+
 /* ============================================================
    INTERNAL PRICING SCREEN  — verbatim tool styles, scoped under .tool-shell
    ============================================================ */

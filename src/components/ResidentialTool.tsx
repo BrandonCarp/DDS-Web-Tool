@@ -11,6 +11,7 @@ const GLASS = [
 ] as const;
 
 const TRACKS: { value: TrackKey; label: string }[] = [
+  { value: "r10", label: '10" radius' },
   { value: "r12", label: '12" radius' },
   { value: "r15", label: '15" radius' },
   { value: "low_headroom", label: "Low headroom" },

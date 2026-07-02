@@ -109,6 +109,14 @@ describe("quoteResidential — full quote with add-on upcharges", () => {
     expect(q.unitPrice).toBeCloseTo(base, 2);
   });
 
+  it("10in radius track adds nothing (included, like 12in/15in)", () => {
+    const base = priceResidential("T50S", dim(8, 0, 7, 0), "solid").price!;
+    const q = quoteResidential("T50S", dim(8, 0, 7, 0), opts({ track: "r10" }));
+    expect(q.unitPrice).toBeCloseTo(base, 2);
+    // no separate track line should be emitted for the no-charge radii
+    expect(q.lines.some((l) => /radius track/.test(l.name))).toBe(false);
+  });
+
   it("includes torsion at no charge on 9ft-tall doors", () => {
     const base = priceResidential("T50S", dim(12, 0, 9, 0), "solid").price!;
     const q = quoteResidential("T50S", dim(12, 0, 9, 0), opts());

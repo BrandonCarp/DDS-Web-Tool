@@ -120,6 +120,7 @@ const STYLE_NAME: Record<WindowStyle, string> = {
   inserts: "Glass + inserts",
 };
 const TRACK_NAME: Record<string, string> = {
+  r10: "10″ radius track",
   r12: "12″ radius track",
   r15: "15″ radius track",
   low_headroom: "Low headroom track",
@@ -171,8 +172,8 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
     });
   }
 
-  // Track adjustment (r12 / r15 are the no-charge defaults)
-  if (opts.track && opts.track !== "r12" && opts.track !== "r15") {
+  // Track adjustment (r10 / r12 / r15 are the no-charge defaults)
+  if (opts.track && opts.track !== "r12" && opts.track !== "r15" && opts.track !== "r10") {
     const adj = (ADDONS.track as Record<string, number>)[opts.track] ?? 0;
     lines.push({
       name: TRACK_NAME[opts.track] ?? opts.track,
