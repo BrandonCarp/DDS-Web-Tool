@@ -57,7 +57,7 @@ function buildDays(rows: AdminEstimate[]) {
 
 /* ---------- charts (hand-rolled SVG, no deps) ---------- */
 function AreaChart({ days }: { days: ReturnType<typeof buildDays> }) {
-  const W = 640, H = 190, P = { l: 46, r: 8, t: 12, b: 22 };
+  const W = 640, H = 148, P = { l: 46, r: 8, t: 12, b: 22 };
   const max = Math.max(100, ...days.map((d) => d.total));
   const x = (i: number) => P.l + (i * (W - P.l - P.r)) / (days.length - 1);
   const y = (v: number) => P.t + (1 - v / max) * (H - P.t - P.b);
@@ -89,7 +89,7 @@ function AreaChart({ days }: { days: ReturnType<typeof buildDays> }) {
 }
 
 function StackedBars({ days }: { days: ReturnType<typeof buildDays> }) {
-  const W = 640, H = 190, P = { l: 30, r: 8, t: 12, b: 22 };
+  const W = 640, H = 132, P = { l: 30, r: 8, t: 12, b: 22 };
   const max = Math.max(3, ...days.map((d) => TYPES.reduce((a, t) => a + d.counts[t], 0)));
   const bw = (W - P.l - P.r) / days.length - 3;
   const y = (v: number) => P.t + (1 - v / max) * (H - P.t - P.b);

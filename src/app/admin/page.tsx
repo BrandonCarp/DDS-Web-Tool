@@ -21,7 +21,7 @@ export default async function AdminPage() {
        from estimates order by created_at desc limit 100`,
   );
   return (
-    <div className="tool-shell">
+    <div className="tool-shell admin-page">
       <AdminPanel
         users={users}
         estimates={estimates}
