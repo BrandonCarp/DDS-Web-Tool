@@ -223,7 +223,9 @@ describe("window designs (inserts catalog from index.html)", () => {
   const opts = { style: "inserts" as const, color: "White", track: "r12" as const, spring: "extension" as const, lock: "none" as const };
   it("adds the design name to the description when valid for the door", () => {
     const q = quoteResidential("T50S", dim(8, 0, 7, 0), { ...opts, windesign: "509" });
-    expect(q.description).toContain("Colonial 509 insert");
+    expect(q.description).toContain("Colonial 509 inserts");
+    expect(q.description).toContain("windows in the top section");
+    expect(q.description).toContain(`x 7'0", in the color White,`); // color sits right after the size
   });
   it("ignores designs the model cannot take (long panels on a short-only door)", () => {
     const q = quoteResidential("T50S", dim(8, 0, 7, 0), { ...opts, windesign: "612" });
@@ -233,10 +235,10 @@ describe("window designs (inserts catalog from index.html)", () => {
     const q = quoteResidential("T50S", dim(8, 0, 7, 0), { ...opts, windesign: "504" }); // 504 is 14/15/15.6 only
     expect(q.description).not.toContain("Sunset 504");
     const q2 = quoteResidential("T50S", dim(15, 0, 7, 0), { ...opts, windesign: "504" });
-    expect(q2.description).toContain("Sunset 504 insert");
+    expect(q2.description).toContain("Sunset 504 inserts");
   });
   it("Gallery doors get architectural designs even with plain glass", () => {
     const q = quoteResidential("GD1LP", dim(8, 0, 7, 0), { ...opts, style: "glass", windesign: "SQ24" });
-    expect(q.description).toContain("SQ24 insert");
+    expect(q.description).toContain("SQ24 inserts");
   });
 });

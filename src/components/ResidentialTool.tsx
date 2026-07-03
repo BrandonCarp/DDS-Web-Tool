@@ -101,6 +101,13 @@ export function ResidentialTool({ models }: { models: string[] }) {
 
   const getPrice = useCallback(async () => {
     setError(null);
+    setSaved(false);
+    if (!sizeComplete) {
+      setError("Enter the width and height before getting a price.");
+      setResult(null);
+      setResultSig(cfgSig);
+      return;
+    }
     try {
       const res = await fetch("/api/price", {
         method: "POST",
@@ -128,14 +135,14 @@ export function ResidentialTool({ models }: { models: string[] }) {
             model, size: `${widthFt || "—"}'${widthIn || "0"}" x ${heightFt || "—"}'${heightIn || "0"}"`,
             style, color, unitPrice: q.unitPrice, qty: n, total: q.unitPrice * n, description: q.description,
           }),
-        }).then(() => { setSaved(true); setTimeout(() => setSaved(false), 1600); }).catch(() => {/* ignore */});
+        }).then(() => setSaved(true)).catch(() => {/* ignore */});
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
       setResult(null);
       setResultSig(cfgSig);
     }
-  }, [model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, activeDesign, qty, cfgSig]);
+  }, [model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, activeDesign, qty, cfgSig, sizeComplete]);
 
   function onSeries(c: string) {
     setColl(c);
@@ -180,20 +187,6 @@ export function ResidentialTool({ models }: { models: string[] }) {
     navigator.clipboard?.writeText(description.toUpperCase());
     setCopied(true);
     setTimeout(() => setCopied(false), 1600);
-  }
-  async function saveEstimate() {
-    if (!priced) return;
-    try {
-      await fetch("/api/estimates", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model, size: dims, style, color, unitPrice: unit, qty, total, description }),
-      });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 1600);
-    } catch {
-      /* ignore */
-    }
   }
   function clearAll() {
     setWidthFt(""); setWidthIn("0"); setHeightFt(""); setHeightIn("0");
@@ -326,7 +319,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
                 <div className="grow">
                   <label>Glass type</label>
                   <div className="ctl selectwrap">
-                    <select data-testid="style" value={glass} onChange={(e) => setGlass(e.target.value)}>
+                    <select data-testid="style" value={glass} disabled={!sizeComplete} onChange={(e) => setGlass(e.target.value)}>
                       {glassOptions.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
                     </select>
                   </div>
@@ -334,13 +327,13 @@ export function ResidentialTool({ models }: { models: string[] }) {
                 <div className="grow">
                   <label>Framing / insert</label>
                   <div className="ctl selectwrap">
-                    <select value={framing} onChange={(e) => setFraming(e.target.value)} disabled={glass === "solid"}>
+                    <select value={framing} onChange={(e) => setFraming(e.target.value)} disabled={glass === "solid" || !sizeComplete}>
                       <option value="plain">Plain (no insert)</option>
                       <option value="insert">Insert</option>
                     </select>
                   </div>
                 </div>
-                {wDesigns.length > 0 && (
+                {sizeComplete && wDesigns.length > 0 && (
                   <div className="grow">
                     <label>Window design</label>
                     <div className="ctl selectwrap">
@@ -387,11 +380,9 @@ export function ResidentialTool({ models }: { models: string[] }) {
               </div>
             </div>
 
-            {sizeComplete && (
-              <button data-testid="get-price" className="btn primary configbtn" type="button" onClick={getPrice}>
-                Get price
-              </button>
-            )}
+            <button data-testid="get-price" className="btn primary configbtn" type="button" onClick={getPrice}>
+              Get price
+            </button>
             {liveError && <div className="alert warn" data-testid="error">{liveError}</div>}
           </div>
         </div>
@@ -410,12 +401,8 @@ export function ResidentialTool({ models }: { models: string[] }) {
             )}
           </div>
 
-          {!sizeComplete ? (
-            <div className="lines">
-              <div className="alert info" data-testid="need-size" style={{ margin: "6px 0" }}>
-                Next: enter the width and height
-              </div>
-            </div>
+          {!result ? (
+            <div className="lines" />
           ) : priced ? (
             <>
               <div className="lines">
@@ -449,9 +436,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
               </div>
               <div className="qfoot">
                 <button className="btn" type="button" onClick={clearAll}>Clear</button>
-                <button className={`btn ${saved ? "copybtn ok" : ""}`} type="button" onClick={saveEstimate}>
-                  {saved ? "Saved ✓" : "Save estimate"}
-                </button>
+                {saved && <span className="muted-note" data-testid="saved-note">Saved to estimates ✓</span>}
                 <button className="btn primary" type="button" onClick={() => window.print()}>Print quote</button>
               </div>
             </>

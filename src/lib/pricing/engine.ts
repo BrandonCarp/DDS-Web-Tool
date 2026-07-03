@@ -204,7 +204,7 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
   if (opts.style !== "solid") {
     const validDesigns = windowDesigns(model, opts.style, size.widthCode).map((d) => d.id);
     const dn = opts.windesign && validDesigns.includes(opts.windesign) ? designName(opts.windesign) : null;
-    winTxt = `${grade ? grade + " windows" : "windows"}${dn ? ", " + dn + " insert" : ""}`;
+    winTxt = `${grade ? grade + " windows" : "windows"} in the top section${dn ? ", " + dn + " inserts" : ""}`;
   }
   const springTxt = is9 || opts.spring === "torsion" ? "torsion springs" : "extension springs";
   const lockTxt =
@@ -212,7 +212,7 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
     "no lock";
   const trackTxt = (TRACK_NAME[opts.track] || "12″ radius track").toLowerCase();
   const coll = COLLECTIONS_RES[dataKey(model)] === "Gallery Collection" ? COLLECTIONS_RES[dataKey(model)] : "";
-  const description = `Clopay ${coll ? coll + ", " : ""}Model ${model}, ${dims(size)}, ${opts.color}, ${winTxt}, ${trackTxt}, ${springTxt}, ${lockTxt}`;
+  const description = `Clopay ${coll ? coll + ", " : ""}Model ${model}, ${dims(size)}, in the color ${opts.color}, ${winTxt}, ${trackTxt}, ${springTxt}, ${lockTxt}`;
 
   return {
     model, size, priced: true, isStock: stock !== null,
