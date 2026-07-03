@@ -283,6 +283,10 @@ html, body { margin: 0; padding: 0; }
 .tool-shell .dimrow { display: flex; align-items: center; gap: 6px; }
 .tool-shell .dimrow input { width: 62px; text-align: center; padding-left: 6px; padding-right: 6px; }
 .tool-shell .dimrow .u { font-size: 12.5px; color: var(--muted); margin-right: 6px; }
+/* No up/down spinner arrows on number inputs — users type the value directly. */
+.tool-shell input[type=number]::-webkit-outer-spin-button,
+.tool-shell input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.tool-shell input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 .tool-shell .lbl { font-size: 13px; }
 .tool-shell .step { padding: 24px 26px; }
 .tool-shell .step-h h3 { font-size: 15px; }

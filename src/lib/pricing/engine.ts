@@ -72,7 +72,9 @@ export function resolveSizeCode(model: string, dim: Dimensions): SizeCode | null
 export function stockPriceFor(model: string, size: SizeCode): PriceTriple | null {
   const modelStock = STOCK_PRICES[dataKey(model)];
   if (!modelStock) return null;
-  if (size.tier !== "7" && size.tier !== "8") return null;
+  // Tiers 7/8 come from the stock-item book; tier 9 from the strict 9-ft price
+  // book. A size simply missing from STOCK_PRICES falls through to the
+  // standard/odd grid, so no tier gate is needed.
 
   let widthKey: string | null = null;
   if (size.wi === 0) widthKey = String(size.wf);
