@@ -257,6 +257,7 @@ export function AdminPanel({
               {estimates.length === 0 ? (
                 <div className="muted-note">No quotes saved yet.</div>
               ) : (
+                <div className="tablescroll">
                 <table className="esttable">
                   <thead><tr>
                     <th>When</th><th>User</th><th>Model</th><th>Quote type</th><th>Description</th><th style={{ textAlign: "right" }}>Total</th>
@@ -288,6 +289,7 @@ export function AdminPanel({
                     })}
                   </tbody>
                 </table>
+                </div>
               )}
             </div>
           </>

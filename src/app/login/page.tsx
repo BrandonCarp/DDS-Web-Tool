@@ -57,8 +57,8 @@ export default function LoginPage() {
           <button className="btn" type="button" onClick={login} disabled={busy}>
             {busy ? "Signing in…" : "Sign in"}
           </button>
-          <div className="hint">Internal pricing tool · authorized staff only</div>
-          <div className="foot">© Doors Direct · build v6</div>
+          <div className="hint"><b>Authorized staff only</b></div>
+          <div className="foot">© Doors Direct · 2026</div>
         </div>
       </div>
     </div>

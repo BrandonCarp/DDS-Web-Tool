@@ -16,8 +16,8 @@ html, body { margin: 0; padding: 0; }
    calc divisor equal to it. Screen only — printed quotes are unaffected. */
 @media screen {
   .tool-shell {
-    zoom: 1.15;
-    min-height: calc(100vh / 1.15);
+    zoom: 1.2;
+    min-height: calc(100vh / 1.2);
   }
 }
 
@@ -37,7 +37,7 @@ html, body { margin: 0; padding: 0; }
   }
   .tool-shell *{box-sizing:border-box}
   .tool-shell,.tool-shell{margin:0}
-  .tool-shell{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased;text-transform:uppercase}
+  .tool-shell{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased;text-transform:uppercase}
   .tool-shell button,.tool-shell select,.tool-shell input,.tool-shell textarea,.tool-shell option{text-transform:uppercase}
 
   .tool-shell .top{background:var(--brand);color:#fff;padding:12px 22px;display:flex;align-items:center;gap:18px;position:sticky;top:0;z-index:30}
@@ -48,8 +48,8 @@ html, body { margin: 0; padding: 0; }
   .tool-shell .tab.active{background:var(--surface);color:var(--brand)}
   .tool-shell .top .right{margin-left:auto;font-size:12px;color:#d9b9bb;letter-spacing:.4px}
 
-  .tool-shell .wrap{max-width:1500px;margin:14px auto;padding:0 22px;display:grid;grid-template-columns:minmax(0,65fr) minmax(0,20fr) minmax(0,15fr);grid-template-areas:"config quote special";gap:18px;align-items:start}
-  .tool-shell .wrap.two{max-width:1500px;grid-template-columns:minmax(0,1fr) 360px;grid-template-areas:"config quote"}
+  .tool-shell .wrap{max-width:1560px;margin:14px auto;padding:0 22px;display:grid;grid-template-columns:minmax(0,61fr) minmax(0,22fr) minmax(0,17fr);grid-template-areas:"config quote special";gap:18px;align-items:start}
+  .tool-shell .wrap.two{max-width:1560px;grid-template-columns:minmax(0,1fr) 400px;grid-template-areas:"config quote"}
   .tool-shell .config-col{grid-area:config}
   .tool-shell .quote{grid-area:quote}
   .tool-shell .special-col{grid-area:special}
@@ -62,13 +62,13 @@ html, body { margin: 0; padding: 0; }
   .tool-shell .step:last-child{border-bottom:0}
   .tool-shell .step-h{display:flex;align-items:center;gap:10px;margin:0 0 14px}
   .tool-shell .step-n{width:22px;height:22px;border-radius:6px;background:var(--brand);color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center}
-  .tool-shell .step-h h3{margin:0;font-size:13px;letter-spacing:.6px;text-transform:uppercase}
+  .tool-shell .step-h h3{margin:0;font-size:14px;letter-spacing:.6px;text-transform:uppercase}
   .tool-shell .step-h .hint{margin-left:auto;font-size:12px;color:var(--muted-2)}
 
   .tool-shell .field{margin-bottom:10px}.tool-shell .field:last-child{margin-bottom:0}
-  .tool-shell label.lbl{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:0 0 6px}
+  .tool-shell label.lbl{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:0 0 6px}
   .tool-shell label.lbl .req{color:var(--accent)}
-  .tool-shell select,.tool-shell input[type=text],.tool-shell input[type=number]{width:100%;font-family:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);appearance:none}
+  .tool-shell select,.tool-shell input[type=text],.tool-shell input[type=number]{width:100%;font-family:inherit;font-size:15px;padding:11px 13px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);appearance:none}
   .tool-shell select:focus,.tool-shell input:focus{outline:2px solid var(--accent);border-color:var(--accent)}
   .tool-shell select:disabled{background:#f4f0f1;color:var(--muted-2)}
   .tool-shell .selectwrap{position:relative}
@@ -95,7 +95,7 @@ html, body { margin: 0; padding: 0; }
   .tool-shell .bigchoice .s{font-size:12px;color:var(--muted);margin-top:3px}
 
   .tool-shell .chips{display:flex;flex-wrap:wrap;gap:8px}
-  .tool-shell .chip{border:1.5px solid var(--line);background:#fff;border-radius:8px;padding:8px 13px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--ink);transition:.12s}
+  .tool-shell .chip{border:1.5px solid var(--line);background:#fff;border-radius:8px;padding:9px 14px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--ink);transition:.12s}
   .tool-shell .chip:hover{border-color:var(--accent-line)}
   .tool-shell .chip.sel{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-ink)}
 
@@ -114,12 +114,12 @@ html, body { margin: 0; padding: 0; }
   .tool-shell .qhead{background:var(--brand);color:#fff;border-radius:var(--radius) var(--radius) 0 0;padding:16px 20px}
   .tool-shell .qhead .ql{font-size:12px;letter-spacing:.6px;text-transform:uppercase;color:#d9b9bb}
   .tool-shell .qhead .qmodel{font-size:18px;font-weight:700;margin-top:2px}
-  .tool-shell .qhead .qsub{font-size:13px;color:#e6c8ca;margin-top:2px}
+  .tool-shell .qhead .qsub{font-size:14px;color:#e6c8ca;margin-top:2px}
   .tool-shell .stockbadge{display:inline-flex;align-items:center;gap:6px;margin-top:9px;font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px}
   .tool-shell .stockbadge.yes{background:#e9f4ee;color:#15633c}
   .tool-shell .stockbadge.no{background:#fff;color:var(--brand)}
   .tool-shell .lines{padding:8px 20px}
-  .tool-shell .qline{display:flex;justify-content:space-between;gap:10px;padding:7px 0;font-size:14px;border-bottom:1px dashed var(--line-2)}
+  .tool-shell .qline{display:flex;justify-content:space-between;gap:10px;padding:8px 0;font-size:15px;border-bottom:1px dashed var(--line-2)}
   .tool-shell .qline:last-child{border-bottom:0}
   .tool-shell .qline .nm{color:var(--ink)}
   .tool-shell .qline .vl{font-family:var(--mono);font-variant-numeric:tabular-nums}
@@ -236,7 +236,9 @@ html, body { margin: 0; padding: 0; }
   .login-shell .wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:20px;position:relative;z-index:2}
   .login-shell .card{width:100%;max-width:430px;background:#fff;color:#1c1f23;border-radius:16px;
     box-shadow:0 24px 60px rgba(0,0,0,.35);padding:38px 38px 30px}
-  .login-shell .card .logo{display:block;height:46px;margin:0 auto 22px}
+  .login-shell .card .logo{display:block;height:52px;margin:0 auto 22px;background:#fff;border:1px solid #eceff2;border-radius:14px;padding:12px 20px;box-shadow:0 2px 10px rgba(20,24,30,.08);box-sizing:content-box;
+    /* tint the logo art to the brand maroon (#500609) */
+    filter:brightness(0) saturate(100%) invert(8%) sepia(66%) saturate(4456%) hue-rotate(351deg) brightness(93%) contrast(105%)}
   .login-shell h1{font-size:23px;font-weight:700;color:#2a2d31;margin-bottom:24px;text-align:center;letter-spacing:-.2px}
   .login-shell label{display:block;font-size:13px;font-weight:600;color:#43484e;margin:0 0 7px 2px}
   .login-shell .field{margin-bottom:16px}
@@ -355,16 +357,16 @@ html, body { margin: 0; padding: 0; }
   /* the admin page opts out of the tool's 1.15 zoom so it fits the viewport */
   .tool-shell.admin-page { zoom: 1; min-height: 100vh; }
 }
-.tool-shell .admin-shell { display: grid; grid-template-columns: 200px minmax(0, 1fr); min-height: 100vh; background: var(--bg); }
-.tool-shell .adm-side { background: #fff; border-right: 1px solid var(--line); padding: 14px 12px; display: flex; flex-direction: column; gap: 4px; position: sticky; top: 0; height: 100vh; }
-.tool-shell .adm-side .logo { height: 38px; width: auto; align-self: flex-start; margin: 2px 4px 14px; }
+.tool-shell .admin-shell { display: grid; grid-template-columns: 248px minmax(0, 1fr); min-height: 100vh; background: var(--bg); }
+.tool-shell .adm-side { background: #fff; border-right: 1px solid var(--line); padding: 18px 14px; display: flex; flex-direction: column; gap: 4px; position: sticky; top: 0; height: 100vh; }
+.tool-shell .adm-side .logo { height: 48px; width: auto; align-self: flex-start; margin: 2px 4px 14px; }
 .tool-shell .adm-nav { display: flex; flex-direction: column; gap: 4px; }
-.tool-shell .adm-nav button { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; border: 0; background: transparent; padding: 9px 11px; border-radius: 10px; font-size: 13px; font-weight: 700; color: #5a5a5a; cursor: pointer; }
+.tool-shell .adm-nav button { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; border: 0; background: transparent; padding: 12px 14px; border-radius: 10px; font-size: 15px; font-weight: 700; color: #5a5a5a; cursor: pointer; }
 .tool-shell .adm-nav button:hover { background: var(--bg); color: var(--brand); }
 .tool-shell .adm-nav button.active { background: var(--brand); color: #fff; }
-.tool-shell .adm-side .adm-foot { margin-top: auto; display: flex; flex-direction: column; gap: 8px; font-size: 12.5px; padding: 0 6px; }
+.tool-shell .adm-side .adm-foot { margin-top: auto; display: flex; flex-direction: column; gap: 9px; font-size: 14px; padding: 0 8px; }
 .tool-shell .adm-side .adm-foot a { color: var(--brand); font-weight: 700; text-decoration: none; }
-.tool-shell .adm-main { padding: 14px 18px 28px; min-width: 0; max-width: 1400px; }
+.tool-shell .adm-main { padding: 16px 22px 30px; min-width: 0; max-width: 1400px; width: 100%; margin: 0 auto; }
 .tool-shell .adm-top { display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px; }
 .tool-shell .adm-top h1 { margin: 0; font-size: 18px; color: var(--brand); }
 .tool-shell .adm-top .who { margin-left: auto; font-size: 13px; color: var(--muted); }
@@ -384,8 +386,11 @@ html, body { margin: 0; padding: 0; }
 .tool-shell .ubar .urow b { color: #333; }
 .tool-shell .ubar .track { height: 8px; border-radius: 6px; background: var(--bg); overflow: hidden; }
 .tool-shell .ubar .fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--brand), #a8484f); }
+.tool-shell .tablescroll { max-height: 46vh; overflow-y: auto; overscroll-behavior: contain; padding-right: 4px; }
 .tool-shell .esttable { width: 100%; border-collapse: separate; border-spacing: 0 6px; }
-.tool-shell .esttable th { text-align: left; padding: 4px 12px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.tool-shell .esttable thead th { position: sticky; top: 0; background: #fff; z-index: 2; }
+.tool-shell .tablescroll { max-height: 46vh; overflow-y: auto; overscroll-behavior: contain; padding-right: 2px; }
+.tool-shell .esttable th { text-align: left; padding: 6px 12px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; position: sticky; top: 0; background: #fff; z-index: 2; }
 .tool-shell .esttable td { background: #fff; padding: 9px 10px; font-size: 12.5px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .tool-shell .esttable tr.datarow { cursor: pointer; }
 .tool-shell .esttable tr.datarow:hover td { background: #fdf9f9; }
@@ -400,3 +405,15 @@ html, body { margin: 0; padding: 0; }
 .tool-shell .desccell { max-width: 340px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #555; }
 .tool-shell .adm-money { font-family: var(--mono); font-weight: 700; white-space: nowrap; }
 @media (max-width: 1100px) { .tool-shell .admin-shell { grid-template-columns: 1fr; } .tool-shell .adm-side { position: static; height: auto; flex-direction: row; align-items: center; } .tool-shell .adm-side .adm-foot { margin: 0 0 0 auto; flex-direction: row; } .tool-shell .charts { grid-template-columns: 1fr; } }
+
+/* larger sign-in on big screens */
+@media(min-width:1400px){
+  .login-shell .topbar img{height:44px}
+  .login-shell .card{max-width:520px;padding-left:44px;padding-right:44px}
+  .login-shell .card .logo{height:66px;margin-bottom:26px}
+  .login-shell h1{font-size:27px}
+  .login-shell label{font-size:14px}
+  .login-shell input{height:54px;font-size:17px}
+  .login-shell .btn{height:56px;font-size:17px}
+  .login-shell .hint,.login-shell .foot{font-size:14px}
+}
