@@ -16,8 +16,8 @@ html, body { margin: 0; padding: 0; }
    calc divisor equal to it. Screen only — printed quotes are unaffected. */
 @media screen {
   .tool-shell {
-    zoom: 1.2;
-    min-height: calc(100vh / 1.2);
+    zoom: 0.9;
+    min-height: calc(100vh / 0.9);
   }
 }
 
@@ -168,8 +168,8 @@ html, body { margin: 0; padding: 0; }
     .tool-shell .top img.logo{height:42px;padding:6px 11px}
     .tool-shell .top .right{order:2;margin-left:auto;display:flex;align-items:center;gap:8px;font-size:11px;flex-wrap:wrap;justify-content:flex-end;text-align:right}
     .tool-shell .top .right a{white-space:nowrap}
-    .tool-shell .tabs{order:3;width:100%;gap:6px;margin-left:0}
-    .tool-shell .tab{flex:1;text-align:center;padding:10px 6px;font-size:13px}
+    .tool-shell .tabs{order:3;width:100%;margin-left:0;display:grid;grid-template-columns:1fr 1fr;gap:7px}
+    .tool-shell .tab{text-align:center;padding:12px 8px;font-size:12.5px;white-space:nowrap;border-radius:9px}
     .tool-shell .wrap{margin:14px auto;padding:0 12px;gap:14px}
     .tool-shell .quote{position:static}
     .tool-shell .step{padding:16px 14px}
@@ -225,6 +225,7 @@ html, body { margin: 0; padding: 0; }
   .login-shell *{box-sizing:border-box;margin:0;padding:0}
   .login-shell{--maroon:#500609;--maroon-2:#73121a;--accent:#8a1a23}
   .login-shell,.login-shell{height:100%}
+  @media screen{ .login-shell{zoom:0.75;min-height:calc(100vh / 0.75)} }
   .login-shell{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     min-height:100%;display:flex;flex-direction:column;
     background:radial-gradient(1200px 600px at 80% -10%,#7a1620 0%,rgba(122,22,32,0) 60%),
@@ -353,12 +354,12 @@ html, body { margin: 0; padding: 0; }
 /* ================= Admin Dashboard ================= */
 @media screen {
   /* the admin page opts out of the tool's 1.15 zoom so it fits the viewport */
-  .tool-shell.admin-page { zoom: 1.1; min-height: 0; height: calc(100vh / 1.1); overflow: hidden; }
+  .tool-shell.admin-page { zoom: 0.825; min-height: 0; height: calc(100vh / 0.825); overflow: hidden; }
   /* the base .admin-shell min-height:100vh would be 125% under the zoom — pin it to the real viewport */
-  .tool-shell.admin-page .admin-shell { min-height: 0; height: calc(100vh / 1.1); overflow: hidden; }
+  .tool-shell.admin-page .admin-shell { min-height: 0; height: calc(100vh / 0.825); overflow: hidden; }
   /* one-viewport dashboard: the page never scrolls; the quotes card does */
-  .tool-shell.admin-page .adm-side { height: calc(100vh / 1.1); }
-  .tool-shell.admin-page .adm-main { height: calc(100vh / 1.1); overflow: hidden; display: flex; flex-direction: column; }
+  .tool-shell.admin-page .adm-side { height: calc(100vh / 0.825); }
+  .tool-shell.admin-page .adm-main { height: calc(100vh / 0.825); overflow: hidden; display: flex; flex-direction: column; }
   .tool-shell.admin-page .adm-main > .chartcard:last-child { flex: 1; min-height: 140px; display: flex; flex-direction: column; overflow-y: auto; }
   .tool-shell.admin-page .adm-main > .chartcard:last-child .tablescroll { flex: 1; min-height: 0; max-height: none; }
 }
@@ -424,4 +425,9 @@ html, body { margin: 0; padding: 0; }
   .login-shell input{height:56px;font-size:17px}
   .login-shell .btn{height:58px;font-size:17px}
   .login-shell .hint,.login-shell .foot{font-size:14px}
+}
+
+/* login joins the global downscale */
+@media screen{
+  .login-shell{zoom:.75;min-height:calc(100vh / .75)}
 }
