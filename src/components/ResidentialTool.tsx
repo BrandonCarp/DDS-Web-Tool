@@ -120,6 +120,22 @@ export function ResidentialTool({ models }: { models: string[] }) {
     // Double strength is Gallery-only; drop it if the new model isn't Gallery.
     if ((COLLECTIONS[dataKey(m)] ?? coll) !== "Gallery Collection" && glass === "dsb") setGlass("solid");
   }
+  // Clear the whole door configuration back to defaults (used when going Back).
+  function resetConfig() {
+    setWidthFt(""); setWidthIn("0");
+    setHeightFt(""); setHeightIn("0");
+    setAssembly("complete");
+    setColor((COLORS[dataKey(model)] ?? ["White"])[0]);
+    setGlass("solid"); setFraming("plain");
+    setSpring("extension"); setTrack("r12"); setLock("none");
+    setQty(1);
+    setSoPrice(""); setSoKind("door");
+    setResult(null); setError(null); setCopied(false); setSaved(false);
+  }
+  function onBack() {
+    resetConfig();
+    setStep(1);
+  }
 
   const priced = (result?.priced ?? false) && sizeComplete;
   const unit = result?.unitPrice ?? 0;
@@ -228,7 +244,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
         <div className="panel">
           <div className="respanel">
             <div className="modelbar">
-              <button type="button" className="btn backbtn" onClick={() => setStep(1)}>‹ Back</button>
+              <button type="button" className="btn backbtn" onClick={onBack}>‹ Back</button>
               <span className="mlbl">Model</span>
               <span className="mval">{model}</span>
               <span className="muted-note" style={{ marginLeft: "auto" }}>{collection}</span>
@@ -248,15 +264,19 @@ export function ResidentialTool({ models }: { models: string[] }) {
                 </div>
                 <div className="grow">
                   <label>Measure size</label>
-                  <div className="ctl dim2">
-                    <input data-testid="width-ft" type="number" placeholder="ft" value={widthFt} onChange={(e) => setWidthFt(e.target.value)} />
-                    <span className="u">ft</span>
-                    <input data-testid="width-in" type="number" value={widthIn} onChange={(e) => setWidthIn(e.target.value)} />
-                    <span className="u">in W</span>
-                    <input data-testid="height-ft" type="number" placeholder="ft" value={heightFt} onChange={(e) => setHeightFt(e.target.value)} />
-                    <span className="u">ft</span>
-                    <input data-testid="height-in" type="number" value={heightIn} onChange={(e) => setHeightIn(e.target.value)} />
-                    <span className="u">in H</span>
+                  <div className="ctl dimstack">
+                    <div className="dimrow">
+                      <input data-testid="width-ft" type="number" min={0} placeholder="ft" value={widthFt} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setWidthFt(v); }} />
+                      <span className="u">ft</span>
+                      <input data-testid="width-in" type="number" min={0} value={widthIn} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setWidthIn(v); }} />
+                      <span className="u">in W</span>
+                    </div>
+                    <div className="dimrow">
+                      <input data-testid="height-ft" type="number" min={0} placeholder="ft" value={heightFt} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setHeightFt(v); }} />
+                      <span className="u">ft</span>
+                      <input data-testid="height-in" type="number" min={0} value={heightIn} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setHeightIn(v); }} />
+                      <span className="u">in H</span>
+                    </div>
                   </div>
                 </div>
                 <div className="grow">

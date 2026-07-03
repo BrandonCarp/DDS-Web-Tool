@@ -1,0 +1,1469 @@
+diff --git a/src/app/globals.css b/src/app/globals.css
+index 3077535..cc94b81 100644
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -279,6 +279,10 @@ html, body { margin: 0; padding: 0; }
+ .tool-shell select, .tool-shell input[type=text], .tool-shell input[type=number] { font-size: 16px; padding: 13px 14px; }
+ .tool-shell .dim2 input { width: 62px; }
+ .tool-shell .dim2 .u { font-size: 12.5px; }
++.tool-shell .dimstack { display: flex; flex-direction: column; gap: 8px; }
++.tool-shell .dimrow { display: flex; align-items: center; gap: 6px; }
++.tool-shell .dimrow input { width: 62px; text-align: center; padding-left: 6px; padding-right: 6px; }
++.tool-shell .dimrow .u { font-size: 12.5px; color: var(--muted); margin-right: 6px; }
+ .tool-shell .lbl { font-size: 13px; }
+ .tool-shell .step { padding: 24px 26px; }
+ .tool-shell .step-h h3 { font-size: 15px; }
+diff --git a/src/components/ResidentialTool.tsx b/src/components/ResidentialTool.tsx
+index b521836..118e2a3 100644
+--- a/src/components/ResidentialTool.tsx
++++ b/src/components/ResidentialTool.tsx
+@@ -120,6 +120,22 @@ export function ResidentialTool({ models }: { models: string[] }) {
+     // Double strength is Gallery-only; drop it if the new model isn't Gallery.
+     if ((COLLECTIONS[dataKey(m)] ?? coll) !== "Gallery Collection" && glass === "dsb") setGlass("solid");
+   }
++  // Clear the whole door configuration back to defaults (used when going Back).
++  function resetConfig() {
++    setWidthFt(""); setWidthIn("0");
++    setHeightFt(""); setHeightIn("0");
++    setAssembly("complete");
++    setColor((COLORS[dataKey(model)] ?? ["White"])[0]);
++    setGlass("solid"); setFraming("plain");
++    setSpring("extension"); setTrack("r12"); setLock("none");
++    setQty(1);
++    setSoPrice(""); setSoKind("door");
++    setResult(null); setError(null); setCopied(false); setSaved(false);
++  }
++  function onBack() {
++    resetConfig();
++    setStep(1);
++  }
+ 
+   const priced = (result?.priced ?? false) && sizeComplete;
+   const unit = result?.unitPrice ?? 0;
+@@ -228,7 +244,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
+         <div className="panel">
+           <div className="respanel">
+             <div className="modelbar">
+-              <button type="button" className="btn backbtn" onClick={() => setStep(1)}>‹ Back</button>
++              <button type="button" className="btn backbtn" onClick={onBack}>‹ Back</button>
+               <span className="mlbl">Model</span>
+               <span className="mval">{model}</span>
+               <span className="muted-note" style={{ marginLeft: "auto" }}>{collection}</span>
+@@ -248,15 +264,19 @@ export function ResidentialTool({ models }: { models: string[] }) {
+                 </div>
+                 <div className="grow">
+                   <label>Measure size</label>
+-                  <div className="ctl dim2">
+-                    <input data-testid="width-ft" type="number" placeholder="ft" value={widthFt} onChange={(e) => setWidthFt(e.target.value)} />
+-                    <span className="u">ft</span>
+-                    <input data-testid="width-in" type="number" value={widthIn} onChange={(e) => setWidthIn(e.target.value)} />
+-                    <span className="u">in W</span>
+-                    <input data-testid="height-ft" type="number" placeholder="ft" value={heightFt} onChange={(e) => setHeightFt(e.target.value)} />
+-                    <span className="u">ft</span>
+-                    <input data-testid="height-in" type="number" value={heightIn} onChange={(e) => setHeightIn(e.target.value)} />
+-                    <span className="u">in H</span>
++                  <div className="ctl dimstack">
++                    <div className="dimrow">
++                      <input data-testid="width-ft" type="number" min={0} placeholder="ft" value={widthFt} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setWidthFt(v); }} />
++                      <span className="u">ft</span>
++                      <input data-testid="width-in" type="number" min={0} value={widthIn} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setWidthIn(v); }} />
++                      <span className="u">in W</span>
++                    </div>
++                    <div className="dimrow">
++                      <input data-testid="height-ft" type="number" min={0} placeholder="ft" value={heightFt} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setHeightFt(v); }} />
++                      <span className="u">ft</span>
++                      <input data-testid="height-in" type="number" min={0} value={heightIn} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setHeightIn(v); }} />
++                      <span className="u">in H</span>
++                    </div>
+                   </div>
+                 </div>
+                 <div className="grow">
+diff --git a/src/lib/pricing/data/residential-prices.ts b/src/lib/pricing/data/residential-prices.ts
+index d701a9f..17a45ac 100644
+--- a/src/lib/pricing/data/residential-prices.ts
++++ b/src/lib/pricing/data/residential-prices.ts
+@@ -1,1155 +1,196 @@
+-// AUTO-GENERATED from the production price catalog. Do not edit by hand.
++// AUTO-GENERATED from the production price catalog (index.html). Do not edit by hand.
+ // Each key is "<widthCode>x<tier>" -> full base-door sell price by window style.
+ import type { PriceTriple } from "../types";
+ 
+ export const RESIDENTIAL_PRICES: Record<string, Record<string, PriceTriple>> = {
+   "T50S": {
+-    "6x7": {
+-      "solid": 563.47,
+-      "glass": 673.14,
+-      "inserts": 746.24
+-    },
+-    "6x8": {
+-      "solid": 783.75,
+-      "glass": 846.84,
+-      "inserts": 905.59
+-    },
+-    "6x9": {
+-      "solid": 1013.16,
+-      "glass": 1122.82,
+-      "inserts": 1195.92
+-    },
+-    "7x7": {
+-      "solid": 653.55,
+-      "glass": 763.22,
+-      "inserts": 836.31
+-    },
+-    "7x8": {
+-      "solid": 783.75,
+-      "glass": 893.41,
+-      "inserts": 966.51
+-    },
+-    "7x9": {
+-      "solid": 1163.65,
+-      "glass": 1273.31,
+-      "inserts": 1346.41
+-    },
+-    "8x7": {
+-      "solid": 696.96,
+-      "glass": 843.2,
+-      "inserts": 940.69
+-    },
+-    "8x8": {
+-      "solid": 823.53,
+-      "glass": 969.76,
+-      "inserts": 1067.25
+-    },
+-    "8x9": {
+-      "solid": 1208.82,
+-      "glass": 1355.06,
+-      "inserts": 1452.55
+-    },
+-    "9x7": {
+-      "solid": 819.92,
+-      "glass": 966.16,
+-      "inserts": 1063.65
+-    },
+-    "9x8": {
+-      "solid": 885.0,
+-      "glass": 1031.24,
+-      "inserts": 1128.73
+-    },
+-    "9x9": {
+-      "solid": 1292.02,
+-      "glass": 1438.25,
+-      "inserts": 1536.73
+-    },
+-    "10x7": {
+-      "solid": 925.12,
+-      "glass": 1097.9,
+-      "inserts": 1219.75
+-    },
+-    "10x8": {
+-      "solid": 1134.86,
+-      "glass": 1317.65,
+-      "inserts": 1439.49
+-    },
+-    "10x9": {
+-      "solid": 1669.94,
+-      "glass": 1852.73,
+-      "inserts": 1974.57
+-    },
+-    "11x7": {
+-      "solid": 915.12,
+-      "glass": 1107.9,
+-      "inserts": 1229.75
+-    },
+-    "11x8": {
+-      "solid": 1134.86,
+-      "glass": 1317.65,
+-      "inserts": 1439.49
+-    },
+-    "11x9": {
+-      "solid": 1669.54,
+-      "glass": 1852.73,
+-      "inserts": 1974.57
+-    },
+-    "12x7": {
+-      "solid": 984.78,
+-      "glass": 1204.12,
+-      "inserts": 1350.37
+-    },
+-    "12x8": {
+-      "solid": 1225.27,
+-      "glass": 1444.61,
+-      "inserts": 1590.84
+-    },
+-    "12x9": {
+-      "solid": 1801.19,
+-      "glass": 1976.63,
+-      "inserts": 2162.08
+-    },
+-    "13x7": {
+-      "solid": 984.78,
+-      "glass": 1204.12,
+-      "inserts": 1350.35
+-    },
+-    "13x8": {
+-      "solid": 1225.27,
+-      "glass": 1444.61,
+-      "inserts": 1590.84
+-    },
+-    "13x9": {
+-      "solid": 1801.19,
+-      "glass": 1976.63,
+-      "inserts": 2162.08
+-    },
+-    "14x7": {
+-      "solid": 1073.37,
+-      "glass": 1329.27,
+-      "inserts": 1499.86
+-    },
+-    "14x8": {
+-      "solid": 1312.06,
+-      "glass": 1567.96,
+-      "inserts": 1738.55
+-    },
+-    "14x9": {
+-      "solid": 1917.65,
+-      "glass": 2173.55,
+-      "inserts": 2344.14
+-    },
+-    "15x7": {
+-      "solid": 1145.71,
+-      "glass": 1401.61,
+-      "inserts": 1572.2
+-    },
+-    "15x8": {
+-      "solid": 1312.06,
+-      "glass": 1567.96,
+-      "inserts": 1738.55
+-    },
+-    "15x9": {
+-      "solid": 2002.63,
+-      "glass": 2258.53,
+-      "inserts": 2429.12
+-    },
+-    "15.6x7": {
+-      "solid": 989.57,
+-      "glass": 1245.47,
+-      "inserts": 1416.06
+-    },
+-    "15.6x8": {
+-      "solid": 1145.24,
+-      "glass": 1401.14,
+-      "inserts": 1571.73
+-    },
+-    "15.6x9": {
+-      "solid": 1742.73,
+-      "glass": 1998.63,
+-      "inserts": 2169.22
+-    },
+-    "16x7": {
+-      "solid": 1232.49,
+-      "glass": 1524.94,
+-      "inserts": 1719.92
+-    },
+-    "16x8": {
+-      "solid": 1485.65,
+-      "glass": 1778.1,
+-      "inserts": 1973.08
+-    },
+-    "16x9": {
+-      "solid": 2121.98,
+-      "glass": 2414.43,
+-      "inserts": 2609.41
+-    },
+-    "17x7": {
+-      "solid": 1456.73,
+-      "glass": 1749.18,
+-      "inserts": 1944.16
+-    },
+-    "17x8": {
+-      "solid": 1529.04,
+-      "glass": 1821.49,
+-      "inserts": 2016.47
+-    },
+-    "17x9": {
+-      "solid": 2470.02,
+-      "glass": 2772.47,
+-      "inserts": 2967.45
+-    }
++    "6x7": { "solid": 563.47, "glass": 673.14, "inserts": 746.24 },
++    "7x7": { "solid": 653.55, "glass": 763.22, "inserts": 836.31 },
++    "8x7": { "solid": 696.96, "glass": 843.2, "inserts": 940.69 },
++    "9x7": { "solid": 819.92, "glass": 966.16, "inserts": 1063.65 },
++    "10x7": { "solid": 925.12, "glass": 1097.9, "inserts": 1219.75 },
++    "11x7": { "solid": 915.12, "glass": 1107.9, "inserts": 1229.75 },
++    "12x7": { "solid": 984.78, "glass": 1204.12, "inserts": 1350.37 },
++    "13x7": { "solid": 984.78, "glass": 1204.12, "inserts": 1350.35 },
++    "14x7": { "solid": 1073.37, "glass": 1329.27, "inserts": 1499.86 },
++    "15x7": { "solid": 1145.71, "glass": 1401.61, "inserts": 1572.2 },
++    "15.6x7": { "solid": 989.57, "glass": 1245.47, "inserts": 1416.06 },
++    "16x7": { "solid": 1232.49, "glass": 1524.94, "inserts": 1719.92 },
++    "17x7": { "solid": 1456.73, "glass": 1749.18, "inserts": 1944.16 },
++    "6x8": { "solid": 783.75, "glass": 846.84, "inserts": 905.59 },
++    "7x8": { "solid": 783.75, "glass": 893.41, "inserts": 966.51 },
++    "8x8": { "solid": 823.53, "glass": 969.76, "inserts": 1067.25 },
++    "9x8": { "solid": 885.0, "glass": 1031.24, "inserts": 1128.73 },
++    "10x8": { "solid": 1134.86, "glass": 1317.65, "inserts": 1439.49 },
++    "11x8": { "solid": 1134.86, "glass": 1317.65, "inserts": 1439.49 },
++    "12x8": { "solid": 1225.27, "glass": 1444.61, "inserts": 1590.84 },
++    "13x8": { "solid": 1225.27, "glass": 1444.61, "inserts": 1590.84 },
++    "14x8": { "solid": 1312.06, "glass": 1567.96, "inserts": 1738.55 },
++    "15x8": { "solid": 1312.06, "glass": 1567.96, "inserts": 1738.55 },
++    "15.6x8": { "solid": 1145.24, "glass": 1401.14, "inserts": 1571.73 },
++    "16x8": { "solid": 1485.65, "glass": 1778.1, "inserts": 1973.08 },
++    "17x8": { "solid": 1529.04, "glass": 1821.49, "inserts": 2016.47 },
++    "6x9": { "solid": 1013.16, "glass": 1122.82, "inserts": 1195.92 },
++    "7x9": { "solid": 1163.65, "glass": 1273.31, "inserts": 1346.41 },
++    "8x9": { "solid": 1208.82, "glass": 1355.06, "inserts": 1452.55 },
++    "9x9": { "solid": 1292.02, "glass": 1438.25, "inserts": 1536.73 },
++    "10x9": { "solid": 1669.94, "glass": 1852.73, "inserts": 1974.57 },
++    "11x9": { "solid": 1669.54, "glass": 1852.73, "inserts": 1974.57 },
++    "12x9": { "solid": 1801.19, "glass": 1976.63, "inserts": 2162.08 },
++    "13x9": { "solid": 1801.19, "glass": 1976.63, "inserts": 2162.08 },
++    "14x9": { "solid": 1917.65, "glass": 2173.55, "inserts": 2344.14 },
++    "15x9": { "solid": 2002.63, "glass": 2258.53, "inserts": 2429.12 },
++    "15.6x9": { "solid": 1742.73, "glass": 1998.63, "inserts": 2169.22 },
++    "16x9": { "solid": 2121.98, "glass": 2414.43, "inserts": 2609.41 },
++    "17x9": { "solid": 2470.02, "glass": 2772.47, "inserts": 2967.45 },
+   },
+   "T52S": {
+-    "6x7": {
+-      "solid": 760.77,
+-      "glass": 827.34,
+-      "inserts": 871.73
+-    },
+-    "7x7": {
+-      "solid": 760.77,
+-      "glass": 860.64,
+-      "inserts": 927.21
+-    },
+-    "8x7": {
+-      "solid": 803.59,
+-      "glass": 936.77,
+-      "inserts": 1025.55
+-    },
+-    "9x7": {
+-      "solid": 951.8,
+-      "glass": 1084.98,
+-      "inserts": 1173.88
+-    },
+-    "10x7": {
+-      "solid": 1233.7,
+-      "glass": 1400.16,
+-      "inserts": 1511.13
+-    },
+-    "11x7": {
+-      "solid": 1233.7,
+-      "glass": 1400.16,
+-      "inserts": 1511.13
+-    },
+-    "12x7": {
+-      "solid": 1271.55,
+-      "glass": 1471.3,
+-      "inserts": 1604.48
+-    },
+-    "13x7": {
+-      "solid": 1271.55,
+-      "glass": 1471.3,
+-      "inserts": 1604.48
+-    },
+-    "14x7": {
+-      "solid": 1302.86,
+-      "glass": 1535.91,
+-      "inserts": 1691.27
+-    },
+-    "15x7": {
+-      "solid": 1309.43,
+-      "glass": 1542.48,
+-      "inserts": 1697.84
+-    },
+-    "15.6x7": {
+-      "solid": 1132.66,
+-      "glass": 1365.71,
+-      "inserts": 1521.07
+-    },
+-    "16x7": {
+-      "solid": 1414.82,
+-      "glass": 1681.16,
+-      "inserts": 1858.73
+-    },
+-    "17x7": {
+-      "solid": 1482.34,
+-      "glass": 1748.68,
+-      "inserts": 1926.25
+-    },
+-    "6x8": {
+-      "solid": 786.13,
+-      "glass": 876.0,
+-      "inserts": 952.57
+-    },
+-    "7x8": {
+-      "solid": 908.98,
+-      "glass": 1008.86,
+-      "inserts": 1075.43
+-    },
+-    "8x8": {
+-      "solid": 968.27,
+-      "glass": 1101.45,
+-      "inserts": 1190.23
+-    },
+-    "9x8": {
+-      "solid": 1129.66,
+-      "glass": 1262.84,
+-      "inserts": 1351.63
+-    },
+-    "10x8": {
+-      "solid": 1129.66,
+-      "glass": 1262.84,
+-      "inserts": 1351.63
+-    },
+-    "11x8": {
+-      "solid": 1423.07,
+-      "glass": 1589.54,
+-      "inserts": 1700.5
+-    },
+-    "12x8": {
+-      "solid": 1465.88,
+-      "glass": 1665.63,
+-      "inserts": 1798.8
+-    },
+-    "13x8": {
+-      "solid": 1465.88,
+-      "glass": 1665.63,
+-      "inserts": 1798.8
+-    },
+-    "14x8": {
+-      "solid": 1577.86,
+-      "glass": 1810.91,
+-      "inserts": 1966.27
+-    },
+-    "15x8": {
+-      "solid": 1587.75,
+-      "glass": 1820.8,
+-      "inserts": 1976.16
+-    },
+-    "15.6x8": {
+-      "solid": 1374.66,
+-      "glass": 1607.71,
+-      "inserts": 1763.07
+-    },
+-    "16x8": {
+-      "solid": 1721.13,
+-      "glass": 1987.46,
+-      "inserts": 2165.04
+-    },
+-    "17x8": {
+-      "solid": 1847.91,
+-      "glass": 2114.25,
+-      "inserts": 2281.82
+-    },
+-    "6x9": {
+-      "solid": 1105.45,
+-      "glass": 1205.32,
+-      "inserts": 1271.89
+-    },
+-    "7x9": {
+-      "solid": 1269.77,
+-      "glass": 1369.64,
+-      "inserts": 1436.21
+-    },
+-    "8x9": {
+-      "solid": 1334.0,
+-      "glass": 1467.18,
+-      "inserts": 1555.96
+-    },
+-    "9x9": {
+-      "solid": 1401.52,
+-      "glass": 1534.7,
+-      "inserts": 1623.48
+-    },
+-    "10x9": {
+-      "solid": 1819.79,
+-      "glass": 1986.25,
+-      "inserts": 2097.21
+-    },
+-    "11x9": {
+-      "solid": 1819.79,
+-      "glass": 1986.25,
+-      "inserts": 2097.21
+-    },
+-    "12x9": {
+-      "solid": 1946.59,
+-      "glass": 2146.34,
+-      "inserts": 2279.52
+-    },
+-    "13x9": {
+-      "solid": 1946.59,
+-      "glass": 2146.34,
+-      "inserts": 2279.52
+-    },
+-    "14x9": {
+-      "solid": 2083.27,
+-      "glass": 2316.32,
+-      "inserts": 2471.68
+-    },
+-    "15x9": {
+-      "solid": 2262.77,
+-      "glass": 2495.82,
+-      "inserts": 2651.18
+-    },
+-    "15.6x9": {
+-      "solid": 1968.93,
+-      "glass": 2201.98,
+-      "inserts": 2357.34
+-    },
+-    "16x9": {
+-      "solid": 2442.27,
+-      "glass": 2708.25,
+-      "inserts": 2886.18
+-    },
+-    "17x9": {
+-      "solid": 2564.13,
+-      "glass": 2830.46,
+-      "inserts": 3008.04
+-    }
++    "6x7": { "solid": 760.77, "glass": 827.34, "inserts": 871.73 },
++    "7x7": { "solid": 760.77, "glass": 860.64, "inserts": 927.21 },
++    "8x7": { "solid": 803.59, "glass": 936.77, "inserts": 1025.55 },
++    "9x7": { "solid": 951.8, "glass": 1084.98, "inserts": 1173.88 },
++    "10x7": { "solid": 1233.7, "glass": 1400.16, "inserts": 1511.13 },
++    "11x7": { "solid": 1233.7, "glass": 1400.16, "inserts": 1511.13 },
++    "12x7": { "solid": 1271.55, "glass": 1471.3, "inserts": 1604.48 },
++    "13x7": { "solid": 1271.55, "glass": 1471.3, "inserts": 1604.48 },
++    "14x7": { "solid": 1302.86, "glass": 1535.91, "inserts": 1691.27 },
++    "15x7": { "solid": 1309.43, "glass": 1542.48, "inserts": 1697.84 },
++    "15.6x7": { "solid": 1132.66, "glass": 1365.71, "inserts": 1521.07 },
++    "16x7": { "solid": 1414.82, "glass": 1681.16, "inserts": 1858.73 },
++    "17x7": { "solid": 1482.34, "glass": 1748.68, "inserts": 1926.25 },
++    "6x8": { "solid": 786.13, "glass": 876.0, "inserts": 952.57 },
++    "7x8": { "solid": 908.98, "glass": 1008.86, "inserts": 1075.43 },
++    "8x8": { "solid": 968.27, "glass": 1101.45, "inserts": 1190.23 },
++    "9x8": { "solid": 1129.66, "glass": 1262.84, "inserts": 1351.63 },
++    "10x8": { "solid": 1129.66, "glass": 1262.84, "inserts": 1351.63 },
++    "11x8": { "solid": 1423.07, "glass": 1589.54, "inserts": 1700.5 },
++    "12x8": { "solid": 1465.88, "glass": 1665.63, "inserts": 1798.8 },
++    "13x8": { "solid": 1465.88, "glass": 1665.63, "inserts": 1798.8 },
++    "14x8": { "solid": 1577.86, "glass": 1810.91, "inserts": 1966.27 },
++    "15x8": { "solid": 1587.75, "glass": 1820.8, "inserts": 1976.16 },
++    "15.6x8": { "solid": 1374.66, "glass": 1607.71, "inserts": 1763.07 },
++    "16x8": { "solid": 1721.13, "glass": 1987.46, "inserts": 2165.04 },
++    "17x8": { "solid": 1847.91, "glass": 2114.25, "inserts": 2281.82 },
++    "6x9": { "solid": 1105.45, "glass": 1205.32, "inserts": 1271.89 },
++    "7x9": { "solid": 1269.77, "glass": 1369.64, "inserts": 1436.21 },
++    "8x9": { "solid": 1334.0, "glass": 1467.18, "inserts": 1555.96 },
++    "9x9": { "solid": 1401.52, "glass": 1534.7, "inserts": 1623.48 },
++    "10x9": { "solid": 1819.79, "glass": 1986.25, "inserts": 2097.21 },
++    "11x9": { "solid": 1819.79, "glass": 1986.25, "inserts": 2097.21 },
++    "12x9": { "solid": 1946.59, "glass": 2146.34, "inserts": 2279.52 },
++    "13x9": { "solid": 1946.59, "glass": 2146.34, "inserts": 2279.52 },
++    "14x9": { "solid": 2083.27, "glass": 2316.32, "inserts": 2471.68 },
++    "15x9": { "solid": 2262.77, "glass": 2495.82, "inserts": 2651.18 },
++    "15.6x9": { "solid": 1968.93, "glass": 2201.98, "inserts": 2357.34 },
++    "16x9": { "solid": 2442.27, "glass": 2708.25, "inserts": 2886.18 },
++    "17x9": { "solid": 2564.13, "glass": 2830.46, "inserts": 3008.04 },
+   },
+   "4050-4051-4053": {
+-    "6x7": {
+-      "solid": 717.17,
+-      "glass": 844.84,
+-      "inserts": 905.74
+-    },
+-    "6.2x7": {
+-      "solid": 717.17,
+-      "glass": 844.84,
+-      "inserts": 905.74
+-    },
+-    "6.8x7": {
+-      "solid": 829.14,
+-      "glass": 956.81,
+-      "inserts": 1017.7
+-    },
+-    "6.10x7": {
+-      "solid": 829.14,
+-      "glass": 956.81,
+-      "inserts": 1017.7
+-    },
+-    "6.4x7": {
+-      "solid": 829.14,
+-      "glass": 956.81,
+-      "inserts": 1017.7
+-    },
+-    "6.6x7": {
+-      "solid": 829.14,
+-      "glass": 956.81,
+-      "inserts": 1017.7
+-    },
+-    "7x7": {
+-      "solid": 829.14,
+-      "glass": 956.81,
+-      "inserts": 1017.7
+-    },
+-    "8x7": {
+-      "solid": 895.4,
+-      "glass": 1065.65,
+-      "inserts": 1146.84
+-    },
+-    "9x7": {
+-      "solid": 1014.39,
+-      "glass": 1184.63,
+-      "inserts": 1265.82
+-    },
+-    "10x7": {
+-      "solid": 1228.49,
+-      "glass": 1441.28,
+-      "inserts": 1542.77
+-    },
+-    "11x7": {
+-      "solid": 1228.49,
+-      "glass": 1441.28,
+-      "inserts": 1542.77
+-    },
+-    "12x7": {
+-      "solid": 1389.65,
+-      "glass": 1645.02,
+-      "inserts": 1766.81
+-    },
+-    "13x7": {
+-      "solid": 1389.65,
+-      "glass": 1645.02,
+-      "inserts": 1766.81
+-    },
+-    "14x7": {
+-      "solid": 1457.42,
+-      "glass": 1755.33,
+-      "inserts": 1897.42
+-    },
+-    "15x7": {
+-      "solid": 1473.98,
+-      "glass": 1771.89,
+-      "inserts": 1913.98
+-    },
+-    "15.2x7": {
+-      "solid": 1473.98,
+-      "glass": 1771.89,
+-      "inserts": 1913.98
+-    },
+-    "15.10x7": {
+-      "solid": 1473.98,
+-      "glass": 1771.89,
+-      "inserts": 1913.98
+-    },
+-    "15.4x7": {
+-      "solid": 1473.98,
+-      "glass": 1771.89,
+-      "inserts": 1913.98
+-    },
+-    "15.8x7": {
+-      "solid": 1276.37,
+-      "glass": 1574.28,
+-      "inserts": 1716.37
+-    },
+-    "15.6x7": {
+-      "solid": 1276.37,
+-      "glass": 1574.28,
+-      "inserts": 1716.37
+-    },
+-    "16x7": {
+-      "solid": 1284.21,
+-      "glass": 1624.7,
+-      "inserts": 1787.09
+-    },
+-    "16.2x7": {
+-      "solid": 1284.21,
+-      "glass": 1624.7,
+-      "inserts": 1787.09
+-    },
+-    "16.8x7": {
+-      "solid": 1710.42,
+-      "glass": 2050.74,
+-      "inserts": 2213.3
+-    },
+-    "16.10x7": {
+-      "solid": 1710.42,
+-      "glass": 2050.74,
+-      "inserts": 2213.3
+-    },
+-    "16.4x7": {
+-      "solid": 1710.42,
+-      "glass": 2050.74,
+-      "inserts": 2213.3
+-    },
+-    "16.6x7": {
+-      "solid": 1710.42,
+-      "glass": 2050.74,
+-      "inserts": 2213.3
+-    },
+-    "17x7": {
+-      "solid": 1788.74,
+-      "glass": 2129.23,
+-      "inserts": 2291.61
+-    },
+-    "6x8": {
+-      "solid": 866.47,
+-      "glass": 994.12,
+-      "inserts": 1055.04
+-    },
+-    "6.2x8": {
+-      "solid": 866.47,
+-      "glass": 994.12,
+-      "inserts": 1055.04
+-    },
+-    "6.8x8": {
+-      "solid": 1000.84,
+-      "glass": 1128.51,
+-      "inserts": 1189.4
+-    },
+-    "6.10x8": {
+-      "solid": 1000.84,
+-      "glass": 1128.51,
+-      "inserts": 1189.4
+-    },
+-    "6.4x8": {
+-      "solid": 1000.84,
+-      "glass": 1128.51,
+-      "inserts": 1189.4
+-    },
+-    "6.6x8": {
+-      "solid": 1000.84,
+-      "glass": 1128.51,
+-      "inserts": 1189.4
+-    },
+-    "7x8": {
+-      "solid": 1000.84,
+-      "glass": 1128.51,
+-      "inserts": 1189.4
+-    },
+-    "8x8": {
+-      "solid": 1089.68,
+-      "glass": 1259.93,
+-      "inserts": 1341.12
+-    },
+-    "9x8": {
+-      "solid": 1250.82,
+-      "glass": 1421.07,
+-      "inserts": 1502.26
+-    },
+-    "10x8": {
+-      "solid": 1460.42,
+-      "glass": 1673.21,
+-      "inserts": 1774.7
+-    },
+-    "11x8": {
+-      "solid": 1460.42,
+-      "glass": 1673.21,
+-      "inserts": 1774.7
+-    },
+-    "12x8": {
+-      "solid": 1674.28,
+-      "glass": 1929.65,
+-      "inserts": 2051.44
+-    },
+-    "13x8": {
+-      "solid": 1674.28,
+-      "glass": 1929.65,
+-      "inserts": 2051.44
+-    },
+-    "14x8": {
+-      "solid": 1664.28,
+-      "glass": 1929.65,
+-      "inserts": 2051.44
+-    },
+-    "14.2x8": {
+-      "solid": 1664.28,
+-      "glass": 1929.65,
+-      "inserts": 2051.44
+-    },
+-    "14.8x8": {
+-      "solid": 1787.54,
+-      "glass": 2085.14,
+-      "inserts": 2227.23
+-    },
+-    "14.10x8": {
+-      "solid": 1787.54,
+-      "glass": 2085.14,
+-      "inserts": 2227.23
+-    },
+-    "14.4x8": {
+-      "solid": 1787.54,
+-      "glass": 2085.14,
+-      "inserts": 2227.23
+-    },
+-    "14.6x8": {
+-      "solid": 1787.54,
+-      "glass": 2085.14,
+-      "inserts": 2227.23
+-    },
+-    "15x8": {
+-      "solid": 1812.82,
+-      "glass": 2085.14,
+-      "inserts": 2252.82
+-    },
+-    "15.2x8": {
+-      "solid": 1812.82,
+-      "glass": 2085.14,
+-      "inserts": 2252.82
+-    },
+-    "15.10x8": {
+-      "solid": 1812.82,
+-      "glass": 2085.14,
+-      "inserts": 2252.82
+-    },
+-    "15.4x8": {
+-      "solid": 1812.82,
+-      "glass": 2085.14,
+-      "inserts": 2252.82
+-    },
+-    "15.8x8": {
+-      "solid": 1571.02,
+-      "glass": 2011.02,
+-      "inserts": 2110.74
+-    },
+-    "15.6x8": {
+-      "solid": 1571.02,
+-      "glass": 2011.02,
+-      "inserts": 2110.74
+-    },
+-    "16x8": {
+-      "solid": 2026.68,
+-      "glass": 2367.18,
+-      "inserts": 2529.56
+-    },
+-    "16.2x8": {
+-      "solid": 2026.68,
+-      "glass": 2367.18,
+-      "inserts": 2529.56
+-    },
+-    "16.8x8": {
+-      "solid": 2026.68,
+-      "glass": 2357.18,
+-      "inserts": 2529.56
+-    },
+-    "16.10x8": {
+-      "solid": 2026.68,
+-      "glass": 2357.18,
+-      "inserts": 2529.56
+-    },
+-    "16.4x8": {
+-      "solid": 2026.68,
+-      "glass": 2357.18,
+-      "inserts": 2529.56
+-    },
+-    "16.6x8": {
+-      "solid": 2026.68,
+-      "glass": 2357.18,
+-      "inserts": 2529.56
+-    },
+-    "17x8": {
+-      "solid": 2178.79,
+-      "glass": 2509.28,
+-      "inserts": 2681.67
+-    },
+-    "6x9": {
+-      "solid": 1351.86,
+-      "glass": 1479.53,
+-      "inserts": 1540.42
+-    },
+-    "7x9": {
+-      "solid": 1351.86,
+-      "glass": 1479.53,
+-      "inserts": 1540.42
+-    },
+-    "8x9": {
+-      "solid": 1463.3,
+-      "glass": 1633.54,
+-      "inserts": 1714.74
+-    },
+-    "9x9": {
+-      "solid": 1693.74,
+-      "glass": 1863.91,
+-      "inserts": 1945.18
+-    },
+-    "10x9": {
+-      "solid": 2029.56,
+-      "glass": 2242.35,
+-      "inserts": 2343.84
+-    },
+-    "11x9": {
+-      "solid": 2029.56,
+-      "glass": 2242.35,
+-      "inserts": 2343.84
+-    },
+-    "12x9": {
+-      "solid": 2272.04,
+-      "glass": 2527.4,
+-      "inserts": 2649.19
+-    },
+-    "13x9": {
+-      "solid": 2272.04,
+-      "glass": 2527.4,
+-      "inserts": 2649.19
+-    },
+-    "14x9": {
+-      "solid": 2385.0,
+-      "glass": 2682.91,
+-      "inserts": 2825.0
+-    },
+-    "15x9": {
+-      "solid": 2516.0,
+-      "glass": 2813.91,
+-      "inserts": 2956.0
+-    },
+-    "15.2x9": {
+-      "solid": 2516.0,
+-      "glass": 2813.91,
+-      "inserts": 2956.0
+-    },
+-    "15.10x9": {
+-      "solid": 2516.0,
+-      "glass": 2813.91,
+-      "inserts": 2956.0
+-    },
+-    "15.4x9": {
+-      "solid": 2516.0,
+-      "glass": 2813.91,
+-      "inserts": 2956.0
+-    },
+-    "15.8x9": {
+-      "solid": 2179.14,
+-      "glass": 2487.05,
+-      "inserts": 2629.14
+-    },
+-    "15.6x9": {
+-      "solid": 2179.14,
+-      "glass": 2487.05,
+-      "inserts": 2629.14
+-    },
+-    "16x9": {
+-      "solid": 2892.51,
+-      "glass": 3233.0,
+-      "inserts": 3395.39
+-    },
+-    "17x9": {
+-      "solid": 3035.58,
+-      "glass": 3376.07,
+-      "inserts": 3538.46
+-    },
+-    "18x7": {
+-      "solid": 1514.8,
+-      "glass": 1838.95,
+-      "inserts": 1993.55
+-    },
+-    "18x8": {
+-      "solid": 1837.71,
+-      "glass": 2161.86,
+-      "inserts": 2316.46
+-    },
+-    "18x9": {
+-      "solid": 2631.49,
+-      "glass": 2972.04,
+-      "inserts": 3134.45
+-    }
++    "7x7": { "solid": 775.65, "glass": 937.72, "inserts": 1015.02 },
++    "7.6x7": { "solid": 775.65, "glass": 937.72, "inserts": 1015.02 },
++    "8x7": { "solid": 710.65, "glass": 872.72, "inserts": 950.02 },
++    "9x7": { "solid": 765.5, "glass": 927.58, "inserts": 1004.88 },
++    "10x7": { "solid": 864, "glass": 1065.97, "inserts": 1163.22 },
++    "12x7": { "solid": 1051.01, "glass": 1294.12, "inserts": 1410.07 },
++    "14x7": { "solid": 1184.41, "glass": 1468.67, "inserts": 1604.56 },
++    "15x7": { "solid": 1240.51, "glass": 1524.77, "inserts": 1660.67 },
++    "16x7": { "solid": 1261.71, "glass": 1585.86, "inserts": 1740.46 },
++    "17x7": { "solid": 1449.97, "glass": 1774.12, "inserts": 1928.72 },
++    "18x7": { "solid": 1514.8, "glass": 1838.95, "inserts": 1993.55 },
++    "7x8": { "solid": 917.78, "glass": 1079.85, "inserts": 1157.15 },
++    "7.6x8": { "solid": 917.78, "glass": 1079.85, "inserts": 1157.15 },
++    "8x8": { "solid": 852.78, "glass": 1014.85, "inserts": 1092.15 },
++    "9x8": { "solid": 926.33, "glass": 1088.41, "inserts": 1165.71 },
++    "10x8": { "solid": 1059.74, "glass": 1261.71, "inserts": 1358.95 },
++    "12x8": { "solid": 1243.01, "glass": 1486.12, "inserts": 1602.07 },
++    "14x8": { "solid": 1420.04, "glass": 1704.3, "inserts": 1840.2 },
++    "15x8": { "solid": 1513.55, "glass": 1797.81, "inserts": 1933.7 },
++    "16x8": { "solid": 1572.15, "glass": 1896.3, "inserts": 2050.9 },
++    "17x8": { "solid": 1711.78, "glass": 2035.94, "inserts": 2190.53 },
++    "18x8": { "solid": 1837.71, "glass": 2161.86, "inserts": 2316.46 },
++    "8x9": { "solid": 1167.07, "glass": 1337.36, "inserts": 1418.56 },
++    "9x9": { "solid": 1264, "glass": 1434.29, "inserts": 1515.49 },
++    "10x9": { "solid": 1464.4, "glass": 1677.24, "inserts": 1778.73 },
++    "12x9": { "solid": 1756.51, "glass": 2011.93, "inserts": 2133.73 },
++    "14x9": { "solid": 1967.4, "glass": 2265.38, "inserts": 2407.49 },
++    "15x9": { "solid": 2065.64, "glass": 2363.62, "inserts": 2505.73 },
++    "16x9": { "solid": 2179.58, "glass": 2520.13, "inserts": 2682.55 },
++    "18x9": { "solid": 2631.49, "glass": 2972.04, "inserts": 3134.45 },
+   },
+   "9130-9133": {
+-    "8x7": {
+-      "solid": 850.01,
+-      "glass": 1043.87,
+-      "inserts": 1136.32
+-    },
+-    "9x7": {
+-      "solid": 915.62,
+-      "glass": 1109.48,
+-      "inserts": 1201.94
+-    },
+-    "10x7": {
+-      "solid": 1033.43,
+-      "glass": 1275.01,
+-      "inserts": 1391.32
+-    },
+-    "12x7": {
+-      "solid": 1257.11,
+-      "glass": 1547.9,
+-      "inserts": 1686.59
+-    },
+-    "14x7": {
+-      "solid": 1416.68,
+-      "glass": 1756.68,
+-      "inserts": 1919.22
+-    },
+-    "15x7": {
+-      "solid": 1483.78,
+-      "glass": 1823.78,
+-      "inserts": 1986.33
+-    },
+-    "16x7": {
+-      "solid": 1509.13,
+-      "glass": 1896.85,
+-      "inserts": 2081.71
+-    },
+-    "17x7": {
+-      "solid": 1734.31,
+-      "glass": 2122.03,
+-      "inserts": 2306.94
+-    },
+-    "18x7": {
+-      "solid": 1811.85,
+-      "glass": 2199.57,
+-      "inserts": 2384.49
+-    },
+-    "8x8": {
+-      "solid": 1020.01,
+-      "glass": 1213.87,
+-      "inserts": 1306.32
+-    },
+-    "9x8": {
+-      "solid": 1107.99,
+-      "glass": 1301.85,
+-      "inserts": 1394.31
+-    },
+-    "10x8": {
+-      "solid": 1267.55,
+-      "glass": 1509.13,
+-      "inserts": 1625.45
+-    },
+-    "12x8": {
+-      "solid": 1486.76,
+-      "glass": 1777.55,
+-      "inserts": 1916.24
+-    },
+-    "14x8": {
+-      "solid": 1698.52,
+-      "glass": 2038.52,
+-      "inserts": 2201.07
+-    },
+-    "15x8": {
+-      "solid": 1810.36,
+-      "glass": 2150.36,
+-      "inserts": 2312.91
+-    },
+-    "16x8": {
+-      "solid": 1880.45,
+-      "glass": 2268.17,
+-      "inserts": 2453.09
+-    },
+-    "17x8": {
+-      "solid": 2047.47,
+-      "glass": 2435.19,
+-      "inserts": 2620.1
+-    },
+-    "18x8": {
+-      "solid": 2198.08,
+-      "glass": 2585.81,
+-      "inserts": 2770.72
+-    },
+-    "8x9": {
+-      "solid": 1371.87,
+-      "glass": 1516.88,
+-      "inserts": 1609
+-    },
+-    "9x9": {
+-      "solid": 1485.84,
+-      "glass": 1626.84,
+-      "inserts": 1718.96
+-    },
+-    "10x9": {
+-      "solid": 1721.38,
+-      "glass": 1902.4,
+-      "inserts": 2017.54
+-    },
+-    "12x9": {
+-      "solid": 2064.75,
+-      "glass": 2282,
+-      "inserts": 2420.18
+-    },
+-    "14x9": {
+-      "solid": 2312.64,
+-      "glass": 2569.49,
+-      "inserts": 2730.67
+-    },
+-    "15x9": {
+-      "solid": 2428.13,
+-      "glass": 2680.93,
+-      "inserts": 2842.11
+-    },
+-    "16x9": {
+-      "solid": 2562.09,
+-      "glass": 2858.47,
+-      "inserts": 3042.7
+-    },
+-    "18x9": {
+-      "solid": 3093.27,
+-      "glass": 3371.02,
+-      "inserts": 3555.25
+-    }
++    "8x7": { "solid": 850.01, "glass": 1043.87, "inserts": 1136.32 },
++    "9x7": { "solid": 915.62, "glass": 1109.48, "inserts": 1201.94 },
++    "10x7": { "solid": 1033.43, "glass": 1275.01, "inserts": 1391.32 },
++    "12x7": { "solid": 1257.11, "glass": 1547.9, "inserts": 1686.59 },
++    "14x7": { "solid": 1416.68, "glass": 1756.68, "inserts": 1919.22 },
++    "15x7": { "solid": 1483.78, "glass": 1823.78, "inserts": 1986.33 },
++    "16x7": { "solid": 1509.13, "glass": 1896.85, "inserts": 2081.71 },
++    "17x7": { "solid": 1734.31, "glass": 2122.03, "inserts": 2306.94 },
++    "18x7": { "solid": 1811.85, "glass": 2199.57, "inserts": 2384.49 },
++    "8x8": { "solid": 1020.01, "glass": 1213.87, "inserts": 1306.32 },
++    "9x8": { "solid": 1107.99, "glass": 1301.85, "inserts": 1394.31 },
++    "10x8": { "solid": 1267.55, "glass": 1509.13, "inserts": 1625.45 },
++    "12x8": { "solid": 1486.76, "glass": 1777.55, "inserts": 1916.24 },
++    "14x8": { "solid": 1698.52, "glass": 2038.52, "inserts": 2201.07 },
++    "15x8": { "solid": 1810.36, "glass": 2150.36, "inserts": 2312.91 },
++    "16x8": { "solid": 1880.45, "glass": 2268.17, "inserts": 2453.09 },
++    "17x8": { "solid": 2047.47, "glass": 2435.19, "inserts": 2620.1 },
++    "18x8": { "solid": 2198.08, "glass": 2585.81, "inserts": 2770.72 },
++    "8x9": { "solid": 1371.87, "glass": 1516.88, "inserts": 1609 },
++    "9x9": { "solid": 1485.84, "glass": 1626.84, "inserts": 1718.96 },
++    "10x9": { "solid": 1721.38, "glass": 1902.4, "inserts": 2017.54 },
++    "12x9": { "solid": 2064.75, "glass": 2282, "inserts": 2420.18 },
++    "14x9": { "solid": 2312.64, "glass": 2569.49, "inserts": 2730.67 },
++    "15x9": { "solid": 2428.13, "glass": 2680.93, "inserts": 2842.11 },
++    "16x9": { "solid": 2562.09, "glass": 2858.47, "inserts": 3042.7 },
++    "18x9": { "solid": 3093.27, "glass": 3371.02, "inserts": 3555.25 },
+   },
+   "4300": {
+-    "8x7": {
+-      "solid": 823.71,
+-      "glass": 976.9,
+-      "inserts": 1049.96
+-    },
+-    "9x7": {
+-      "solid": 889.7,
+-      "glass": 1042.89,
+-      "inserts": 1115.96
+-    },
+-    "10x7": {
+-      "solid": 996.94,
+-      "glass": 1187.84,
+-      "inserts": 1279.75
+-    },
+-    "12x7": {
+-      "solid": 1209.05,
+-      "glass": 1438.84,
+-      "inserts": 1548.43
+-    },
+-    "14x7": {
+-      "solid": 1364.6,
+-      "glass": 1633.28,
+-      "inserts": 1761.73
+-    },
+-    "15x7": {
+-      "solid": 1434.13,
+-      "glass": 1702.8,
+-      "inserts": 1831.25
+-    },
+-    "16x7": {
+-      "solid": 1471.84,
+-      "glass": 1778.22,
+-      "inserts": 1924.35
+-    },
+-    "17x7": {
+-      "solid": 1675.7,
+-      "glass": 1982.09,
+-      "inserts": 2128.21
+-    },
+-    "18x7": {
+-      "solid": 1748.76,
+-      "glass": 2055.15,
+-      "inserts": 2201.27
+-    },
+-    "8x8": {
+-      "solid": 982.8,
+-      "glass": 1135.99,
+-      "inserts": 1209.05
+-    },
+-    "9x8": {
+-      "solid": 1065.28,
+-      "glass": 1218.48,
+-      "inserts": 1291.54
+-    },
+-    "10x8": {
+-      "solid": 1223.19,
+-      "glass": 1414.09,
+-      "inserts": 1506.01
+-    },
+-    "12x8": {
+-      "solid": 1435.31,
+-      "glass": 1665.1,
+-      "inserts": 1774.69
+-    },
+-    "14x8": {
+-      "solid": 1640.35,
+-      "glass": 1909.03,
+-      "inserts": 2037.47
+-    },
+-    "15x8": {
+-      "solid": 1747.58,
+-      "glass": 2016.26,
+-      "inserts": 2144.71
+-    },
+-    "16x8": {
+-      "solid": 1813.58,
+-      "glass": 2119.96,
+-      "inserts": 2266.09
+-    },
+-    "17x8": {
+-      "solid": 1979.73,
+-      "glass": 2286.12,
+-      "inserts": 2432.24
+-    },
+-    "18x8": {
+-      "solid": 2123.5,
+-      "glass": 2429.88,
+-      "inserts": 2576.01
+-    },
+-    "8x9": {
+-      "solid": 1311.74,
+-      "glass": 1472.61,
+-      "inserts": 1549.33
+-    },
+-    "9x9": {
+-      "solid": 1398.37,
+-      "glass": 1559.25,
+-      "inserts": 1635.96
+-    },
+-    "10x9": {
+-      "solid": 1561.72,
+-      "glass": 1762.82,
+-      "inserts": 1858.74
+-    },
+-    "12x9": {
+-      "solid": 1873.54,
+-      "glass": 2114.84,
+-      "inserts": 2229.93
+-    },
+-    "14x9": {
+-      "solid": 2098.77,
+-      "glass": 2380.3,
+-      "inserts": 2514.58
+-    },
+-    "15x9": {
+-      "solid": 2203.95,
+-      "glass": 2485.47,
+-      "inserts": 2619.75
+-    },
+-    "16x9": {
+-      "solid": 2398.25,
+-      "glass": 2719.98,
+-      "inserts": 2873.44
+-    },
+-    "18x9": {
+-      "solid": 2869.74,
+-      "glass": 3191.47,
+-      "inserts": 3344.93
+-    }
++    "8x7": { "solid": 823.71, "glass": 976.9, "inserts": 1049.96 },
++    "9x7": { "solid": 889.7, "glass": 1042.89, "inserts": 1115.96 },
++    "10x7": { "solid": 996.94, "glass": 1187.84, "inserts": 1279.75 },
++    "12x7": { "solid": 1209.05, "glass": 1438.84, "inserts": 1548.43 },
++    "14x7": { "solid": 1364.6, "glass": 1633.28, "inserts": 1761.73 },
++    "15x7": { "solid": 1434.13, "glass": 1702.8, "inserts": 1831.25 },
++    "16x7": { "solid": 1471.84, "glass": 1778.22, "inserts": 1924.35 },
++    "17x7": { "solid": 1675.7, "glass": 1982.09, "inserts": 2128.21 },
++    "18x7": { "solid": 1748.76, "glass": 2055.15, "inserts": 2201.27 },
++    "8x8": { "solid": 982.8, "glass": 1135.99, "inserts": 1209.05 },
++    "9x8": { "solid": 1065.28, "glass": 1218.48, "inserts": 1291.54 },
++    "10x8": { "solid": 1223.19, "glass": 1414.09, "inserts": 1506.01 },
++    "12x8": { "solid": 1435.31, "glass": 1665.1, "inserts": 1774.69 },
++    "14x8": { "solid": 1640.35, "glass": 1909.03, "inserts": 2037.47 },
++    "15x8": { "solid": 1747.58, "glass": 2016.26, "inserts": 2144.71 },
++    "16x8": { "solid": 1813.58, "glass": 2119.96, "inserts": 2266.09 },
++    "17x8": { "solid": 1979.73, "glass": 2286.12, "inserts": 2432.24 },
++    "18x8": { "solid": 2123.5, "glass": 2429.88, "inserts": 2576.01 },
++    "8x9": { "solid": 1311.74, "glass": 1472.61, "inserts": 1549.33 },
++    "9x9": { "solid": 1398.37, "glass": 1559.25, "inserts": 1635.96 },
++    "10x9": { "solid": 1561.72, "glass": 1762.82, "inserts": 1858.74 },
++    "12x9": { "solid": 1873.54, "glass": 2114.84, "inserts": 2229.93 },
++    "14x9": { "solid": 2098.77, "glass": 2380.3, "inserts": 2514.58 },
++    "15x9": { "solid": 2203.95, "glass": 2485.47, "inserts": 2619.75 },
++    "16x9": { "solid": 2398.25, "glass": 2719.98, "inserts": 2873.44 },
++    "18x9": { "solid": 2869.74, "glass": 3191.47, "inserts": 3344.93 },
+   },
+   "GD1LP-GD1SP": {
+-    "8x7": {
+-      "solid": 765.77,
+-      "glass": 1047.02,
+-      "inserts": 1093.04
+-    },
+-    "9x7": {
+-      "solid": 824.58,
+-      "glass": 1105.83,
+-      "inserts": 1151.85
+-    },
+-    "10x7": {
+-      "solid": 930.67,
+-      "glass": 1211.83,
+-      "inserts": 1257.95
+-    },
+-    "12x7": {
+-      "solid": 1131.39,
+-      "glass": 1552.98,
+-      "inserts": 1622.49
+-    },
+-    "14x7": {
+-      "solid": 1275.85,
+-      "glass": 1697.44,
+-      "inserts": 1766.96
+-    },
+-    "15x7": {
+-      "solid": 1335.94,
+-      "glass": 1898.41,
+-      "inserts": 1990.87
+-    },
+-    "16x7": {
+-      "solid": 1358.95,
+-      "glass": 1921.46,
+-      "inserts": 2013.5
+-    },
+-    "17x7": {
+-      "solid": 1560.84,
+-      "glass": 2123.31,
+-      "inserts": 2215.77
+-    },
+-    "18x7": {
+-      "solid": 1631.27,
+-      "glass": 2193.74,
+-      "inserts": 2286.2
+-    },
+-    "8x8": {
+-      "solid": 917.9,
+-      "glass": 1199.15,
+-      "inserts": 1245.18
+-    },
+-    "9x8": {
+-      "solid": 997.16,
+-      "glass": 1278.41,
+-      "inserts": 1324.44
+-    },
+-    "10x8": {
+-      "solid": 1141.61,
+-      "glass": 1422.77,
+-      "inserts": 1468.69
+-    },
+-    "12x8": {
+-      "solid": 1338.48,
+-      "glass": 1760.07,
+-      "inserts": 1829.59
+-    },
+-    "14x8": {
+-      "solid": 1528.92,
+-      "glass": 1950.51,
+-      "inserts": 2019.63
+-    },
+-    "15x8": {
+-      "solid": 1629.96,
+-      "glass": 2192.53,
+-      "inserts": 2284.99
+-    },
+-    "16x8": {
+-      "solid": 1692.62,
+-      "glass": 2255.12,
+-      "inserts": 2347.17
+-    },
+-    "17x8": {
+-      "solid": 1843.44,
+-      "glass": 2405.91,
+-      "inserts": 2498.37
+-    },
+-    "18x8": {
+-      "solid": 1978.99,
+-      "glass": 2541.46,
+-      "inserts": 2634.92
+-    }
+-  }
++    "8x7": { "solid": 765.77, "glass": 1047.02, "inserts": 1093.04 },
++    "9x7": { "solid": 824.58, "glass": 1105.83, "inserts": 1151.85 },
++    "10x7": { "solid": 930.67, "glass": 1211.83, "inserts": 1257.95 },
++    "12x7": { "solid": 1131.39, "glass": 1552.98, "inserts": 1622.49 },
++    "14x7": { "solid": 1275.85, "glass": 1697.44, "inserts": 1766.96 },
++    "15x7": { "solid": 1335.94, "glass": 1898.41, "inserts": 1990.87 },
++    "16x7": { "solid": 1358.95, "glass": 1921.46, "inserts": 2013.5 },
++    "17x7": { "solid": 1560.84, "glass": 2123.31, "inserts": 2215.77 },
++    "18x7": { "solid": 1631.27, "glass": 2193.74, "inserts": 2286.2 },
++    "8x8": { "solid": 917.9, "glass": 1199.15, "inserts": 1245.18 },
++    "9x8": { "solid": 997.16, "glass": 1278.41, "inserts": 1324.44 },
++    "10x8": { "solid": 1141.61, "glass": 1422.77, "inserts": 1468.69 },
++    "12x8": { "solid": 1338.48, "glass": 1760.07, "inserts": 1829.59 },
++    "14x8": { "solid": 1528.92, "glass": 1950.51, "inserts": 2019.63 },
++    "15x8": { "solid": 1629.96, "glass": 2192.53, "inserts": 2284.99 },
++    "16x8": { "solid": 1692.62, "glass": 2255.12, "inserts": 2347.17 },
++    "17x8": { "solid": 1843.44, "glass": 2405.91, "inserts": 2498.37 },
++    "18x8": { "solid": 1978.99, "glass": 2541.46, "inserts": 2634.92 },
++  },
+ };
+-
+-export type ResidentialModel = keyof typeof RESIDENTIAL_PRICES;
+diff --git a/src/lib/pricing/engine.test.ts b/src/lib/pricing/engine.test.ts
+index 2c4a33a..664db97 100644
+--- a/src/lib/pricing/engine.test.ts
++++ b/src/lib/pricing/engine.test.ts
+@@ -131,31 +131,26 @@ describe("quoteResidential — full quote with add-on upcharges", () => {
+   });
+ });
+ 
+-describe("4050-4051-4053 odd-size resolution (finer width groups)", () => {
++describe("4050-4051-4053 size resolution (matches index.html grid)", () => {
+   const price = (wf: number, wi: number, tier: number, style: "solid" | "glass" | "inserts" = "solid") =>
+     priceResidential("4050-4051-4053", dim(wf, wi, tier, 0), style).price;
+ 
+-  it("splits 6' at 6'0-6'2 vs 6'4-6'10 (7' tall)", () => {
+-    expect(price(6, 0, 7)).toBeCloseTo(717.17, 2);
+-    expect(price(6, 2, 7)).toBeCloseTo(717.17, 2);
+-    expect(price(6, 4, 7)).toBeCloseTo(829.14, 2);
+-    expect(price(6, 6, 7)).toBeCloseTo(829.14, 2);
+-    expect(price(6, 10, 7)).toBeCloseTo(829.14, 2);
++  it("prices nominal widths straight from the catalog grid (7' tall)", () => {
++    expect(price(8, 0, 7)).toBeCloseTo(710.65, 2);
++    expect(price(9, 0, 7)).toBeCloseTo(765.5, 2);
++    expect(price(10, 0, 7)).toBeCloseTo(864, 2);
+   });
+-  it("splits 15' at 15'2/4/10 vs 15'6/8", () => {
+-    expect(price(15, 2, 7)).toBeCloseTo(1473.98, 2);
+-    expect(price(15, 6, 7)).toBeCloseTo(1276.37, 2);
+-    expect(price(15, 8, 7)).toBeCloseTo(1276.37, 2);
+-    expect(price(15, 10, 7)).toBeCloseTo(1473.98, 2);
++  it("gives 7'6\" its own half-foot price", () => {
++    expect(price(7, 6, 7)).toBeCloseTo(775.65, 2);
++    expect(price(7, 0, 7)).toBeCloseTo(775.65, 2);
+   });
+-  it("splits 16' at 16'0-2 vs 16'4-10 (7' tall)", () => {
+-    expect(price(16, 0, 7)).toBeCloseTo(1284.21, 2);
+-    expect(price(16, 4, 7)).toBeCloseTo(1710.42, 2);
+-    expect(price(16, 10, 7)).toBeCloseTo(1710.42, 2);
++  it("rounds other half-foot widths down to the nominal foot", () => {
++    // no 8.6 grid entry, so 8'6" resolves to the 8' price
++    expect(price(8, 6, 7)).toBeCloseTo(710.65, 2);
+   });
+   it("prices glass and inserts too (10' x 9')", () => {
+-    expect(price(10, 0, 9, "glass")).toBeCloseTo(2242.35, 2);
+-    expect(price(10, 0, 9, "inserts")).toBeCloseTo(2343.84, 2);
++    expect(price(10, 0, 9, "glass")).toBeCloseTo(1677.24, 2);
++    expect(price(10, 0, 9, "inserts")).toBeCloseTo(1778.73, 2);
+   });
+ });
+ 

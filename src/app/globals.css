@@ -279,6 +279,10 @@ html, body { margin: 0; padding: 0; }
 .tool-shell select, .tool-shell input[type=text], .tool-shell input[type=number] { font-size: 16px; padding: 13px 14px; }
 .tool-shell .dim2 input { width: 62px; }
 .tool-shell .dim2 .u { font-size: 12.5px; }
+.tool-shell .dimstack { display: flex; flex-direction: column; gap: 8px; }
+.tool-shell .dimrow { display: flex; align-items: center; gap: 6px; }
+.tool-shell .dimrow input { width: 62px; text-align: center; padding-left: 6px; padding-right: 6px; }
+.tool-shell .dimrow .u { font-size: 12.5px; color: var(--muted); margin-right: 6px; }
 .tool-shell .lbl { font-size: 13px; }
 .tool-shell .step { padding: 24px 26px; }
 .tool-shell .step-h h3 { font-size: 15px; }

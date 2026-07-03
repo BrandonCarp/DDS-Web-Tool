@@ -131,31 +131,26 @@ describe("quoteResidential — full quote with add-on upcharges", () => {
   });
 });
 
-describe("4050-4051-4053 odd-size resolution (finer width groups)", () => {
+describe("4050-4051-4053 size resolution (matches index.html grid)", () => {
   const price = (wf: number, wi: number, tier: number, style: "solid" | "glass" | "inserts" = "solid") =>
     priceResidential("4050-4051-4053", dim(wf, wi, tier, 0), style).price;
 
-  it("splits 6' at 6'0-6'2 vs 6'4-6'10 (7' tall)", () => {
-    expect(price(6, 0, 7)).toBeCloseTo(717.17, 2);
-    expect(price(6, 2, 7)).toBeCloseTo(717.17, 2);
-    expect(price(6, 4, 7)).toBeCloseTo(829.14, 2);
-    expect(price(6, 6, 7)).toBeCloseTo(829.14, 2);
-    expect(price(6, 10, 7)).toBeCloseTo(829.14, 2);
+  it("prices nominal widths straight from the catalog grid (7' tall)", () => {
+    expect(price(8, 0, 7)).toBeCloseTo(710.65, 2);
+    expect(price(9, 0, 7)).toBeCloseTo(765.5, 2);
+    expect(price(10, 0, 7)).toBeCloseTo(864, 2);
   });
-  it("splits 15' at 15'2/4/10 vs 15'6/8", () => {
-    expect(price(15, 2, 7)).toBeCloseTo(1473.98, 2);
-    expect(price(15, 6, 7)).toBeCloseTo(1276.37, 2);
-    expect(price(15, 8, 7)).toBeCloseTo(1276.37, 2);
-    expect(price(15, 10, 7)).toBeCloseTo(1473.98, 2);
+  it("gives 7'6\" its own half-foot price", () => {
+    expect(price(7, 6, 7)).toBeCloseTo(775.65, 2);
+    expect(price(7, 0, 7)).toBeCloseTo(775.65, 2);
   });
-  it("splits 16' at 16'0-2 vs 16'4-10 (7' tall)", () => {
-    expect(price(16, 0, 7)).toBeCloseTo(1284.21, 2);
-    expect(price(16, 4, 7)).toBeCloseTo(1710.42, 2);
-    expect(price(16, 10, 7)).toBeCloseTo(1710.42, 2);
+  it("rounds other half-foot widths down to the nominal foot", () => {
+    // no 8.6 grid entry, so 8'6" resolves to the 8' price
+    expect(price(8, 6, 7)).toBeCloseTo(710.65, 2);
   });
   it("prices glass and inserts too (10' x 9')", () => {
-    expect(price(10, 0, 9, "glass")).toBeCloseTo(2242.35, 2);
-    expect(price(10, 0, 9, "inserts")).toBeCloseTo(2343.84, 2);
+    expect(price(10, 0, 9, "glass")).toBeCloseTo(1677.24, 2);
+    expect(price(10, 0, 9, "inserts")).toBeCloseTo(1778.73, 2);
   });
 });
 
