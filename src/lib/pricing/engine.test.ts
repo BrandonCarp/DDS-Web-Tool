@@ -218,3 +218,25 @@ describe("2026 workbook authority (V2 stock + strict 9FT book)", () => {
     expect(priceResidential("GD1LP", dim(8, 0, 9, 0), "solid").source).toBe("none");
   });
 });
+
+describe("window designs (inserts catalog from index.html)", () => {
+  const opts = { style: "inserts" as const, color: "White", track: "r12" as const, spring: "extension" as const, lock: "none" as const };
+  it("adds the design name to the description when valid for the door", () => {
+    const q = quoteResidential("T50S", dim(8, 0, 7, 0), { ...opts, windesign: "509" });
+    expect(q.description).toContain("Colonial 509 insert");
+  });
+  it("ignores designs the model cannot take (long panels on a short-only door)", () => {
+    const q = quoteResidential("T50S", dim(8, 0, 7, 0), { ...opts, windesign: "612" });
+    expect(q.description).not.toContain("Stockton");
+  });
+  it("ignores width-restricted sunsets on the wrong width", () => {
+    const q = quoteResidential("T50S", dim(8, 0, 7, 0), { ...opts, windesign: "504" }); // 504 is 14/15/15.6 only
+    expect(q.description).not.toContain("Sunset 504");
+    const q2 = quoteResidential("T50S", dim(15, 0, 7, 0), { ...opts, windesign: "504" });
+    expect(q2.description).toContain("Sunset 504 insert");
+  });
+  it("Gallery doors get architectural designs even with plain glass", () => {
+    const q = quoteResidential("GD1LP", dim(8, 0, 7, 0), { ...opts, style: "glass", windesign: "SQ24" });
+    expect(q.description).toContain("SQ24 insert");
+  });
+});

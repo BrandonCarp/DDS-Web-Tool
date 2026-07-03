@@ -29,3 +29,11 @@ export function dataKey(model: string): string {
 export function expandModels(keys: string[]): string[] {
   return keys.flatMap((k) => MODEL_SPLIT[k] ?? [k]);
 }
+
+/** Display order for the model selector within each collection. */
+export const MODEL_ORDER = ["T50S", "T52S", "4050", "4051", "4053", "4300", "9130", "9133", "GD1LP", "GD1SP"];
+
+export function modelSort(a: string, b: string): number {
+  const ia = MODEL_ORDER.indexOf(a), ib = MODEL_ORDER.indexOf(b);
+  return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+}

@@ -54,6 +54,8 @@ export interface QuoteOptions {
   track: TrackKey;
   spring: SpringKey;
   lock: LockKey;
+  /** Optional window/insert design id (e.g. "509", "SQ24"); validated in the engine. */
+  windesign?: string;
 }
 
 export interface Quote {

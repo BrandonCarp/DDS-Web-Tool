@@ -7,6 +7,7 @@ import { RESIDENTIAL_PRICES } from "./data/residential-prices";
 import { STOCK_PRICES } from "./data/stock-prices";
 import { ADDONS, ULTRAGRAIN, GRADE_RES, COLLECTIONS_RES } from "./data/addons";
 import { dataKey, expandModels } from "./model-groups";
+import { windowDesigns, designName } from "./data/inserts";
 import type {
   Dimensions,
   PriceResult,
@@ -199,8 +200,12 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
 
   // Door description (matches index.html wording)
   const grade = GRADE_RES[dataKey(model)] || "";
-  const winTxt =
-    opts.style === "solid" ? "solid, no windows" : grade ? `${grade} windows` : "windows";
+  let winTxt = "solid, no windows";
+  if (opts.style !== "solid") {
+    const validDesigns = windowDesigns(model, opts.style, size.widthCode).map((d) => d.id);
+    const dn = opts.windesign && validDesigns.includes(opts.windesign) ? designName(opts.windesign) : null;
+    winTxt = `${grade ? grade + " windows" : "windows"}${dn ? ", " + dn + " insert" : ""}`;
+  }
   const springTxt = is9 || opts.spring === "torsion" ? "torsion springs" : "extension springs";
   const lockTxt =
     ({ none: "no lock", slide: "inside slide lock", lockbar: "lockbar", lockbar_installed: "lockbar installed" } as Record<string, string>)[opts.lock] ||

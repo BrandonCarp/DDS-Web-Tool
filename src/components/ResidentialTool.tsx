@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { LockKey, Quote, SpringKey, TrackKey, WindowStyle } from "@/lib/pricing/types";
 import { MARGINS, COLORS, COLLECTIONS } from "@/lib/pricing/data/catalog-meta";
-import { dataKey } from "@/lib/pricing/model-groups";
+import { dataKey, modelSort } from "@/lib/pricing/model-groups";
+import { windowDesigns, designWidthCode } from "@/lib/pricing/data/inserts";
 
 const GLASS = [
   { value: "solid", label: "Solid (no windows)" },
@@ -41,6 +42,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
       const c = COLLECTIONS[dataKey(m)] || "Other";
       (t[c] ||= []).push(m);
     }
+    for (const c of Object.keys(t)) t[c].sort(modelSort);
     return t;
   }, [models]);
   const collections = Object.keys(doorTree);
@@ -58,6 +60,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
   const [color, setColor] = useState("White");
   const [glass, setGlass] = useState("solid");
   const [framing, setFraming] = useState("plain");
+  const [windesign, setWindesign] = useState("");
   const [spring, setSpring] = useState<SpringKey>("extension");
   const [track, setTrack] = useState<TrackKey>("r12");
   const [lock, setLock] = useState<LockKey>("none");
@@ -66,8 +69,9 @@ export function ResidentialTool({ models }: { models: string[] }) {
   const [soPrice, setSoPrice] = useState("");
   const [soKind, setSoKind] = useState<"door" | "section">("door");
 
-  const [result, setResult] = useState<Quote | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [resultRaw, setResult] = useState<Quote | null>(null);
+  const [resultSig, setResultSig] = useState("");
+  const [errorRaw, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -81,6 +85,20 @@ export function ResidentialTool({ models }: { models: string[] }) {
   const hf = parseInt(heightFt, 10);
   const sizeComplete = Number.isFinite(wf) && Number.isFinite(hf);
 
+  // Window/insert designs available for this exact door (model + style + width).
+  const wDesigns = useMemo(
+    () => windowDesigns(model, style, designWidthCode(wf, parseInt(widthIn, 10) || 0)),
+    [model, style, wf, widthIn],
+  );
+  // A previously chosen design that no longer fits this door is simply inactive.
+  const activeDesign = windesign && wDesigns.some((d) => d.id === windesign) ? windesign : "";
+
+  // The quote is only shown while it matches the CURRENT configuration; any
+  // config change makes it stale, so the user must click "Get price" again.
+  const cfgSig = JSON.stringify([model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, activeDesign]);
+  const result = resultRaw && resultSig === cfgSig ? resultRaw : null;
+  const liveError = errorRaw && resultSig === cfgSig ? errorRaw : null;
+
   const getPrice = useCallback(async () => {
     setError(null);
     try {
@@ -92,22 +110,32 @@ export function ResidentialTool({ models }: { models: string[] }) {
           widthFt: Number(widthFt), widthIn: Number(widthIn || 0),
           heightFt: Number(heightFt), heightIn: Number(heightIn || 0),
           style, color, track, spring, lock,
+          windesign: activeDesign || undefined,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Request failed");
-      setResult(data as Quote);
+      const q = data as Quote;
+      setResult(q);
+      setResultSig(cfgSig);
+      // Getting a price also records the quote in the estimates DB.
+      if (q.priced) {
+        const n = Math.max(1, qty);
+        await fetch("/api/estimates", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model, size: `${widthFt || "—"}'${widthIn || "0"}" x ${heightFt || "—"}'${heightIn || "0"}"`,
+            style, color, unitPrice: q.unitPrice, qty: n, total: q.unitPrice * n, description: q.description,
+          }),
+        }).then(() => { setSaved(true); setTimeout(() => setSaved(false), 1600); }).catch(() => {/* ignore */});
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
       setResult(null);
+      setResultSig(cfgSig);
     }
-  }, [model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock]);
-
-  useEffect(() => {
-    if (step !== 2 || !model || !sizeComplete) return;
-    const id = setTimeout(getPrice, 150);
-    return () => clearTimeout(id);
-  }, [getPrice, step, model, sizeComplete]);
+  }, [model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, activeDesign, qty, cfgSig]);
 
   function onSeries(c: string) {
     setColl(c);
@@ -126,7 +154,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
     setHeightFt(""); setHeightIn("0");
     setAssembly("complete");
     setColor((COLORS[dataKey(model)] ?? ["White"])[0]);
-    setGlass("solid"); setFraming("plain");
+    setGlass("solid"); setFraming("plain"); setWindesign("");
     setSpring("extension"); setTrack("r12"); setLock("none");
     setQty(1);
     setSoPrice(""); setSoKind("door");
@@ -169,7 +197,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
   }
   function clearAll() {
     setWidthFt(""); setWidthIn("0"); setHeightFt(""); setHeightIn("0");
-    setAssembly("complete"); setGlass("solid"); setFraming("plain");
+    setAssembly("complete"); setGlass("solid"); setFraming("plain"); setWindesign("");
     setSpring("extension"); setTrack("r12"); setLock("none"); setQty(1); setSoPrice("");
   }
 
@@ -268,13 +296,17 @@ export function ResidentialTool({ models }: { models: string[] }) {
                     <div className="dimrow">
                       <input data-testid="width-ft" type="number" min={0} placeholder="ft" value={widthFt} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setWidthFt(v); }} />
                       <span className="u">ft</span>
-                      <input data-testid="width-in" type="number" min={0} value={widthIn} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setWidthIn(v); }} />
+                      <select data-testid="width-in" className="insel" value={widthIn} onChange={(e) => setWidthIn(e.target.value)}>
+                        {["0", "2", "4", "6", "8", "10"].map((v) => <option key={v} value={v}>{v}</option>)}
+                      </select>
                       <span className="u">in W</span>
                     </div>
                     <div className="dimrow">
                       <input data-testid="height-ft" type="number" min={0} placeholder="ft" value={heightFt} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setHeightFt(v); }} />
                       <span className="u">ft</span>
-                      <input data-testid="height-in" type="number" min={0} value={heightIn} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setHeightIn(v); }} />
+                      <select data-testid="height-in" className="insel" value={heightIn} onChange={(e) => setHeightIn(e.target.value)}>
+                        {["0", "3", "6", "9"].map((v) => <option key={v} value={v}>{v}</option>)}
+                      </select>
                       <span className="u">in H</span>
                     </div>
                   </div>
@@ -308,6 +340,17 @@ export function ResidentialTool({ models }: { models: string[] }) {
                     </select>
                   </div>
                 </div>
+                {wDesigns.length > 0 && (
+                  <div className="grow">
+                    <label>Window design</label>
+                    <div className="ctl selectwrap">
+                      <select data-testid="windesign" value={activeDesign} onChange={(e) => setWindesign(e.target.value)}>
+                        <option value="">None / standard</option>
+                        {wDesigns.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="ggroup">
@@ -315,7 +358,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
                 <div className="grow">
                   <label>Spring</label>
                   <div className="ctl selectwrap">
-                    <select value={spring} onChange={(e) => setSpring(e.target.value as SpringKey)}>
+                    <select data-testid="spring" value={spring} onChange={(e) => setSpring(e.target.value as SpringKey)}>
                       <option value="extension">Extension</option>
                       <option value="torsion">Torsion</option>
                     </select>
@@ -324,7 +367,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
                 <div className="grow">
                   <label>Track lift / radius</label>
                   <div className="ctl selectwrap">
-                    <select value={track} onChange={(e) => setTrack(e.target.value as TrackKey)}>
+                    <select data-testid="track" value={track} onChange={(e) => setTrack(e.target.value as TrackKey)}>
                       {TRACKS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                     </select>
                   </div>
@@ -336,7 +379,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
                 <div className="grow">
                   <label>Lock</label>
                   <div className="ctl selectwrap">
-                    <select value={lock} onChange={(e) => setLock(e.target.value as LockKey)}>
+                    <select data-testid="lock" value={lock} onChange={(e) => setLock(e.target.value as LockKey)}>
                       {LOCKS.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
                     </select>
                   </div>
@@ -349,7 +392,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
                 Get price
               </button>
             )}
-            {error && <div className="alert warn" data-testid="error">{error}</div>}
+            {liveError && <div className="alert warn" data-testid="error">{liveError}</div>}
           </div>
         </div>
       </section>

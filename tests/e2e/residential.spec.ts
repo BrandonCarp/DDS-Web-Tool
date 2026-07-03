@@ -16,9 +16,9 @@ test.describe("authenticated", () => {
   test("prices an exact stock size at the stock price", async ({ page }) => {
     await configureT50S(page);
     await page.getByTestId("width-ft").fill("8");
-    await page.getByTestId("width-in").fill("0");
+    await page.getByTestId("width-in").selectOption("0");
     await page.getByTestId("height-ft").fill("7");
-    await page.getByTestId("height-in").fill("0");
+    await page.getByTestId("height-in").selectOption("0");
     await page.getByTestId("style").selectOption("solid");
     await page.getByTestId("get-price").click();
     await expect(page.getByTestId("price")).toHaveText("$560.37");
@@ -28,12 +28,12 @@ test.describe("authenticated", () => {
   test("adds torsion + lock + track upcharges to the total", async ({ page }) => {
     await configureT50S(page);
     await page.getByTestId("width-ft").fill("9");
-    await page.getByTestId("width-in").fill("0");
+    await page.getByTestId("width-in").selectOption("0");
     await page.getByTestId("height-ft").fill("7");
-    await page.getByTestId("height-in").fill("0");
-    await page.locator("select").nth(4).selectOption("torsion");
-    await page.locator("select").nth(5).selectOption("r32");
-    await page.locator("select").nth(6).selectOption("lockbar_installed");
+    await page.getByTestId("height-in").selectOption("0");
+    await page.getByTestId("spring").selectOption("torsion");
+    await page.getByTestId("track").selectOption("r32");
+    await page.getByTestId("lock").selectOption("lockbar_installed");
     await page.getByTestId("get-price").click();
     await expect(page.getByTestId("total")).toHaveText("$920.58");
   });
