@@ -22,9 +22,9 @@ export default async function AdminPage() {
         <nav className="tabs">
           <Link href="/" className="tab">‹ Back to tool</Link>
         </nav>
-        <div className="right">Admin · {admin.username}</div>
+        <div className="right">Admin Dashboard · {admin.username}</div>
       </header>
-      <AdminPanel users={users} estimates={estimates} meId={admin.id} />
+      <AdminPanel users={users} estimates={estimates} meId={admin.id} master={admin.role === "admin"} />
     </div>
   );
 }

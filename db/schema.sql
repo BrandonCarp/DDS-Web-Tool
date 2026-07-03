@@ -3,7 +3,7 @@ create table if not exists users (
   id            serial primary key,
   username      text unique not null,
   password_hash text not null,
-  role          text not null default 'user',      -- 'admin' | 'user'
+  role          text not null default 'user',      -- 'admin' | 'semiadmin' | 'user'
   active        boolean not null default true,
   created_at    timestamptz not null default now()
 );

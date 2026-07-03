@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 export interface AdminUser {
   id: number;
   username: string;
-  role: "admin" | "user";
+  role: "admin" | "semiadmin" | "user";
   active: boolean;
   created_at: string;
 }
@@ -31,17 +31,20 @@ export function AdminPanel({
   users,
   estimates,
   meId,
+  master,
 }: {
   users: AdminUser[];
   estimates: AdminEstimate[];
   meId: number;
+  /** Full admins manage accounts; semi-admins see the dashboard without user controls. */
+  master: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [nu, setNu] = useState("");
   const [np, setNp] = useState("");
-  const [nr, setNr] = useState<"admin" | "user">("user");
+  const [nr, setNr] = useState<"admin" | "semiadmin" | "user">("user");
 
   async function call(method: string, body: Record<string, unknown>) {
     setBusy(true);
@@ -79,8 +82,10 @@ export function AdminPanel({
 
   return (
     <div className="wrap" style={{ gridTemplateColumns: "1fr", gridTemplateAreas: "none", display: "block", maxWidth: 1100 }}>
+      <h2 style={{ margin: "0 0 16px", fontSize: 20 }}>Admin Dashboard</h2>
       {err && <div className="alert warn" style={{ marginBottom: 14 }}>{err}</div>}
 
+      {master && (
       <div className="panel" style={{ marginBottom: 18 }}>
         <div className="step">
           <div className="step-h"><span className="step-n">1</span><h3>User accounts</h3></div>
@@ -91,8 +96,9 @@ export function AdminPanel({
               <input placeholder="username" value={nu} onChange={(e) => setNu(e.target.value)} style={{ width: 180 }} />
               <input placeholder="temp password (6+)" value={np} onChange={(e) => setNp(e.target.value)} style={{ width: 200 }} />
               <div className="selectwrap">
-                <select value={nr} onChange={(e) => setNr(e.target.value as "admin" | "user")}>
+                <select value={nr} onChange={(e) => setNr(e.target.value as "admin" | "semiadmin" | "user")}>
                   <option value="user">User</option>
+                  <option value="semiadmin">Semi-admin</option>
                   <option value="admin">Admin</option>
                 </select>
               </div>
@@ -118,9 +124,13 @@ export function AdminPanel({
                     <button className="chip" disabled={busy || u.id === meId} onClick={() => call("PATCH", { id: u.id, active: !u.active })}>
                       {u.active ? "Disable" : "Enable"}
                     </button>
-                    <button className="chip" disabled={busy || u.id === meId} onClick={() => call("PATCH", { id: u.id, role: u.role === "admin" ? "user" : "admin" })}>
-                      Make {u.role === "admin" ? "user" : "admin"}
-                    </button>
+                    <div className="selectwrap" style={{ display: "inline-block" }}>
+                      <select value={u.role} disabled={busy || u.id === meId} onChange={(e) => call("PATCH", { id: u.id, role: e.target.value })} style={{ padding: "4px 26px 4px 8px", fontSize: 12 }}>
+                        <option value="user">User</option>
+                        <option value="semiadmin">Semi-admin</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </div>
                     <button className="chip" disabled={busy} onClick={() => resetPw(u.id, u.username)}>Reset password</button>
                   </td>
                 </tr>
@@ -129,10 +139,11 @@ export function AdminPanel({
           </table>
         </div>
       </div>
+      )}
 
       <div className="panel">
         <div className="step">
-          <div className="step-h"><span className="step-n">2</span><h3>Estimates</h3><span className="hint">Last 100</span></div>
+          <div className="step-h"><span className="step-n">{master ? 2 : 1}</span><h3>Estimates</h3><span className="hint">Last 100</span></div>
           {estimates.length === 0 ? (
             <div className="muted-note">No estimates saved yet.</div>
           ) : (

@@ -8,7 +8,7 @@ import { query } from "./db";
 export const SESSION_COOKIE = "dds_session";
 const TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
-export type Role = "admin" | "user";
+export type Role = "admin" | "semiadmin" | "user";
 export interface User {
   id: number;
   username: string;
@@ -67,7 +67,15 @@ export async function requireUser(): Promise<User> {
   return u;
 }
 
+// Admin Dashboard access: full admins AND semi-admins.
 export async function requireAdmin(): Promise<User> {
+  const u = await requireUser();
+  if (u.role !== "admin" && u.role !== "semiadmin") redirect("/");
+  return u;
+}
+
+// User management (create accounts, roles, passwords, enable/disable): full admins only.
+export async function requireMasterAdmin(): Promise<User> {
   const u = await requireUser();
   if (u.role !== "admin") redirect("/");
   return u;
