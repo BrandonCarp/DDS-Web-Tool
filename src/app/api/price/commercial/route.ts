@@ -30,8 +30,6 @@ export async function POST(req: Request) {
   } else {
     input = {
       order: "section", mfr, model,
-      widthMode: b.widthMode === "manual" ? "manual" : "standard",
-      secSize: typeof b.secSize === "string" ? b.secSize : undefined,
       manFt: Number(b.manFt), manIn: Number(b.manIn) || 0,
       secKind: b.secKind === "int" ? "int" : "bt",
       secHeight: b.secHeight === "24" ? "24" : "21",

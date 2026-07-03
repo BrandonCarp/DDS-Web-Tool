@@ -37,32 +37,36 @@ describe("commercial complete-door matrix (ported from the legacy tool)", () => 
 
 const section = (over: Record<string, unknown> = {}) => ({
   order: "section" as const, mfr: "Clopay", model: "524",
-  widthMode: "standard" as const, secSize: "8.2", secKind: "bt" as const,
+  manFt: 8, manIn: 2, secKind: "bt" as const,
   secHeight: "21" as const, windows: 0, retainer: false, stile: "none" as const, ...over,
 });
 
-describe("commercial replacement sections", () => {
-  it("stocked Clopay standard size: sell = cost / (1 - 49%)", () => {
-    const q = quoteCommercial(section());
-    expect(q.unitPrice).toBeCloseTo(128.23 / 0.51, 2); // 524 8'2" bottom cost from the sections book
-  });
-  it("per-foot model (Wayne Dalton 2415 @ $29/ft), 5-inch-plus rounds up", () => {
-    const q = quoteCommercial(section({ model: "2415", mfr: "Wayne Dalton", widthMode: "manual", manFt: 9, manIn: 6 }));
-    expect(q.unitPrice).toBeCloseTo(29 * 10, 2);
+describe("commercial replacement sections (any customer width)", () => {
+  it("per-foot model at the customer's width (524 @ $29/ft), 5-inch-plus rounds up", () => {
+    expect(quoteCommercial(section({ manFt: 9, manIn: 6 })).unitPrice).toBeCloseTo(29 * 10, 2);
+    expect(quoteCommercial(section({ manFt: 8, manIn: 2 })).unitPrice).toBeCloseTo(29 * 8, 2);
   });
   it("per-foot adders: retainer per foot, stiles flat, windows ×$150 on intermediates", () => {
-    const q = quoteCommercial(section({ model: "2415", mfr: "Wayne Dalton", widthMode: "manual", manFt: 10, manIn: 0, retainer: true, stile: "double" }));
+    const q = quoteCommercial(section({ model: "2415", mfr: "Wayne Dalton", manFt: 10, manIn: 0, retainer: true, stile: "double" }));
     expect(q.unitPrice).toBeCloseTo(29 * 10 + 3.75 * 10 + 50, 2);
-    const qi = quoteCommercial(section({ model: "2415", mfr: "Wayne Dalton", widthMode: "manual", manFt: 10, manIn: 0, secKind: "int", windows: 2 }));
+    const qi = quoteCommercial(section({ model: "2415", mfr: "Wayne Dalton", manFt: 10, manIn: 0, secKind: "int", windows: 2 }));
     expect(qi.unitPrice).toBeCloseTo(29 * 10 + 300, 2);
   });
   it("caps windows at the max for the width (≤9ft -> 2)", () => {
-    const q = quoteCommercial(section({ model: "2415", mfr: "Wayne Dalton", widthMode: "manual", manFt: 8, manIn: 0, secKind: "int", windows: 5 }));
+    const q = quoteCommercial(section({ model: "2415", mfr: "Wayne Dalton", manFt: 8, manIn: 0, secKind: "int", windows: 5 }));
     expect(q.unitPrice).toBeCloseTo(29 * 8 + 150 * 2, 2);
   });
-  it("Clopay 3200 section uses stock cost (no per-foot rate exists)", () => {
-    const q = quoteCommercial(section({ model: "3200", secSize: "9.2", secKind: "int" }));
-    expect(q.unitPrice).toBeCloseTo(198.78 / 0.51, 2);
+  it("Clopay panel model without a per-foot rate rounds UP to the next standard width cost", () => {
+    // 9'4" wanted -> priced as the 10'2" standard section, cost / (1 - 49%)
+    const q = quoteCommercial(section({ model: "3200", manFt: 9, manIn: 4, secKind: "int" }));
+    expect(q.unitPrice).toBeCloseTo(220.87 / 0.51, 2);
+    expect(q.lines[0].name).toContain("priced as 10′2″ standard");
+    // exact standard width prices straight from its own cost row
+    const q2 = quoteCommercial(section({ model: "3200", manFt: 9, manIn: 2, secKind: "int" }));
+    expect(q2.unitPrice).toBeCloseTo(198.78 / 0.51, 2);
+  });
+  it("rejects widths beyond the widest standard section for cost-table models", () => {
+    expect(quoteCommercial(section({ model: "3200", manFt: 18, manIn: 0 })).incomplete).toMatch(/Too wide/);
   });
 });
 

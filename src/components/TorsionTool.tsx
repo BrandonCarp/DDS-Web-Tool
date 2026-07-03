@@ -9,12 +9,27 @@ export function TorsionTool() {
   const [id, setId] = useState("2");
   const [wire, setWire] = useState("");
   const [length, setLength] = useState("");
+  const [saved, setSaved] = useState(false);
 
   const wires = TORSION.stock_wires[id] ?? Object.keys(TORSION.ppi).filter((w) => TORSION.ppi[w][id] != null);
   const len = parseFloat(length);
   const price = wire && Number.isFinite(len) && len > 0 ? torsionPrice(wire, id, len) : null;
 
-  function pickId(v: string) { setId(v); setWire(""); }
+  function pickId(v: string) { setId(v); setWire(""); setSaved(false); }
+
+  async function saveQuote() {
+    if (price == null) return;
+    await fetch("/api/estimates", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        quoteType: "spring",
+        model: "Torsion spring", size: `${fmtWire(wire)}″ × ${TORSION.id_labels[id]} × ${len}″`,
+        style: null, color: null,
+        unitPrice: price, qty: 1, total: price,
+        description: `Torsion spring cut to size — ${fmtWire(wire)}″ wire, ${TORSION.id_labels[id]}, ${len}″ long`,
+      }),
+    }).then(() => setSaved(true)).catch(() => {/* ignore */});
+  }
 
   return (
     <div className="wrap two">
@@ -35,14 +50,14 @@ export function TorsionTool() {
             <div className="row2">
               <div className="field"><label className="lbl">Wire size <span className="req">*</span></label>
                 <div className="selectwrap">
-                  <select data-testid="tor-wire" value={wire} onChange={(e) => setWire(e.target.value)}>
+                  <select data-testid="tor-wire" value={wire} onChange={(e) => { setWire(e.target.value); setSaved(false); }}>
                     <option value="">Select…</option>
                     {wires.map((w) => <option key={w} value={w}>{fmtWire(w)}″ wire</option>)}
                   </select>
                 </div>
               </div>
               <div className="field"><label className="lbl">Length (inches) <span className="req">*</span></label>
-                <input data-testid="tor-length" type="text" inputMode="decimal" value={length} onChange={(e) => setLength(e.target.value)} placeholder="e.g. 24.5" />
+                <input data-testid="tor-length" type="text" inputMode="decimal" value={length} onChange={(e) => { setLength(e.target.value); setSaved(false); }} placeholder="e.g. 24.5" />
               </div>
             </div>
             {id === "6" && <div className="note">6″ ID springs include filler at ${TORSION.filler_per_inch}/inch.</div>}
@@ -70,7 +85,10 @@ export function TorsionTool() {
                 {fmtWire(wire)}″ wire · {TORSION.id_labels[id]} · {len}″ long
               </div>
               <div className="qfoot">
-                <button className="btn" type="button" onClick={() => { setWire(""); setLength(""); }}>Clear</button>
+                <button className="btn" type="button" onClick={() => { setWire(""); setLength(""); setSaved(false); }}>Clear</button>
+                {saved
+                  ? <span className="muted-note">Saved to estimates ✓</span>
+                  : <button className="btn" type="button" onClick={saveQuote}>Save quote</button>}
                 <button className="btn primary" type="button" onClick={() => window.print()}>Print</button>
               </div>
             </>

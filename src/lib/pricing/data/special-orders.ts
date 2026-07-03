@@ -196,3 +196,8 @@ export const SPECIAL: Record<string, SpecialSeries> = {
     }
   }
 };
+
+/** Commercial special orders: Clopay 3200/524 — complete door at 45% margin, sections at 49%. */
+export const SPECIAL_COMMERCIAL: Record<string, { models: string[]; door: number; section: number }> = {
+  Clopay: { models: ["3200", "524"], door: 45, section: 49 },
+};

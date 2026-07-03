@@ -40,7 +40,7 @@ export function AppShell({
         </nav>
         <div className="right">
           {(user.role === "admin" || user.role === "semiadmin") && (
-            <a href="/admin" style={{ color: "#fff", fontWeight: 700, marginRight: 14 }}>Admin</a>
+            <a href="/admin" style={{ color: "#fff", fontWeight: 700, marginRight: 14 }}>ADMIN DASHBOARD</a>
           )}
           {user.username} · <a href="/api/logout" style={{ color: "#fff" }}>Sign out</a>
         </div>

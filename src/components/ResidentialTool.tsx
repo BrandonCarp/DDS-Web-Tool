@@ -132,6 +132,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            quoteType: "residential",
             model, size: `${widthFt || "—"}'${widthIn || "0"}" x ${heightFt || "—"}'${heightIn || "0"}"`,
             style, color, unitPrice: q.unitPrice, qty: n, total: q.unitPrice * n, description: q.description,
           }),

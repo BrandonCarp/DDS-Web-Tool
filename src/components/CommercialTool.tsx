@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import {
-  COMM_COMPLETE, COMM_MATRIX_SIZES, COMM_SECTION_WIDTHS, COMM_STD_SIZES,
+  COMM_COMPLETE, COMM_MATRIX_SIZES,
   SLAB_RATE, SLAB_LABEL, SLAB_ADDERS, commMfrs, commModelsFor, maxWindows, roundedFeet,
 } from "@/lib/pricing/data/commercial-meta";
 
@@ -27,8 +27,6 @@ export function CommercialTool() {
   const [clock, setClock] = useState<"none" | "slide">("none");
   // section config
   const [order, setOrder] = useState<"complete" | "section">("section");
-  const [widthMode, setWidthMode] = useState<"standard" | "manual">("standard");
-  const [secSize, setSecSize] = useState("");
   const [manFt, setManFt] = useState("");
   const [manIn, setManIn] = useState("0");
   const [secKind, setSecKind] = useState<"bt" | "int">("bt");
@@ -45,22 +43,19 @@ export function CommercialTool() {
   const [copied, setCopied] = useState(false);
 
   const canComplete = COMM_COMPLETE.has(model);
-  const hasCost = !!COMM_SECTION_WIDTHS[model];
   const hasRate = SLAB_RATE[model] != null;
-  const perFoot = hasRate && (widthMode === "manual" || !hasCost);
-  const stdSizes = hasCost ? COMM_SECTION_WIDTHS[model] : COMM_STD_SIZES;
+  const perFoot = hasRate; // per-foot rate models; others price from the section cost table
 
   const rFeet = useMemo(() => {
     if (order !== "section") return null;
-    let ft: number, inch: number;
-    if (widthMode === "manual" && hasRate) { ft = parseInt(manFt, 10); inch = parseInt(manIn, 10) || 0; }
-    else { if (!secSize) return null; const m = secSize.split("."); ft = parseInt(m[0], 10); inch = parseInt(m[1] || "0", 10); }
+    const ft = parseInt(manFt, 10);
+    const inch = parseInt(manIn, 10) || 0;
     if (Number.isNaN(ft)) return null;
     return roundedFeet(ft, inch);
-  }, [order, widthMode, hasRate, manFt, manIn, secSize]);
+  }, [order, manFt, manIn]);
   const mx = rFeet ? maxWindows(rFeet) : 0;
 
-  const cfgSig = JSON.stringify([mfr, model, order, size, glass, track, mount, cspring, clock, widthMode, secSize, manFt, manIn, secKind, secHeight, windows, retainer, stile]);
+  const cfgSig = JSON.stringify([mfr, model, order, size, glass, track, mount, cspring, clock, manFt, manIn, secKind, secHeight, windows, retainer, stile]);
   const result = resultRaw && resultSig === cfgSig ? resultRaw : null;
   const liveError = errorRaw && resultSig === cfgSig ? errorRaw : null;
   const priced = result?.priced ?? false;
@@ -69,13 +64,13 @@ export function CommercialTool() {
 
   function pickModel(m: string) {
     setModel(m);
-    setSize(""); setSecSize(""); setWidthMode("standard"); setManFt(""); setManIn("0");
+    setSize(""); setManFt(""); setManIn("0");
     setWindows("0"); setRetainer(false); setStile("none");
     setOrder(COMM_COMPLETE.has(m) ? "complete" : "section");
   }
   function resetConfig() {
     setSize(""); setGlass("solid"); setTrack("15R"); setMount("continuous"); setCspring("torsion"); setClock("none");
-    setWidthMode("standard"); setSecSize(""); setManFt(""); setManIn("0");
+    setManFt(""); setManIn("0");
     setSecKind("bt"); setSecHeight("21"); setWindows("0"); setRetainer(false); setStile("none");
     setQty(1); setResult(null); setError(null); setSaved(false); setCopied(false);
   }
@@ -87,7 +82,7 @@ export function CommercialTool() {
       const body =
         order === "complete"
           ? { order, mfr, model, size, glass, track, mount, cspring, clock }
-          : { order, mfr, model, widthMode, secSize, manFt: Number(manFt), manIn: Number(manIn) || 0, secKind, secHeight, windows: Number(windows) || 0, retainer, stile };
+          : { order, mfr, model, manFt: Number(manFt), manIn: Number(manIn) || 0, secKind, secHeight, windows: Number(windows) || 0, retainer, stile };
       const res = await fetch("/api/price/commercial", {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
       });
@@ -100,6 +95,7 @@ export function CommercialTool() {
         await fetch("/api/estimates", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            quoteType: "commercial",
             model: `${mfr} ${model}${order === "section" ? " section" : ""}`,
             size: data.sub, style: order, color: "—",
             unitPrice: data.unitPrice, qty: n, total: data.unitPrice * n,
@@ -111,7 +107,7 @@ export function CommercialTool() {
       setError(e instanceof Error ? e.message : "Something went wrong");
       setResult(null); setResultSig(cfgSig);
     }
-  }, [order, mfr, model, size, glass, track, mount, cspring, clock, widthMode, secSize, manFt, manIn, secKind, secHeight, windows, retainer, stile, qty, cfgSig]);
+  }, [order, mfr, model, size, glass, track, mount, cspring, clock, manFt, manIn, secKind, secHeight, windows, retainer, stile, qty, cfgSig]);
 
   function copyDesc() {
     if (!result?.description) return;
@@ -218,40 +214,17 @@ export function CommercialTool() {
                         </select>
                       </div>
                     </div>
-                    {hasRate && (
-                      <div className="grow">
-                        <label>Width mode</label>
-                        <div className="ctl selectwrap">
-                          <select value={widthMode} onChange={(e) => setWidthMode(e.target.value as "standard" | "manual")}>
-                            <option value="standard">Standard size</option>
-                            <option value="manual">Custom width</option>
-                          </select>
+                    <div className="grow">
+                      <label>Door width</label>
+                      <div className="ctl dimstack">
+                        <div className="dimrow">
+                          <input data-testid="comm-width-ft" type="number" min={0} placeholder="ft" value={manFt} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setManFt(v); }} />
+                          <span className="u">ft</span>
+                          <input data-testid="comm-width-in" type="number" min={0} value={manIn} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setManIn(v); }} />
+                          <span className="u">in</span>
                         </div>
                       </div>
-                    )}
-                    {widthMode === "manual" && hasRate ? (
-                      <div className="grow">
-                        <label>Width</label>
-                        <div className="ctl dimstack">
-                          <div className="dimrow">
-                            <input type="number" min={0} placeholder="ft" value={manFt} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setManFt(v); }} />
-                            <span className="u">ft</span>
-                            <input type="number" min={0} value={manIn} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setManIn(v); }} />
-                            <span className="u">in</span>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="grow">
-                        <label>Door width</label>
-                        <div className="ctl selectwrap">
-                          <select value={secSize} onChange={(e) => setSecSize(e.target.value)}>
-                            <option value="">Select…</option>
-                            {stdSizes.map((w) => <option key={w} value={w}>{w.replace(".", "′")}″ wide</option>)}
-                          </select>
-                        </div>
-                      </div>
-                    )}
+                    </div>
                   </>
                 )}
               </div>
@@ -356,7 +329,7 @@ export function CommercialTool() {
                     )}
                   </>
                 ) : (
-                  <div className="grow"><label>&nbsp;</label><div className="ctl"><span className="muted-note">Sell price calculated from stock cost. 21″ and 24″ are the same price.</span></div></div>
+                  <div className="grow"><label>&nbsp;</label><div className="ctl"><span className="muted-note">Any width — priced from the next standard section up. 21″ and 24″ are the same price.</span></div></div>
                 )}
               </div>
             </div>

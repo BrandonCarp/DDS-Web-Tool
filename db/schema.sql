@@ -30,3 +30,6 @@ create table if not exists estimates (
   created_at  timestamptz not null default now()
 );
 create index if not exists estimates_created_idx on estimates (created_at desc);
+
+-- Quote type for the admin dashboard: 'residential' | 'commercial' | 'special' | 'spring'
+alter table estimates add column if not exists quote_type text not null default 'residential';

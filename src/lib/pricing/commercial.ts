@@ -29,9 +29,7 @@ export interface CommCompleteInput {
 export interface CommSectionInput {
   order: "section";
   mfr: string; model: string;
-  widthMode: "standard" | "manual";
-  secSize?: string;                   // standard width key, e.g. "8.2"
-  manFt?: number; manIn?: number;     // manual width
+  manFt?: number; manIn?: number;     // customer's width — any size
   secKind: "bt" | "int";
   secHeight: "21" | "24";
   windows?: number;                   // intermediate sections only
@@ -91,42 +89,45 @@ export function quoteCommercial(input: CommInput): CommQuote {
     };
   }
 
-  // 2) Replacement section — stock cost @ margin for stocked Clopay standard
-  //    sizes, per-foot otherwise.
+  // 2) Replacement section — the customer's width can be ANY size (per the
+  //    slab pricing sheet). Models with a per-foot rate price rate × feet
+  //    (5″+ rounds up); Clopay panel models without a rate price from the
+  //    stock-cost table at the next standard width UP, at the section margin.
   const hasCost = !!COMM_SECTIONS.cost[model];
   const hasRate = COMM_SLAB.rate[model] != null;
-  const perFoot = hasRate && (input.widthMode === "manual" || !hasCost);
 
-  let ft: number, inch: number, widthLabel: string, secSizeKey: string | null = null;
-  if (input.widthMode === "manual" && hasRate) {
-    ft = Math.trunc(Number(input.manFt));
-    inch = Math.trunc(Number(input.manIn)) || 0;
-    if (!Number.isFinite(ft) || ft <= 0) return { ...base, incomplete: "Enter the door width" };
-    widthLabel = `${ft}′${inch ? inch + "″" : ""}`;
-  } else {
-    if (!input.secSize) return { ...base, incomplete: "Select a width" };
-    secSizeKey = input.secSize;
-    const m = input.secSize.split(".");
-    ft = parseInt(m[0], 10);
-    inch = parseInt(m[1] || "0", 10);
-    widthLabel = `${ft}′${inch ? inch + "″" : ""}`;
-  }
+  const ft = Math.trunc(Number(input.manFt));
+  const inch = Math.trunc(Number(input.manIn)) || 0;
+  if (!Number.isFinite(ft) || ft <= 0) return { ...base, incomplete: "Enter the door width" };
+  const widthLabel = `${ft}′${inch ? inch + "″" : ""}`;
   const rFeet = roundedFeet(ft, inch);
   const kindNm = input.secKind === "bt" ? "Bottom" : "Intermediate";
   const sub = `${widthLabel} · ${kindNm} · ${input.secHeight}″`;
   const lines: CommQuoteLine[] = [];
 
-  if (perFoot) {
+  if (hasRate) {
     const rate = COMM_SLAB.rate[model];
     lines.push({ name: `${kindNm} section · ${rFeet}′ × $${rate}/ft`, value: rate * rFeet, kind: "base" });
     if (input.secKind === "bt" && input.retainer)
       lines.push({ name: `Bottom retainer & rubber · ${rFeet}′`, value: COMM_SLAB.adders.retainer * rFeet, kind: "add" });
     if (input.stile === "single") lines.push({ name: "Single end stiles", value: COMM_SLAB.adders.stile_single, kind: "add" });
     if (input.stile === "double") lines.push({ name: "Double end stiles", value: COMM_SLAB.adders.stile_double, kind: "add" });
+  } else if (hasCost) {
+    // round UP to the next standard width with a cost (e.g. 9′4″ -> 10′2″ section)
+    const want = ft + inch / 12;
+    const keys = Object.keys(COMM_SECTIONS.cost[model])
+      .map((k) => ({ k, v: parseInt(k.split(".")[0], 10) + parseInt(k.split(".")[1] || "0", 10) / 12 }))
+      .sort((a, b) => a.v - b.v);
+    const hit = keys.find((x) => x.v >= want - 1e-9);
+    if (!hit) return { ...base, sub, incomplete: `Too wide — sections top out at ${keys[keys.length - 1].k.replace(".", "′")}″` };
+    const cost = COMM_SECTIONS.cost[model][hit.k][input.secKind];
+    const stdLabel = hit.k.replace(".", "′") + "″";
+    lines.push({
+      name: `${kindNm} section${hit.v > want + 1e-9 ? ` · priced as ${stdLabel} standard` : ""}`,
+      value: cost / (1 - COMM_SECTIONS.margin / 100), kind: "base",
+    });
   } else {
-    const cost = (COMM_SECTIONS.cost[model]?.[secSizeKey as string] as Record<string, number> | undefined)?.[input.secKind];
-    if (cost == null) return { ...base, sub, incomplete: "Not available for this size" };
-    lines.push({ name: `${kindNm} section`, value: cost / (1 - COMM_SECTIONS.margin / 100), kind: "base" });
+    return { ...base, sub, incomplete: "No section pricing for this model" };
   }
   // windows on any intermediate section
   if (input.secKind === "int") {
