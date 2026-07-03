@@ -49,8 +49,15 @@ const TYPE_COLOR: Record<string, string> = {
   special: "#d99a2b",
   spring: "#9a9a9a",
 };
-const typeOf = (e: AdminEstimate) =>
-  e.quote_type && TYPE_LABEL[e.quote_type] ? e.quote_type : "residential";
+const typeOf = (e: AdminEstimate) => {
+  const qt = e.quote_type && TYPE_LABEL[e.quote_type] ? e.quote_type : null;
+  if (qt && qt !== "residential") return qt;
+  // Legacy rows (saved before quote_type existed) default to residential — detect their real type.
+  if (e.model === "Torsion spring") return "spring";
+  if (e.description?.startsWith("Special order")) return "special";
+  if (e.style === "complete" || e.style === "section" || /^(Clopay|Wayne Dalton|Overhead|Amarr) /.test(e.model)) return "commercial";
+  return "residential";
+}
 
 /* ---------- last-30-day buckets ---------- */
 function buildDays(rows: AdminEstimate[]) {
@@ -320,18 +327,16 @@ export function AdminPanel({
             </button>
           )}
         </nav>
-        <div className="adm-foot">
-          <Link className="font-2xl" href="/">
-            ‹ Back to tool
-          </Link>
-          <a href="/api/logout">Sign out</a>
-        </div>
       </aside>
 
       <main className="adm-main">
         <div className="adm-top">
           <h1>{view === "users" ? "Users" : "Admin Dashboard"}</h1>
           <span className="who">{username}</span>
+          <div className="adm-actions no-print">
+            <Link href="/">‹ Back to tool</Link>
+            <a href="/api/logout">Sign out</a>
+          </div>
         </div>
         {err && (
           <div className="alert warn" style={{ marginBottom: 14 }}>
