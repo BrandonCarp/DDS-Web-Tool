@@ -355,11 +355,13 @@ html, body { margin: 0; padding: 0; }
 /* ================= Admin Dashboard ================= */
 @media screen {
   /* the admin page opts out of the tool's 1.15 zoom so it fits the viewport */
-  .tool-shell.admin-page { zoom: 1.25; min-height: calc(100vh / 1.25); }
+  .tool-shell.admin-page { zoom: 1.25; min-height: 0; height: calc(100vh / 1.25); overflow: hidden; }
+  /* the base .admin-shell min-height:100vh would be 125% under the zoom — pin it to the real viewport */
+  .tool-shell.admin-page .admin-shell { min-height: 0; height: calc(100vh / 1.25); overflow: hidden; }
   /* one-viewport dashboard: the page never scrolls; the quotes card does */
   .tool-shell.admin-page .adm-side { height: calc(100vh / 1.25); }
   .tool-shell.admin-page .adm-main { height: calc(100vh / 1.25); overflow: hidden; display: flex; flex-direction: column; }
-  .tool-shell.admin-page .adm-main > .chartcard:last-child { flex: 1; min-height: 140px; display: flex; flex-direction: column; }
+  .tool-shell.admin-page .adm-main > .chartcard:last-child { flex: 1; min-height: 140px; display: flex; flex-direction: column; overflow-y: auto; }
   .tool-shell.admin-page .adm-main > .chartcard:last-child .tablescroll { flex: 1; min-height: 0; max-height: none; }
 }
 .tool-shell .admin-shell { display: grid; grid-template-columns: 248px minmax(0, 1fr); min-height: 100vh; background: var(--bg); }
