@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { LockKey, Quote, SpringKey, TrackKey, WindowStyle } from "@/lib/pricing/types";
 import { MARGINS, COLORS, COLLECTIONS } from "@/lib/pricing/data/catalog-meta";
+import { dataKey } from "@/lib/pricing/model-groups";
 
 const GLASS = [
   { value: "solid", label: "Solid (no windows)" },
@@ -37,7 +38,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
   const doorTree = useMemo(() => {
     const t: Record<string, string[]> = {};
     for (const m of models) {
-      const c = COLLECTIONS[m] || "Other";
+      const c = COLLECTIONS[dataKey(m)] || "Other";
       (t[c] ||= []).push(m);
     }
     return t;
@@ -71,8 +72,11 @@ export function ResidentialTool({ models }: { models: string[] }) {
   const [saved, setSaved] = useState(false);
 
   const style = styleFrom(glass, framing);
-  const colorList = COLORS[model] ?? ["White"];
-  const collection = COLLECTIONS[model] ?? coll;
+  const colorList = COLORS[dataKey(model)] ?? ["White"];
+  const collection = COLLECTIONS[dataKey(model)] ?? coll;
+  const isGallery = collection === "Gallery Collection";
+  // Double strength B grade is only offered on Gallery Collection doors.
+  const glassOptions = isGallery ? GLASS : GLASS.filter((g) => g.value !== "dsb");
   const wf = parseInt(widthFt, 10);
   const hf = parseInt(heightFt, 10);
   const sizeComplete = Number.isFinite(wf) && Number.isFinite(hf);
@@ -111,8 +115,10 @@ export function ResidentialTool({ models }: { models: string[] }) {
   }
   function onPickModel(m: string) {
     setModel(m);
-    const list = COLORS[m] ?? ["White"];
+    const list = COLORS[dataKey(m)] ?? ["White"];
     if (!list.includes(color)) setColor(list[0]);
+    // Double strength is Gallery-only; drop it if the new model isn't Gallery.
+    if ((COLLECTIONS[dataKey(m)] ?? coll) !== "Gallery Collection" && glass === "dsb") setGlass("solid");
   }
 
   const priced = (result?.priced ?? false) && sizeComplete;
@@ -121,7 +127,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
   const dims = `${widthFt || "—"}'${widthIn || "0"}" x ${heightFt || "—"}'${heightIn || "0"}"`;
   const description = result?.description ?? "";
 
-  const margins = MARGINS[model];
+  const margins = MARGINS[dataKey(model)];
   const margin = margins ? (soKind === "door" ? margins.door : margins.section) : null;
   const soCost = parseFloat(String(soPrice).replace(/,/g, "")) || 0;
   const soSell = margin != null && soCost > 0 ? soCost / (1 - margin / 100) : null;
@@ -269,7 +275,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
                   <label>Glass type</label>
                   <div className="ctl selectwrap">
                     <select data-testid="style" value={glass} onChange={(e) => setGlass(e.target.value)}>
-                      {GLASS.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
+                      {glassOptions.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
                     </select>
                   </div>
                 </div>
@@ -393,35 +399,35 @@ export function ResidentialTool({ models }: { models: string[] }) {
             </div>
           )}
         </div>
+      </aside>
 
-        <div className="special-col">
-          <div className="sobox panel no-print">
-            <div className="sohead">Special order — {model}</div>
-            <div className="sobody sobody-grid">
-              <div className="so-fields">
-                <div className="field">
-                  <label className="lbl">Total price <span className="req">*</span></label>
-                  <input type="text" inputMode="decimal" value={soPrice} onChange={(e) => setSoPrice(e.target.value)} placeholder="0.00" />
-                  <div className="note">Enter the total price — that is the cost plus the fuel charge.</div>
-                </div>
-                <div className="field">
-                  <label className="lbl">Type</label>
-                  <div className="chips">
-                    <button type="button" className={`chip ${soKind === "door" ? "sel" : ""}`} onClick={() => setSoKind("door")}>Complete door</button>
-                    <button type="button" className={`chip ${soKind === "section" ? "sel" : ""}`} onClick={() => setSoKind("section")}>Sections</button>
-                  </div>
+      <div className="special-col">
+        <div className="sobox panel no-print">
+          <div className="sohead">Special order — {model}</div>
+          <div className="sobody sobody-grid">
+            <div className="so-fields">
+              <div className="field">
+                <label className="lbl">Total price <span className="req">*</span></label>
+                <input type="text" inputMode="decimal" value={soPrice} onChange={(e) => setSoPrice(e.target.value)} placeholder="0.00" />
+                <div className="note">Enter the total price — that is the cost plus the fuel charge.</div>
+              </div>
+              <div className="field">
+                <label className="lbl">Type</label>
+                <div className="chips">
+                  <button type="button" className={`chip ${soKind === "door" ? "sel" : ""}`} onClick={() => setSoKind("door")}>Complete door</button>
+                  <button type="button" className={`chip ${soKind === "section" ? "sel" : ""}`} onClick={() => setSoKind("section")}>Sections</button>
                 </div>
               </div>
-              <div className="so-out">
-                <div className="box sell">
-                  <div className="k">Sell price</div>
-                  <div className="v" data-testid="so-sell">{soSell ? fmt(soSell) : "—"}</div>
-                </div>
+            </div>
+            <div className="so-out">
+              <div className="box sell">
+                <div className="k">Sell price</div>
+                <div className="v" data-testid="so-sell">{soSell ? fmt(soSell) : "—"}</div>
               </div>
             </div>
           </div>
         </div>
-      </aside>
+      </div>
     </div>
   );
 }

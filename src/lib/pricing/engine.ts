@@ -6,6 +6,7 @@
 import { RESIDENTIAL_PRICES } from "./data/residential-prices";
 import { STOCK_PRICES } from "./data/stock-prices";
 import { ADDONS, ULTRAGRAIN, GRADE_RES, COLLECTIONS_RES } from "./data/addons";
+import { dataKey, expandModels } from "./model-groups";
 import type {
   Dimensions,
   PriceResult,
@@ -40,7 +41,7 @@ export function resolveSizeCode(model: string, dim: Dimensions): SizeCode | null
   if (Number.isNaN(wf) || Number.isNaN(hf)) return null;
 
   const tier = tierForHeight(hf * 12 + hi);
-  const grid = RESIDENTIAL_PRICES[model] ?? {};
+  const grid = RESIDENTIAL_PRICES[dataKey(model)] ?? {};
   const widthsForTier = Object.keys(grid)
     .filter((k) => k.endsWith("x" + tier))
     .map((k) => k.split("x")[0]);
@@ -69,7 +70,7 @@ export function resolveSizeCode(model: string, dim: Dimensions): SizeCode | null
  * widths) returns null so the caller falls back to the standard/odd price.
  */
 export function stockPriceFor(model: string, size: SizeCode): PriceTriple | null {
-  const modelStock = STOCK_PRICES[model];
+  const modelStock = STOCK_PRICES[dataKey(model)];
   if (!modelStock) return null;
   if (size.tier !== "7" && size.tier !== "8") return null;
 
@@ -91,7 +92,7 @@ export function priceResidential(
   if (!size) {
     return { model, style, size: null, price: null, priced: false, isStock: false, source: "none", triple: null };
   }
-  const standard = RESIDENTIAL_PRICES[model]?.[size.code] ?? null;
+  const standard = RESIDENTIAL_PRICES[dataKey(model)]?.[size.code] ?? null;
   const stock = stockPriceFor(model, size);
   const triple = stock ?? standard;
   if (!triple) {
@@ -111,7 +112,7 @@ export function priceResidential(
 
 /** Models that have a residential price grid. */
 export function listModels(): string[] {
-  return Object.keys(RESIDENTIAL_PRICES);
+  return expandModels(Object.keys(RESIDENTIAL_PRICES));
 }
 
 const STYLE_NAME: Record<WindowStyle, string> = {
@@ -153,7 +154,7 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
   };
   const size = resolveSizeCode(model, dim);
   if (!size) return empty;
-  const standard = RESIDENTIAL_PRICES[model]?.[size.code] ?? null;
+  const standard = RESIDENTIAL_PRICES[dataKey(model)]?.[size.code] ?? null;
   const stock = stockPriceFor(model, size);
   const triple = stock ?? standard;
   if (!triple) return { ...empty, size };
@@ -162,7 +163,7 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
   lines.push({ name: `Base door (${STYLE_NAME[opts.style]})`, value: triple[opts.style] });
 
   // Ultra Grain color upcharge (single < 12', double >= 12')
-  const ug = ULTRAGRAIN[model];
+  const ug = ULTRAGRAIN[dataKey(model)];
   if (ug && opts.color === "Ultra Grain") {
     const isDouble = size.wf >= 12;
     lines.push({
@@ -195,7 +196,7 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
   const unitPrice = lines.reduce((sum, l) => sum + (l.value || 0), 0);
 
   // Door description (matches index.html wording)
-  const grade = GRADE_RES[model] || "";
+  const grade = GRADE_RES[dataKey(model)] || "";
   const winTxt =
     opts.style === "solid" ? "solid, no windows" : grade ? `${grade} windows` : "windows";
   const springTxt = is9 || opts.spring === "torsion" ? "torsion springs" : "extension springs";
@@ -203,7 +204,7 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
     ({ none: "no lock", slide: "inside slide lock", lockbar: "lockbar", lockbar_installed: "lockbar installed" } as Record<string, string>)[opts.lock] ||
     "no lock";
   const trackTxt = (TRACK_NAME[opts.track] || "12″ radius track").toLowerCase();
-  const coll = model === "GD1LP-GD1SP" ? COLLECTIONS_RES[model] : "";
+  const coll = COLLECTIONS_RES[dataKey(model)] === "Gallery Collection" ? COLLECTIONS_RES[dataKey(model)] : "";
   const description = `Clopay ${coll ? coll + ", " : ""}Model ${model}, ${dims(size)}, ${opts.color}, ${winTxt}, ${trackTxt}, ${springTxt}, ${lockTxt}`;
 
   return {

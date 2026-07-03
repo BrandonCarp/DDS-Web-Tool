@@ -23,7 +23,7 @@ index 4e4c5d5..3077535 100644
     INTERNAL PRICING SCREEN  — verbatim tool styles, scoped under .tool-shell
     ============================================================ */
 diff --git a/src/components/ResidentialTool.tsx b/src/components/ResidentialTool.tsx
-index 90ee6bc..ac0d1e4 100644
+index 90ee6bc..b521836 100644
 --- a/src/components/ResidentialTool.tsx
 +++ b/src/components/ResidentialTool.tsx
 @@ -3,6 +3,7 @@
@@ -51,7 +51,7 @@ index 90ee6bc..ac0d1e4 100644
        (t[c] ||= []).push(m);
      }
      return t;
-@@ -70,8 +72,8 @@ export function ResidentialTool({ models }: { models: string[] }) {
+@@ -70,8 +72,11 @@ export function ResidentialTool({ models }: { models: string[] }) {
    const [saved, setSaved] = useState(false);
  
    const style = styleFrom(glass, framing);
@@ -59,19 +59,25 @@ index 90ee6bc..ac0d1e4 100644
 -  const collection = COLLECTIONS[model] ?? coll;
 +  const colorList = COLORS[dataKey(model)] ?? ["White"];
 +  const collection = COLLECTIONS[dataKey(model)] ?? coll;
++  const isGallery = collection === "Gallery Collection";
++  // Double strength B grade is only offered on Gallery Collection doors.
++  const glassOptions = isGallery ? GLASS : GLASS.filter((g) => g.value !== "dsb");
    const wf = parseInt(widthFt, 10);
    const hf = parseInt(heightFt, 10);
    const sizeComplete = Number.isFinite(wf) && Number.isFinite(hf);
-@@ -110,7 +112,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
+@@ -110,8 +115,10 @@ export function ResidentialTool({ models }: { models: string[] }) {
    }
    function onPickModel(m: string) {
      setModel(m);
 -    const list = COLORS[m] ?? ["White"];
 +    const list = COLORS[dataKey(m)] ?? ["White"];
      if (!list.includes(color)) setColor(list[0]);
++    // Double strength is Gallery-only; drop it if the new model isn't Gallery.
++    if ((COLLECTIONS[dataKey(m)] ?? coll) !== "Gallery Collection" && glass === "dsb") setGlass("solid");
    }
  
-@@ -120,7 +122,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
+   const priced = (result?.priced ?? false) && sizeComplete;
+@@ -120,7 +127,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
    const dims = `${widthFt || "—"}'${widthIn || "0"}" x ${heightFt || "—"}'${heightIn || "0"}"`;
    const description = result?.description ?? "";
  
@@ -80,7 +86,16 @@ index 90ee6bc..ac0d1e4 100644
    const margin = margins ? (soKind === "door" ? margins.door : margins.section) : null;
    const soCost = parseFloat(String(soPrice).replace(/,/g, "")) || 0;
    const soSell = margin != null && soCost > 0 ? soCost / (1 - margin / 100) : null;
-@@ -392,35 +394,35 @@ export function ResidentialTool({ models }: { models: string[] }) {
+@@ -268,7 +275,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
+                   <label>Glass type</label>
+                   <div className="ctl selectwrap">
+                     <select data-testid="style" value={glass} onChange={(e) => setGlass(e.target.value)}>
+-                      {GLASS.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
++                      {glassOptions.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
+                     </select>
+                   </div>
+                 </div>
+@@ -392,35 +399,35 @@ export function ResidentialTool({ models }: { models: string[] }) {
              </div>
            )}
          </div>

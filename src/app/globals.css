@@ -16,8 +16,8 @@ html, body { margin: 0; padding: 0; }
    calc divisor equal to it. Screen only — printed quotes are unaffected. */
 @media screen {
   .tool-shell {
-    zoom: 1.22;
-    min-height: calc(100vh / 1.22);
+    zoom: 1.15;
+    min-height: calc(100vh / 1.15);
   }
 }
 

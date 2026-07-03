@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { priceResidential, quoteResidential, resolveSizeCode, tierForHeight } from "./engine";
+import { priceResidential, quoteResidential, resolveSizeCode, tierForHeight, listModels } from "./engine";
 import { RESIDENTIAL_PRICES } from "./data/residential-prices";
 import { STOCK_PRICES } from "./data/stock-prices";
 import type { WindowStyle } from "./types";
@@ -156,5 +156,39 @@ describe("4050-4051-4053 odd-size resolution (finer width groups)", () => {
   it("prices glass and inserts too (10' x 9')", () => {
     expect(price(10, 0, 9, "glass")).toBeCloseTo(2242.35, 2);
     expect(price(10, 0, 9, "inserts")).toBeCloseTo(2343.84, 2);
+  });
+});
+
+describe("model split (independent selection, shared pricing)", () => {
+  const baseOpts = {
+    style: "solid" as const, color: "White",
+    track: "r12" as const, spring: "extension" as const, lock: "none" as const,
+  };
+
+  it("selector lists the split members, not the grouped keys", () => {
+    const models = listModels();
+    for (const m of ["4050", "4051", "4053", "9130", "9133", "GD1LP", "GD1SP"]) {
+      expect(models).toContain(m);
+    }
+    expect(models).not.toContain("4050-4051-4053");
+    expect(models).not.toContain("9130-9133");
+    expect(models).not.toContain("GD1LP-GD1SP");
+  });
+
+  it("split members price identically and quote the specific model", () => {
+    const a = quoteResidential("4050", dim(8, 0, 7, 0), baseOpts);
+    const b = quoteResidential("4051", dim(8, 0, 7, 0), baseOpts);
+    const c = quoteResidential("4053", dim(8, 0, 7, 0), baseOpts);
+    expect(a.unitPrice).toBeGreaterThan(0);
+    expect(b.unitPrice).toBeCloseTo(a.unitPrice, 2);
+    expect(c.unitPrice).toBeCloseTo(a.unitPrice, 2);
+    expect(b.description).toContain("Model 4051");
+    expect(b.description).not.toContain("4050-4051-4053");
+  });
+
+  it("keeps the Gallery Collection prefix for split GD1LP/GD1SP", () => {
+    const q = quoteResidential("GD1LP", dim(9, 0, 7, 0), baseOpts);
+    expect(q.description).toContain("Gallery Collection");
+    expect(q.description).toContain("Model GD1LP");
   });
 });
