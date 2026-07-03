@@ -16,8 +16,8 @@ html, body { margin: 0; padding: 0; }
    calc divisor equal to it. Screen only — printed quotes are unaffected. */
 @media screen {
   .tool-shell {
-    zoom: 1.5;
-    min-height: calc(100vh / 1.5);
+    zoom: 1.2;
+    min-height: calc(100vh / 1.2);
   }
 }
 
@@ -234,18 +234,16 @@ html, body { margin: 0; padding: 0; }
   .login-shell .topbar{padding:26px 30px;position:relative;z-index:2}
   .login-shell .topbar img{height:34px;opacity:.92}
   .login-shell .wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:20px;position:relative;z-index:2}
-  .login-shell .card{width:100%;max-width:500px;background:#fff;color:#1c1f23;border-radius:16px;
+  .login-shell .card{width:100%;max-width:450px;background:#fff;color:#1c1f23;border-radius:16px;
     box-shadow:0 24px 60px rgba(0,0,0,.35);padding:38px 38px 30px}
-  .login-shell .card .logo{display:block;height:62px;margin:0 auto 24px;background:#fff;border:1px solid #eceff2;border-radius:14px;padding:12px 20px;box-shadow:0 2px 10px rgba(20,24,30,.08);box-sizing:content-box;
-    /* tint the logo art to the brand maroon (#500609) */
-    filter:brightness(0) saturate(100%) invert(8%) sepia(66%) saturate(4456%) hue-rotate(351deg) brightness(93%) contrast(105%)}
-  .login-shell h1{font-size:27px;font-weight:700;color:#2a2d31;margin-bottom:24px;text-align:center;letter-spacing:-.2px}
-  .login-shell label{display:block;font-size:15px;font-weight:600;color:#43484e;margin:0 0 7px 2px}
+  .login-shell .card .logo{display:block;height:52px;margin:0 auto 22px;background:#fff;border:1px solid #eceff2;border-radius:14px;padding:12px 20px;box-shadow:0 2px 10px rgba(20,24,30,.08);box-sizing:content-box}
+  .login-shell h1{font-size:24px;font-weight:700;color:#2a2d31;margin-bottom:24px;text-align:center;letter-spacing:-.2px}
+  .login-shell label{display:block;font-size:14px;font-weight:600;color:#43484e;margin:0 0 7px 2px}
   .login-shell .field{margin-bottom:16px}
-  .login-shell input{width:100%;height:58px;border:1.5px solid #d7dbe0;border-radius:10px;padding:0 16px;font-size:18px;
+  .login-shell input{width:100%;height:52px;border:1.5px solid #d7dbe0;border-radius:10px;padding:0 15px;font-size:16px;
     background:#fff;transition:border-color .15s,box-shadow .15s;outline:none}
   .login-shell input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(138,26,35,.13)}
-  .login-shell .btn{width:100%;height:60px;border:0;border-radius:10px;margin-top:6px;font-size:18px;
+  .login-shell .btn{width:100%;height:54px;border:0;border-radius:10px;margin-top:6px;font-size:16px;
     background:linear-gradient(180deg,#8a1a23,#6a1019);color:#fff;font-size:15px;font-weight:700;letter-spacing:.6px;
     text-transform:uppercase;cursor:pointer;transition:filter .15s}
   .login-shell .btn:hover{filter:brightness(1.08)}
@@ -355,12 +353,12 @@ html, body { margin: 0; padding: 0; }
 /* ================= Admin Dashboard ================= */
 @media screen {
   /* the admin page opts out of the tool's 1.15 zoom so it fits the viewport */
-  .tool-shell.admin-page { zoom: 1.25; min-height: 0; height: calc(100vh / 1.25); overflow: hidden; }
+  .tool-shell.admin-page { zoom: 1.1; min-height: 0; height: calc(100vh / 1.1); overflow: hidden; }
   /* the base .admin-shell min-height:100vh would be 125% under the zoom — pin it to the real viewport */
-  .tool-shell.admin-page .admin-shell { min-height: 0; height: calc(100vh / 1.25); overflow: hidden; }
+  .tool-shell.admin-page .admin-shell { min-height: 0; height: calc(100vh / 1.1); overflow: hidden; }
   /* one-viewport dashboard: the page never scrolls; the quotes card does */
-  .tool-shell.admin-page .adm-side { height: calc(100vh / 1.25); }
-  .tool-shell.admin-page .adm-main { height: calc(100vh / 1.25); overflow: hidden; display: flex; flex-direction: column; }
+  .tool-shell.admin-page .adm-side { height: calc(100vh / 1.1); }
+  .tool-shell.admin-page .adm-main { height: calc(100vh / 1.1); overflow: hidden; display: flex; flex-direction: column; }
   .tool-shell.admin-page .adm-main > .chartcard:last-child { flex: 1; min-height: 140px; display: flex; flex-direction: column; overflow-y: auto; }
   .tool-shell.admin-page .adm-main > .chartcard:last-child .tablescroll { flex: 1; min-height: 0; max-height: none; }
 }
@@ -418,12 +416,12 @@ html, body { margin: 0; padding: 0; }
 
 /* larger sign-in on big screens */
 @media(min-width:1400px){
-  .login-shell .topbar img{height:52px}
-  .login-shell .card{max-width:600px;padding:44px 52px}
-  .login-shell .card .logo{height:78px;margin-bottom:30px}
-  .login-shell h1{font-size:32px}
-  .login-shell label{font-size:16px}
-  .login-shell input{height:64px;font-size:19px}
-  .login-shell .btn{height:66px;font-size:19px}
+  .login-shell .topbar img{height:44px}
+  .login-shell .card{max-width:520px;padding:40px 46px}
+  .login-shell .card .logo{height:60px;margin-bottom:26px}
+  .login-shell h1{font-size:26px}
+  .login-shell label{font-size:15px}
+  .login-shell input{height:56px;font-size:17px}
+  .login-shell .btn{height:58px;font-size:17px}
   .login-shell .hint,.login-shell .foot{font-size:14px}
 }
