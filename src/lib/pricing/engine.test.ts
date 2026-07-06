@@ -242,3 +242,32 @@ describe("window designs (inserts catalog from index.html)", () => {
     expect(q.description).toContain("SQ24 inserts");
   });
 });
+
+describe("4300 family (4301/4310 share 4300 pricing; 7/5/2026 odd-size sheets)", () => {
+  const o = { style: "solid" as const, color: "White", track: "r12" as const, spring: "extension" as const, lock: "none" as const };
+  it("4301 and 4310 appear as their own selections and price identically to 4300", () => {
+    const models = listModels();
+    for (const m of ["4300", "4301", "4310"]) expect(models).toContain(m);
+    const a = quoteResidential("4300", dim(8, 4, 7, 0), o);
+    const b = quoteResidential("4301", dim(8, 4, 7, 0), o);
+    const c = quoteResidential("4310", dim(8, 4, 7, 0), o);
+    expect(a.unitPrice).toBeCloseTo(1023.63, 2); // new 7' odd band
+    expect(b.unitPrice).toBeCloseTo(a.unitPrice, 2);
+    expect(c.unitPrice).toBeCloseTo(a.unitPrice, 2);
+    expect(c.description).toContain("Model 4310");
+  });
+  it("prices the new 7-ft odd bands (incl. the 15'6/15'8 split)", () => {
+    expect(priceResidential("4300", dim(6, 2, 7, 0), "solid").price).toBeCloseTo(818.96, 2);
+    expect(priceResidential("4300", dim(15, 6, 7, 0), "solid").price).toBeCloseTo(1452.59, 2);
+    expect(priceResidential("4300", dim(15, 4, 7, 0), "solid").price).toBeCloseTo(1676.07, 2);
+    expect(priceResidential("4300", dim(19, 10, 7, 0), "inserts").price).toBeCloseTo(2803.36, 2);
+  });
+  it("prices the new 9-ft odd bands and keeps stock overrides at exact stock sizes", () => {
+    expect(priceResidential("4301", dim(9, 4, 9, 0), "glass").price).toBeCloseTo(1922.13, 2);
+    expect(priceResidential("4300", dim(8, 0, 7, 0), "solid")).toMatchObject({ price: 823.71, source: "stock" });
+    expect(priceResidential("4301", dim(12, 0, 9, 0), "solid")).toMatchObject({ price: 1873.54, source: "stock" });
+  });
+  it("corrects the 12-ft x 9-ft inserts sheet typo (was listed below glass)", () => {
+    expect(priceResidential("4300", dim(12, 4, 9, 0), "inserts").price).toBeCloseTo(2716.7, 2);
+  });
+});
