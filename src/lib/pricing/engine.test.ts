@@ -271,3 +271,39 @@ describe("4300 family (4301/4310 share 4300 pricing; 7/5/2026 odd-size sheets)",
     expect(priceResidential("4300", dim(12, 4, 9, 0), "inserts").price).toBeCloseTo(2716.7, 2);
   });
 });
+
+describe("GD1LP/GD1SP odd-size grids (Est 42768/42827/42828, 7/2026)", () => {
+  const cases: [ReturnType<typeof dim>, WindowStyle, number][] = [
+    // tier 7 (heights 6'0–7'0)
+    [dim(6, 2, 6, 0), "solid", 764.05],
+    [dim(6, 2, 7, 0), "inserts", 1042.35],
+    [dim(6, 6, 6, 3), "glass", 1101.96], // 6'4–6'10 band interior
+    [dim(7, 0, 7, 0), "solid", 883.32], // 7'0 flat shares the 7'0–7'6 band
+    [dim(11, 6, 6, 9), "glass", 1698.32], // the 116'' sheet typo width
+    [dim(15, 4, 7, 0), "solid", 1567.11], // 15' split: 15'2/15'4/15'10...
+    [dim(15, 8, 7, 0), "solid", 1357.74], // ...vs cheaper 15'6/15'8
+    [dim(17, 10, 7, 0), "inserts", 2644.51],
+    // tier 8 (heights 7'6–8'0)
+    [dim(6, 2, 7, 6), "solid", 921.74],
+    [dim(10, 8, 8, 0), "glass", 1991.18],
+    [dim(17, 10, 8, 0), "inserts", 3059.32],
+    // tier 9 (heights 8'3–9'0)
+    [dim(6, 2, 8, 3), "solid", 1295.46],
+    [dim(12, 10, 9, 0), "glass", 2925.46],
+    [dim(15, 6, 9, 0), "inserts", 3138.82],
+    [dim(17, 10, 9, 0), "inserts", 4065.12],
+  ];
+  for (const [d, style, want] of cases) {
+    it(`prices ${d.widthFt}'${d.widthIn}\" x ${d.heightFt}'${d.heightIn}\" ${style} at ${want} (both models)`, () => {
+      for (const model of ["GD1LP", "GD1SP"]) {
+        const r = priceResidential(model, d, style);
+        expect(r.priced).toBe(true);
+        expect(r.source).toBe("standard");
+        expect(r.price).toBe(want);
+      }
+    });
+  }
+  it("stock override still wins at exact stock sizes (8x7)", () => {
+    expect(priceResidential("GD1LP", dim(8, 0, 7, 0), "solid").source).toBe("stock");
+  });
+});
