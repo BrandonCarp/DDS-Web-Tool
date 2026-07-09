@@ -55,8 +55,11 @@ export function designWidthCode(wf: number, wi: number): string {
 /** Window/insert designs available for the current door (specific model + style + width). */
 export function windowDesigns(unit: string, style: string, widthCode: string | null): InsertDesign[] {
   if (style === "solid") return [];
-  if (String(unit).indexOf("GD") === 0) return ARCHITECTURAL; // Gallery -> architectural windows
-  if (style !== "inserts") return []; // steel + plain glass = no decorative design
+  // Designs are INSERTS: only offered when the framing/insert selection is
+  // "insert" (style === "inserts"). Plain glass gets no design on any model,
+  // Gallery included — otherwise an insert could ride along at the glass price.
+  if (style !== "inserts") return [];
+  if (String(unit).indexOf("GD") === 0) return ARCHITECTURAL; // Gallery -> architectural inserts
   const rule = INSERT_RULES[unit] ?? "all";
   return DECORATIVE.filter((d) => {
     const is500 = String(d.id).charAt(0) === "5"; // 500-series = plain short windows + sunsets

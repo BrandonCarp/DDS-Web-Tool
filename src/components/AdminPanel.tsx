@@ -278,6 +278,53 @@ export function AdminPanel({
       setBusy(false);
     }
   }
+
+  /* ----- estimate management (master-admin only; server re-checks the role) ----- */
+  const [editId, setEditId] = useState<number | null>(null);
+  const [eDesc, setEDesc] = useState("");
+  const [eQty, setEQty] = useState("1");
+  const [eUnit, setEUnit] = useState("0");
+
+  async function estCall(method: "PATCH" | "DELETE", body: Record<string, unknown>) {
+    setBusy(true);
+    setErr(null);
+    try {
+      const r = await fetch("/api/admin/estimates", {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error ?? "Request failed");
+      router.refresh();
+      return true;
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Something went wrong");
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+  function startEdit(e: AdminEstimate) {
+    setEditId(e.id);
+    setEDesc(e.description ?? "");
+    setEQty(String(e.qty));
+    setEUnit(String(Number(e.unit_price)));
+  }
+  async function saveEdit() {
+    if (editId === null) return;
+    if (await estCall("PATCH", { id: editId, description: eDesc, qty: Number(eQty), unitPrice: Number(eUnit) }))
+      setEditId(null);
+  }
+  async function deleteEstimate(e: AdminEstimate) {
+    if (!window.confirm(`Delete ${e.username}'s ${e.model} quote for ${money(e.total)}? This can't be undone.`)) return;
+    await estCall("DELETE", { id: e.id });
+  }
+  async function clearLast50() {
+    const n = Math.min(50, estimates.length);
+    if (!window.confirm(`Delete the ${n} most recent quotes from the estimates database? This can't be undone.`)) return;
+    await estCall("DELETE", { last: n });
+  }
   async function addUser() {
     if (await call("POST", { username: nu, password: np, role: nr })) {
       setNu("");
@@ -397,7 +444,14 @@ export function AdminPanel({
             </div>
 
             <div className="chartcard">
-              <h4>Latest quotes</h4>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <h4>Latest quotes</h4>
+                {master && estimates.length > 0 && (
+                  <button className="chip" disabled={busy} onClick={clearLast50} title="Delete the most recent quotes (up to 50)">
+                    Clear last {Math.min(50, estimates.length)}
+                  </button>
+                )}
+              </div>
               {estimates.length === 0 ? (
                 <div className="muted-note">No quotes saved yet.</div>
               ) : (
@@ -447,6 +501,38 @@ export function AdminPanel({
                                   Size {e.size || "—"} · Qty {e.qty} · Unit {money(e.unit_price)}
                                   {e.color && e.color !== "—" ? ` · ${e.color}` : ""}
                                 </div>
+                                {master && editId !== e.id && (
+                                  <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                                    <button className="chip" disabled={busy} onClick={(ev) => { ev.stopPropagation(); startEdit(e); }}>
+                                      Edit
+                                    </button>
+                                    <button className="chip" disabled={busy} onClick={(ev) => { ev.stopPropagation(); void deleteEstimate(e); }}>
+                                      Delete
+                                    </button>
+                                  </div>
+                                )}
+                                {master && editId === e.id && (
+                                  <div onClick={(ev) => ev.stopPropagation()} style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+                                    <textarea
+                                      value={eDesc}
+                                      onChange={(ev) => setEDesc(ev.target.value)}
+                                      rows={2}
+                                      style={{ width: "100%", resize: "vertical" }}
+                                      placeholder="Description"
+                                    />
+                                    <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                                      <label style={{ fontSize: 12 }}>Qty</label>
+                                      <input type="number" min={1} value={eQty} onChange={(ev) => setEQty(ev.target.value)} style={{ width: 70 }} />
+                                      <label style={{ fontSize: 12 }}>Unit price</label>
+                                      <input type="number" min={0} step="0.01" value={eUnit} onChange={(ev) => setEUnit(ev.target.value)} style={{ width: 110 }} />
+                                      <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                                        New total: {money((Number(eUnit) || 0) * (Number(eQty) || 0))}
+                                      </span>
+                                      <button className="chip" disabled={busy} onClick={() => void saveEdit()}>Save</button>
+                                      <button className="chip" disabled={busy} onClick={() => setEditId(null)}>Cancel</button>
+                                    </div>
+                                  </div>
+                                )}
                               </td>
                             </tr>
                           ) : null,

@@ -3,6 +3,7 @@ import { priceResidential, quoteResidential, resolveSizeCode, tierForHeight, lis
 import { RESIDENTIAL_PRICES } from "./data/residential-prices";
 import { STOCK_PRICES } from "./data/stock-prices";
 import type { WindowStyle } from "./types";
+import { windowDesigns } from "./data/inserts";
 
 const dim = (wf: number, wi: number, hf: number, hi: number) => ({
   widthFt: wf, widthIn: wi, heightFt: hf, heightIn: hi,
@@ -237,9 +238,11 @@ describe("window designs (inserts catalog from index.html)", () => {
     const q2 = quoteResidential("T50S", dim(15, 0, 7, 0), { ...opts, windesign: "504" });
     expect(q2.description).toContain("Sunset 504 inserts");
   });
-  it("Gallery doors get architectural designs even with plain glass", () => {
+  it("Gallery designs require the inserts style — plain glass drops the design", () => {
     const q = quoteResidential("GD1LP", dim(8, 0, 7, 0), { ...opts, style: "glass", windesign: "SQ24" });
-    expect(q.description).toContain("SQ24 inserts");
+    expect(q.description).not.toContain("SQ24");
+    const q2 = quoteResidential("GD1LP", dim(8, 0, 7, 0), { ...opts, style: "inserts", windesign: "SQ24" });
+    expect(q2.description).toContain("SQ24 inserts");
   });
 });
 
@@ -305,5 +308,33 @@ describe("GD1LP/GD1SP odd-size grids (Est 42768/42827/42828, 7/2026)", () => {
   }
   it("stock override still wins at exact stock sizes (8x7)", () => {
     expect(priceResidential("GD1LP", dim(8, 0, 7, 0), "solid").source).toBe("stock");
+  });
+});
+
+describe("windowDesigns — insert designs require the inserts style", () => {
+  it("offers NO designs at plain-glass style, Gallery included", () => {
+    expect(windowDesigns("GD1LP", "glass", "16")).toEqual([]);
+    expect(windowDesigns("GD1SP", "glass", "9")).toEqual([]);
+    expect(windowDesigns("T50S", "glass", "16")).toEqual([]);
+    expect(windowDesigns("4053", "glass", "16")).toEqual([]);
+  });
+  it("offers architectural inserts on Gallery only at the inserts style", () => {
+    const ids = windowDesigns("GD1LP", "inserts", "16").map((d) => d.id);
+    expect(ids).toContain("SQ24");
+    expect(ids).toContain("REC14");
+  });
+  it("offers nothing for solid doors", () => {
+    expect(windowDesigns("GD1LP", "solid", "16")).toEqual([]);
+    expect(windowDesigns("T50S", "solid", "16")).toEqual([]);
+  });
+  it("still offers decorative designs for steel models at the inserts style", () => {
+    expect(windowDesigns("T50S", "inserts", "16").length).toBeGreaterThan(0);
+  });
+  it("the engine drops a design submitted with plain-glass style (no silent insert upgrade)", () => {
+    const q = quoteResidential("GD1LP", { widthFt: 16, widthIn: 0, heightFt: 7, heightIn: 0 }, {
+      style: "glass", color: "White", track: "r12", spring: "extension", lock: "none", windesign: "SQ24",
+    });
+    expect(q.priced).toBe(true);
+    expect(q.description.toLowerCase()).not.toContain("sq24");
   });
 });

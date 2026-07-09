@@ -79,8 +79,11 @@ export function ResidentialTool({ models }: { models: string[] }) {
   const colorList = COLORS[dataKey(model)] ?? ["White"];
   const collection = COLLECTIONS[dataKey(model)] ?? coll;
   const isGallery = collection === "Gallery Collection";
-  // Double strength B grade is only offered on Gallery Collection doors.
-  const glassOptions = isGallery ? GLASS : GLASS.filter((g) => g.value !== "dsb");
+  // Gallery Collection doors take double strength B grade ONLY (their sole
+  // window option); every other model takes single strength only.
+  const glassOptions = isGallery
+    ? GLASS.filter((g) => g.value !== "ssb")
+    : GLASS.filter((g) => g.value !== "dsb");
   const wf = parseInt(widthFt, 10);
   const hf = parseInt(heightFt, 10);
   const sizeComplete = Number.isFinite(wf) && Number.isFinite(hf);
@@ -153,8 +156,11 @@ export function ResidentialTool({ models }: { models: string[] }) {
     setModel(m);
     const list = COLORS[dataKey(m)] ?? ["White"];
     if (!list.includes(color)) setColor(list[0]);
-    // Double strength is Gallery-only; drop it if the new model isn't Gallery.
-    if ((COLLECTIONS[dataKey(m)] ?? coll) !== "Gallery Collection" && glass === "dsb") setGlass("solid");
+    // Glass grade follows the model: Gallery = double strength only, everything
+    // else = single strength only. Keep "windows" selected across the switch.
+    const gallery = (COLLECTIONS[dataKey(m)] ?? coll) === "Gallery Collection";
+    if (gallery && glass === "ssb") setGlass("dsb");
+    if (!gallery && glass === "dsb") setGlass("ssb");
   }
   // Clear the whole door configuration back to defaults (used when going Back).
   function resetConfig() {
