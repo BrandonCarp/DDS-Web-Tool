@@ -204,7 +204,9 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
     "no lock";
   const trackTxt = (TRACK_NAME[opts.track] || "12″ radius track").toLowerCase();
   const coll = COLLECTIONS_RES[dataKey(model)] === "Gallery Collection" ? COLLECTIONS_RES[dataKey(model)] : "";
-  const description = `Clopay ${coll ? coll + ", " : ""}Model ${model}, ${dims(size)}, in the color ${opts.color}, ${winTxt}, ${trackTxt}, ${springTxt}, ${lockTxt}`;
+  // Lead with the stock status — mirrors the "STOCK DOOR MODEL ..." verbiage on
+  // DDS QuickBooks estimates, and makes the copied description state it plainly.
+  const description = `${stock ? "Stock door" : "Special order"} — Clopay ${coll ? coll + ", " : ""}Model ${model}, ${dims(size)}, in the color ${opts.color}, ${winTxt}, ${trackTxt}, ${springTxt}, ${lockTxt}`;
 
   return {
     model, size, priced: true, isStock: stock !== null,
@@ -251,7 +253,7 @@ export function quoteResidentialSection(model: string, input: ResSectionInput): 
   if (lockbar) lines.push({ name: "Lockbar installed", value: ADDONS.lockbar_installed, kind: "add" });
   const unitPrice = lines.reduce((a, l) => a + (l.kind === "minus" ? -l.value : l.value), 0);
   const desc =
-    `Clopay Model ${model}, ${kindNm.toLowerCase()} replacement section` +
+    `Stock — Clopay Model ${model}, ${kindNm.toLowerCase()} replacement section` +
     (input.kind === "int" ? (glazed ? " with glass" : ", solid") : "") +
     `, ${input.height}" high, ${widthTxt} wide, in the color ${input.color || "White"}` +
     (lockbar ? ", lockbar installed" : "") +

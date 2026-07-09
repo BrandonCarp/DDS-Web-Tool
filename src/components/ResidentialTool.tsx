@@ -512,9 +512,9 @@ export function ResidentialTool({ models }: { models: string[] }) {
             <div className="ql">Residential quote</div>
             <div className="qmodel">{model}</div>
             {sizeComplete && <div className="qsub">{sections ? `${activeSecWidth ? sectionWidthLabel(activeSecWidth) : "—"} wide · ${secKind === "bt" ? "bottom" : "intermediate"} section · ${color}` : `${dims} · ${style} · ${color}`}</div>}
-            {priced && !sections && (
+            {priced && (
               <span data-testid="source-badge" className={`stockbadge ${result?.isStock ? "yes" : "no"}`}>
-                {result?.isStock ? "✓ In stock — Doors Direct South" : "Special / odd size"}
+                {result?.isStock ? "✓ In stock — Doors Direct South" : "Special order — not stocked"}
               </span>
             )}
           </div>

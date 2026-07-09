@@ -384,3 +384,22 @@ describe("residential replacement sections (2026 V2 workbook SECTIONS blocks)", 
     expect(quoteResidentialSection("3200", sec()).priced).toBe(false);
   });
 });
+
+describe("stock vs special-order stated in the quote", () => {
+  const opts2 = { style: "solid", color: "White", track: "r12", spring: "extension", lock: "none" } as const;
+  it("stock doors lead with 'Stock door —'", () => {
+    const q = quoteResidential("T50S", { widthFt: 8, widthIn: 0, heightFt: 7, heightIn: 0 }, opts2);
+    expect(q.isStock).toBe(true);
+    expect(q.description.startsWith("Stock door — ")).toBe(true);
+  });
+  it("odd/standard-priced doors lead with 'Special order —'", () => {
+    const q = quoteResidential("T50S", { widthFt: 8, widthIn: 4, heightFt: 7, heightIn: 0 }, opts2);
+    expect(q.isStock).toBe(false);
+    expect(q.description.startsWith("Special order — ")).toBe(true);
+  });
+  it("sections lead with 'Stock —' and report isStock", () => {
+    const q = quoteResidentialSection("4300", { widthKey: "9", height: "18", kind: "bt", color: "White" });
+    expect(q.isStock).toBe(true);
+    expect(q.description.startsWith("Stock — ")).toBe(true);
+  });
+});
