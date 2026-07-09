@@ -33,7 +33,7 @@ export interface CommSectionInput {
   secKind: "bt" | "int";
   secHeight: "21" | "24";
   windows?: number;                   // intermediate sections only
-  retainer?: boolean;                 // bottom + per-foot only
+  retainer?: boolean;                 // DEPRECATED — ignored; retainer is always included on bottom sections
   stile?: "none" | "single" | "double"; // per-foot only
 }
 export type CommInput = CommCompleteInput | CommSectionInput;
@@ -108,7 +108,9 @@ export function quoteCommercial(input: CommInput): CommQuote {
   if (hasRate) {
     const rate = COMM_SLAB.rate[model];
     lines.push({ name: `${kindNm} section · ${rFeet}′ × $${rate}/ft`, value: rate * rFeet, kind: "base" });
-    if (input.secKind === "bt" && input.retainer)
+    // Bottom retainer & rubber is ALWAYS included on a bottom section — it is
+    // no longer a selectable option (the input.retainer flag is ignored).
+    if (input.secKind === "bt")
       lines.push({ name: `Bottom retainer & rubber · ${rFeet}′`, value: COMM_SLAB.adders.retainer * rFeet, kind: "add" });
     if (input.stile === "single") lines.push({ name: "Single end stiles", value: COMM_SLAB.adders.stile_single, kind: "add" });
     if (input.stile === "double") lines.push({ name: "Double end stiles", value: COMM_SLAB.adders.stile_double, kind: "add" });

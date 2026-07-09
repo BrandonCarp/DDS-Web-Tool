@@ -32,7 +32,6 @@ export function CommercialTool() {
   const [secKind, setSecKind] = useState<"bt" | "int">("bt");
   const [secHeight, setSecHeight] = useState<"21" | "24">("21");
   const [windows, setWindows] = useState("0");
-  const [retainer, setRetainer] = useState(false);
   const [stile, setStile] = useState<"none" | "single" | "double">("none");
 
   const [qty, setQty] = useState(1);
@@ -55,7 +54,7 @@ export function CommercialTool() {
   }, [order, manFt, manIn]);
   const mx = rFeet ? maxWindows(rFeet) : 0;
 
-  const cfgSig = JSON.stringify([mfr, model, order, size, glass, track, mount, cspring, clock, manFt, manIn, secKind, secHeight, windows, retainer, stile]);
+  const cfgSig = JSON.stringify([mfr, model, order, size, glass, track, mount, cspring, clock, manFt, manIn, secKind, secHeight, windows, stile]);
   const result = resultRaw && resultSig === cfgSig ? resultRaw : null;
   const liveError = errorRaw && resultSig === cfgSig ? errorRaw : null;
   const priced = result?.priced ?? false;
@@ -65,13 +64,13 @@ export function CommercialTool() {
   function pickModel(m: string) {
     setModel(m);
     setSize(""); setManFt(""); setManIn("0");
-    setWindows("0"); setRetainer(false); setStile("none");
+    setWindows("0"); setStile("none");
     setOrder(COMM_COMPLETE.has(m) ? "complete" : "section");
   }
   function resetConfig() {
     setSize(""); setGlass("solid"); setTrack("15R"); setMount("continuous"); setCspring("torsion"); setClock("none");
     setManFt(""); setManIn("0");
-    setSecKind("bt"); setSecHeight("21"); setWindows("0"); setRetainer(false); setStile("none");
+    setSecKind("bt"); setSecHeight("21"); setWindows("0"); setStile("none");
     setQty(1); setResult(null); setError(null); setSaved(false); setCopied(false);
   }
   function onBack() { resetConfig(); setStep(1); }
@@ -82,7 +81,7 @@ export function CommercialTool() {
       const body =
         order === "complete"
           ? { order, mfr, model, size, glass, track, mount, cspring, clock }
-          : { order, mfr, model, manFt: Number(manFt), manIn: Number(manIn) || 0, secKind, secHeight, windows: Number(windows) || 0, retainer, stile };
+          : { order, mfr, model, manFt: Number(manFt), manIn: Number(manIn) || 0, secKind, secHeight, windows: Number(windows) || 0, stile };
       const res = await fetch("/api/price/commercial", {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
       });
@@ -107,7 +106,7 @@ export function CommercialTool() {
       setError(e instanceof Error ? e.message : "Something went wrong");
       setResult(null); setResultSig(cfgSig);
     }
-  }, [order, mfr, model, size, glass, track, mount, cspring, clock, manFt, manIn, secKind, secHeight, windows, retainer, stile, qty, cfgSig]);
+  }, [order, mfr, model, size, glass, track, mount, cspring, clock, manFt, manIn, secKind, secHeight, windows, stile, qty, cfgSig]);
 
   function copyDesc() {
     if (!result?.description) return;
@@ -319,12 +318,7 @@ export function CommercialTool() {
                     {secKind === "bt" && (
                       <div className="grow">
                         <label>Bottom retainer &amp; rubber</label>
-                        <div className="ctl selectwrap">
-                          <select value={retainer ? "yes" : "no"} onChange={(e) => setRetainer(e.target.value === "yes")}>
-                            <option value="no">No</option>
-                            <option value="yes">Yes (+${SLAB_ADDERS.retainer}/ft)</option>
-                          </select>
-                        </div>
+                        <div className="ctl"><span className="muted-note">Included automatically (+${SLAB_ADDERS.retainer}/ft)</span></div>
                       </div>
                     )}
                   </>

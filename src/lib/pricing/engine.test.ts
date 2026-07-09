@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { priceResidential, quoteResidential, resolveSizeCode, tierForHeight, listModels } from "./engine";
+import { priceResidential, quoteResidential, quoteResidentialSection, resolveSizeCode, tierForHeight, listModels } from "./engine";
 import { RESIDENTIAL_PRICES } from "./data/residential-prices";
 import { STOCK_PRICES } from "./data/stock-prices";
 import type { WindowStyle } from "./types";
@@ -336,5 +336,51 @@ describe("windowDesigns — insert designs require the inserts style", () => {
     });
     expect(q.priced).toBe(true);
     expect(q.description.toLowerCase()).not.toContain("sq24");
+  });
+});
+
+describe("residential replacement sections (2026 V2 workbook SECTIONS blocks)", () => {
+  const sec = (over: Record<string, unknown> = {}) =>
+    ({ widthKey: "8", height: "18", kind: "bt", color: "White", ...over }) as Parameters<typeof quoteResidentialSection>[1];
+
+  it("prices bottom / intermediate / glazed from the sheet columns", () => {
+    expect(quoteResidentialSection("T50S", sec()).unitPrice).toBe(167.5);
+    expect(quoteResidentialSection("T50S", sec({ kind: "int" })).unitPrice).toBe(136.84);
+    expect(quoteResidentialSection("T50S", sec({ kind: "int", glazed: true })).unitPrice).toBe(292.95);
+    expect(quoteResidentialSection("T52S", sec({ widthKey: "9", kind: "int" })).unitPrice).toBe(231.13);
+    expect(quoteResidentialSection("9130", sec({ widthKey: "16", kind: "int", glazed: true })).unitPrice).toBe(900.57);
+    expect(quoteResidentialSection("4300", sec({ widthKey: "9" })).unitPrice).toBe(253.78);
+    expect(quoteResidentialSection("GD1LP", sec({ widthKey: "16", kind: "int", glazed: true })).unitPrice).toBe(1130.53);
+  });
+  it("18\" and 21\" heights share one price", () => {
+    expect(quoteResidentialSection("4300", sec({ height: "21" })).unitPrice)
+      .toBe(quoteResidentialSection("4300", sec({ height: "18" })).unitPrice);
+  });
+  it("stocked 7'6\" doors take the 8'0\" section price (not the sheet's 7'6\" row)", () => {
+    expect(quoteResidentialSection("T50S", sec({ widthKey: "7.6" })).unitPrice).toBe(167.5); // sheet row says 192.60
+    expect(quoteResidentialSection("4050", sec({ widthKey: "7.6", kind: "int" })).unitPrice).toBe(190.97); // sheet row says 215.97
+    // 4050's 7'0" row is its own price and is NOT remapped
+    expect(quoteResidentialSection("4050", sec({ widthKey: "7", kind: "int" })).unitPrice).toBe(215.97);
+  });
+  it("lockbar installed (+$70) only on SOLID intermediate sections", () => {
+    const q = quoteResidentialSection("T50S", sec({ kind: "int", lockbar: true }));
+    expect(q.unitPrice).toBeCloseTo(136.84 + 70, 2);
+    expect(q.description).toContain("lockbar installed");
+    // glazed intermediates and bottoms ignore the flag
+    expect(quoteResidentialSection("T50S", sec({ kind: "int", glazed: true, lockbar: true })).unitPrice).toBe(292.95);
+    expect(quoteResidentialSection("T50S", sec({ kind: "bt", lockbar: true })).unitPrice).toBe(167.5);
+  });
+  it("bottom sections ignore the glazed flag", () => {
+    expect(quoteResidentialSection("T50S", sec({ glazed: true })).unitPrice).toBe(167.5);
+  });
+  it("split models resolve to their shared section table", () => {
+    expect(quoteResidentialSection("4301", sec({ widthKey: "16" })).unitPrice)
+      .toBe(quoteResidentialSection("4300", sec({ widthKey: "16" })).unitPrice);
+    expect(quoteResidentialSection("9133", sec()).unitPrice).toBe(quoteResidentialSection("9130", sec()).unitPrice);
+    expect(quoteResidentialSection("GD1SP", sec()).unitPrice).toBe(quoteResidentialSection("GD1LP", sec()).unitPrice);
+  });
+  it("non-stock widths and unknown models are not priced", () => {
+    expect(quoteResidentialSection("4300", sec({ widthKey: "12" })).priced).toBe(false);
+    expect(quoteResidentialSection("3200", sec()).priced).toBe(false);
   });
 });

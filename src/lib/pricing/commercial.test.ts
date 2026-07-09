@@ -42,15 +42,20 @@ const section = (over: Record<string, unknown> = {}) => ({
 });
 
 describe("commercial replacement sections (any customer width)", () => {
-  it("per-foot model at the customer's width (524 @ $29/ft), 5-inch-plus rounds up", () => {
-    expect(quoteCommercial(section({ manFt: 9, manIn: 6 })).unitPrice).toBeCloseTo(29 * 10, 2);
-    expect(quoteCommercial(section({ manFt: 8, manIn: 2 })).unitPrice).toBeCloseTo(29 * 8, 2);
+  it("per-foot BOTTOM section always includes retainer & rubber (+$3.75/ft), 5-inch-plus rounds up", () => {
+    // retainer is automatic now — the old opt-in flag is ignored either way
+    expect(quoteCommercial(section({ manFt: 9, manIn: 6 })).unitPrice).toBeCloseTo((29 + 3.75) * 10, 2);
+    expect(quoteCommercial(section({ manFt: 8, manIn: 2, retainer: false })).unitPrice).toBeCloseTo((29 + 3.75) * 8, 2);
   });
-  it("per-foot adders: retainer per foot, stiles flat, windows ×$150 on intermediates", () => {
-    const q = quoteCommercial(section({ model: "2415", mfr: "Wayne Dalton", manFt: 10, manIn: 0, retainer: true, stile: "double" }));
-    expect(q.unitPrice).toBeCloseTo(29 * 10 + 3.75 * 10 + 50, 2);
+  it("per-foot INTERMEDIATE section has no retainer; stiles flat, windows ×$150", () => {
+    const q = quoteCommercial(section({ model: "2415", mfr: "Wayne Dalton", manFt: 10, manIn: 0, stile: "double" }));
+    expect(q.unitPrice).toBeCloseTo(29 * 10 + 3.75 * 10 + 50, 2); // bottom: retainer included
     const qi = quoteCommercial(section({ model: "2415", mfr: "Wayne Dalton", manFt: 10, manIn: 0, secKind: "int", windows: 2 }));
-    expect(qi.unitPrice).toBeCloseTo(29 * 10 + 300, 2);
+    expect(qi.unitPrice).toBeCloseTo(29 * 10 + 300, 2); // intermediate: no retainer
+  });
+  it("cost-table bottom sections (Clopay panel models) are unchanged — no retainer adder", () => {
+    const q = quoteCommercial(section({ model: "3200", manFt: 9, manIn: 4, secKind: "bt" }));
+    expect(q.lines.some((l) => /retainer/i.test(l.name))).toBe(false);
   });
   it("caps windows at the max for the width (≤9ft -> 2)", () => {
     const q = quoteCommercial(section({ model: "2415", mfr: "Wayne Dalton", manFt: 8, manIn: 0, secKind: "int", windows: 5 }));

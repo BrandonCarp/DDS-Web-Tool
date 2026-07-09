@@ -8,16 +8,8 @@ import { STOCK_PRICES } from "./data/stock-prices";
 import { ADDONS, ULTRAGRAIN, GRADE_RES, COLLECTIONS_RES } from "./data/addons";
 import { dataKey, expandModels } from "./model-groups";
 import { windowDesigns, designName } from "./data/inserts";
-import type {
-  Dimensions,
-  PriceResult,
-  PriceTriple,
-  Quote,
-  QuoteOptions,
-  SizeCode,
-  Tier,
-  WindowStyle,
-} from "./types";
+import { RES_SECTIONS } from "./data/res-sections";
+import type { Dimensions, PriceResult, PriceTriple, Quote, QuoteOptions, SizeCode, Tier, WindowStyle, QuoteLine } from "./types";
 
 const TIER_7_MAX_IN = 84; // <= 7'0"
 const TIER_8_MAX_IN = 96; // <= 8'0"
@@ -219,4 +211,50 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
     source: stock ? "stock" : "standard",
     lines, unitPrice, description,
   };
+}
+
+/* ================= Residential replacement sections ================= */
+// Priced from the SECTIONS blocks in the 2026 V2 workbook (sell prices, per
+// section, 18"/21" heights share one price). Stock widths only — the UI offers
+// a dropdown, never a typed width.
+
+export interface ResSectionInput {
+  widthKey: string;          // e.g. "8", "16", "7.6" — a RES_SECTION_WIDTHS key
+  height: "18" | "21";       // label only; both heights share one price
+  kind: "bt" | "int";
+  glazed?: boolean;          // intermediate sections only
+  lockbar?: boolean;         // lockbar INSTALLED — solid intermediate sections only
+  color?: string;
+}
+
+export function quoteResidentialSection(model: string, input: ResSectionInput): Quote {
+  const empty: Quote = {
+    model, size: null, priced: false, isStock: false, source: "none",
+    lines: [], unitPrice: 0, description: "",
+  };
+  const table = RES_SECTIONS[dataKey(model)];
+  if (!table) return empty;
+  // Stocked 7'6" doors take their sections at the 8'0" price (Brandon, 7/9/2026) —
+  // this deliberately bypasses the sheet's own higher 7'6" rows.
+  const priceKey = input.widthKey === "7.6" ? "8" : input.widthKey;
+  const row = table[priceKey];
+  if (!row) return empty;
+  const glazed = input.kind === "int" && !!input.glazed;
+  const base = input.kind === "bt" ? row.bottom : glazed ? row.glazed : row.inter;
+  const [wft, win] = input.widthKey.split(".");
+  const widthTxt = `${wft}'${win ?? 0}"`;
+  const kindNm = input.kind === "bt" ? "Bottom" : "Intermediate";
+  const lines: QuoteLine[] = [
+    { name: `${kindNm} section${input.kind === "int" ? (glazed ? " (glazed)" : " (solid)") : ""} · ${input.height}″ · ${widthTxt}`, value: base },
+  ];
+  const lockbar = input.kind === "int" && !glazed && !!input.lockbar;
+  if (lockbar) lines.push({ name: "Lockbar installed", value: ADDONS.lockbar_installed, kind: "add" });
+  const unitPrice = lines.reduce((a, l) => a + (l.kind === "minus" ? -l.value : l.value), 0);
+  const desc =
+    `Clopay Model ${model}, ${kindNm.toLowerCase()} replacement section` +
+    (input.kind === "int" ? (glazed ? " with glass" : ", solid") : "") +
+    `, ${input.height}" high, ${widthTxt} wide, in the color ${input.color || "White"}` +
+    (lockbar ? ", lockbar installed" : "") +
+    ` — sections only`;
+  return { model, size: null, priced: true, isStock: true, source: "standard", lines, unitPrice, description: desc };
 }

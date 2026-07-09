@@ -1,0 +1,654 @@
+diff --git a/src/app/api/price/route.ts b/src/app/api/price/route.ts
+index 6840fe7..867683f 100644
+--- a/src/app/api/price/route.ts
++++ b/src/app/api/price/route.ts
+@@ -1,5 +1,5 @@
+ import { NextResponse } from "next/server";
+-import { quoteResidential } from "@/lib/pricing/engine";
++import { quoteResidential, quoteResidentialSection } from "@/lib/pricing/engine";
+ import type { LockKey, QuoteOptions, SpringKey, TrackKey, WindowStyle } from "@/lib/pricing/types";
+ import { getSessionUser } from "@/lib/auth";
+ import { DECORATIVE, ARCHITECTURAL } from "@/lib/pricing/data/inserts";
+@@ -19,6 +19,23 @@ export async function POST(req: Request) {
+   }
+   const { model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, windesign } = body;
+   if (typeof model !== "string") return NextResponse.json({ error: "model is required" }, { status: 400 });
++
++  // Sections-only quotes: stock-size dropdown widths, priced from the workbook
++  // SECTIONS blocks in the engine. No door-style/track fields apply.
++  if (body.assembly === "sections") {
++    const widthKey = String(body.widthKey ?? "");
++    if (!/^\d+(\.\d+)?$/.test(widthKey)) return NextResponse.json({ error: "invalid section width" }, { status: 400 });
++    const quote = quoteResidentialSection(model, {
++      widthKey,
++      height: body.secHeight === "21" ? "21" : "18",
++      kind: body.secKind === "int" ? "int" : "bt",
++      glazed: body.glazed === true,
++      lockbar: body.lockbar === true,
++      color: typeof color === "string" ? color : "White",
++    });
++    return NextResponse.json(quote);
++  }
++
+   if (!STYLES.includes(style as WindowStyle)) return NextResponse.json({ error: "invalid style" }, { status: 400 });
+ 
+   const opts: QuoteOptions = {
+diff --git a/src/components/CommercialTool.tsx b/src/components/CommercialTool.tsx
+index 27e853c..c911490 100644
+--- a/src/components/CommercialTool.tsx
++++ b/src/components/CommercialTool.tsx
+@@ -32,7 +32,6 @@ export function CommercialTool() {
+   const [secKind, setSecKind] = useState<"bt" | "int">("bt");
+   const [secHeight, setSecHeight] = useState<"21" | "24">("21");
+   const [windows, setWindows] = useState("0");
+-  const [retainer, setRetainer] = useState(false);
+   const [stile, setStile] = useState<"none" | "single" | "double">("none");
+ 
+   const [qty, setQty] = useState(1);
+@@ -55,7 +54,7 @@ export function CommercialTool() {
+   }, [order, manFt, manIn]);
+   const mx = rFeet ? maxWindows(rFeet) : 0;
+ 
+-  const cfgSig = JSON.stringify([mfr, model, order, size, glass, track, mount, cspring, clock, manFt, manIn, secKind, secHeight, windows, retainer, stile]);
++  const cfgSig = JSON.stringify([mfr, model, order, size, glass, track, mount, cspring, clock, manFt, manIn, secKind, secHeight, windows, stile]);
+   const result = resultRaw && resultSig === cfgSig ? resultRaw : null;
+   const liveError = errorRaw && resultSig === cfgSig ? errorRaw : null;
+   const priced = result?.priced ?? false;
+@@ -65,13 +64,13 @@ export function CommercialTool() {
+   function pickModel(m: string) {
+     setModel(m);
+     setSize(""); setManFt(""); setManIn("0");
+-    setWindows("0"); setRetainer(false); setStile("none");
++    setWindows("0"); setStile("none");
+     setOrder(COMM_COMPLETE.has(m) ? "complete" : "section");
+   }
+   function resetConfig() {
+     setSize(""); setGlass("solid"); setTrack("15R"); setMount("continuous"); setCspring("torsion"); setClock("none");
+     setManFt(""); setManIn("0");
+-    setSecKind("bt"); setSecHeight("21"); setWindows("0"); setRetainer(false); setStile("none");
++    setSecKind("bt"); setSecHeight("21"); setWindows("0"); setStile("none");
+     setQty(1); setResult(null); setError(null); setSaved(false); setCopied(false);
+   }
+   function onBack() { resetConfig(); setStep(1); }
+@@ -82,7 +81,7 @@ export function CommercialTool() {
+       const body =
+         order === "complete"
+           ? { order, mfr, model, size, glass, track, mount, cspring, clock }
+-          : { order, mfr, model, manFt: Number(manFt), manIn: Number(manIn) || 0, secKind, secHeight, windows: Number(windows) || 0, retainer, stile };
++          : { order, mfr, model, manFt: Number(manFt), manIn: Number(manIn) || 0, secKind, secHeight, windows: Number(windows) || 0, stile };
+       const res = await fetch("/api/price/commercial", {
+         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+       });
+@@ -107,7 +106,7 @@ export function CommercialTool() {
+       setError(e instanceof Error ? e.message : "Something went wrong");
+       setResult(null); setResultSig(cfgSig);
+     }
+-  }, [order, mfr, model, size, glass, track, mount, cspring, clock, manFt, manIn, secKind, secHeight, windows, retainer, stile, qty, cfgSig]);
++  }, [order, mfr, model, size, glass, track, mount, cspring, clock, manFt, manIn, secKind, secHeight, windows, stile, qty, cfgSig]);
+ 
+   function copyDesc() {
+     if (!result?.description) return;
+@@ -319,12 +318,7 @@ export function CommercialTool() {
+                     {secKind === "bt" && (
+                       <div className="grow">
+                         <label>Bottom retainer &amp; rubber</label>
+-                        <div className="ctl selectwrap">
+-                          <select value={retainer ? "yes" : "no"} onChange={(e) => setRetainer(e.target.value === "yes")}>
+-                            <option value="no">No</option>
+-                            <option value="yes">Yes (+${SLAB_ADDERS.retainer}/ft)</option>
+-                          </select>
+-                        </div>
++                        <div className="ctl"><span className="muted-note">Included automatically (+${SLAB_ADDERS.retainer}/ft)</span></div>
+                       </div>
+                     )}
+                   </>
+diff --git a/src/components/ResidentialTool.tsx b/src/components/ResidentialTool.tsx
+index 5a13c8b..ef9fe70 100644
+--- a/src/components/ResidentialTool.tsx
++++ b/src/components/ResidentialTool.tsx
+@@ -5,6 +5,7 @@ import type { LockKey, Quote, SpringKey, TrackKey, WindowStyle } from "@/lib/pri
+ import { MARGINS, COLORS, COLLECTIONS } from "@/lib/pricing/data/catalog-meta";
+ import { dataKey, modelSort } from "@/lib/pricing/model-groups";
+ import { windowDesigns, designWidthCode } from "@/lib/pricing/data/inserts";
++import { RES_SECTION_WIDTHS, sectionWidthLabel } from "@/lib/pricing/data/res-section-meta";
+ 
+ const GLASS = [
+   { value: "solid", label: "Solid (no windows)" },
+@@ -57,6 +58,13 @@ export function ResidentialTool({ models }: { models: string[] }) {
+   const [heightFt, setHeightFt] = useState("");
+   const [heightIn, setHeightIn] = useState("0");
+   const [assembly, setAssembly] = useState("complete");
++  // "Sections only" mode — mirrors the Commercial replacement-section flow.
++  // Widths are STOCK-SIZE DROPDOWNS from the 2026 V2 workbook, never typed.
++  const [secKind, setSecKind] = useState<"bt" | "int">("bt");
++  const [secHeight, setSecHeight] = useState<"18" | "21">("18");
++  const [secWidth, setSecWidth] = useState("");
++  const [secGlass, setSecGlass] = useState<"solid" | "glazed">("solid");
++  const [secLock, setSecLock] = useState<"none" | "installed">("none");
+   const [color, setColor] = useState("White");
+   const [glass, setGlass] = useState("solid");
+   const [framing, setFraming] = useState("plain");
+@@ -79,6 +87,9 @@ export function ResidentialTool({ models }: { models: string[] }) {
+   const colorList = COLORS[dataKey(model)] ?? ["White"];
+   const collection = COLLECTIONS[dataKey(model)] ?? coll;
+   const isGallery = collection === "Gallery Collection";
++  const sections = assembly === "sections";
++  const secWidths = RES_SECTION_WIDTHS[dataKey(model)] ?? [];
++  const activeSecWidth = secWidth && secWidths.includes(secWidth) ? secWidth : "";
+   // Gallery Collection doors take double strength B grade ONLY (their sole
+   // window option); every other model takes single strength only.
+   const glassOptions = isGallery
+@@ -86,7 +97,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
+     : GLASS.filter((g) => g.value !== "dsb");
+   const wf = parseInt(widthFt, 10);
+   const hf = parseInt(heightFt, 10);
+-  const sizeComplete = Number.isFinite(wf) && Number.isFinite(hf);
++  const sizeComplete = sections ? !!activeSecWidth : Number.isFinite(wf) && Number.isFinite(hf);
+ 
+   // Window/insert designs available for this exact door (model + style + width).
+   const wDesigns = useMemo(
+@@ -98,7 +109,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
+ 
+   // The quote is only shown while it matches the CURRENT configuration; any
+   // config change makes it stale, so the user must click "Get price" again.
+-  const cfgSig = JSON.stringify([model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, activeDesign]);
++  const cfgSig = JSON.stringify([model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, activeDesign, assembly, secKind, secHeight, activeSecWidth, secGlass, secLock]);
+   const result = resultRaw && resultSig === cfgSig ? resultRaw : null;
+   const liveError = errorRaw && resultSig === cfgSig ? errorRaw : null;
+ 
+@@ -106,11 +117,47 @@ export function ResidentialTool({ models }: { models: string[] }) {
+     setError(null);
+     setSaved(false);
+     if (!sizeComplete) {
+-      setError("Enter the width and height before getting a price.");
++      setError(sections ? "Pick the door width before getting a price." : "Enter the width and height before getting a price.");
+       setResult(null);
+       setResultSig(cfgSig);
+       return;
+     }
++    // ---- Sections only: priced server-side from the workbook SECTIONS data.
++    if (sections) {
++      try {
++        const res = await fetch("/api/price", {
++          method: "POST",
++          headers: { "Content-Type": "application/json" },
++          body: JSON.stringify({
++            model, assembly: "sections", widthKey: activeSecWidth,
++            secHeight, secKind, glazed: secKind === "int" && secGlass === "glazed",
++            lockbar: secKind === "int" && secGlass === "solid" && secLock === "installed",
++            color,
++          }),
++        });
++        const data = await res.json();
++        if (!res.ok) throw new Error(data.error ?? "Request failed");
++        const q = data as Quote;
++        setResult(q);
++        setResultSig(cfgSig);
++        if (q.priced) {
++          const n = Math.max(1, qty);
++          await fetch("/api/estimates", {
++            method: "POST",
++            headers: { "Content-Type": "application/json" },
++            body: JSON.stringify({
++              model, size: sectionWidthLabel(activeSecWidth), color, unitPrice: q.unitPrice,
++              qty: n, total: q.unitPrice * n, description: q.description, quoteType: "residential",
++            }),
++          }).then(() => setSaved(true)).catch(() => {});
++        }
++      } catch (e) {
++        setError(e instanceof Error ? e.message : "Something went wrong");
++        setResult(null);
++        setResultSig(cfgSig);
++      }
++      return;
++    }
+     try {
+       const res = await fetch("/api/price", {
+         method: "POST",
+@@ -146,7 +193,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
+       setResult(null);
+       setResultSig(cfgSig);
+     }
+-  }, [model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, activeDesign, qty, cfgSig, sizeComplete]);
++  }, [model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, activeDesign, qty, cfgSig, sizeComplete, sections, secKind, secHeight, activeSecWidth, secGlass, secLock]);
+ 
+   function onSeries(c: string) {
+     setColl(c);
+@@ -166,7 +213,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
+   function resetConfig() {
+     setWidthFt(""); setWidthIn("0");
+     setHeightFt(""); setHeightIn("0");
+-    setAssembly("complete");
++    setAssembly("complete"); setSecKind("bt"); setSecHeight("18"); setSecWidth(""); setSecGlass("solid"); setSecLock("none");
+     setColor((COLORS[dataKey(model)] ?? ["White"])[0]);
+     setGlass("solid"); setFraming("plain"); setWindesign("");
+     setSpring("extension"); setTrack("r12"); setLock("none");
+@@ -197,7 +244,8 @@ export function ResidentialTool({ models }: { models: string[] }) {
+   }
+   function clearAll() {
+     setWidthFt(""); setWidthIn("0"); setHeightFt(""); setHeightIn("0");
+-    setAssembly("complete"); setGlass("solid"); setFraming("plain"); setWindesign("");
++    setAssembly("complete"); setSecKind("bt"); setSecHeight("18"); setSecWidth(""); setSecGlass("solid"); setSecLock("none");
++    setGlass("solid"); setFraming("plain"); setWindesign("");
+     setSpring("extension"); setTrack("r12"); setLock("none"); setQty(1); setSoPrice("");
+   }
+ 
+@@ -290,6 +338,39 @@ export function ResidentialTool({ models }: { models: string[] }) {
+                     </select>
+                   </div>
+                 </div>
++                {sections && (
++                  <>
++                    <div className="grow">
++                      <label>Section type</label>
++                      <div className="ctl selectwrap">
++                        <select value={secKind} onChange={(e) => setSecKind(e.target.value as "bt" | "int")}>
++                          <option value="bt">Bottom section</option>
++                          <option value="int">Intermediate section</option>
++                        </select>
++                      </div>
++                    </div>
++                    <div className="grow">
++                      <label>Section height</label>
++                      <div className="ctl selectwrap">
++                        <select value={secHeight} onChange={(e) => setSecHeight(e.target.value as "18" | "21")}>
++                          <option value="18">18″</option>
++                          <option value="21">21″</option>
++                        </select>
++                      </div>
++                    </div>
++                  </>
++                )}
++                {sections ? (
++                  <div className="grow">
++                    <label>Door width (stock sizes)</label>
++                    <div className="ctl selectwrap">
++                      <select data-testid="sec-width" value={activeSecWidth} onChange={(e) => setSecWidth(e.target.value)}>
++                        <option value="">Select width…</option>
++                        {secWidths.map((w) => <option key={w} value={w}>{sectionWidthLabel(w)}</option>)}
++                      </select>
++                    </div>
++                  </div>
++                ) : (
+                 <div className="grow">
+                   <label>Measure size</label>
+                   <div className="ctl dimstack">
+@@ -301,16 +382,17 @@ export function ResidentialTool({ models }: { models: string[] }) {
+                       </select>
+                       <span className="u">in W</span>
+                     </div>
+-                    <div className="dimrow">
++                    {!sections && <div className="dimrow">
+                       <input data-testid="height-ft" type="number" min={0} placeholder="ft" value={heightFt} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setHeightFt(v); }} />
+                       <span className="u">ft</span>
+                       <select data-testid="height-in" className="insel" value={heightIn} onChange={(e) => setHeightIn(e.target.value)}>
+                         {["0", "3", "6", "9"].map((v) => <option key={v} value={v}>{v}</option>)}
+                       </select>
+                       <span className="u">in H</span>
+-                    </div>
++                    </div>}
+                   </div>
+                 </div>
++                )}
+                 <div className="grow">
+                   <label>Color</label>
+                   <div className="ctl selectwrap">
+@@ -321,7 +403,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
+                 </div>
+               </div>
+ 
+-              <div className="ggroup">
++              {!sections && <div className="ggroup">
+                 <div className="ghdr">Window options</div>
+                 <div className="grow">
+                   <label>Glass type</label>
+@@ -351,9 +433,9 @@ export function ResidentialTool({ models }: { models: string[] }) {
+                     </div>
+                   </div>
+                 )}
+-              </div>
++              </div>}
+ 
+-              <div className="ggroup">
++              {!sections && <div className="ggroup">
+                 <div className="ghdr">Track options</div>
+                 <div className="grow">
+                   <label>Spring</label>
+@@ -372,18 +454,47 @@ export function ResidentialTool({ models }: { models: string[] }) {
+                     </select>
+                   </div>
+                 </div>
+-              </div>
++              </div>}
+ 
+               <div className="ggroup">
+-                <div className="ghdr">Additional options</div>
+-                <div className="grow">
+-                  <label>Lock</label>
+-                  <div className="ctl selectwrap">
+-                    <select data-testid="lock" value={lock} onChange={(e) => setLock(e.target.value as LockKey)}>
+-                      {LOCKS.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
+-                    </select>
++                <div className="ghdr">{sections ? "Section options" : "Additional options"}</div>
++                {sections ? (
++                  secKind === "int" ? (
++                    <>
++                      <div className="grow">
++                        <label>Glass</label>
++                        <div className="ctl selectwrap">
++                          <select value={secGlass} onChange={(e) => setSecGlass(e.target.value as "solid" | "glazed")}>
++                            <option value="solid">Solid — no windows</option>
++                            <option value="glazed">Glazed (glass section)</option>
++                          </select>
++                        </div>
++                      </div>
++                      {secGlass === "solid" && (
++                        <div className="grow">
++                          <label>Lockbar</label>
++                          <div className="ctl selectwrap">
++                            <select value={secLock} onChange={(e) => setSecLock(e.target.value as "none" | "installed")}>
++                              <option value="none">No lockbar</option>
++                              <option value="installed">Lockbar installed</option>
++                            </select>
++                          </div>
++                        </div>
++                      )}
++                    </>
++                  ) : (
++                    <div className="grow"><label>&nbsp;</label><div className="ctl"><span className="muted-note">Bottom section — solid only.</span></div></div>
++                  )
++                ) : (
++                  <div className="grow">
++                    <label>Lock</label>
++                    <div className="ctl selectwrap">
++                      <select data-testid="lock" value={lock} onChange={(e) => setLock(e.target.value as LockKey)}>
++                        {LOCKS.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
++                      </select>
++                    </div>
+                   </div>
+-                </div>
++                )}
+               </div>
+             </div>
+ 
+@@ -400,8 +511,8 @@ export function ResidentialTool({ models }: { models: string[] }) {
+           <div className="qhead">
+             <div className="ql">Residential quote</div>
+             <div className="qmodel">{model}</div>
+-            {sizeComplete && <div className="qsub">{dims} · {style} · {color}</div>}
+-            {priced && (
++            {sizeComplete && <div className="qsub">{sections ? `${activeSecWidth ? sectionWidthLabel(activeSecWidth) : "—"} wide · ${secKind === "bt" ? "bottom" : "intermediate"} section · ${color}` : `${dims} · ${style} · ${color}`}</div>}
++            {priced && !sections && (
+               <span data-testid="source-badge" className={`stockbadge ${result?.isStock ? "yes" : "no"}`}>
+                 {result?.isStock ? "✓ In stock — Doors Direct South" : "Special / odd size"}
+               </span>
+diff --git a/src/lib/pricing/commercial.test.ts b/src/lib/pricing/commercial.test.ts
+index f10b3f7..966aaf1 100644
+--- a/src/lib/pricing/commercial.test.ts
++++ b/src/lib/pricing/commercial.test.ts
+@@ -42,15 +42,20 @@ const section = (over: Record<string, unknown> = {}) => ({
+ });
+ 
+ describe("commercial replacement sections (any customer width)", () => {
+-  it("per-foot model at the customer's width (524 @ $29/ft), 5-inch-plus rounds up", () => {
+-    expect(quoteCommercial(section({ manFt: 9, manIn: 6 })).unitPrice).toBeCloseTo(29 * 10, 2);
+-    expect(quoteCommercial(section({ manFt: 8, manIn: 2 })).unitPrice).toBeCloseTo(29 * 8, 2);
++  it("per-foot BOTTOM section always includes retainer & rubber (+$3.75/ft), 5-inch-plus rounds up", () => {
++    // retainer is automatic now — the old opt-in flag is ignored either way
++    expect(quoteCommercial(section({ manFt: 9, manIn: 6 })).unitPrice).toBeCloseTo((29 + 3.75) * 10, 2);
++    expect(quoteCommercial(section({ manFt: 8, manIn: 2, retainer: false })).unitPrice).toBeCloseTo((29 + 3.75) * 8, 2);
+   });
+-  it("per-foot adders: retainer per foot, stiles flat, windows ×$150 on intermediates", () => {
+-    const q = quoteCommercial(section({ model: "2415", mfr: "Wayne Dalton", manFt: 10, manIn: 0, retainer: true, stile: "double" }));
+-    expect(q.unitPrice).toBeCloseTo(29 * 10 + 3.75 * 10 + 50, 2);
++  it("per-foot INTERMEDIATE section has no retainer; stiles flat, windows ×$150", () => {
++    const q = quoteCommercial(section({ model: "2415", mfr: "Wayne Dalton", manFt: 10, manIn: 0, stile: "double" }));
++    expect(q.unitPrice).toBeCloseTo(29 * 10 + 3.75 * 10 + 50, 2); // bottom: retainer included
+     const qi = quoteCommercial(section({ model: "2415", mfr: "Wayne Dalton", manFt: 10, manIn: 0, secKind: "int", windows: 2 }));
+-    expect(qi.unitPrice).toBeCloseTo(29 * 10 + 300, 2);
++    expect(qi.unitPrice).toBeCloseTo(29 * 10 + 300, 2); // intermediate: no retainer
++  });
++  it("cost-table bottom sections (Clopay panel models) are unchanged — no retainer adder", () => {
++    const q = quoteCommercial(section({ model: "3200", manFt: 9, manIn: 4, secKind: "bt" }));
++    expect(q.lines.some((l) => /retainer/i.test(l.name))).toBe(false);
+   });
+   it("caps windows at the max for the width (≤9ft -> 2)", () => {
+     const q = quoteCommercial(section({ model: "2415", mfr: "Wayne Dalton", manFt: 8, manIn: 0, secKind: "int", windows: 5 }));
+diff --git a/src/lib/pricing/commercial.ts b/src/lib/pricing/commercial.ts
+index 6a453f7..10b64a5 100644
+--- a/src/lib/pricing/commercial.ts
++++ b/src/lib/pricing/commercial.ts
+@@ -33,7 +33,7 @@ export interface CommSectionInput {
+   secKind: "bt" | "int";
+   secHeight: "21" | "24";
+   windows?: number;                   // intermediate sections only
+-  retainer?: boolean;                 // bottom + per-foot only
++  retainer?: boolean;                 // DEPRECATED — ignored; retainer is always included on bottom sections
+   stile?: "none" | "single" | "double"; // per-foot only
+ }
+ export type CommInput = CommCompleteInput | CommSectionInput;
+@@ -108,7 +108,9 @@ export function quoteCommercial(input: CommInput): CommQuote {
+   if (hasRate) {
+     const rate = COMM_SLAB.rate[model];
+     lines.push({ name: `${kindNm} section · ${rFeet}′ × $${rate}/ft`, value: rate * rFeet, kind: "base" });
+-    if (input.secKind === "bt" && input.retainer)
++    // Bottom retainer & rubber is ALWAYS included on a bottom section — it is
++    // no longer a selectable option (the input.retainer flag is ignored).
++    if (input.secKind === "bt")
+       lines.push({ name: `Bottom retainer & rubber · ${rFeet}′`, value: COMM_SLAB.adders.retainer * rFeet, kind: "add" });
+     if (input.stile === "single") lines.push({ name: "Single end stiles", value: COMM_SLAB.adders.stile_single, kind: "add" });
+     if (input.stile === "double") lines.push({ name: "Double end stiles", value: COMM_SLAB.adders.stile_double, kind: "add" });
+diff --git a/src/lib/pricing/data/res-section-meta.ts b/src/lib/pricing/data/res-section-meta.ts
+new file mode 100644
+index 0000000..b087dd1
+--- /dev/null
++++ b/src/lib/pricing/data/res-section-meta.ts
+@@ -0,0 +1,17 @@
++// GENERATED from new_pricing_2026_V2.xlsx — width OPTIONS only, no pricing,
++// so it is safe to import in client components (same pattern as inserts.ts).
++// Sections are stock-size dropdowns only (no free width input) per Brandon, 7/2026.
++
++export const RES_SECTION_WIDTHS: Record<string, string[]> = {
++  "T50S": ["7.6", "8", "9", "10", "12", "15", "16"],
++  "T52S": ["8", "9", "10", "16"],
++  "4050-4051-4053": ["7", "7.6", "8", "9", "10", "12", "14", "15", "16", "18"],
++  "9130-9133": ["8", "9", "16"],
++  "4300": ["8", "9", "16"],
++  "GD1LP-GD1SP": ["8", "9", "16"],
++};
++
++export function sectionWidthLabel(key: string): string {
++  const [ft, inch] = key.split(".");
++  return `${ft}'${inch ?? 0}\"`;
++}
+diff --git a/src/lib/pricing/data/res-sections.ts b/src/lib/pricing/data/res-sections.ts
+new file mode 100644
+index 0000000..73e6e97
+--- /dev/null
++++ b/src/lib/pricing/data/res-sections.ts
+@@ -0,0 +1,51 @@
++// GENERATED from new_pricing_2026_V2.xlsx (SECTIONS blocks, per model sheet).
++// SELL prices per replacement section. 18" and 21" heights share one price
++// (the sheet lists them as a single 18"/21" row). Values are verbatim from
++// the workbook — the 7'6" -> 8'0" pricing rule is applied in the engine, not here.
++
++export type ResSectionRow = { bottom: number; inter: number; glazed: number };
++
++export const RES_SECTIONS: Record<string, Record<string, ResSectionRow>> = {
++  "T50S": {
++    "7.6": { "bottom": 192.6, "inter": 161.84, "glazed": 317.95 },
++    "8": { "bottom": 167.5, "inter": 136.84, "glazed": 292.95 },
++    "9": { "bottom": 188.54, "inter": 153.94, "glazed": 310.05 },
++    "10": { "bottom": 209.49, "inter": 171.06, "glazed": 366.21 },
++    "12": { "bottom": 251.4, "inter": 205.27, "glazed": 439.43 },
++    "15": { "bottom": 314.25, "inter": 256.57, "glazed": 529.78 },
++    "16": { "bottom": 335.19, "inter": 273.68, "glazed": 585.9 },
++  },
++  "T52S": {
++    "8": { "bottom": 235.65, "inter": 205.46, "glazed": 351.71 },
++    "9": { "bottom": 265.1, "inter": 231.13, "glazed": 377.38 },
++    "10": { "bottom": 294.54, "inter": 256.81, "glazed": 439.63 },
++    "16": { "bottom": 471.29, "inter": 410.89, "glazed": 703.41 },
++  },
++  "4050-4051-4053": {
++    "7": { "bottom": 242.3, "inter": 215.97, "glazed": 401.62 },
++    "7.6": { "bottom": 242.3, "inter": 215.97, "glazed": 401.62 },
++    "8": { "bottom": 217.3, "inter": 190.97, "glazed": 376.62 },
++    "9": { "bottom": 244.48, "inter": 215.08, "glazed": 400.54 },
++    "10": { "bottom": 271.63, "inter": 238.95, "glazed": 470.79 },
++    "12": { "bottom": 325.95, "inter": 286.76, "glazed": 564.95 },
++    "14": { "bottom": 380.29, "inter": 334.52, "glazed": 659.08 },
++    "15": { "bottom": 407.48, "inter": 358.46, "glazed": 683.02 },
++    "16": { "bottom": 434.62, "inter": 382.32, "glazed": 753.27 },
++    "18": { "bottom": 493.8, "inter": 434.42, "glazed": 809.02 },
++  },
++  "9130-9133": {
++    "8": { "bottom": 259.92, "inter": 228.65, "glazed": 450.25 },
++    "9": { "bottom": 292.43, "inter": 257.25, "glazed": 478.84 },
++    "16": { "bottom": 519.84, "inter": 457.11, "glazed": 900.57 },
++  },
++  "4300": {
++    "8": { "bottom": 225.56, "inter": 200.86, "glazed": 375.97 },
++    "9": { "bottom": 253.78, "inter": 225.97, "glazed": 401.06 },
++    "16": { "bottom": 451.14, "inter": 401.75, "glazed": 751.97 },
++  },
++  "GD1LP-GD1SP": {
++    "8": { "bottom": 250.73, "inter": 220.53, "glazed": 565.28 },
++    "9": { "bottom": 282.05, "inter": 248.08, "glazed": 592.83 },
++    "16": { "bottom": 501.48, "inter": 441.03, "glazed": 1130.53 },
++  },
++};
+diff --git a/src/lib/pricing/engine.test.ts b/src/lib/pricing/engine.test.ts
+index b0e0f6a..033cc88 100644
+--- a/src/lib/pricing/engine.test.ts
++++ b/src/lib/pricing/engine.test.ts
+@@ -1,5 +1,5 @@
+ import { describe, it, expect } from "vitest";
+-import { priceResidential, quoteResidential, resolveSizeCode, tierForHeight, listModels } from "./engine";
++import { priceResidential, quoteResidential, quoteResidentialSection, resolveSizeCode, tierForHeight, listModels } from "./engine";
+ import { RESIDENTIAL_PRICES } from "./data/residential-prices";
+ import { STOCK_PRICES } from "./data/stock-prices";
+ import type { WindowStyle } from "./types";
+@@ -338,3 +338,49 @@ describe("windowDesigns — insert designs require the inserts style", () => {
+     expect(q.description.toLowerCase()).not.toContain("sq24");
+   });
+ });
++
++describe("residential replacement sections (2026 V2 workbook SECTIONS blocks)", () => {
++  const sec = (over: Record<string, unknown> = {}) =>
++    ({ widthKey: "8", height: "18", kind: "bt", color: "White", ...over }) as Parameters<typeof quoteResidentialSection>[1];
++
++  it("prices bottom / intermediate / glazed from the sheet columns", () => {
++    expect(quoteResidentialSection("T50S", sec()).unitPrice).toBe(167.5);
++    expect(quoteResidentialSection("T50S", sec({ kind: "int" })).unitPrice).toBe(136.84);
++    expect(quoteResidentialSection("T50S", sec({ kind: "int", glazed: true })).unitPrice).toBe(292.95);
++    expect(quoteResidentialSection("T52S", sec({ widthKey: "9", kind: "int" })).unitPrice).toBe(231.13);
++    expect(quoteResidentialSection("9130", sec({ widthKey: "16", kind: "int", glazed: true })).unitPrice).toBe(900.57);
++    expect(quoteResidentialSection("4300", sec({ widthKey: "9" })).unitPrice).toBe(253.78);
++    expect(quoteResidentialSection("GD1LP", sec({ widthKey: "16", kind: "int", glazed: true })).unitPrice).toBe(1130.53);
++  });
++  it("18\" and 21\" heights share one price", () => {
++    expect(quoteResidentialSection("4300", sec({ height: "21" })).unitPrice)
++      .toBe(quoteResidentialSection("4300", sec({ height: "18" })).unitPrice);
++  });
++  it("stocked 7'6\" doors take the 8'0\" section price (not the sheet's 7'6\" row)", () => {
++    expect(quoteResidentialSection("T50S", sec({ widthKey: "7.6" })).unitPrice).toBe(167.5); // sheet row says 192.60
++    expect(quoteResidentialSection("4050", sec({ widthKey: "7.6", kind: "int" })).unitPrice).toBe(190.97); // sheet row says 215.97
++    // 4050's 7'0" row is its own price and is NOT remapped
++    expect(quoteResidentialSection("4050", sec({ widthKey: "7", kind: "int" })).unitPrice).toBe(215.97);
++  });
++  it("lockbar installed (+$70) only on SOLID intermediate sections", () => {
++    const q = quoteResidentialSection("T50S", sec({ kind: "int", lockbar: true }));
++    expect(q.unitPrice).toBeCloseTo(136.84 + 70, 2);
++    expect(q.description).toContain("lockbar installed");
++    // glazed intermediates and bottoms ignore the flag
++    expect(quoteResidentialSection("T50S", sec({ kind: "int", glazed: true, lockbar: true })).unitPrice).toBe(292.95);
++    expect(quoteResidentialSection("T50S", sec({ kind: "bt", lockbar: true })).unitPrice).toBe(167.5);
++  });
++  it("bottom sections ignore the glazed flag", () => {
++    expect(quoteResidentialSection("T50S", sec({ glazed: true })).unitPrice).toBe(167.5);
++  });
++  it("split models resolve to their shared section table", () => {
++    expect(quoteResidentialSection("4301", sec({ widthKey: "16" })).unitPrice)
++      .toBe(quoteResidentialSection("4300", sec({ widthKey: "16" })).unitPrice);
++    expect(quoteResidentialSection("9133", sec()).unitPrice).toBe(quoteResidentialSection("9130", sec()).unitPrice);
++    expect(quoteResidentialSection("GD1SP", sec()).unitPrice).toBe(quoteResidentialSection("GD1LP", sec()).unitPrice);
++  });
++  it("non-stock widths and unknown models are not priced", () => {
++    expect(quoteResidentialSection("4300", sec({ widthKey: "12" })).priced).toBe(false);
++    expect(quoteResidentialSection("3200", sec()).priced).toBe(false);
++  });
++});
+diff --git a/src/lib/pricing/engine.ts b/src/lib/pricing/engine.ts
+index d6e44e3..c6b91fc 100644
+--- a/src/lib/pricing/engine.ts
++++ b/src/lib/pricing/engine.ts
+@@ -8,16 +8,8 @@ import { STOCK_PRICES } from "./data/stock-prices";
+ import { ADDONS, ULTRAGRAIN, GRADE_RES, COLLECTIONS_RES } from "./data/addons";
+ import { dataKey, expandModels } from "./model-groups";
+ import { windowDesigns, designName } from "./data/inserts";
+-import type {
+-  Dimensions,
+-  PriceResult,
+-  PriceTriple,
+-  Quote,
+-  QuoteOptions,
+-  SizeCode,
+-  Tier,
+-  WindowStyle,
+-} from "./types";
++import { RES_SECTIONS } from "./data/res-sections";
++import type { Dimensions, PriceResult, PriceTriple, Quote, QuoteOptions, SizeCode, Tier, WindowStyle, QuoteLine } from "./types";
+ 
+ const TIER_7_MAX_IN = 84; // <= 7'0"
+ const TIER_8_MAX_IN = 96; // <= 8'0"
+@@ -220,3 +212,49 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
+     lines, unitPrice, description,
+   };
+ }
++
++/* ================= Residential replacement sections ================= */
++// Priced from the SECTIONS blocks in the 2026 V2 workbook (sell prices, per
++// section, 18"/21" heights share one price). Stock widths only — the UI offers
++// a dropdown, never a typed width.
++
++export interface ResSectionInput {
++  widthKey: string;          // e.g. "8", "16", "7.6" — a RES_SECTION_WIDTHS key
++  height: "18" | "21";       // label only; both heights share one price
++  kind: "bt" | "int";
++  glazed?: boolean;          // intermediate sections only
++  lockbar?: boolean;         // lockbar INSTALLED — solid intermediate sections only
++  color?: string;
++}
++
++export function quoteResidentialSection(model: string, input: ResSectionInput): Quote {
++  const empty: Quote = {
++    model, size: null, priced: false, isStock: false, source: "none",
++    lines: [], unitPrice: 0, description: "",
++  };
++  const table = RES_SECTIONS[dataKey(model)];
++  if (!table) return empty;
++  // Stocked 7'6" doors take their sections at the 8'0" price (Brandon, 7/9/2026) —
++  // this deliberately bypasses the sheet's own higher 7'6" rows.
++  const priceKey = input.widthKey === "7.6" ? "8" : input.widthKey;
++  const row = table[priceKey];
++  if (!row) return empty;
++  const glazed = input.kind === "int" && !!input.glazed;
++  const base = input.kind === "bt" ? row.bottom : glazed ? row.glazed : row.inter;
++  const [wft, win] = input.widthKey.split(".");
++  const widthTxt = `${wft}'${win ?? 0}"`;
++  const kindNm = input.kind === "bt" ? "Bottom" : "Intermediate";
++  const lines: QuoteLine[] = [
++    { name: `${kindNm} section${input.kind === "int" ? (glazed ? " (glazed)" : " (solid)") : ""} · ${input.height}″ · ${widthTxt}`, value: base },
++  ];
++  const lockbar = input.kind === "int" && !glazed && !!input.lockbar;
++  if (lockbar) lines.push({ name: "Lockbar installed", value: ADDONS.lockbar_installed, kind: "add" });
++  const unitPrice = lines.reduce((a, l) => a + (l.kind === "minus" ? -l.value : l.value), 0);
++  const desc =
++    `Clopay Model ${model}, ${kindNm.toLowerCase()} replacement section` +
++    (input.kind === "int" ? (glazed ? " with glass" : ", solid") : "") +
++    `, ${input.height}" high, ${widthTxt} wide, in the color ${input.color || "White"}` +
++    (lockbar ? ", lockbar installed" : "") +
++    ` — sections only`;
++  return { model, size: null, priced: true, isStock: true, source: "standard", lines, unitPrice, description: desc };
++}

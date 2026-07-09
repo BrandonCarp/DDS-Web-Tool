@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { quoteResidential } from "@/lib/pricing/engine";
+import { quoteResidential, quoteResidentialSection } from "@/lib/pricing/engine";
 import type { LockKey, QuoteOptions, SpringKey, TrackKey, WindowStyle } from "@/lib/pricing/types";
 import { getSessionUser } from "@/lib/auth";
 import { DECORATIVE, ARCHITECTURAL } from "@/lib/pricing/data/inserts";
@@ -19,6 +19,23 @@ export async function POST(req: Request) {
   }
   const { model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, windesign } = body;
   if (typeof model !== "string") return NextResponse.json({ error: "model is required" }, { status: 400 });
+
+  // Sections-only quotes: stock-size dropdown widths, priced from the workbook
+  // SECTIONS blocks in the engine. No door-style/track fields apply.
+  if (body.assembly === "sections") {
+    const widthKey = String(body.widthKey ?? "");
+    if (!/^\d+(\.\d+)?$/.test(widthKey)) return NextResponse.json({ error: "invalid section width" }, { status: 400 });
+    const quote = quoteResidentialSection(model, {
+      widthKey,
+      height: body.secHeight === "21" ? "21" : "18",
+      kind: body.secKind === "int" ? "int" : "bt",
+      glazed: body.glazed === true,
+      lockbar: body.lockbar === true,
+      color: typeof color === "string" ? color : "White",
+    });
+    return NextResponse.json(quote);
+  }
+
   if (!STYLES.includes(style as WindowStyle)) return NextResponse.json({ error: "invalid style" }, { status: 400 });
 
   const opts: QuoteOptions = {

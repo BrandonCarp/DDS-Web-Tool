@@ -5,6 +5,7 @@ import type { LockKey, Quote, SpringKey, TrackKey, WindowStyle } from "@/lib/pri
 import { MARGINS, COLORS, COLLECTIONS } from "@/lib/pricing/data/catalog-meta";
 import { dataKey, modelSort } from "@/lib/pricing/model-groups";
 import { windowDesigns, designWidthCode } from "@/lib/pricing/data/inserts";
+import { RES_SECTION_WIDTHS, sectionWidthLabel } from "@/lib/pricing/data/res-section-meta";
 
 const GLASS = [
   { value: "solid", label: "Solid (no windows)" },
@@ -57,6 +58,13 @@ export function ResidentialTool({ models }: { models: string[] }) {
   const [heightFt, setHeightFt] = useState("");
   const [heightIn, setHeightIn] = useState("0");
   const [assembly, setAssembly] = useState("complete");
+  // "Sections only" mode — mirrors the Commercial replacement-section flow.
+  // Widths are STOCK-SIZE DROPDOWNS from the 2026 V2 workbook, never typed.
+  const [secKind, setSecKind] = useState<"bt" | "int">("bt");
+  const [secHeight, setSecHeight] = useState<"18" | "21">("18");
+  const [secWidth, setSecWidth] = useState("");
+  const [secGlass, setSecGlass] = useState<"solid" | "glazed">("solid");
+  const [secLock, setSecLock] = useState<"none" | "installed">("none");
   const [color, setColor] = useState("White");
   const [glass, setGlass] = useState("solid");
   const [framing, setFraming] = useState("plain");
@@ -79,6 +87,9 @@ export function ResidentialTool({ models }: { models: string[] }) {
   const colorList = COLORS[dataKey(model)] ?? ["White"];
   const collection = COLLECTIONS[dataKey(model)] ?? coll;
   const isGallery = collection === "Gallery Collection";
+  const sections = assembly === "sections";
+  const secWidths = RES_SECTION_WIDTHS[dataKey(model)] ?? [];
+  const activeSecWidth = secWidth && secWidths.includes(secWidth) ? secWidth : "";
   // Gallery Collection doors take double strength B grade ONLY (their sole
   // window option); every other model takes single strength only.
   const glassOptions = isGallery
@@ -86,7 +97,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
     : GLASS.filter((g) => g.value !== "dsb");
   const wf = parseInt(widthFt, 10);
   const hf = parseInt(heightFt, 10);
-  const sizeComplete = Number.isFinite(wf) && Number.isFinite(hf);
+  const sizeComplete = sections ? !!activeSecWidth : Number.isFinite(wf) && Number.isFinite(hf);
 
   // Window/insert designs available for this exact door (model + style + width).
   const wDesigns = useMemo(
@@ -98,7 +109,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
 
   // The quote is only shown while it matches the CURRENT configuration; any
   // config change makes it stale, so the user must click "Get price" again.
-  const cfgSig = JSON.stringify([model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, activeDesign]);
+  const cfgSig = JSON.stringify([model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, activeDesign, assembly, secKind, secHeight, activeSecWidth, secGlass, secLock]);
   const result = resultRaw && resultSig === cfgSig ? resultRaw : null;
   const liveError = errorRaw && resultSig === cfgSig ? errorRaw : null;
 
@@ -106,9 +117,45 @@ export function ResidentialTool({ models }: { models: string[] }) {
     setError(null);
     setSaved(false);
     if (!sizeComplete) {
-      setError("Enter the width and height before getting a price.");
+      setError(sections ? "Pick the door width before getting a price." : "Enter the width and height before getting a price.");
       setResult(null);
       setResultSig(cfgSig);
+      return;
+    }
+    // ---- Sections only: priced server-side from the workbook SECTIONS data.
+    if (sections) {
+      try {
+        const res = await fetch("/api/price", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model, assembly: "sections", widthKey: activeSecWidth,
+            secHeight, secKind, glazed: secKind === "int" && secGlass === "glazed",
+            lockbar: secKind === "int" && secGlass === "solid" && secLock === "installed",
+            color,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Request failed");
+        const q = data as Quote;
+        setResult(q);
+        setResultSig(cfgSig);
+        if (q.priced) {
+          const n = Math.max(1, qty);
+          await fetch("/api/estimates", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model, size: sectionWidthLabel(activeSecWidth), color, unitPrice: q.unitPrice,
+              qty: n, total: q.unitPrice * n, description: q.description, quoteType: "residential",
+            }),
+          }).then(() => setSaved(true)).catch(() => {});
+        }
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Something went wrong");
+        setResult(null);
+        setResultSig(cfgSig);
+      }
       return;
     }
     try {
@@ -146,7 +193,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
       setResult(null);
       setResultSig(cfgSig);
     }
-  }, [model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, activeDesign, qty, cfgSig, sizeComplete]);
+  }, [model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, activeDesign, qty, cfgSig, sizeComplete, sections, secKind, secHeight, activeSecWidth, secGlass, secLock]);
 
   function onSeries(c: string) {
     setColl(c);
@@ -166,7 +213,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
   function resetConfig() {
     setWidthFt(""); setWidthIn("0");
     setHeightFt(""); setHeightIn("0");
-    setAssembly("complete");
+    setAssembly("complete"); setSecKind("bt"); setSecHeight("18"); setSecWidth(""); setSecGlass("solid"); setSecLock("none");
     setColor((COLORS[dataKey(model)] ?? ["White"])[0]);
     setGlass("solid"); setFraming("plain"); setWindesign("");
     setSpring("extension"); setTrack("r12"); setLock("none");
@@ -197,7 +244,8 @@ export function ResidentialTool({ models }: { models: string[] }) {
   }
   function clearAll() {
     setWidthFt(""); setWidthIn("0"); setHeightFt(""); setHeightIn("0");
-    setAssembly("complete"); setGlass("solid"); setFraming("plain"); setWindesign("");
+    setAssembly("complete"); setSecKind("bt"); setSecHeight("18"); setSecWidth(""); setSecGlass("solid"); setSecLock("none");
+    setGlass("solid"); setFraming("plain"); setWindesign("");
     setSpring("extension"); setTrack("r12"); setLock("none"); setQty(1); setSoPrice("");
   }
 
@@ -290,6 +338,39 @@ export function ResidentialTool({ models }: { models: string[] }) {
                     </select>
                   </div>
                 </div>
+                {sections && (
+                  <>
+                    <div className="grow">
+                      <label>Section type</label>
+                      <div className="ctl selectwrap">
+                        <select value={secKind} onChange={(e) => setSecKind(e.target.value as "bt" | "int")}>
+                          <option value="bt">Bottom section</option>
+                          <option value="int">Intermediate section</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grow">
+                      <label>Section height</label>
+                      <div className="ctl selectwrap">
+                        <select value={secHeight} onChange={(e) => setSecHeight(e.target.value as "18" | "21")}>
+                          <option value="18">18″</option>
+                          <option value="21">21″</option>
+                        </select>
+                      </div>
+                    </div>
+                  </>
+                )}
+                {sections ? (
+                  <div className="grow">
+                    <label>Door width (stock sizes)</label>
+                    <div className="ctl selectwrap">
+                      <select data-testid="sec-width" value={activeSecWidth} onChange={(e) => setSecWidth(e.target.value)}>
+                        <option value="">Select width…</option>
+                        {secWidths.map((w) => <option key={w} value={w}>{sectionWidthLabel(w)}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                ) : (
                 <div className="grow">
                   <label>Measure size</label>
                   <div className="ctl dimstack">
@@ -301,16 +382,17 @@ export function ResidentialTool({ models }: { models: string[] }) {
                       </select>
                       <span className="u">in W</span>
                     </div>
-                    <div className="dimrow">
+                    {!sections && <div className="dimrow">
                       <input data-testid="height-ft" type="number" min={0} placeholder="ft" value={heightFt} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setHeightFt(v); }} />
                       <span className="u">ft</span>
                       <select data-testid="height-in" className="insel" value={heightIn} onChange={(e) => setHeightIn(e.target.value)}>
                         {["0", "3", "6", "9"].map((v) => <option key={v} value={v}>{v}</option>)}
                       </select>
                       <span className="u">in H</span>
-                    </div>
+                    </div>}
                   </div>
                 </div>
+                )}
                 <div className="grow">
                   <label>Color</label>
                   <div className="ctl selectwrap">
@@ -321,7 +403,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
                 </div>
               </div>
 
-              <div className="ggroup">
+              {!sections && <div className="ggroup">
                 <div className="ghdr">Window options</div>
                 <div className="grow">
                   <label>Glass type</label>
@@ -351,9 +433,9 @@ export function ResidentialTool({ models }: { models: string[] }) {
                     </div>
                   </div>
                 )}
-              </div>
+              </div>}
 
-              <div className="ggroup">
+              {!sections && <div className="ggroup">
                 <div className="ghdr">Track options</div>
                 <div className="grow">
                   <label>Spring</label>
@@ -372,18 +454,47 @@ export function ResidentialTool({ models }: { models: string[] }) {
                     </select>
                   </div>
                 </div>
-              </div>
+              </div>}
 
               <div className="ggroup">
-                <div className="ghdr">Additional options</div>
-                <div className="grow">
-                  <label>Lock</label>
-                  <div className="ctl selectwrap">
-                    <select data-testid="lock" value={lock} onChange={(e) => setLock(e.target.value as LockKey)}>
-                      {LOCKS.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
-                    </select>
+                <div className="ghdr">{sections ? "Section options" : "Additional options"}</div>
+                {sections ? (
+                  secKind === "int" ? (
+                    <>
+                      <div className="grow">
+                        <label>Glass</label>
+                        <div className="ctl selectwrap">
+                          <select value={secGlass} onChange={(e) => setSecGlass(e.target.value as "solid" | "glazed")}>
+                            <option value="solid">Solid — no windows</option>
+                            <option value="glazed">Glazed (glass section)</option>
+                          </select>
+                        </div>
+                      </div>
+                      {secGlass === "solid" && (
+                        <div className="grow">
+                          <label>Lockbar</label>
+                          <div className="ctl selectwrap">
+                            <select value={secLock} onChange={(e) => setSecLock(e.target.value as "none" | "installed")}>
+                              <option value="none">No lockbar</option>
+                              <option value="installed">Lockbar installed</option>
+                            </select>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="grow"><label>&nbsp;</label><div className="ctl"><span className="muted-note">Bottom section — solid only.</span></div></div>
+                  )
+                ) : (
+                  <div className="grow">
+                    <label>Lock</label>
+                    <div className="ctl selectwrap">
+                      <select data-testid="lock" value={lock} onChange={(e) => setLock(e.target.value as LockKey)}>
+                        {LOCKS.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
+                      </select>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
 
@@ -400,8 +511,8 @@ export function ResidentialTool({ models }: { models: string[] }) {
           <div className="qhead">
             <div className="ql">Residential quote</div>
             <div className="qmodel">{model}</div>
-            {sizeComplete && <div className="qsub">{dims} · {style} · {color}</div>}
-            {priced && (
+            {sizeComplete && <div className="qsub">{sections ? `${activeSecWidth ? sectionWidthLabel(activeSecWidth) : "—"} wide · ${secKind === "bt" ? "bottom" : "intermediate"} section · ${color}` : `${dims} · ${style} · ${color}`}</div>}
+            {priced && !sections && (
               <span data-testid="source-badge" className={`stockbadge ${result?.isStock ? "yes" : "no"}`}>
                 {result?.isStock ? "✓ In stock — Doors Direct South" : "Special / odd size"}
               </span>
