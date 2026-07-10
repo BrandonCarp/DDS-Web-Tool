@@ -1,14 +1,39 @@
 import { requireAdmin } from "@/lib/auth";
 import { query } from "@/lib/db";
-import { AdminPanel, type AdminUser, type AdminEstimate } from "@/components/AdminPanel";
+import { AdminPanel, type AdminUser, type AdminEstimate, type LoginEvent } from "@/components/AdminPanel";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
   const admin = await requireAdmin();
-  const users = await query<AdminUser>(
-    "select id, username, role, active, created_at from users order by created_at",
-  );
+  const master = admin.role === "admin";
+  // Extended columns exist after the login-tracking migration; fall back
+  // gracefully if it hasn't been run yet.
+  let users: AdminUser[];
+  try {
+    users = await query<AdminUser>(
+      "select id, username, role, active, created_at, last_login, last_seen from users order by created_at",
+    );
+  } catch {
+    users = await query<AdminUser>(
+      "select id, username, role, active, created_at from users order by created_at",
+    );
+  }
+  // Sign-in activity is MASTER-ADMIN only — the data never leaves the server
+  // for semi-admins.
+  let logins: LoginEvent[] = [];
+  if (master) {
+    try {
+      logins = await query<LoginEvent>(
+        `select e.id, e.at, e.ip, e.city, e.region, e.country, u.username
+           from login_events e join users u on u.id = e.user_id
+          where e.at > now() - interval '14 days'
+          order by e.at desc limit 60`,
+      );
+    } catch {
+      /* table not migrated yet */
+    }
+  }
   // last-31-days set powers the charts; the table shows the latest 100
   const monthEstimates = await query<AdminEstimate>(
     `select id, username, model, size, style, color, unit_price, qty, total, description, quote_type, created_at
@@ -26,8 +51,9 @@ export default async function AdminPage() {
         users={users}
         estimates={estimates}
         monthEstimates={monthEstimates}
+        logins={logins}
         meId={admin.id}
-        master={admin.role === "admin"}
+        master={master}
         username={admin.username}
       />
     </div>

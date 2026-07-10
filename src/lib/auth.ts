@@ -58,6 +58,16 @@ export async function getSessionUser(): Promise<User | null> {
     return null;
   }
   if (!r.active) return null;
+  // Keep "last active" fresh without a write per click: at most one update
+  // every 5 minutes, and never let it break auth (also covers pre-migration deploys).
+  try {
+    await query(
+      "update users set last_seen = now() where id = $1 and (last_seen is null or last_seen < now() - interval '5 minutes')",
+      [r.id],
+    );
+  } catch {
+    /* best-effort */
+  }
   return { id: r.id, username: r.username, role: r.role, active: r.active };
 }
 

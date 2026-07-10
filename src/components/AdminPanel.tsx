@@ -10,6 +10,17 @@ export interface AdminUser {
   role: "admin" | "semiadmin" | "user";
   active: boolean;
   created_at: string;
+  last_login?: string | null;
+  last_seen?: string | null;
+}
+export interface LoginEvent {
+  id: number;
+  at: string;
+  ip: string | null;
+  city: string | null;
+  region: string | null;
+  country: string | null;
+  username: string;
 }
 export interface AdminEstimate {
   id: number;
@@ -225,6 +236,7 @@ function UserBars({ rows }: { rows: AdminEstimate[] }) {
 /* ---------- main panel ---------- */
 export function AdminPanel({
   users,
+  logins = [],
   estimates,
   monthEstimates,
   meId,
@@ -232,6 +244,7 @@ export function AdminPanel({
   username,
 }: {
   users: AdminUser[];
+  logins?: LoginEvent[];
   estimates: AdminEstimate[];
   monthEstimates: AdminEstimate[];
   meId: number;
@@ -598,6 +611,8 @@ export function AdminPanel({
                   <th style={th}>User</th>
                   <th style={th}>Role</th>
                   <th style={th}>Status</th>
+                  <th style={th}>Last login</th>
+                  <th style={th}>Last active</th>
                   <th style={th}>Actions</th>
                 </tr>
               </thead>
@@ -616,6 +631,8 @@ export function AdminPanel({
                         {u.active ? "Active" : "Disabled"}
                       </span>
                     </td>
+                    <td style={{ ...td, whiteSpace: "nowrap" }}>{u.last_login ? when(u.last_login) : "never"}</td>
+                    <td style={{ ...td, whiteSpace: "nowrap" }}>{u.last_seen ? when(u.last_seen) : "—"}</td>
                     <td style={{ ...td, display: "flex", gap: 6, flexWrap: "wrap" }}>
                       <button
                         className="chip"
@@ -648,6 +665,54 @@ export function AdminPanel({
                 ))}
               </tbody>
             </table>
+
+            {/* Sign-in activity — this whole view is master-only, and the data
+                is only loaded server-side for the master admin. Locations are
+                approximate (IP-based, city level at best). */}
+            <div className="chartcard" style={{ marginTop: 16 }}>
+              <h4>Sign-in activity — last 14 days</h4>
+              {logins.length === 0 ? (
+                <div style={{ color: "var(--muted)", padding: 8 }}>No logins recorded yet.</div>
+              ) : (
+                <>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", padding: "4px 0 10px" }}>
+                    {Object.entries(
+                      logins.reduce<Record<string, number>>((acc, e) => {
+                        acc[e.username] = (acc[e.username] ?? 0) + 1;
+                        return acc;
+                      }, {}),
+                    )
+                      .sort((a, b) => b[1] - a[1])
+                      .map(([name, n]) => (
+                        <span key={name} className="chip" style={{ cursor: "default" }}>
+                          {name}: {n} login{n === 1 ? "" : "s"}
+                        </span>
+                      ))}
+                  </div>
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr>
+                        <th style={th}>When</th>
+                        <th style={th}>User</th>
+                        <th style={th}>From (approx.)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {logins.map((e) => (
+                        <tr key={e.id}>
+                          <td style={{ ...td, whiteSpace: "nowrap" }}>{when(e.at)}</td>
+                          <td style={td}><b>{e.username}</b></td>
+                          <td style={td}>
+                            {[e.city, e.region].filter(Boolean).join(", ") || "unknown"}
+                            {e.ip ? <span style={{ color: "var(--muted)" }}> · {e.ip}</span> : null}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </>
+              )}
+            </div>
           </div>
         )}
       </main>
