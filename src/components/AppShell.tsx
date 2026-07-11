@@ -5,7 +5,7 @@ import { ResidentialTool } from "./ResidentialTool";
 import { CommercialTool } from "./CommercialTool";
 import { SpecialTool } from "./SpecialTool";
 import { TorsionTool } from "./TorsionTool";
-import { CustomerJobProvider, CustomerBar } from "./CustomerJobFields";
+import { CustomerJobProvider, CustomerBar, CustomerGate } from "./CustomerJobFields";
 
 const TABS = [
   { id: "residential", label: "Residential" },
@@ -47,10 +47,12 @@ export function AppShell({
         </div>
       </header>
       <CustomerBar />
-      {mode === "residential" && <ResidentialTool models={models} />}
-      {mode === "commercial" && <CommercialTool />}
-      {mode === "special" && <SpecialTool />}
-      {mode === "torsion" && <TorsionTool />}
+      <CustomerGate>
+        {mode === "residential" && <ResidentialTool models={models} />}
+        {mode === "commercial" && <CommercialTool />}
+        {mode === "special" && <SpecialTool />}
+        {mode === "torsion" && <TorsionTool />}
+      </CustomerGate>
     </CustomerJobProvider>
   );
 }
