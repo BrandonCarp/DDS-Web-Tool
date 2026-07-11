@@ -162,6 +162,14 @@ export function ResidentialTool({ models }: { models: string[] }) {
       }
       return;
     }
+    // Inserts require an actual design choice — no pricing a generic "insert"
+    // when this model offers specific insert designs.
+    if (style === "inserts" && wDesigns.length > 0 && !activeDesign) {
+      setError("Select a window insert design before getting a price.");
+      setResult(null);
+      setResultSig(cfgSig);
+      return;
+    }
     try {
       const res = await fetch("/api/price", {
         method: "POST",
@@ -198,7 +206,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
       setResult(null);
       setResultSig(cfgSig);
     }
-  }, [model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, activeDesign, qty, cfgSig, sizeComplete, sections, secKind, secHeight, activeSecWidth, secGlass, secLock, custName, custPo, custJob]);
+  }, [model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, activeDesign, wDesigns, qty, cfgSig, sizeComplete, sections, secKind, secHeight, activeSecWidth, secGlass, secLock, custName, custPo, custJob]);
 
   function onSeries(c: string) {
     setColl(c);
@@ -440,7 +448,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
                     <label>Window design</label>
                     <div className="ctl selectwrap">
                       <select data-testid="windesign" value={activeDesign} onChange={(e) => setWindesign(e.target.value)}>
-                        <option value="">None / standard</option>
+                        <option value="">Select a design…</option>
                         {wDesigns.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
                       </select>
                     </div>
