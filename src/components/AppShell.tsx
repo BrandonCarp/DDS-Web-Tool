@@ -5,6 +5,7 @@ import { ResidentialTool } from "./ResidentialTool";
 import { CommercialTool } from "./CommercialTool";
 import { SpecialTool } from "./SpecialTool";
 import { TorsionTool } from "./TorsionTool";
+import { CustomerJobProvider, CustomerBar } from "./CustomerJobFields";
 
 const TABS = [
   { id: "residential", label: "Residential" },
@@ -22,7 +23,7 @@ export function AppShell({
 }) {
   const [mode, setMode] = useState<string>("residential");
   return (
-    <>
+    <CustomerJobProvider>
       <header className="top">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="logo" src="/logo.png" alt="Doors Direct" />
@@ -45,11 +46,12 @@ export function AppShell({
           {user.username} · <a href="/api/logout" style={{ color: "#fff" }}>Sign out</a>
         </div>
       </header>
+      <CustomerBar />
       {mode === "residential" && <ResidentialTool models={models} />}
       {mode === "commercial" && <CommercialTool />}
       {mode === "special" && <SpecialTool />}
       {mode === "torsion" && <TorsionTool />}
-    </>
+    </CustomerJobProvider>
   );
 }
 

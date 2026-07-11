@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useCustomerJob } from "@/components/CustomerJobFields";
 import { TORSION, ID_ORDER, torsionPrice, fmtWire } from "@/lib/pricing/data/torsion";
 
 const fmt = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export function TorsionTool() {
+  const { custName, custPo, custJob } = useCustomerJob();
   const [id, setId] = useState("2");
   const [wire, setWire] = useState("");
   const [length, setLength] = useState("");
@@ -27,6 +29,7 @@ export function TorsionTool() {
         style: null, color: null,
         unitPrice: price, qty: 1, total: price,
         description: `Torsion spring cut to size — ${fmtWire(wire)}″ wire, ${TORSION.id_labels[id]}, ${len}″ long`,
+        customer: custName, poNumber: custPo, jobName: custJob,
       }),
     }).then(() => setSaved(true)).catch(() => {/* ignore */});
   }

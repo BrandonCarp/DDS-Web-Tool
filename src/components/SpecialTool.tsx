@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useCustomerJob } from "@/components/CustomerJobFields";
 import { SPECIAL, SPECIAL_COMMERCIAL } from "@/lib/pricing/data/special-orders";
 
 const fmt = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -36,6 +37,7 @@ function soCommercial(mfr: string, kind: "door" | "section", priceStr: string) {
 }
 
 export function SpecialTool() {
+  const { custName, custPo, custJob } = useCustomerJob();
   const [scope, setScope] = useState<"residential" | "commercial">("residential");
   // residential
   const [series, setSeries] = useState("");
@@ -85,6 +87,7 @@ export function SpecialTool() {
         style: scope, color: null,
         unitPrice: n.sell, qty: nQty, total: n.sell * nQty,
         description: `Special order — ${label} — Clopay list ${price} @ ${n.margin}% margin`,
+        customer: custName, poNumber: custPo, jobName: custJob,
       }),
     }).then(() => setSaved(true)).catch(() => {/* ignore */});
   }

@@ -9,15 +9,19 @@ export async function GET(req: Request) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const q = new URL(req.url).searchParams.get("q")?.trim() ?? "";
-  if (q.length < 2) return NextResponse.json({ customers: [] });
   try {
-    const customers = await query<{ qb_name: string; company: string | null; phone: string | null }>(
-      `select qb_name, company, phone
-         from customers
-        where active and (qb_name ilike $1 or company ilike $1)
-        order by qb_name limit 10`,
-      [`%${q}%`],
-    );
+    // Short/empty query = browse mode (top of the list); otherwise search.
+    const customers = q.length < 2
+      ? await query<{ qb_name: string; company: string | null; phone: string | null }>(
+          "select qb_name, company, phone from customers where active order by qb_name limit 12",
+        )
+      : await query<{ qb_name: string; company: string | null; phone: string | null }>(
+          `select qb_name, company, phone
+             from customers
+            where active and (qb_name ilike $1 or company ilike $1)
+            order by qb_name limit 10`,
+          [`%${q}%`],
+        );
     return NextResponse.json({ customers });
   } catch {
     // table not migrated yet — behave as "no matches" rather than erroring

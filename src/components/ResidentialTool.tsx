@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CustomerJobFields } from "@/components/CustomerJobFields";
+import { useCustomerJob } from "@/components/CustomerJobFields";
 import type { LockKey, Quote, SpringKey, TrackKey, WindowStyle } from "@/lib/pricing/types";
 import { MARGINS, COLORS, COLLECTIONS } from "@/lib/pricing/data/catalog-meta";
 import { dataKey, modelSort } from "@/lib/pricing/model-groups";
@@ -74,12 +74,11 @@ export function ResidentialTool({ models }: { models: string[] }) {
   const [track, setTrack] = useState<TrackKey>("r12");
   const [lock, setLock] = useState<LockKey>("none");
   const [qty, setQty] = useState(1);
-  const [custName, setCustName] = useState("");
-  const [custPo, setCustPo] = useState("");
-  const [custJob, setCustJob] = useState("");
+  const { custName, custPo, custJob } = useCustomerJob();
 
   const [soPrice, setSoPrice] = useState("");
   const [soKind, setSoKind] = useState<"door" | "section">("door");
+  const [soOpen, setSoOpen] = useState(false); // special-order panel hidden until clicked
 
   const [resultRaw, setResult] = useState<Quote | null>(null);
   const [resultSig, setResultSig] = useState("");
@@ -308,12 +307,20 @@ export function ResidentialTool({ models }: { models: string[] }) {
           </div>
         </aside>
         <div className="special-col">
-          <div className="sobox panel no-print">
-            <div className="sohead">Special order — {model || "select a model first"}</div>
-            <div className="sobody">
-              <div className="note">Pick a residential model above to price a special-order version.</div>
+          {!soOpen ? (
+            <button type="button" className="socollapse no-print" onClick={() => setSoOpen(true)}>
+              Special order →
+            </button>
+          ) : (
+            <div className="sobox panel no-print">
+              <div className="sohead">Special order — {model || "select a model first"}
+                <button type="button" className="chip" style={{ float: "right" }} onClick={() => setSoOpen(false)}>Hide</button>
+              </div>
+              <div className="sobody">
+                <div className="note">Pick a residential model above to price a special-order version.</div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     );
@@ -543,11 +550,6 @@ export function ResidentialTool({ models }: { models: string[] }) {
                   );
                 })}
               </div>
-              <CustomerJobFields
-                customer={custName} setCustomer={setCustName}
-                po={custPo} setPo={setCustPo}
-                job={custJob} setJob={setCustJob}
-              />
               <div className="qtyrow">
                 <label htmlFor="qty">Quantity</label>
                 <input id="qty" type="number" min={1} value={qty} onChange={(e) => setQty(Number(e.target.value))} />
@@ -579,8 +581,15 @@ export function ResidentialTool({ models }: { models: string[] }) {
       </aside>
 
       <div className="special-col">
+        {!soOpen ? (
+          <button type="button" className="socollapse no-print" onClick={() => setSoOpen(true)}>
+            Special order →
+          </button>
+        ) : (
         <div className="sobox panel no-print">
-          <div className="sohead">Special order — {model}</div>
+          <div className="sohead">Special order — {model}
+            <button type="button" className="chip" style={{ float: "right" }} onClick={() => setSoOpen(false)}>Hide</button>
+          </div>
           <div className="sobody sobody-grid">
             <div className="so-fields">
               <div className="field">
@@ -604,6 +613,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   );

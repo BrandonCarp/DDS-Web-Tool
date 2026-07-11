@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { CustomerJobFields } from "@/components/CustomerJobFields";
+import { useCustomerJob } from "@/components/CustomerJobFields";
 import {
   COMM_COMPLETE, COMM_MATRIX_SIZES,
   SLAB_RATE, SLAB_LABEL, SLAB_ADDERS, commMfrs, commModelsFor, maxWindows, roundedFeet,
@@ -36,9 +36,7 @@ export function CommercialTool() {
   const [stile, setStile] = useState<"none" | "single" | "double">("none");
 
   const [qty, setQty] = useState(1);
-  const [custName, setCustName] = useState("");
-  const [custPo, setCustPo] = useState("");
-  const [custJob, setCustJob] = useState("");
+  const { custName, custPo, custJob } = useCustomerJob();
   const [resultRaw, setResult] = useState<CommQuote | null>(null);
   const [resultSig, setResultSig] = useState("");
   const [errorRaw, setError] = useState<string | null>(null);
@@ -369,11 +367,6 @@ export function CommercialTool() {
                   </div>
                 ))}
               </div>
-              <CustomerJobFields
-                customer={custName} setCustomer={setCustName}
-                po={custPo} setPo={setCustPo}
-                job={custJob} setJob={setCustJob}
-              />
               <div className="qtyrow">
                 <label htmlFor="cqty">Quantity</label>
                 <input id="cqty" type="number" min={1} value={qty} onChange={(e) => setQty(Number(e.target.value))} />
