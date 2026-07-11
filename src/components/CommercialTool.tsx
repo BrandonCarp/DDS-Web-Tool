@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { QbExportButton } from "@/components/QbExportButton";
 import { useCustomerJob } from "@/components/CustomerJobFields";
 import {
   COMM_COMPLETE, COMM_MATRIX_SIZES,
@@ -382,6 +383,9 @@ export function CommercialTool() {
                   <button className={`btn copybtn ${copied ? "ok" : ""}`} type="button" onClick={copyDesc}>
                     {copied ? "Copied ✓" : "Copy description"}
                   </button>
+                  {result.priced && (
+                    <QbExportButton quoteType="commercial" description={result.description} qty={Math.max(1, qty)} rate={result.unitPrice} />
+                  )}
                 </div>
               )}
               <div className="qfoot">

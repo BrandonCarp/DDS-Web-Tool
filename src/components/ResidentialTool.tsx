@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { QbExportButton } from "@/components/QbExportButton";
 import { useCustomerJob } from "@/components/CustomerJobFields";
 import type { LockKey, Quote, SpringKey, TrackKey, WindowStyle } from "@/lib/pricing/types";
-import { MARGINS, COLORS, COLLECTIONS } from "@/lib/pricing/data/catalog-meta";
+import { COLORS, COLLECTIONS } from "@/lib/pricing/data/catalog-meta";
 import { dataKey, modelSort } from "@/lib/pricing/model-groups";
 import { windowDesigns, designWidthCode } from "@/lib/pricing/data/inserts";
 import { RES_SECTION_WIDTHS, sectionWidthLabel } from "@/lib/pricing/data/res-section-meta";
@@ -76,9 +77,6 @@ export function ResidentialTool({ models }: { models: string[] }) {
   const [qty, setQty] = useState(1);
   const { custName, custPo, custJob } = useCustomerJob();
 
-  const [soPrice, setSoPrice] = useState("");
-  const [soKind, setSoKind] = useState<"door" | "section">("door");
-  const [soOpen, setSoOpen] = useState(false); // special-order panel hidden until clicked
 
   const [resultRaw, setResult] = useState<Quote | null>(null);
   const [resultSig, setResultSig] = useState("");
@@ -231,7 +229,6 @@ export function ResidentialTool({ models }: { models: string[] }) {
     setGlass("solid"); setFraming("plain"); setWindesign("");
     setSpring("extension"); setTrack("r12"); setLock("none");
     setQty(1);
-    setSoPrice(""); setSoKind("door");
     setResult(null); setError(null); setCopied(false); setSaved(false);
   }
   function onBack() {
@@ -245,10 +242,6 @@ export function ResidentialTool({ models }: { models: string[] }) {
   const dims = `${widthFt || "—"}'${widthIn || "0"}" x ${heightFt || "—"}'${heightIn || "0"}"`;
   const description = result?.description ?? "";
 
-  const margins = MARGINS[dataKey(model)];
-  const margin = margins ? (soKind === "door" ? margins.door : margins.section) : null;
-  const soCost = parseFloat(String(soPrice).replace(/,/g, "")) || 0;
-  const soSell = margin != null && soCost > 0 ? soCost / (1 - margin / 100) : null;
 
   function copyDesc() {
     navigator.clipboard?.writeText(description.toUpperCase());
@@ -259,13 +252,13 @@ export function ResidentialTool({ models }: { models: string[] }) {
     setWidthFt(""); setWidthIn("0"); setHeightFt(""); setHeightIn("0");
     setAssembly("complete"); setSecKind("bt"); setSecHeight("18"); setSecWidth(""); setSecGlass("solid"); setSecLock("none");
     setGlass("solid"); setFraming("plain"); setWindesign("");
-    setSpring("extension"); setTrack("r12"); setLock("none"); setQty(1); setSoPrice("");
+    setSpring("extension"); setTrack("r12"); setLock("none"); setQty(1);
   }
 
   // ---------------- STEP 1: SELECT YOUR DOOR ----------------
   if (step === 1) {
     return (
-      <div className="wrap">
+      <div className="wrap two">
         <section className="config-col">
           <div className="panel">
             <div className="step">
@@ -314,22 +307,6 @@ export function ResidentialTool({ models }: { models: string[] }) {
             </div>
           </div>
         </aside>
-        <div className="special-col">
-          {!soOpen ? (
-            <button type="button" className="socollapse no-print" onClick={() => setSoOpen(true)}>
-              Special order →
-            </button>
-          ) : (
-            <div className="sobox panel no-print">
-              <div className="sohead">Special order — {model || "select a model first"}
-                <button type="button" className="chip" style={{ float: "right" }} onClick={() => setSoOpen(false)}>Hide</button>
-              </div>
-              <div className="sobody">
-                <div className="note">Pick a residential model above to price a special-order version.</div>
-              </div>
-            </div>
-          )}
-        </div>
       </div>
     );
   }
@@ -572,6 +549,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
                 <button className={`btn copybtn ${copied ? "ok" : ""}`} type="button" onClick={copyDesc}>
                   {copied ? "Copied ✓" : "Copy description"}
                 </button>
+                <QbExportButton quoteType="residential" description={description} qty={Math.max(1, qty)} rate={unit} />
               </div>
               <div className="qfoot">
                 <button className="btn" type="button" onClick={clearAll}>Clear</button>
@@ -582,47 +560,12 @@ export function ResidentialTool({ models }: { models: string[] }) {
           ) : (
             <div className="empty" data-testid="not-priced">
               <div className="emptymsg">No standard price for that size</div>
-              <div className="muted-note" style={{ marginTop: 6 }}>Handle it as a special order &rarr;</div>
+              <div className="muted-note" style={{ marginTop: 6 }}>Handle it in the Special Order tab &rarr;</div>
             </div>
           )}
         </div>
       </aside>
 
-      <div className="special-col">
-        {!soOpen ? (
-          <button type="button" className="socollapse no-print" onClick={() => setSoOpen(true)}>
-            Special order →
-          </button>
-        ) : (
-        <div className="sobox panel no-print">
-          <div className="sohead">Special order — {model}
-            <button type="button" className="chip" style={{ float: "right" }} onClick={() => setSoOpen(false)}>Hide</button>
-          </div>
-          <div className="sobody sobody-grid">
-            <div className="so-fields">
-              <div className="field">
-                <label className="lbl">Total price <span className="req">*</span></label>
-                <input type="text" inputMode="decimal" value={soPrice} onChange={(e) => setSoPrice(e.target.value)} placeholder="0.00" />
-                <div className="note">Enter the total price — that is the cost plus the fuel charge.</div>
-              </div>
-              <div className="field">
-                <label className="lbl">Type</label>
-                <div className="chips">
-                  <button type="button" className={`chip ${soKind === "door" ? "sel" : ""}`} onClick={() => setSoKind("door")}>Complete door</button>
-                  <button type="button" className={`chip ${soKind === "section" ? "sel" : ""}`} onClick={() => setSoKind("section")}>Sections</button>
-                </div>
-              </div>
-            </div>
-            <div className="so-out">
-              <div className="box sell">
-                <div className="k">Sell price</div>
-                <div className="v" data-testid="so-sell">{soSell ? fmt(soSell) : "—"}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-        )}
-      </div>
     </div>
   );
 }
