@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { CustomerJobFields } from "@/components/CustomerJobFields";
 import {
   COMM_COMPLETE, COMM_MATRIX_SIZES,
   SLAB_RATE, SLAB_LABEL, SLAB_ADDERS, commMfrs, commModelsFor, maxWindows, roundedFeet,
@@ -35,6 +36,9 @@ export function CommercialTool() {
   const [stile, setStile] = useState<"none" | "single" | "double">("none");
 
   const [qty, setQty] = useState(1);
+  const [custName, setCustName] = useState("");
+  const [custPo, setCustPo] = useState("");
+  const [custJob, setCustJob] = useState("");
   const [resultRaw, setResult] = useState<CommQuote | null>(null);
   const [resultSig, setResultSig] = useState("");
   const [errorRaw, setError] = useState<string | null>(null);
@@ -98,6 +102,7 @@ export function CommercialTool() {
             model: `${mfr} ${model}${order === "section" ? " section" : ""}`,
             size: data.sub, style: order, color: "—",
             unitPrice: data.unitPrice, qty: n, total: data.unitPrice * n,
+            customer: custName, poNumber: custPo, jobName: custJob,
             description: data.description ?? `${mfr} ${model} — ${data.sub}`,
           }),
         }).then(() => setSaved(true)).catch(() => {/* ignore */});
@@ -106,7 +111,7 @@ export function CommercialTool() {
       setError(e instanceof Error ? e.message : "Something went wrong");
       setResult(null); setResultSig(cfgSig);
     }
-  }, [order, mfr, model, size, glass, track, mount, cspring, clock, manFt, manIn, secKind, secHeight, windows, stile, qty, cfgSig]);
+  }, [order, mfr, model, size, glass, track, mount, cspring, clock, manFt, manIn, secKind, secHeight, windows, stile, qty, cfgSig, custName, custPo, custJob]);
 
   function copyDesc() {
     if (!result?.description) return;
@@ -364,6 +369,11 @@ export function CommercialTool() {
                   </div>
                 ))}
               </div>
+              <CustomerJobFields
+                customer={custName} setCustomer={setCustName}
+                po={custPo} setPo={setCustPo}
+                job={custJob} setJob={setCustJob}
+              />
               <div className="qtyrow">
                 <label htmlFor="cqty">Quantity</label>
                 <input id="cqty" type="number" min={1} value={qty} onChange={(e) => setQty(Number(e.target.value))} />

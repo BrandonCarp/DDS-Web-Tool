@@ -35,6 +35,9 @@ export interface AdminEstimate {
   description: string | null;
   quote_type: string | null;
   created_at: string;
+  customer?: string | null;
+  po_number?: string | null;
+  job_name?: string | null;
 }
 
 const money = (n: string | number) =>
@@ -510,6 +513,13 @@ export function AdminPanel({
                             <tr key={`${e.id}-d`} className="detail">
                               <td colSpan={6}>
                                 <b>Full description:</b> {e.description ?? "—"}
+                                {(e.customer || e.po_number || e.job_name) && (
+                                  <div style={{ marginTop: 4 }}>
+                                    {e.customer ? <><b>Customer:</b> {e.customer} </> : null}
+                                    {e.po_number ? <> · <b>P.O.:</b> {e.po_number}</> : null}
+                                    {e.job_name ? <> · <b>Job:</b> {e.job_name}</> : null}
+                                  </div>
+                                )}
                                 <div style={{ marginTop: 6, color: "var(--muted)" }}>
                                   Size {e.size || "—"} · Qty {e.qty} · Unit {money(e.unit_price)}
                                   {e.color && e.color !== "—" ? ` · ${e.color}` : ""}

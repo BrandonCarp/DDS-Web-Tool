@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { CustomerJobFields } from "@/components/CustomerJobFields";
 import type { LockKey, Quote, SpringKey, TrackKey, WindowStyle } from "@/lib/pricing/types";
 import { MARGINS, COLORS, COLLECTIONS } from "@/lib/pricing/data/catalog-meta";
 import { dataKey, modelSort } from "@/lib/pricing/model-groups";
@@ -73,6 +74,9 @@ export function ResidentialTool({ models }: { models: string[] }) {
   const [track, setTrack] = useState<TrackKey>("r12");
   const [lock, setLock] = useState<LockKey>("none");
   const [qty, setQty] = useState(1);
+  const [custName, setCustName] = useState("");
+  const [custPo, setCustPo] = useState("");
+  const [custJob, setCustJob] = useState("");
 
   const [soPrice, setSoPrice] = useState("");
   const [soKind, setSoKind] = useState<"door" | "section">("door");
@@ -148,6 +152,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
             body: JSON.stringify({
               model, size: sectionWidthLabel(activeSecWidth), color, unitPrice: q.unitPrice,
               qty: n, total: q.unitPrice * n, description: q.description, quoteType: "residential",
+              customer: custName, poNumber: custPo, jobName: custJob,
             }),
           }).then(() => setSaved(true)).catch(() => {});
         }
@@ -185,6 +190,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
             quoteType: "residential",
             model, size: `${widthFt || "—"}'${widthIn || "0"}" x ${heightFt || "—"}'${heightIn || "0"}"`,
             style, color, unitPrice: q.unitPrice, qty: n, total: q.unitPrice * n, description: q.description,
+            customer: custName, poNumber: custPo, jobName: custJob,
           }),
         }).then(() => setSaved(true)).catch(() => {/* ignore */});
       }
@@ -193,7 +199,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
       setResult(null);
       setResultSig(cfgSig);
     }
-  }, [model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, activeDesign, qty, cfgSig, sizeComplete, sections, secKind, secHeight, activeSecWidth, secGlass, secLock]);
+  }, [model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, activeDesign, qty, cfgSig, sizeComplete, sections, secKind, secHeight, activeSecWidth, secGlass, secLock, custName, custPo, custJob]);
 
   function onSeries(c: string) {
     setColl(c);
@@ -537,6 +543,11 @@ export function ResidentialTool({ models }: { models: string[] }) {
                   );
                 })}
               </div>
+              <CustomerJobFields
+                customer={custName} setCustomer={setCustName}
+                po={custPo} setPo={setCustPo}
+                job={custJob} setJob={setCustJob}
+              />
               <div className="qtyrow">
                 <label htmlFor="qty">Quantity</label>
                 <input id="qty" type="number" min={1} value={qty} onChange={(e) => setQty(Number(e.target.value))} />

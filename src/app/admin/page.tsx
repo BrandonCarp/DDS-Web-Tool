@@ -34,17 +34,27 @@ export default async function AdminPage() {
       /* table not migrated yet */
     }
   }
-  // last-31-days set powers the charts; the table shows the latest 100
-  const monthEstimates = await query<AdminEstimate>(
-    `select id, username, model, size, style, color, unit_price, qty, total, description, quote_type, created_at
-       from estimates
-      where created_at > now() - interval '31 days'
-      order by created_at desc`,
-  );
-  const estimates = await query<AdminEstimate>(
-    `select id, username, model, size, style, color, unit_price, qty, total, description, quote_type, created_at
-       from estimates order by created_at desc limit 100`,
-  );
+  // last-31-days set powers the charts; the table shows the latest 100.
+  // customer/po/job columns exist after the customers migration — fall back if not.
+  const baseCols = "id, username, model, size, style, color, unit_price, qty, total, description, quote_type, created_at";
+  let monthEstimates: AdminEstimate[];
+  let estimates: AdminEstimate[];
+  try {
+    monthEstimates = await query<AdminEstimate>(
+      `select ${baseCols}, customer, po_number, job_name from estimates
+        where created_at > now() - interval '31 days' order by created_at desc`,
+    );
+    estimates = await query<AdminEstimate>(
+      `select ${baseCols}, customer, po_number, job_name from estimates order by created_at desc limit 100`,
+    );
+  } catch {
+    monthEstimates = await query<AdminEstimate>(
+      `select ${baseCols} from estimates where created_at > now() - interval '31 days' order by created_at desc`,
+    );
+    estimates = await query<AdminEstimate>(
+      `select ${baseCols} from estimates order by created_at desc limit 100`,
+    );
+  }
   return (
     <div className="tool-shell admin-page">
       <AdminPanel
