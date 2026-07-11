@@ -49,7 +49,7 @@ html, body { margin: 0; padding: 0; }
   .tool-shell .top .right{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:12px;color:#d9b9bb;letter-spacing:.4px;text-align:center}
 
   .tool-shell .wrap{max-width:1560px;margin:14px auto;padding:0 22px;display:grid;grid-template-columns:minmax(0,61fr) minmax(0,22fr) minmax(0,17fr);grid-template-areas:"config quote special";gap:18px;align-items:start}
-  .tool-shell .wrap.two{max-width:1560px;grid-template-columns:minmax(0,1fr) 400px;grid-template-areas:"config quote"}
+  .tool-shell .wrap.two{max-width:1300px;grid-template-columns:minmax(0,1fr) 360px;grid-template-areas:"config quote"}
   .tool-shell .config-col{grid-area:config}
   .tool-shell .quote{grid-area:quote}
   .tool-shell .special-col{grid-area:special}
@@ -192,12 +192,49 @@ html, body { margin: 0; padding: 0; }
   }
 
   @media print{
-    .tool-shell .top,.tool-shell .qfoot,.tool-shell .sobox,.tool-shell .no-print{display:none!important}
+    .tool-shell .top,.tool-shell .qfoot,.tool-shell .sobox,.tool-shell .no-print,.tool-shell .custbar-outer{display:none!important}
     .tool-shell{background:#fff}.tool-shell .wrap{display:block;max-width:none;margin:0;padding:0}
     .tool-shell .panel{box-shadow:none;border:0}.tool-shell .config-col{display:none}.tool-shell .quote{position:static}
     .tool-shell .qhead{background:#fff;color:#000;border-bottom:2px solid var(--brand)}
     .tool-shell .qhead .ql,.tool-shell .qhead .qsub{color:#555}
+    /* QuickBooks-replica estimate sheet: if present, it IS the printout */
+    .tool-shell:has(.estsheet) .wrap{display:none!important}
+    .tool-shell .estsheet{display:block!important}
   }
+  @page{margin:14mm}
+
+  /* ---- QB estimate replica (matched to a real printed estimate) ---- */
+  .tool-shell .estsheet{display:none;font-family:Arial,Helvetica,sans-serif;color:#000;font-size:9pt;line-height:1.3;text-transform:none;max-width:7.5in;margin:0 auto}
+  .tool-shell .estsheet .r{text-align:right}
+  .tool-shell .estsheet table{border-collapse:collapse}
+  .tool-shell .estsheet .es-top{display:flex;justify-content:space-between;align-items:flex-start}
+  .tool-shell .estsheet .es-co{font-size:9pt;line-height:1.45;padding-top:2pt}
+  .tool-shell .estsheet .es-head{text-align:right}
+  .tool-shell .estsheet .es-head h1{font-size:21pt;font-weight:400;margin:0 0 10pt;letter-spacing:.3pt}
+  .tool-shell .estsheet .es-meta th{border:1px solid #000;font-size:7pt;font-weight:400;padding:1pt 6pt;text-align:center}
+  .tool-shell .estsheet .es-meta td{border:1px solid #000;font-size:8.5pt;padding:2pt 6pt;text-align:center;min-width:72pt}
+  .tool-shell .estsheet .es-addr{display:flex;gap:22pt;margin:16pt 0 0;max-width:5.4in}
+  .tool-shell .estsheet .es-addrcol{flex:1}
+  .tool-shell .estsheet .es-boxlbl{font-size:7pt;padding:0 0 2pt 1pt}
+  .tool-shell .estsheet .es-box{border:1px solid #000;min-height:74pt;padding:3pt 6pt;font-size:8.5pt;line-height:1.45}
+  .tool-shell .estsheet .es-porow{display:flex;justify-content:flex-end;margin:12pt 0 8pt}
+  .tool-shell .estsheet .es-meta3 th{min-width:0}
+  .tool-shell .estsheet .es-meta3 td{min-width:0}
+  .tool-shell .estsheet .es-meta3 th:nth-child(1),.tool-shell .estsheet .es-meta3 td:nth-child(1){width:100pt}
+  .tool-shell .estsheet .es-meta3 th:nth-child(2),.tool-shell .estsheet .es-meta3 td:nth-child(2){width:56pt}
+  .tool-shell .estsheet .es-meta3 th:nth-child(3),.tool-shell .estsheet .es-meta3 td:nth-child(3){width:130pt}
+  .tool-shell .estsheet .es-lines{width:100%}
+  .tool-shell .estsheet .es-lines th{border:1px solid #000;font-size:7pt;font-weight:400;padding:2pt 5pt;text-align:left}
+  .tool-shell .estsheet .es-lines th.r,.tool-shell .estsheet .es-lines td.r{text-align:right}
+  .tool-shell .estsheet .es-lines td{border-left:1px solid #000;border-right:1px solid #000;padding:5pt 5pt 2pt;vertical-align:top;font-size:8.5pt;line-height:1.4}
+  .tool-shell .estsheet .es-lines .es-fill td{height:300pt;border-bottom:1px solid #000}
+  .tool-shell .estsheet .es-bottom{display:flex;justify-content:space-between;align-items:flex-end;margin-top:10pt}
+  .tool-shell .estsheet .es-terms{font-size:7.5pt}
+  .tool-shell .estsheet .es-terms p{margin:2pt 0}
+  .tool-shell .estsheet .es-sig{margin-top:12pt!important}
+  .tool-shell .estsheet .es-tot td{padding:2pt 0 2pt 26pt;font-size:9pt}
+  .tool-shell .estsheet .es-tot .es-grand td{font-weight:700;font-size:10.5pt;padding-top:5pt}
+  .tool-shell .estsheet .es-ph{margin-top:16pt;font-size:8.5pt;line-height:1.6}
 
   /* Clopay-style residential configurator */
   .tool-shell .respanel{padding:16px}

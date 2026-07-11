@@ -11,20 +11,23 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 
 type CustomerJob = {
   custName: string; setCustName: (v: string) => void;
+  custBill: string; setCustBill: (v: string) => void;
   custPo: string; setCustPo: (v: string) => void;
   custJob: string; setCustJob: (v: string) => void;
 };
 const noop = () => {};
 const Ctx = createContext<CustomerJob>({
-  custName: "", setCustName: noop, custPo: "", setCustPo: noop, custJob: "", setCustJob: noop,
+  custName: "", setCustName: noop, custBill: "", setCustBill: noop,
+  custPo: "", setCustPo: noop, custJob: "", setCustJob: noop,
 });
 
 export function CustomerJobProvider({ children }: { children: ReactNode }) {
   const [custName, setCustName] = useState("");
+  const [custBill, setCustBill] = useState("");
   const [custPo, setCustPo] = useState("");
   const [custJob, setCustJob] = useState("");
   return (
-    <Ctx.Provider value={{ custName, setCustName, custPo, setCustPo, custJob, setCustJob }}>
+    <Ctx.Provider value={{ custName, setCustName, custBill, setCustBill, custPo, setCustPo, custJob, setCustJob }}>
       {children}
     </Ctx.Provider>
   );
@@ -47,10 +50,10 @@ export function CustomerGate({ children }: { children: ReactNode }) {
   );
 }
 
-type Hit = { qb_name: string; company: string | null; phone: string | null };
+type Hit = { qb_name: string; company: string | null; phone: string | null; bill_to: string | null };
 
 export function CustomerBar() {
-  const { custName, setCustName, custPo, setCustPo, custJob, setCustJob } = useCustomerJob();
+  const { custName, setCustName, setCustBill, custPo, setCustPo, custJob, setCustJob } = useCustomerJob();
   const [draft, setDraft] = useState(custName);
   const [hits, setHits] = useState<Hit[]>([]);
   const [open, setOpen] = useState(false);
@@ -79,6 +82,7 @@ export function CustomerBar() {
     picked.current = true;
     setDraft(h.qb_name);
     setCustName(h.qb_name);
+    setCustBill(h.bill_to ?? "");
     setOpen(false);
   };
 
@@ -93,7 +97,7 @@ export function CustomerBar() {
             placeholder="Select a customer…"
             autoComplete="off"
             value={draft}
-            onChange={(e) => { setDraft(e.target.value); setCustName(""); }}
+            onChange={(e) => { setDraft(e.target.value); setCustName(""); setCustBill(""); }}
             onFocus={() => void search(draft)}
             onBlur={() => setTimeout(() => {
               setOpen(false);

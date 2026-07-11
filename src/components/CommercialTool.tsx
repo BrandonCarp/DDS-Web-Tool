@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { QbExportButton } from "@/components/QbExportButton";
+import { EstimateSheet } from "@/components/EstimateSheet";
+import { QB_ITEMS } from "@/lib/qb/iif";
 import { useCustomerJob } from "@/components/CustomerJobFields";
 import {
   COMM_COMPLETE, COMM_MATRIX_SIZES,
@@ -42,7 +43,6 @@ export function CommercialTool() {
   const [resultSig, setResultSig] = useState("");
   const [errorRaw, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
-  const [copied, setCopied] = useState(false);
 
   const canComplete = COMM_COMPLETE.has(model);
   const hasRate = SLAB_RATE[model] != null;
@@ -74,7 +74,7 @@ export function CommercialTool() {
     setSize(""); setGlass("solid"); setTrack("15R"); setMount("continuous"); setCspring("torsion"); setClock("none");
     setManFt(""); setManIn("0");
     setSecKind("bt"); setSecHeight("21"); setWindows("0"); setStile("none");
-    setQty(1); setResult(null); setError(null); setSaved(false); setCopied(false);
+    setQty(1); setResult(null); setError(null); setSaved(false);
   }
   function onBack() { resetConfig(); setStep(1); }
 
@@ -112,12 +112,6 @@ export function CommercialTool() {
     }
   }, [order, mfr, model, size, glass, track, mount, cspring, clock, manFt, manIn, secKind, secHeight, windows, stile, qty, cfgSig, custName, custPo, custJob]);
 
-  function copyDesc() {
-    if (!result?.description) return;
-    navigator.clipboard.writeText(result.description.toUpperCase()).then(() => {
-      setCopied(true); setTimeout(() => setCopied(false), 1400);
-    });
-  }
 
   // ---------------- STEP 1 ----------------
   if (step === 1) {
@@ -163,6 +157,7 @@ export function CommercialTool() {
 
   // ---------------- STEP 2 ----------------
   return (
+    <>
     <div className="wrap two">
       <section className="config-col">
         <div className="panel">
@@ -380,12 +375,6 @@ export function CommercialTool() {
                 <div className="descbox no-print">
                   <div className="desclbl">Door description</div>
                   <div className="desctext">{result.description.toUpperCase()}</div>
-                  <button className={`btn copybtn ${copied ? "ok" : ""}`} type="button" onClick={copyDesc}>
-                    {copied ? "Copied ✓" : "Copy description"}
-                  </button>
-                  {result.priced && (
-                    <QbExportButton quoteType="commercial" description={result.description} qty={Math.max(1, qty)} rate={result.unitPrice} />
-                  )}
                 </div>
               )}
               <div className="qfoot">
@@ -398,5 +387,9 @@ export function CommercialTool() {
         </div>
       </aside>
     </div>
+    {result?.priced && (
+      <EstimateSheet lines={[{ item: QB_ITEMS.commercial, desc: result.description ?? "", qty: Math.max(1, qty), rate: result.unitPrice }]} />
+    )}
+    </>
   );
 }

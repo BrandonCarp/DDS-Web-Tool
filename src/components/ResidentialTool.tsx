@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { QbExportButton } from "@/components/QbExportButton";
+import { EstimateSheet } from "@/components/EstimateSheet";
+import { QB_ITEMS } from "@/lib/qb/iif";
 import { useCustomerJob } from "@/components/CustomerJobFields";
 import type { LockKey, Quote, SpringKey, TrackKey, WindowStyle } from "@/lib/pricing/types";
 import { COLORS, COLLECTIONS } from "@/lib/pricing/data/catalog-meta";
@@ -81,7 +82,6 @@ export function ResidentialTool({ models }: { models: string[] }) {
   const [resultRaw, setResult] = useState<Quote | null>(null);
   const [resultSig, setResultSig] = useState("");
   const [errorRaw, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
 
   const style = styleFrom(glass, framing);
@@ -229,7 +229,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
     setGlass("solid"); setFraming("plain"); setWindesign("");
     setSpring("extension"); setTrack("r12"); setLock("none");
     setQty(1);
-    setResult(null); setError(null); setCopied(false); setSaved(false);
+    setResult(null); setError(null); setSaved(false);
   }
   function onBack() {
     resetConfig();
@@ -243,11 +243,6 @@ export function ResidentialTool({ models }: { models: string[] }) {
   const description = result?.description ?? "";
 
 
-  function copyDesc() {
-    navigator.clipboard?.writeText(description.toUpperCase());
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1600);
-  }
   function clearAll() {
     setWidthFt(""); setWidthIn("0"); setHeightFt(""); setHeightIn("0");
     setAssembly("complete"); setSecKind("bt"); setSecHeight("18"); setSecWidth(""); setSecGlass("solid"); setSecLock("none");
@@ -313,7 +308,8 @@ export function ResidentialTool({ models }: { models: string[] }) {
 
   // ---------------- STEP 2: CONFIGURE ----------------
   return (
-    <div className="wrap">
+    <>
+    <div className="wrap two">
       <section className="config-col">
         <div className="panel">
           <div className="respanel">
@@ -546,10 +542,6 @@ export function ResidentialTool({ models }: { models: string[] }) {
               <div className="descbox no-print">
                 <div className="desclbl">Door description</div>
                 <div className="desctext">{description.toUpperCase()}</div>
-                <button className={`btn copybtn ${copied ? "ok" : ""}`} type="button" onClick={copyDesc}>
-                  {copied ? "Copied ✓" : "Copy description"}
-                </button>
-                <QbExportButton quoteType="residential" description={description} qty={Math.max(1, qty)} rate={unit} />
               </div>
               <div className="qfoot">
                 <button className="btn" type="button" onClick={clearAll}>Clear</button>
@@ -567,5 +559,9 @@ export function ResidentialTool({ models }: { models: string[] }) {
       </aside>
 
     </div>
+    {priced && (
+      <EstimateSheet lines={[{ item: QB_ITEMS.residential, desc: description, qty: Math.max(1, qty), rate: unit }]} />
+    )}
+    </>
   );
 }
