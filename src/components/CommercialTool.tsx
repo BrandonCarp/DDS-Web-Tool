@@ -89,6 +89,7 @@ export function CommercialTool() {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
       });
       const data = (await res.json()) as CommQuote & { error?: string };
+      if (res.status === 401) { window.location.assign("/login"); return; }
       if (!res.ok) throw new Error(data.error ?? "Request failed");
       setResult(data); setResultSig(cfgSig);
       if (data.incomplete) { setError(data.incomplete); return; }

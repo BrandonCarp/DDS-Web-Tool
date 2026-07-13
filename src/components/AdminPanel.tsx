@@ -284,6 +284,7 @@ export function AdminPanel({
         body: JSON.stringify(body),
       });
       const d = await r.json().catch(() => ({}));
+      if (r.status === 401) { window.location.assign("/login"); return false; }
       if (!r.ok) throw new Error(d.error ?? "Request failed");
       router.refresh();
       return true;
@@ -311,6 +312,7 @@ export function AdminPanel({
         body: JSON.stringify(body),
       });
       const d = await r.json().catch(() => ({}));
+      if (r.status === 401) { window.location.assign("/login"); return false; }
       if (!r.ok) throw new Error(d.error ?? "Request failed");
       router.refresh();
       return true;

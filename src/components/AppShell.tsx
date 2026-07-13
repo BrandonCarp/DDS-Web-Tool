@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ResidentialTool } from "./ResidentialTool";
 import { CommercialTool } from "./CommercialTool";
 import { SpecialTool } from "./SpecialTool";
@@ -33,6 +33,19 @@ function Shell({
   user: { username: string; role: string };
 }) {
   const [mode, setMode] = useState<string>("residential");
+  // Idle watcher: 20 minutes with no interaction -> log out and land on the
+  // login screen. The SERVER enforces the same window on the session itself;
+  // this just makes the logout visible instead of surprising the next click.
+  useEffect(() => {
+    const IDLE_MS = 20 * 60 * 1000; // keep in sync with IDLE_MS in lib/auth.ts
+    let t: ReturnType<typeof setTimeout>;
+    const kick = () => window.location.assign("/api/logout");
+    const reset = () => { clearTimeout(t); t = setTimeout(kick, IDLE_MS); };
+    const evs = ["pointerdown", "keydown", "wheel", "touchstart"] as const;
+    evs.forEach((e) => window.addEventListener(e, reset, { passive: true }));
+    reset();
+    return () => { clearTimeout(t); evs.forEach((e) => window.removeEventListener(e, reset)); };
+  }, []);
   const { setCustName, setCustPo, setCustJob } = useCustomerJob();
   // Switching tabs starts a fresh quote session: the customer must be
   // re-selected before the new tab's tool unlocks.

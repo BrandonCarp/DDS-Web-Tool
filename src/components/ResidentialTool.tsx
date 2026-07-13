@@ -137,7 +137,8 @@ export function ResidentialTool({ models }: { models: string[] }) {
           }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "Request failed");
+        if (res.status === 401) { window.location.assign("/login"); return; }
+      if (!res.ok) throw new Error(data.error ?? "Request failed");
         const q = data as Quote;
         setResult(q);
         setResultSig(cfgSig);
@@ -181,6 +182,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
         }),
       });
       const data = await res.json();
+      if (res.status === 401) { window.location.assign("/login"); return; }
       if (!res.ok) throw new Error(data.error ?? "Request failed");
       const q = data as Quote;
       setResult(q);
