@@ -44,9 +44,6 @@ export const STOCK_PRICES: Record<string, Record<string, Record<string, PriceTri
       "8": { "solid": 1144.21, "glass": 1417.06, "inserts": 1598.96 },
       "9": { "solid": 1690.73, "glass": 1976.11, "inserts": 2166.35 },
     },
-    "18": {
-      "9": { "solid": 2095.76, "glass": 2381.15, "inserts": 2571.38 },
-    },
   },
   "T52S": {
     "8": {
@@ -77,9 +74,6 @@ export const STOCK_PRICES: Record<string, Record<string, Record<string, PriceTri
       "7": { "solid": 1131.05, "glass": 1386.68, "inserts": 1557.09 },
       "8": { "solid": 1363.31, "glass": 1618.93, "inserts": 1789.35 },
       "9": { "solid": 1980.81, "glass": 2250.12, "inserts": 2429.67 },
-    },
-    "18": {
-      "9": { "solid": 2245.79, "glass": 2515.1, "inserts": 2694.66 },
     },
   },
   "4050-4051-4053": {

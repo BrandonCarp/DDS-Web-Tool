@@ -554,8 +554,8 @@ export function ResidentialTool({ models }: { models: string[] }) {
             </>
           ) : (
             <div className="empty" data-testid="not-priced">
-              <div className="emptymsg">No standard price for that size</div>
-              <div className="muted-note" style={{ marginTop: 6 }}>Handle it in the Special Order tab &rarr;</div>
+              <div className="emptymsg">This size must be entered in the Special Order category</div>
+              <div className="muted-note" style={{ marginTop: 6 }}>Special Order tab &rarr;</div>
             </div>
           )}
         </div>

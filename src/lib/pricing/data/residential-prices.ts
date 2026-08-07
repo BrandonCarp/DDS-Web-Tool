@@ -1,4 +1,9 @@
 // AUTO-GENERATED residential price grid. Do not edit by hand.
+// 18'0" widths for T50S / T52S generated 08/2026 from new_pricing_2026_V2.xlsx (SELL
+// columns). DDS stocks only the 4050 at 18'0", so T50S/T52S 18' live here in the
+// standard tier and read as special order. NOTE: that workbook's T52S 9'0" column is
+// a copy-fill of its 8'0" column for the 8/9/10/16ft widths — only the 18ft rows,
+// entered fresh, were taken from it.
 // 4300-family (4300/4301/4310) tiers 7 & 9 regenerated from the 7/5/2026 odd-size sheets;
 // other models and 4300 tier 8 carried over from the PDF-verified production grid.
 import type { PriceTriple } from "../types";
@@ -223,6 +228,9 @@ export const RESIDENTIAL_PRICES: Record<string, Record<string, PriceTriple>> = {
     "15.6x9": { "solid": 1742.73, "glass": 1998.63, "inserts": 2169.22 },
     "16x9": { "solid": 2121.98, "glass": 2414.43, "inserts": 2609.41 },
     "17x9": { "solid": 2470.02, "glass": 2772.47, "inserts": 2967.45 },
+    "18x7": { "solid": 1223.43, "glass": 1496.28, "inserts": 1678.18 },
+    "18x8": { "solid": 1282.11, "glass": 1554.96, "inserts": 1736.86 },
+    "18x9": { "solid": 2095.76, "glass": 2381.15, "inserts": 2571.38 },
   },
   "T52S": {
     "6x7": { "solid": 760.77, "glass": 827.34, "inserts": 871.73 },
@@ -264,6 +272,9 @@ export const RESIDENTIAL_PRICES: Record<string, Record<string, PriceTriple>> = {
     "15.6x9": { "solid": 1968.93, "glass": 2201.98, "inserts": 2357.34 },
     "16x9": { "solid": 2442.27, "glass": 2708.25, "inserts": 2886.18 },
     "17x9": { "solid": 2564.13, "glass": 2830.46, "inserts": 3008.04 },
+    "18x7": { "solid": 1275.36, "glass": 1530.98, "inserts": 1701.39 },
+    "18x8": { "solid": 1580.45, "glass": 1836.07, "inserts": 2006.49 },
+    "18x9": { "solid": 2245.79, "glass": 2515.1, "inserts": 2694.66 },
   },
   "4050-4051-4053": {
     "6x7": { "solid": 717.17, "glass": 844.84, "inserts": 905.74 },

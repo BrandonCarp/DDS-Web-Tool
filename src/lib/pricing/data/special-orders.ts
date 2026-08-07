@@ -48,6 +48,15 @@ export const SPECIAL: Record<string, SpecialSeries> = {
     },
     "ug_margin": 43
   },
+  "Grand Harbor Collection": {
+    "type": "margin",
+    "models": {
+      "GH": {
+        "door": 41,
+        "section": 43
+      }
+    }
+  },
   "Coachman Collection": {
     "type": "margin",
     "models": {
@@ -142,57 +151,58 @@ export const SPECIAL: Record<string, SpecialSeries> = {
     "type": "margin",
     "models": {
       "4308": {
-        "door": 44,
-        "section": 44
+        "door": 45,
+        "section": 43
       },
       "4305": {
-        "door": 44,
-        "section": 44
+        "door": 45,
+        "section": 43
       },
       "4132": {
-        "door": 44,
-        "section": 44
+        "door": 45,
+        "section": 43
       },
       "4138": {
-        "door": 44,
-        "section": 44
+        "door": 45,
+        "section": 43
       },
       "9132": {
-        "door": 42,
-        "section": 42
+        "door": 45,
+        "section": 43
       },
       "9131": {
-        "door": 42,
-        "section": 42
+        "door": 45,
+        "section": 43
       },
       "9138": {
-        "door": 42,
-        "section": 42
+        "door": 45,
+        "section": 43
       },
       "9139": {
-        "door": 42,
-        "section": 42
+        "door": 45,
+        "section": 43
       },
       "9202": {
-        "door": 42,
-        "section": 42
+        "door": 45,
+        "section": 43
       },
       "9201": {
-        "door": 42,
-        "section": 42
+        "door": 45,
+        "section": 43
       },
       "9208": {
-        "door": 42,
-        "section": 42
+        "door": 45,
+        "section": 43
       },
       "9205": {
-        "door": 42,
-        "section": 42
+        "door": 45,
+        "section": 43
       },
       "9209": {
-        "door": 42,
-        "section": 42
+        "door": 45,
+        "section": 43
       }
+
     }
   }
 };

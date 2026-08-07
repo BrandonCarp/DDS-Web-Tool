@@ -398,6 +398,12 @@ html, body { margin: 0; padding: 0; }
   .tool-shell.admin-page .adm-side { height: calc(100vh / 0.825); }
   .tool-shell.admin-page .adm-main { height: calc(100vh / 0.825); overflow: hidden; display: flex; flex-direction: column; }
   .tool-shell.admin-page .adm-main > .chartcard:last-child { flex: 1; min-height: 140px; display: flex; flex-direction: column; overflow-y: auto; }
+  /* This card is a flex column, so its children shrink by default. On the Users
+     view the "Add a user" .ggroup would collapse toward zero height and — because
+     .ggroup sets overflow:hidden — clip itself out of sight entirely. Let the
+     card's own overflow-y:auto do the scrolling instead of squashing children.
+     .tablescroll below is more specific and keeps its flex:1. */
+  .tool-shell.admin-page .adm-main > .chartcard:last-child > * { flex-shrink: 0; }
   .tool-shell.admin-page .adm-main > .chartcard:last-child .tablescroll { flex: 1; min-height: 0; max-height: none; }
 }
 /* Below 1100px the dashboard stacks into one column, so the one-viewport lock

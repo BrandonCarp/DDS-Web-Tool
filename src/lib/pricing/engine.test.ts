@@ -212,11 +212,20 @@ describe("2026 workbook authority (V2 stock + strict 9FT book)", () => {
   it("9-ft-high exact sizes use the strict 9FT-book prices", () => {
     expect(priceResidential("4050", dim(12, 0, 9, 0), "solid")).toMatchObject({ price: 1756.51, source: "stock" });
     expect(priceResidential("9130", dim(12, 0, 9, 0), "solid")).toMatchObject({ price: 2064.75, source: "stock" });
-    expect(priceResidential("T52S", dim(18, 0, 9, 0), "inserts")).toMatchObject({ price: 2694.66, source: "stock" });
+    // DDS stocks only the 4050 at 18'0" — T50S/T52S 18' price from the standard
+    //  tier and read as special order (Brandon, 08/2026). Price is unchanged.
+    expect(priceResidential("T52S", dim(18, 0, 9, 0), "inserts")).toMatchObject({ price: 2694.66, source: "standard" });
     expect(priceResidential("4300", dim(8, 0, 9, 0), "solid")).toMatchObject({ price: 1311.74, source: "stock" });
   });
   it("Gallery has no 9-ft prices at all (not stocked or priced 9' tall)", () => {
     expect(priceResidential("GD1LP", dim(8, 0, 9, 0), "solid").source).toBe("none");
+  });
+  it("only the 4050 family is stocked at 18' — T50S/T52S are special order", () => {
+    for (const h of [7, 8, 9]) {
+      expect(priceResidential("T50S", dim(18, 0, h, 0), "solid").source).toBe("standard");
+      expect(priceResidential("T52S", dim(18, 0, h, 0), "solid").source).toBe("standard");
+      expect(priceResidential("4050", dim(18, 0, h, 0), "solid").source).toBe("stock");
+    }
   });
 });
 
