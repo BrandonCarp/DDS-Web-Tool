@@ -8,6 +8,7 @@ import { useCustomerJob } from "@/components/CustomerJobFields";
 import {
   COMM_COMPLETE, COMM_MATRIX_SIZES,
   SLAB_RATE, SLAB_LABEL, commMfrs, commModelsFor, maxWindows, roundedFeet,
+  SECTION_MAX_WIDTH_IN, maxWidthLabel, sectionColors,
 } from "@/lib/pricing/data/commercial-meta";
 
 interface CommQuote {
@@ -58,6 +59,13 @@ export function CommercialTool() {
     return roundedFeet(ft, inch);
   }, [order, manFt, manIn]);
   const mx = rFeet ? maxWindows(rFeet) : 0;
+
+  // Widest section this model may be ordered in, for the input hint and the
+  // number field's max. quoteCommercial() enforces it regardless.
+  const colorOpts = sectionColors(model);
+  const maxIn = SECTION_MAX_WIDTH_IN[model] ?? null;
+  const maxFt = maxIn != null ? Math.floor(maxIn / 12) : null;
+  const overMax = maxIn != null && manFt !== "" && (Number(manFt) * 12 + (Number(manIn) || 0)) > maxIn;
 
   const cfgSig = JSON.stringify([mfr, model, order, size, glass, track, mount, cspring, clock, manFt, manIn, secKind, secHeight, windows, stile, secColor]);
   const result = resultRaw && resultSig === cfgSig ? resultRaw : null;
@@ -219,11 +227,17 @@ export function CommercialTool() {
                       <label>Door width</label>
                       <div className="ctl dimstack">
                         <div className="dimrow">
-                          <input data-testid="comm-width-ft" type="number" min={0} placeholder="ft" value={manFt} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setManFt(v); }} />
+                          <input data-testid="comm-width-ft" type="number" min={0} max={maxFt ?? undefined} placeholder="ft" value={manFt} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setManFt(v); }} />
                           <span className="u">ft</span>
-                          <input data-testid="comm-width-in" type="number" min={0} value={manIn} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setManIn(v); }} />
+                          {/* Inches are inches. The engine re-checks this — the browser is not the gate. */}
+                          <input data-testid="comm-width-in" type="number" min={0} max={11} value={manIn} onChange={(e) => { const v = e.target.value; if (v === "" || (Number(v) >= 0 && Number(v) <= 11)) setManIn(v); }} />
                           <span className="u">in</span>
                         </div>
+                        {maxIn != null && (
+                          <div className={overMax ? "note warn" : "muted-note"} style={{ marginTop: 6 }} data-testid="comm-width-limit">
+                            {overMax ? `Too wide — ${model} sections go up to ${maxWidthLabel(maxIn)}` : `Up to ${maxWidthLabel(maxIn)}`}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </>
@@ -319,9 +333,8 @@ export function CommercialTool() {
                     <div className="grow">
                       <label>Color</label>
                       <div className="ctl selectwrap">
-                        <select data-testid="comm-color" value={secColor} onChange={(e) => setSecColor(e.target.value as "White" | "Brown")}>
-                          <option value="White">White</option>
-                          <option value="Brown">Brown</option>
+                        <select data-testid="comm-color" value={secColor} onChange={(e) => setSecColor(e.target.value as "White" | "Brown")} disabled={colorOpts.length === 1}>
+                          {colorOpts.map((c) => <option key={c} value={c}>{c}</option>)}
                         </select>
                       </div>
                     </div>

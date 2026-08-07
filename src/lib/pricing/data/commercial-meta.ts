@@ -207,3 +207,51 @@ export function commModelsFor(mfr: string): string[] {
 }
 export function maxWindows(ft: number): number { if (ft <= 9) return 2; if (ft <= 13) return 3; if (ft <= 16) return 4; return 5; }
 export function roundedFeet(ft: number, inch: number): number { return ft + (inch >= 5 ? 1 : 0); }
+
+/**
+ * Widest section DDS will quote, per model, as total inches.
+ *
+ * These are ordering limits, not price-book gaps — the per-foot models would
+ * happily multiply out to any width, which is how an 8′20″ section slipped
+ * through. Confirmed by Brandon 08/2026.
+ *
+ * Models absent from this table are NOT capped: 2742 (Amarr) and Clopay
+ * 3150 / 3717 / 3200 were not specified.
+ */
+export const SECTION_MAX_WIDTH_IN: Record<string, number> = {
+  "524": 28 * 12, "524V": 28 * 12, "524S": 28 * 12,
+  "3720": 28 * 12,
+  "TS125": 18 * 12 + 4,
+  "TS150": 26 * 12,
+  "TS200": 28 * 12,
+  "591": 28 * 12, "592": 28 * 12, "593": 28 * 12,
+  "2415": 28 * 12, "2415V": 28 * 12, "2415S": 28 * 12,
+};
+
+/** Human label for a max width, e.g. 220 -> `18′4″`. */
+export function maxWidthLabel(totalIn: number): string {
+  const ft = Math.floor(totalIn / 12), inch = totalIn % 12;
+  return `${ft}′${inch ? inch + "″" : "0″"}`;
+}
+
+/**
+ * Colours each section model is actually offered in, from the DDS section
+ * availability table (08/2026). Same price either way — this governs what the
+ * counter may pick and what lands in the description, not cost.
+ *
+ * T125 and T200 are WHITE ONLY. 591/592/593/2415 are listed WH/CB, treated as
+ * White/Brown here. Models absent from this table fall back to White + Brown.
+ */
+export const SECTION_COLORS: Record<string, ("White" | "Brown")[]> = {
+  "524": ["White", "Brown"], "524V": ["White", "Brown"], "524S": ["White", "Brown"],
+  "3720": ["White", "Brown"],
+  "TS125": ["White"],
+  "TS150": ["White", "Brown"],
+  "TS200": ["White"],
+  "591": ["White", "Brown"], "592": ["White", "Brown"], "593": ["White", "Brown"],
+  "2415": ["White", "Brown"], "2415V": ["White", "Brown"], "2415S": ["White", "Brown"],
+};
+
+export function sectionColors(model: string): ("White" | "Brown")[] {
+  return SECTION_COLORS[model] ?? ["White", "Brown"];
+}

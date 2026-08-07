@@ -137,3 +137,67 @@ describe("doors taller than 9'0\" are not priced", () => {
     }
   });
 });
+
+describe("commercial section width limits", () => {
+  const sec = (model: string, ft: number, inch: number) =>
+    quoteCommercial({ order: "section", mfr: "x", model, secHeight: "24",
+      manFt: ft, manIn: inch, secKind: "bt", stile: "single", color: "White" } as never);
+
+  it("rejects inches outside 0-11 — an 8'20\" section used to price", () => {
+    expect(sec("TS150", 8, 20).priced).toBe(false);
+    expect(sec("TS150", 8, 20).incomplete).toMatch(/0-11/);
+    expect(sec("TS150", 8, 12).priced).toBe(false);
+    expect(sec("TS150", 8, 11).priced).toBe(true);
+  });
+
+  it("holds each model to its own maximum width", () => {
+    const cases: [string, number, number][] = [
+      ["TS125", 18, 4], ["TS150", 26, 0], ["TS200", 28, 0],
+      ["524", 28, 0], ["524V", 28, 0], ["524S", 28, 0],
+      ["591", 28, 0], ["592", 28, 0], ["593", 28, 0],
+      ["2415", 28, 0], ["2415V", 28, 0], ["2415S", 28, 0],
+    ];
+    for (const [model, ft, inch] of cases) {
+      expect(sec(model, ft, inch).priced).toBe(true);          // at the limit: fine
+      expect(sec(model, ft, inch + 1).priced).toBe(false);     // one inch over: blocked
+    }
+  });
+
+  it("TS125 stops well before the others", () => {
+    expect(sec("TS125", 20, 0).priced).toBe(false);
+    expect(sec("TS200", 20, 0).priced).toBe(true);
+  });
+
+  it("names the limit so the counter knows why", () => {
+    expect(sec("TS125", 19, 0).incomplete).toContain("18′4″");
+  });
+});
+
+describe("section colour availability", () => {
+  const sec = (model: string, color: string) =>
+    quoteCommercial({ order: "section", mfr: "x", model, secHeight: "24",
+      manFt: 10, manIn: 0, secKind: "bt", stile: "single", color } as never);
+
+  it("TS125 and TS200 are white only", () => {
+    for (const m of ["TS125", "TS200"]) {
+      expect(sec(m, "White").priced).toBe(true);
+      expect(sec(m, "Brown").priced).toBe(false);
+      expect(sec(m, "Brown").incomplete).toMatch(/White only/);
+    }
+  });
+
+  it("the models the table lists in brown still take brown", () => {
+    for (const m of ["524", "3720", "TS150", "591", "592", "593", "2415"]) {
+      expect(sec(m, "Brown").priced).toBe(true);
+    }
+  });
+
+  it("brown and white cost the same where both are offered", () => {
+    expect(sec("TS150", "Brown").unitPrice).toBe(sec("TS150", "White").unitPrice);
+  });
+
+  it("colour reaches the description", () => {
+    expect(sec("TS150", "Brown").description).toContain("in the color Brown");
+    expect(sec("TS200", "White").description).toContain("in the color White");
+  });
+});

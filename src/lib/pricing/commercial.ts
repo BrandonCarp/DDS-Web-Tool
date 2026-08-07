@@ -2,7 +2,7 @@
 // commStockCheck() + the complete-door description builder. Server-side only.
 
 import { COMM_MATRIX, COMM_SECTIONS, COMM_SLAB, STOCK_COMM, GRADE_COMM } from "./data/commercial";
-import { COMM_COMPLETE, maxWindows, roundedFeet } from "./data/commercial-meta";
+import { COMM_COMPLETE, maxWindows, roundedFeet, SECTION_MAX_WIDTH_IN, maxWidthLabel, sectionColors } from "./data/commercial-meta";
 
 export interface CommQuoteLine { name: string; value: number; kind: "base" | "add" | "minus" }
 export interface CommQuote {
@@ -103,6 +103,18 @@ export function quoteCommercial(input: CommInput): CommQuote {
   const ft = Math.trunc(Number(input.manFt));
   const inch = Math.trunc(Number(input.manIn)) || 0;
   if (!Number.isFinite(ft) || ft <= 0) return { ...base, incomplete: "Enter the door width" };
+  // Inches are inches: 0-11. An 8′20″ section used to price happily.
+  if (inch < 0 || inch > 11) return { ...base, incomplete: "Inches must be 0-11" };
+  // T125 and T200 are white only; picking Brown there is an ordering error.
+  const allowed = sectionColors(model);
+  const wantColor = input.color === "Brown" ? "Brown" : "White";
+  if (!allowed.includes(wantColor)) {
+    return { ...base, incomplete: `${model} sections are ${allowed.join(" / ")} only` };
+  }
+  const maxIn = SECTION_MAX_WIDTH_IN[model];
+  if (maxIn != null && ft * 12 + inch > maxIn) {
+    return { ...base, incomplete: `${model} sections go up to ${maxWidthLabel(maxIn)}` };
+  }
   const widthLabel = `${ft}′${inch ? inch + "″" : ""}`;
   const rFeet = roundedFeet(ft, inch);
   const kindNm = input.secKind === "bt" ? "Bottom" : "Intermediate";
