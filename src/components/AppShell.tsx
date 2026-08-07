@@ -5,7 +5,7 @@ import { ResidentialTool } from "./ResidentialTool";
 import { CommercialTool } from "./CommercialTool";
 import { SpecialTool } from "./SpecialTool";
 import { TorsionTool } from "./TorsionTool";
-import { CustomerJobProvider, CustomerBar, CustomerGate, useCustomerJob } from "./CustomerJobFields";
+import { CustomerJobProvider, useCustomerJob } from "./CustomerJobFields";
 
 const BASE_TABS = [
   { id: "residential", label: "Residential" },
@@ -51,9 +51,11 @@ function Shell({
   }, []);
   const isMaster = user.role === "admin";
   const tabs = isMaster ? [...BASE_TABS, INVENTORY_TAB] : BASE_TABS;
+  // Customer / P.O. / Job name is SHELVED for now — the bar and the
+  // selection gate are removed, so quoting is immediate again. The provider
+  // stays mounted so the tools keep compiling and simply save blank
+  // customer fields; restoring the feature is two JSX lines below.
   const { setCustName, setCustPo, setCustJob } = useCustomerJob();
-  // Switching tabs starts a fresh quote session: the customer must be
-  // re-selected before the new tab's tool unlocks.
   const pickTab = (id: string) => {
     setMode(id);
     setCustName(""); setCustPo(""); setCustJob("");
@@ -82,22 +84,19 @@ function Shell({
           {user.username} · <a href="/api/logout" style={{ color: "#fff" }}>Sign out</a>
         </div>
       </header>
-      <CustomerBar key={mode} />
-      <CustomerGate>
-        {mode === "residential" && <ResidentialTool models={models} />}
-        {mode === "commercial" && <CommercialTool />}
-        {mode === "special" && <SpecialTool />}
-        {mode === "torsion" && <TorsionTool />}
-        {mode === "inventory" && isMaster && (
-          <div className="wrap"><section className="config-col"><div className="panel" style={{ padding: 40, textAlign: "center" }}>
-            <div className="ghdr" style={{ marginBottom: 12 }}>Inventory — coming soon</div>
-            <div className="muted-note" style={{ textTransform: "none" }}>
-              Stock on hand by model, size and color — built on receiving documents in and daily sales out.
-              This tab is reserved for it and is visible only to you.
-            </div>
-          </div></section></div>
-        )}
-      </CustomerGate>
+      {mode === "residential" && <ResidentialTool models={models} />}
+      {mode === "commercial" && <CommercialTool />}
+      {mode === "special" && <SpecialTool />}
+      {mode === "torsion" && <TorsionTool />}
+      {mode === "inventory" && isMaster && (
+        <div className="wrap"><section className="config-col"><div className="panel" style={{ padding: 40, textAlign: "center" }}>
+          <div className="ghdr" style={{ marginBottom: 12 }}>Inventory — coming soon</div>
+          <div className="muted-note" style={{ textTransform: "none" }}>
+            Stock on hand by model, size and color — built on receiving documents in and daily sales out.
+            This tab is reserved for it and is visible only to you.
+          </div>
+        </div></section></div>
+      )}
     </>
   );
 }
