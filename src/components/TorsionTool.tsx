@@ -22,9 +22,6 @@ export function TorsionTool() {
   const price = wire && Number.isFinite(len) && len > 0 ? torsionPrice(wire, id, len) : null;
 
   const springs = Math.max(0, right) + Math.max(0, left);
-  // Copy price gives the extended total once hands are entered; the bare each
-  // price while both are still 0.
-  const extended = price != null ? price * (springs || 1) : null;
   const description = price != null ? springDescription(wire, id, len, right, left) : "";
 
   // Spring quotes are still recorded — copying now stands in for the old
@@ -76,7 +73,6 @@ export function TorsionTool() {
                 <input data-testid="tor-length" type="text" inputMode="decimal" value={length} onChange={(e) => setLength(e.target.value)} placeholder="e.g. 24.5" />
               </div>
             </div>
-            {id === "6" && <div className="note">6″ ID springs include filler at ${TORSION.filler_per_inch}/inch.</div>}
           </div>
         </div>
       </section>
@@ -96,13 +92,6 @@ export function TorsionTool() {
                 <span className="tl">Spring price (each)</span>
                 <span className="tv" data-testid="tor-price">{fmt(price)}</span>
               </div>
-              {springs > 0 && (
-                <div className="total" style={{ borderTop: 0, paddingTop: 0 }}>
-                  <span className="tl">Total ({springs} spring{springs > 1 ? "s" : ""})</span>
-                  <span className="tv" data-testid="tor-extended">{fmt(price * springs)}</span>
-                </div>
-              )}
-
               <div className="descbox no-print">
                 <div className="desclbl">Spring description</div>
                 <div className="desctext" data-testid="tor-desc">{description}</div>
@@ -127,7 +116,7 @@ export function TorsionTool() {
 
               <div className="qfoot">
                 <button className="btn" type="button" onClick={clear}>Clear</button>
-                <CopyButton text={fmt(extended ?? 0)} label="Copy price" onCopy={record} testId="tor-copy-price" />
+                <CopyButton text={fmt(price)} label="Copy price" onCopy={record} testId="tor-copy-price" />
                 <CopyButton text={description} label="Copy description" primary onCopy={record} testId="tor-copy-desc" />
               </div>
             </>

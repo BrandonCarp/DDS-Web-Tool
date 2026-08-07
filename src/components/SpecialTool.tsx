@@ -10,22 +10,27 @@ const fmt = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigi
 // Ported 1:1 from the production tool's soNumbers():
 //   multiplier series: cost = Clopay list × multiplier, sell = cost / (1 - cost_margin/100)
 //   margin series:     sell = list / (1 - margin/100); Ultra Grain swaps in the UG margin (no $ adder)
-function soNumbers(series: string, model: string, kind: "door" | "section", ug: boolean, priceStr: string) {
+function soNumbers(series: string, model: string, kind: "door" | "section", priceStr: string) {
   const ser = SPECIAL[series];
   const list = parseFloat(priceStr);
   if (!ser || Number.isNaN(list)) return null;
-  let costBasis: number, margin: number, ugSel = false;
+  let costBasis: number, margin: number;
   if (ser.type === "multiplier") {
     costBasis = list * ser.multiplier;
     margin = ser.cost_margin;
   } else {
     const md = ser.models[model];
     if (!md) return null;
+    // FLAT MARGIN. The counter enters the Clopay portal TOTAL (subtotal +
+    // energy surcharge, no MPQ), which already carries any Ultra Grain premium
+    // Clopay charged. So the model's own margin applies and nothing is swapped
+    // in. SPECIAL.ug_margin and SPECIAL.ug (the $216.72 / $433.51 single and
+    // double adders) are left in the data, unused, against a future change of
+    // input basis — they are list-side figures, not sell-side.
     margin = kind === "section" ? md.section : md.door;
-    if (md.ug && ug) { ugSel = true; margin = ser.ug_margin != null ? ser.ug_margin : 43; }
     costBasis = list;
   }
-  return { sell: costBasis / (1 - margin / 100), margin, ugSel };
+  return { sell: costBasis / (1 - margin / 100), margin };
 }
 
 // Commercial special orders: Clopay 3200/524 — 45% margin complete door, 49% sections.
@@ -34,7 +39,7 @@ function soCommercial(mfr: string, kind: "door" | "section", priceStr: string) {
   const list = parseFloat(priceStr);
   if (!cfg || Number.isNaN(list)) return null;
   const margin = kind === "section" ? cfg.section : cfg.door;
-  return { sell: list / (1 - margin / 100), margin, ugSel: false };
+  return { sell: list / (1 - margin / 100), margin };
 }
 
 export function SpecialTool() {
@@ -43,7 +48,6 @@ export function SpecialTool() {
   // residential
   const [series, setSeries] = useState("");
   const [model, setModel] = useState("");
-  const [ug, setUg] = useState(false);
   // commercial
   const [cMfr, setCMfr] = useState("Clopay");
   const [cModel, setCModel] = useState("");
@@ -58,7 +62,7 @@ export function SpecialTool() {
 
   const n =
     scope === "residential"
-      ? series ? soNumbers(series, model, kind, ug, price) : null
+      ? series ? soNumbers(series, model, kind, price) : null
       : cModel ? soCommercial(cMfr, kind, price) : null;
   const total = n ? n.sell * Math.max(1, qty) : 0;
 
@@ -66,14 +70,14 @@ export function SpecialTool() {
     scope === "residential"
       ? ser?.type === "multiplier"
         ? `${series} special order`
-        : `${model} ${kind === "section" ? "sections" : "door"}${n?.ugSel ? ", Ultra Grain" : ""}`
+        : `${model} ${kind === "section" ? "sections" : "door"}`
       : `${cMfr} ${cModel} ${kind === "section" ? "sections" : "complete door"}`;
 
   function pickScope(v: "residential" | "commercial") {
-    setScope(v); setSeries(""); setModel(""); setCModel(""); setKind("door"); setUg(false); setPrice(""); setSaved(false);
+    setScope(v); setSeries(""); setModel(""); setCModel(""); setKind("door"); setPrice(""); setSaved(false);
   }
   function pickSeries(v: string) {
-    setSeries(v); setModel(""); setKind("door"); setUg(false); setPrice(""); setSaved(false);
+    setSeries(v); setModel(""); setKind("door"); setPrice(""); setSaved(false);
   }
 
   async function saveQuote() {
@@ -153,7 +157,7 @@ export function SpecialTool() {
               <div className="step-h"><span className="step-n">2</span><h3>{series} model</h3></div>
               <div className="field"><label className="lbl">Model <span className="req">*</span></label>
                 <div className="selectwrap">
-                  <select data-testid="so-model" value={model} onChange={(e) => { setModel(e.target.value); setUg(false); setSaved(false); }}>
+                  <select data-testid="so-model" value={model} onChange={(e) => { setModel(e.target.value); setSaved(false); }}>
                     <option value="">Select…</option>
                     {Object.keys(ser.models).map((m) => <option key={m} value={m}>{m}{ser.models[m].new ? " (new)" : ""}</option>)}
                   </select>
@@ -168,14 +172,7 @@ export function SpecialTool() {
                         <button type="button" className={`chip ${kind === "section" ? "sel" : ""}`} onClick={() => { setKind("section"); setSaved(false); }}>Sections</button>
                       </div>
                     </div>
-                    {md.ug ? (
-                      <div className="field"><label className="lbl">Finish</label>
-                        <div className="chips">
-                          <button type="button" className={`chip ${!ug ? "sel" : ""}`} onClick={() => { setUg(false); setSaved(false); }}>Standard color</button>
-                          <button type="button" className={`chip ${ug ? "sel" : ""}`} onClick={() => { setUg(true); setSaved(false); }}>Ultra Grain</button>
-                        </div>
-                      </div>
-                    ) : <div />}
+                    <div />
                   </div>
                   <div className="field" style={{ marginTop: 6 }}>
                     <label className="lbl">Enter total = sub total + energy surcharge — do not apply MPQ <span className="req">*</span></label>
