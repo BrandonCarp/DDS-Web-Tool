@@ -14,12 +14,21 @@ import type { Dimensions, PriceResult, PriceTriple, Quote, QuoteOptions, SizeCod
 
 const TIER_7_MAX_IN = 84; // <= 7'0"
 const TIER_8_MAX_IN = 96; // <= 8'0"
+const TIER_9_MAX_IN = 108; // <= 9'0" — the tallest tier the app carries prices for
 
-/** Height (in total inches) -> door height tier. */
-export function tierForHeight(totalInches: number): Tier {
+/**
+ * Height (in total inches) -> door height tier, or null above 9'0".
+ *
+ * The books run to 16' in five more columns (9'3"-10', 10'3"-12', 12'3"-14',
+ * 14'3"-16'), none of which are loaded here. Before this returned "9" for ANY
+ * height, so a 16-ft door quoted silently at the 9-ft price — badly under. Tall
+ * doors now return no price and the tool sends them to Special Order.
+ */
+export function tierForHeight(totalInches: number): Tier | null {
   if (totalInches <= TIER_7_MAX_IN) return "7";
   if (totalInches <= TIER_8_MAX_IN) return "8";
-  return "9";
+  if (totalInches <= TIER_9_MAX_IN) return "9";
+  return null;
 }
 
 /**
@@ -35,6 +44,7 @@ export function resolveSizeCode(model: string, dim: Dimensions): SizeCode | null
   if (Number.isNaN(wf) || Number.isNaN(hf)) return null;
 
   const tier = tierForHeight(hf * 12 + hi);
+  if (tier === null) return null; // taller than 9'0" — no prices loaded, Special Order
   const grid = RESIDENTIAL_PRICES[dataKey(model)] ?? {};
   const widthsForTier = Object.keys(grid)
     .filter((k) => k.endsWith("x" + tier))
@@ -210,7 +220,7 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
   // series are White-only). A stock-size door in a non-stocked color still
   // PRICES from the stock sheet (source stays "stock"), but reads as a special
   // order in the badge and description.
-  const inStock = stock !== null && colorInStock(model, opts.color);
+  const inStock = stock !== null && colorInStock(model, opts.color, size.wf);
   // The stock/special status is NOT in the description — it is shown in the
   // stock badge on screen. The description is copied verbatim into QuickBooks,
   // where the status is a DDS-internal fact, not part of the product line.
