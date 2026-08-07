@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { CopyButton } from "@/components/CopyButton";
 import { useCustomerJob } from "@/components/CustomerJobFields";
-import { TORSION, ID_ORDER, torsionPrice, fmtWire } from "@/lib/pricing/data/torsion";
+import { TORSION, ID_ORDER, torsionPrice, fmtWire, springDescription } from "@/lib/pricing/data/torsion";
 
 const fmt = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -11,28 +12,40 @@ export function TorsionTool() {
   const [id, setId] = useState("2");
   const [wire, setWire] = useState("");
   const [length, setLength] = useState("");
-  const [saved, setSaved] = useState(false);
+  // Hand counts default to 0/0 — the description then reads as the bare spring
+  // spec, with no quantities appended.
+  const [right, setRight] = useState(0);
+  const [left, setLeft] = useState(0);
 
   const wires = TORSION.stock_wires[id] ?? Object.keys(TORSION.ppi).filter((w) => TORSION.ppi[w][id] != null);
   const len = parseFloat(length);
   const price = wire && Number.isFinite(len) && len > 0 ? torsionPrice(wire, id, len) : null;
 
-  function pickId(v: string) { setId(v); setWire(""); setSaved(false); }
+  const springs = Math.max(0, right) + Math.max(0, left);
+  // Copy price gives the extended total once hands are entered; the bare each
+  // price while both are still 0.
+  const extended = price != null ? price * (springs || 1) : null;
+  const description = price != null ? springDescription(wire, id, len, right, left) : "";
 
-  async function saveQuote() {
+  // Spring quotes are still recorded — copying now stands in for the old
+  // "Save quote" button, so the admin dashboard keeps seeing them.
+  async function record() {
     if (price == null) return;
+    const n = springs || 1;
     await fetch("/api/estimates", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         quoteType: "spring",
         model: "Torsion spring", size: `${fmtWire(wire)}″ × ${TORSION.id_labels[id]} × ${len}″`,
         style: null, color: null,
-        unitPrice: price, qty: 1, total: price,
-        description: `Torsion spring cut to size — ${fmtWire(wire)}″ wire, ${TORSION.id_labels[id]}, ${len}″ long`,
-        customer: custName, poNumber: custPo, jobName: custJob,
+        unitPrice: price, qty: n, total: price * n,
+        description, customer: custName, poNumber: custPo, jobName: custJob,
       }),
-    }).then(() => setSaved(true)).catch(() => {/* ignore */});
+    }).catch(() => {/* ignore */});
   }
+
+  function pickId(v: string) { setId(v); setWire(""); }
+  function clear() { setWire(""); setLength(""); setRight(0); setLeft(0); }
 
   return (
     <div className="wrap two">
@@ -53,18 +66,17 @@ export function TorsionTool() {
             <div className="row2">
               <div className="field"><label className="lbl">Wire size <span className="req">*</span></label>
                 <div className="selectwrap">
-                  <select data-testid="tor-wire" value={wire} onChange={(e) => { setWire(e.target.value); setSaved(false); }}>
+                  <select data-testid="tor-wire" value={wire} onChange={(e) => setWire(e.target.value)}>
                     <option value="">Select…</option>
                     {wires.map((w) => <option key={w} value={w}>{fmtWire(w)}″ wire</option>)}
                   </select>
                 </div>
               </div>
               <div className="field"><label className="lbl">Length (inches) <span className="req">*</span></label>
-                <input data-testid="tor-length" type="text" inputMode="decimal" value={length} onChange={(e) => { setLength(e.target.value); setSaved(false); }} placeholder="e.g. 24.5" />
+                <input data-testid="tor-length" type="text" inputMode="decimal" value={length} onChange={(e) => setLength(e.target.value)} placeholder="e.g. 24.5" />
               </div>
             </div>
             {id === "6" && <div className="note">6″ ID springs include filler at ${TORSION.filler_per_inch}/inch.</div>}
-            <div className="note">If a wire size isn&apos;t priced, the next larger priced wire is used automatically. Springs are cut to size in our shop — ready within 2 hours of your call.</div>
           </div>
         </div>
       </section>
@@ -84,15 +96,39 @@ export function TorsionTool() {
                 <span className="tl">Spring price (each)</span>
                 <span className="tv" data-testid="tor-price">{fmt(price)}</span>
               </div>
-              <div className="note" style={{ margin: "0 20px 16px" }}>
-                {fmtWire(wire)}″ wire · {TORSION.id_labels[id]} · {len}″ long
+              {springs > 0 && (
+                <div className="total" style={{ borderTop: 0, paddingTop: 0 }}>
+                  <span className="tl">Total ({springs} spring{springs > 1 ? "s" : ""})</span>
+                  <span className="tv" data-testid="tor-extended">{fmt(price * springs)}</span>
+                </div>
+              )}
+
+              <div className="descbox no-print">
+                <div className="desclbl">Spring description</div>
+                <div className="desctext" data-testid="tor-desc">{description}</div>
               </div>
+
+              <div className="row2" style={{ margin: "0 20px 16px" }}>
+                <div className="field">
+                  <label className="lbl">Right springs (red)</label>
+                  <input
+                    data-testid="tor-right" type="number" min={0} value={right}
+                    onChange={(e) => setRight(Math.max(0, Math.trunc(Number(e.target.value)) || 0))}
+                  />
+                </div>
+                <div className="field">
+                  <label className="lbl">Left springs (black)</label>
+                  <input
+                    data-testid="tor-left" type="number" min={0} value={left}
+                    onChange={(e) => setLeft(Math.max(0, Math.trunc(Number(e.target.value)) || 0))}
+                  />
+                </div>
+              </div>
+
               <div className="qfoot">
-                <button className="btn" type="button" onClick={() => { setWire(""); setLength(""); setSaved(false); }}>Clear</button>
-                {saved
-                  ? <span className="muted-note">Saved to estimates ✓</span>
-                  : <button className="btn" type="button" onClick={saveQuote}>Save quote</button>}
-                <button className="btn primary" type="button" onClick={() => window.print()}>Print</button>
+                <button className="btn" type="button" onClick={clear}>Clear</button>
+                <CopyButton text={fmt(extended ?? 0)} label="Copy price" onCopy={record} testId="tor-copy-price" />
+                <CopyButton text={description} label="Copy description" primary onCopy={record} testId="tor-copy-desc" />
               </div>
             </>
           )}

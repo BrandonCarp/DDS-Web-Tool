@@ -385,22 +385,25 @@ describe("residential replacement sections (2026 V2 workbook SECTIONS blocks)", 
   });
 });
 
-describe("stock vs special-order stated in the quote", () => {
+describe("stock vs special-order is reported on isStock, NOT in the description", () => {
   const opts2 = { style: "solid", color: "White", track: "r12", spring: "extension", lock: "none" } as const;
-  it("stock doors lead with 'Stock door —'", () => {
+  it("a stock door reports isStock and leads with the manufacturer", () => {
     const q = quoteResidential("T50S", { widthFt: 8, widthIn: 0, heightFt: 7, heightIn: 0 }, opts2);
     expect(q.isStock).toBe(true);
-    expect(q.description.startsWith("Stock door — ")).toBe(true);
+    expect(q.description.startsWith("Clopay ")).toBe(true);
+    expect(q.description).not.toContain("Stock door");
   });
-  it("odd/standard-priced doors lead with 'Special order —'", () => {
+  it("an odd/standard-priced door reports !isStock without saying so in the description", () => {
     const q = quoteResidential("T50S", { widthFt: 8, widthIn: 4, heightFt: 7, heightIn: 0 }, opts2);
     expect(q.isStock).toBe(false);
-    expect(q.description.startsWith("Special order — ")).toBe(true);
+    expect(q.description.startsWith("Clopay ")).toBe(true);
+    expect(q.description).not.toContain("Special order");
   });
-  it("sections lead with 'Stock —' and report isStock", () => {
+  it("sections report isStock and lead with the manufacturer", () => {
     const q = quoteResidentialSection("4300", { widthKey: "9", height: "18", kind: "bt", color: "White" });
     expect(q.isStock).toBe(true);
-    expect(q.description.startsWith("Stock — ")).toBe(true);
+    expect(q.description.startsWith("Clopay ")).toBe(true);
+    expect(q.description).not.toContain("Stock");
   });
 });
 
@@ -409,7 +412,7 @@ describe("stock status requires a stocked COLOR, not just a stock size", () => {
   it("chocolate brown T50S at a stock size is a SPECIAL ORDER at the stock price", () => {
     const q = quoteResidential("T50S", { widthFt: 8, widthIn: 0, heightFt: 7, heightIn: 0 }, o("Chocolate Brown"));
     expect(q.isStock).toBe(false);
-    expect(q.description.startsWith("Special order — ")).toBe(true);
+    expect(q.description).not.toContain("Special order");
     expect(q.source).toBe("stock");      // pricing unchanged — still the stock-sheet price
     expect(q.lines[0].value).toBe(560.37);
   });
@@ -421,7 +424,7 @@ describe("stock status requires a stocked COLOR, not just a stock size", () => {
   it("sections follow the same rule", () => {
     const brown = quoteResidentialSection("T50S", { widthKey: "8", height: "18", kind: "bt", color: "Chocolate Brown" });
     expect(brown.isStock).toBe(false);
-    expect(brown.description.startsWith("Special order — ")).toBe(true);
+    expect(brown.description).not.toContain("Special order");
     expect(brown.unitPrice).toBe(167.5); // price unchanged
     const white = quoteResidentialSection("T50S", { widthKey: "8", height: "18", kind: "bt", color: "White" });
     expect(white.isStock).toBe(true);

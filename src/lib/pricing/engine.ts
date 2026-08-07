@@ -211,9 +211,10 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
   // PRICES from the stock sheet (source stays "stock"), but reads as a special
   // order in the badge and description.
   const inStock = stock !== null && colorInStock(model, opts.color);
-  // Lead with the stock status — mirrors the "STOCK DOOR MODEL ..." verbiage on
-  // DDS QuickBooks estimates, and makes the copied description state it plainly.
-  const description = `${inStock ? "Stock door" : "Special order"} — Clopay ${coll ? coll + ", " : ""}Model ${model}, ${dims(size)}, in the color ${opts.color}, ${winTxt}, ${trackTxt}, ${springTxt}, ${lockTxt}`;
+  // The stock/special status is NOT in the description — it is shown in the
+  // stock badge on screen. The description is copied verbatim into QuickBooks,
+  // where the status is a DDS-internal fact, not part of the product line.
+  const description = `Clopay ${coll ? coll + ", " : ""}Model ${model}, ${dims(size)}, in the color ${opts.color}, ${winTxt}, ${trackTxt}, ${springTxt}, ${lockTxt}`;
 
   return {
     model, size, priced: true, isStock: inStock,
@@ -261,7 +262,7 @@ export function quoteResidentialSection(model: string, input: ResSectionInput): 
   const unitPrice = lines.reduce((a, l) => a + (l.kind === "minus" ? -l.value : l.value), 0);
   const secStock = colorInStock(model, input.color || "White");
   const desc =
-    `${secStock ? "Stock" : "Special order"} — Clopay Model ${model}, ${kindNm.toLowerCase()} replacement section` +
+    `Clopay Model ${model}, ${kindNm.toLowerCase()} replacement section` +
     (input.kind === "int" ? (glazed ? " with glass" : ", solid") : "") +
     `, ${input.height}" high, ${widthTxt} wide, in the color ${input.color || "White"}` +
     (lockbar ? ", lockbar installed" : "") +

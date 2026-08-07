@@ -35,6 +35,10 @@ export interface CommSectionInput {
   windows?: number;                   // intermediate sections only
   retainer?: boolean;                 // DEPRECATED — ignored; retainer is always included on bottom sections
   stile?: "none" | "single" | "double"; // per-foot only
+  color?: "White" | "Brown";          // DESCRIPTION ONLY — individual sections come in white or brown
+                                      // at the same price. No colour data exists in the source books;
+                                      // if brown ever carries an upcharge it must come from a parsed
+                                      // sheet, not a hand-typed constant.
 }
 export type CommInput = CommCompleteInput | CommSectionInput;
 
@@ -138,5 +142,25 @@ export function quoteCommercial(input: CommInput): CommQuote {
     if (n > 0) lines.push({ name: `Windows ×${Math.min(n, mx)}`, value: COMM_SLAB.adders.window * Math.min(n, mx), kind: "add" });
   }
   const unitPrice = lines.reduce((a, l) => a + (l.kind === "minus" ? -l.value : l.value), 0);
-  return { priced: true, lines, unitPrice, sub };
+
+  // Description for a replacement section. Written in the counter's own order —
+  // manufacturer, model, size, what the section IS, colour, stiles — so it can
+  // be pasted straight onto a QuickBooks estimate line.
+  const nWin = input.secKind === "int" ? Math.min(Math.trunc(Number(input.windows)) || 0, maxWindows(rFeet)) : 0;
+  const asciiWidth = `${ft}'${inch ? inch + '"' : '0"'}`;
+  const kindPhrase =
+    input.secKind === "bt"
+      ? "bottom section"
+      : nWin > 0
+        ? `${nWin} 24x12 window section`
+        : "solid intermediate section";
+  const stilePhrase =
+    input.stile === "double" ? "double end stiles" : input.stile === "single" ? "single end stiles" : null;
+  const color = input.color === "Brown" ? "Brown" : "White";
+  const description =
+    `${input.mfr || "Clopay"} Model ${model}, ${asciiWidth} x ${input.secHeight}", ` +
+    `${kindPhrase}, in the color ${color}` +
+    (stilePhrase ? `, ${stilePhrase}` : "");
+
+  return { priced: true, lines, unitPrice, sub, description };
 }

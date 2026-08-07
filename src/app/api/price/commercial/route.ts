@@ -35,7 +35,9 @@ export async function POST(req: Request) {
       secHeight: b.secHeight === "24" ? "24" : "21",
       windows: Number(b.windows) || 0,
       retainer: b.retainer === true,
-      stile: b.stile === "single" || b.stile === "double" ? (b.stile as "single" | "double") : "none",
+      // Sections always carry end stiles now; single is the default.
+      stile: b.stile === "double" ? "double" : "single",
+      color: b.color === "Brown" ? "Brown" : "White",
     };
   }
   return NextResponse.json(quoteCommercial(input));

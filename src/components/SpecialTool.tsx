@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useCustomerJob } from "@/components/CustomerJobFields";
+import { CopyButton } from "@/components/CopyButton";
 import { SPECIAL, SPECIAL_COMMERCIAL } from "@/lib/pricing/data/special-orders";
 
 const fmt = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -86,7 +87,9 @@ export function SpecialTool() {
         size: kind === "section" ? "Sections" : "Door",
         style: scope, color: null,
         unitPrice: n.sell, qty: nQty, total: n.sell * nQty,
-        description: `Special order — ${label} — Clopay list ${price} @ ${n.margin}% margin`,
+        // The entered list value is kept for audit; the MARGIN is not written into
+        // the stored description — semi-admins can read the estimates table.
+        description: `${label} — Clopay list ${price}`,
         customer: custName, poNumber: custPo, jobName: custJob,
       }),
     }).then(() => setSaved(true)).catch(() => {/* ignore */});
@@ -141,7 +144,6 @@ export function SpecialTool() {
               <div className="field" style={{ marginTop: 4 }}>
                 <label className="lbl">Clopay list price <span className="req">*</span></label>
                 <input type="text" inputMode="decimal" value={price} onChange={(e) => { setPrice(e.target.value); setSaved(false); }} placeholder="0.00" />
-                <div className="note">Sell = list × {ser.multiplier} cost, at a {ser.cost_margin}% margin.</div>
               </div>
             </div>
           )}
@@ -176,7 +178,7 @@ export function SpecialTool() {
                     ) : <div />}
                   </div>
                   <div className="field" style={{ marginTop: 6 }}>
-                    <label className="lbl">Clopay list / total <span className="req">*</span></label>
+                    <label className="lbl">Enter total = sub total + energy surcharge — do not apply MPQ <span className="req">*</span></label>
                     <input type="text" inputMode="decimal" value={price} onChange={(e) => { setPrice(e.target.value); setSaved(false); }} placeholder="0.00" />
                   </div>
                 </>
@@ -192,10 +194,9 @@ export function SpecialTool() {
                   <button type="button" className={`chip ${kind === "door" ? "sel" : ""}`} onClick={() => { setKind("door"); setSaved(false); }}>Complete door</button>
                   <button type="button" className={`chip ${kind === "section" ? "sel" : ""}`} onClick={() => { setKind("section"); setSaved(false); }}>Sections</button>
                 </div>
-                <div className="note">Complete door at a 45% margin · sections at a 49% margin.</div>
               </div>
               <div className="field" style={{ marginTop: 6 }}>
-                <label className="lbl">Clopay list / total <span className="req">*</span></label>
+                <label className="lbl">Enter total = sub total + energy surcharge — do not apply MPQ <span className="req">*</span></label>
                 <input data-testid="so-comm-price" type="text" inputMode="decimal" value={price} onChange={(e) => { setPrice(e.target.value); setSaved(false); }} placeholder="0.00" />
               </div>
             </div>
@@ -234,10 +235,8 @@ export function SpecialTool() {
               </div>
               <div className="qfoot">
                 <button className="btn" type="button" onClick={() => pickScope(scope)}>Clear</button>
-                {saved
-                  ? <span className="muted-note">Saved to estimates ✓</span>
-                  : <button className="btn" type="button" onClick={saveQuote}>Save quote</button>}
-                <button className="btn primary" type="button" onClick={() => window.print()}>Print quote</button>
+                <CopyButton text={fmt(total)} label="Copy price" onCopy={saveQuote} testId="so-copy-price" />
+                <CopyButton text={label.toUpperCase()} label="Copy description" primary onCopy={saveQuote} testId="so-copy-desc" />
               </div>
             </>
           )}

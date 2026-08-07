@@ -2,11 +2,12 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { EstimateSheet } from "@/components/EstimateSheet";
+import { CopyButton } from "@/components/CopyButton";
 import { QB_ITEMS } from "@/lib/qb/iif";
 import { useCustomerJob } from "@/components/CustomerJobFields";
 import {
   COMM_COMPLETE, COMM_MATRIX_SIZES,
-  SLAB_RATE, SLAB_LABEL, SLAB_ADDERS, commMfrs, commModelsFor, maxWindows, roundedFeet,
+  SLAB_RATE, SLAB_LABEL, commMfrs, commModelsFor, maxWindows, roundedFeet,
 } from "@/lib/pricing/data/commercial-meta";
 
 interface CommQuote {
@@ -35,7 +36,8 @@ export function CommercialTool() {
   const [secKind, setSecKind] = useState<"bt" | "int">("bt");
   const [secHeight, setSecHeight] = useState<"21" | "24">("21");
   const [windows, setWindows] = useState("0");
-  const [stile, setStile] = useState<"none" | "single" | "double">("none");
+  const [stile, setStile] = useState<"single" | "double">("single");
+  const [secColor, setSecColor] = useState<"White" | "Brown">("White");
 
   const [qty, setQty] = useState(1);
   const { custName, custPo, custJob } = useCustomerJob();
@@ -57,7 +59,7 @@ export function CommercialTool() {
   }, [order, manFt, manIn]);
   const mx = rFeet ? maxWindows(rFeet) : 0;
 
-  const cfgSig = JSON.stringify([mfr, model, order, size, glass, track, mount, cspring, clock, manFt, manIn, secKind, secHeight, windows, stile]);
+  const cfgSig = JSON.stringify([mfr, model, order, size, glass, track, mount, cspring, clock, manFt, manIn, secKind, secHeight, windows, stile, secColor]);
   const result = resultRaw && resultSig === cfgSig ? resultRaw : null;
   const liveError = errorRaw && resultSig === cfgSig ? errorRaw : null;
   const priced = result?.priced ?? false;
@@ -67,13 +69,13 @@ export function CommercialTool() {
   function pickModel(m: string) {
     setModel(m);
     setSize(""); setManFt(""); setManIn("0");
-    setWindows("0"); setStile("none");
+    setWindows("0"); setStile("single"); setSecColor("White");
     setOrder(COMM_COMPLETE.has(m) ? "complete" : "section");
   }
   function resetConfig() {
     setSize(""); setGlass("solid"); setTrack("15R"); setMount("continuous"); setCspring("torsion"); setClock("none");
     setManFt(""); setManIn("0");
-    setSecKind("bt"); setSecHeight("21"); setWindows("0"); setStile("none");
+    setSecKind("bt"); setSecHeight("21"); setWindows("0"); setStile("single"); setSecColor("White");
     setQty(1); setResult(null); setError(null); setSaved(false);
   }
   function onBack() { resetConfig(); setStep(1); }
@@ -84,7 +86,7 @@ export function CommercialTool() {
       const body =
         order === "complete"
           ? { order, mfr, model, size, glass, track, mount, cspring, clock }
-          : { order, mfr, model, manFt: Number(manFt), manIn: Number(manIn) || 0, secKind, secHeight, windows: Number(windows) || 0, stile };
+          : { order, mfr, model, manFt: Number(manFt), manIn: Number(manIn) || 0, secKind, secHeight, windows: Number(windows) || 0, stile, color: secColor };
       const res = await fetch("/api/price/commercial", {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
       });
@@ -111,7 +113,7 @@ export function CommercialTool() {
       setError(e instanceof Error ? e.message : "Something went wrong");
       setResult(null); setResultSig(cfgSig);
     }
-  }, [order, mfr, model, size, glass, track, mount, cspring, clock, manFt, manIn, secKind, secHeight, windows, stile, qty, cfgSig, custName, custPo, custJob]);
+  }, [order, mfr, model, size, glass, track, mount, cspring, clock, manFt, manIn, secKind, secHeight, windows, stile, secColor, qty, cfgSig, custName, custPo, custJob]);
 
 
   // ---------------- STEP 1 ----------------
@@ -247,7 +249,7 @@ export function CommercialTool() {
                       <select value={windows} onChange={(e) => setWindows(e.target.value)}>
                         <option value="0">Solid — no windows</option>
                         {Array.from({ length: mx }, (_, i) => i + 1).map((i) => (
-                          <option key={i} value={String(i)}>{i} window{i > 1 ? "s" : ""} (+${SLAB_ADDERS.window * i})</option>
+                          <option key={i} value={String(i)}>{i} window{i > 1 ? "s" : ""}</option>
                         ))}
                       </select>
                     </div>
@@ -308,19 +310,21 @@ export function CommercialTool() {
                     <div className="grow">
                       <label>End stiles</label>
                       <div className="ctl selectwrap">
-                        <select value={stile} onChange={(e) => setStile(e.target.value as "none" | "single" | "double")}>
-                          <option value="none">None</option>
-                          <option value="single">Single (+${SLAB_ADDERS.stile_single})</option>
-                          <option value="double">Double (+${SLAB_ADDERS.stile_double})</option>
+                        <select value={stile} onChange={(e) => setStile(e.target.value as "single" | "double")}>
+                          <option value="single">Single</option>
+                          <option value="double">Double</option>
                         </select>
                       </div>
                     </div>
-                    {secKind === "bt" && (
-                      <div className="grow">
-                        <label>Bottom retainer &amp; rubber</label>
-                        <div className="ctl"><span className="muted-note">Included automatically (+${SLAB_ADDERS.retainer}/ft)</span></div>
+                    <div className="grow">
+                      <label>Color</label>
+                      <div className="ctl selectwrap">
+                        <select data-testid="comm-color" value={secColor} onChange={(e) => setSecColor(e.target.value as "White" | "Brown")}>
+                          <option value="White">White</option>
+                          <option value="Brown">Brown</option>
+                        </select>
                       </div>
-                    )}
+                    </div>
                   </>
                 ) : (
                   <div className="grow"><label>&nbsp;</label><div className="ctl"><span className="muted-note">Any width — priced from the next standard section up. 21″ and 24″ are the same price.</span></div></div>
@@ -354,16 +358,27 @@ export function CommercialTool() {
             <div className="lines" />
           ) : (
             <>
-              <div className="lines">
-                {result.lines.map((l, i) => (
-                  <div className="qline" key={i}>
-                    <span className="nm">{l.name}</span>
-                    <span className={l.kind === "add" ? "vl add" : l.kind === "minus" ? "vl minus" : "vl"} {...(i === 0 ? { "data-testid": "comm-price" } : {})}>
-                      {l.kind === "add" && l.value > 0 ? "+" : ""}{fmt(l.value)}
-                    </span>
+              {order === "section" ? (
+                // Sections show the finished price only — the retainer, stile and
+                // window adders are rolled in rather than itemised.
+                <div className="lines">
+                  <div className="qline">
+                    <span className="nm">{result.sub}</span>
+                    <span className="vl" data-testid="comm-price">{fmt(result.unitPrice)}</span>
                   </div>
-                ))}
-              </div>
+                </div>
+              ) : (
+                <div className="lines">
+                  {result.lines.map((l, i) => (
+                    <div className="qline" key={i}>
+                      <span className="nm">{l.name}</span>
+                      <span className={l.kind === "add" ? "vl add" : l.kind === "minus" ? "vl minus" : "vl"} {...(i === 0 ? { "data-testid": "comm-price" } : {})}>
+                        {l.kind === "add" && l.value > 0 ? "+" : ""}{fmt(l.value)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
               <div className="qtyrow">
                 <label htmlFor="cqty">Quantity</label>
                 <input id="cqty" type="number" min={1} value={qty} onChange={(e) => setQty(Number(e.target.value))} />
@@ -380,8 +395,8 @@ export function CommercialTool() {
               )}
               <div className="qfoot">
                 <button className="btn" type="button" onClick={resetConfig}>Clear</button>
-                {saved && <span className="muted-note" data-testid="comm-saved">Saved to estimates ✓</span>}
-                <button className="btn primary" type="button" onClick={() => window.print()}>Print quote</button>
+                <CopyButton text={fmt(total)} label="Copy price" testId="comm-copy-price" />
+                <CopyButton text={(result.description ?? "").toUpperCase()} label="Copy description" primary testId="comm-copy-desc" />
               </div>
             </>
           )}

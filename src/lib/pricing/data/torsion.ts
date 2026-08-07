@@ -202,3 +202,55 @@ export function torsionPrice(wireStr: string, id: string, len: number): number |
 }
 
 export function fmtWire(w: string): string { return parseFloat(w).toFixed(3).replace(/^0/, ""); }
+
+/* ---------- counter-facing description ----------
+ * The spring description is pasted straight into QuickBooks, so it is built in
+ * plain ASCII: no ″ prime, no ¾ ligature. Wire is written the way the shop says
+ * it out loud — "234 wire", not ".234".
+ */
+export const ID_LABELS_ASCII: Record<string, string> = {
+  "2": '2" ID',
+  "2.625": '2-5/8" ID',
+  "3.75": '3-3/4" ID',
+  "6": '6" ID',
+};
+
+/** ".234" -> "234" — the shop's spoken form of the wire gauge. */
+export function wireCode(w: string): string {
+  return fmtWire(w).replace(/^\./, "");
+}
+
+/** Winding-cone colour convention: right-hand wound = red, left-hand = black. */
+export const HAND_COLOR = { right: "RED", left: "BLACK" } as const;
+
+/**
+ * Base spring description, e.g. `3-3/4" ID, 234 WIRE, 52" LONG`.
+ * Quantities are appended by springDescription().
+ */
+export function springBase(wire: string, id: string, lengthIn: number): string {
+  return `${ID_LABELS_ASCII[id] ?? id}, ${wireCode(wire)} WIRE, ${lengthIn}" LONG`;
+}
+
+/**
+ * Full description with hand counts appended.
+ *   0 / 0  -> `3-3/4" ID, 234 WIRE, 52" LONG`
+ *   1R 1L  -> `... [1] - RIGHT(RED) AND [1] - LEFT(BLACK)`
+ *   0R 2L  -> `... [2] - LEFTS(BLACK)`
+ * Right is listed first, matching how the counter calls a pair.
+ */
+export function springDescription(
+  wire: string,
+  id: string,
+  lengthIn: number,
+  right: number,
+  left: number,
+): string {
+  const base = springBase(wire, id, lengthIn);
+  const part = (n: number, hand: "right" | "left") =>
+    `[${n}] - ${hand.toUpperCase()}${n > 1 ? "S" : ""}(${HAND_COLOR[hand]})`;
+  const parts: string[] = [];
+  if (right > 0) parts.push(part(right, "right"));
+  if (left > 0) parts.push(part(left, "left"));
+  if (!parts.length) return base;
+  return `${base} ${parts.join(" AND ")}`;
+}

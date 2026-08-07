@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { EstimateSheet } from "@/components/EstimateSheet";
+import { CopyButton } from "@/components/CopyButton";
 import { QB_ITEMS } from "@/lib/qb/iif";
 import { useCustomerJob } from "@/components/CustomerJobFields";
 import type { LockKey, Quote, SpringKey, TrackKey, WindowStyle } from "@/lib/pricing/types";
@@ -547,8 +548,8 @@ export function ResidentialTool({ models }: { models: string[] }) {
               </div>
               <div className="qfoot">
                 <button className="btn" type="button" onClick={clearAll}>Clear</button>
-                {saved && <span className="muted-note" data-testid="saved-note">Saved to estimates ✓</span>}
-                <button className="btn primary" type="button" onClick={() => window.print()}>Print quote</button>
+                <CopyButton text={fmt(total)} label="Copy price" testId="copy-price" />
+                <CopyButton text={description.toUpperCase()} label="Copy description" primary testId="copy-desc" />
               </div>
             </>
           ) : (
