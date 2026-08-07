@@ -7,12 +7,15 @@ import { SpecialTool } from "./SpecialTool";
 import { TorsionTool } from "./TorsionTool";
 import { CustomerJobProvider, CustomerBar, CustomerGate, useCustomerJob } from "./CustomerJobFields";
 
-const TABS = [
+const BASE_TABS = [
   { id: "residential", label: "Residential" },
   { id: "commercial", label: "Commercial" },
   { id: "special", label: "Special Order" },
   { id: "torsion", label: "Torsion Springs" },
 ] as const;
+// Inventory is visible ONLY to the master admin (role "admin") — it's a
+// placeholder until that build starts.
+const INVENTORY_TAB = { id: "inventory", label: "Inventory" } as const;
 
 export function AppShell(props: {
   models: string[];
@@ -46,6 +49,8 @@ function Shell({
     reset();
     return () => { clearTimeout(t); evs.forEach((e) => window.removeEventListener(e, reset)); };
   }, []);
+  const isMaster = user.role === "admin";
+  const tabs = isMaster ? [...BASE_TABS, INVENTORY_TAB] : BASE_TABS;
   const { setCustName, setCustPo, setCustJob } = useCustomerJob();
   // Switching tabs starts a fresh quote session: the customer must be
   // re-selected before the new tab's tool unlocks.
@@ -59,7 +64,7 @@ function Shell({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="logo" src="/logo.png" alt="Doors Direct" />
         <nav className="tabs">
-          {TABS.map((t) => (
+          {tabs.map((t) => (
             <button
               key={t.id}
               type="button"
@@ -83,6 +88,15 @@ function Shell({
         {mode === "commercial" && <CommercialTool />}
         {mode === "special" && <SpecialTool />}
         {mode === "torsion" && <TorsionTool />}
+        {mode === "inventory" && isMaster && (
+          <div className="wrap"><section className="config-col"><div className="panel" style={{ padding: 40, textAlign: "center" }}>
+            <div className="ghdr" style={{ marginBottom: 12 }}>Inventory — coming soon</div>
+            <div className="muted-note" style={{ textTransform: "none" }}>
+              Stock on hand by model, size and color — built on receiving documents in and daily sales out.
+              This tab is reserved for it and is visible only to you.
+            </div>
+          </div></section></div>
+        )}
       </CustomerGate>
     </>
   );
