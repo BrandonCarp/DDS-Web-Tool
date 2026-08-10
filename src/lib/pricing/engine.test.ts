@@ -135,58 +135,6 @@ describe("data integrity", () => {
   });
 });
 
-describe("Bridgeport series", () => {
-  const o = {
-    style: "solid" as const, color: "White", track: "r12" as const,
-    spring: "extension" as const, lock: "none" as const,
-  };
-
-  it("appears in the model list as four selectable models", () => {
-    const models = listModels();
-    for (const m of ["BD1NU", "BD1EU", "BD2NU", "BD2EU"]) expect(models).toContain(m);
-  });
-
-  it("prices a BD1NU 16' x 7' off the book at the 43 margin", () => {
-    // book door 928.00 x .99 / .57 = 1611.79
-    const r = priceResidential("BD1NU", dim(16, 0, 7, 0), "solid");
-    expect(r.price).toBe(1611.79);
-    // DSB 14'10"-19'0" band: plain 384.12, w/ inserts 488.88
-    expect(priceResidential("BD1NU", dim(16, 0, 7, 0), "glass").price).toBe(2278.95);
-    expect(priceResidential("BD1NU", dim(16, 0, 7, 0), "inserts").price).toBe(2460.9);
-  });
-
-  it("charges the same at 9'0\" and 10'0\" — the book merges that band", () => {
-    const nine = priceResidential("BD2NU", dim(16, 0, 9, 0), "solid").price;
-    const ten = priceResidential("BD2NU", dim(16, 0, 10, 0), "solid").price;
-    expect(nine).toBe(ten);
-  });
-
-  it("never reads as stock — DDS does not floor Bridgeport", () => {
-    const q = quoteResidential("BD1NU", dim(16, 0, 7, 0), o);
-    expect(q.isStock).toBe(false);
-    expect(q.source).toBe("standard");
-  });
-
-  it("respects each family's max width", () => {
-    expect(priceResidential("BD1NU", dim(18, 0, 7, 0), "solid").priced).toBe(true);
-    expect(priceResidential("BD1NU", dim(19, 0, 7, 0), "solid").priced).toBe(false);
-    expect(priceResidential("BD2NU", dim(20, 0, 7, 0), "solid").priced).toBe(true);
-  });
-
-  it("refuses the widths BDS10 lists as unavailable", () => {
-    // 10'2"-11'4" and 14'8" are not built in this series
-    expect(priceResidential("BD1NU", dim(11, 0, 7, 0), "solid").priced).toBe(false);
-    expect(priceResidential("BD1NU", dim(14, 8, 7, 0), "solid").priced).toBe(false);
-  });
-
-  it("offers Bridgeport ordering codes, not the Sunset designs", () => {
-    const ids = windowDesigns("BD1NU", "inserts", "16").map((d) => d.id);
-    expect(ids).toContain("SQ24");
-    expect(ids).toContain("GRVA1");
-    expect(ids).not.toContain("509");
-  });
-});
-
 describe("spring rules above 8 feet", () => {
   const o = (spring: "torsion" | "extension") => ({
     style: "solid" as const, color: "White", track: "r12" as const,

@@ -38,9 +38,7 @@ export const GRADE_RES: Record<string, string> = {
   "4050-4051-4053": "single strength b grade",
   "9130-9133": "single strength b grade",
   "4300": "single strength b grade",
-  "GD1LP-GD1SP": "double strength b grade",
-  "BD1NU-BD1EU": "double strength b grade",
-  "BD2NU-BD2EU": "double strength b grade"
+  "GD1LP-GD1SP": "double strength b grade"
 };
 
 export const COLLECTIONS_RES: Record<string, string> = {
@@ -49,7 +47,5 @@ export const COLLECTIONS_RES: Record<string, string> = {
   "T52S": "Value Steel Collection",
   "4050-4051-4053": "Premium Steel Collection",
   "9130-9133": "Premium Steel Collection",
-  "4300": "Premium Steel Collection",
-  "BD1NU-BD1EU": "Bridgeport Collection",
-  "BD2NU-BD2EU": "Bridgeport Collection"
+  "4300": "Premium Steel Collection"
 };

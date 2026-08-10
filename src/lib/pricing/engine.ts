@@ -10,7 +10,6 @@ import { dataKey, expandModels } from "./model-groups";
 import { windowDesigns, designName } from "./data/inserts";
 import { RES_SECTIONS } from "./data/res-sections";
 import { colorInStock } from "./data/stock-colors";
-import { widthUnavailable } from "./data/catalog-meta";
 import type { Dimensions, PriceResult, PriceTriple, Quote, QuoteOptions, SizeCode, Tier, WindowStyle, QuoteLine } from "./types";
 
 /**
@@ -55,11 +54,6 @@ export function resolveSizeCode(model: string, dim: Dimensions): SizeCode | null
 
   const tier = tierForHeight(hf * 12 + hi);
   if (tier === null) return null; // taller than the book — Special Order
-
-  // Check the EXACT width before any row collapsing: a size the series is not
-  // built in must not fall through onto a neighbouring row.
-  const exact = wi === 0 ? String(wf) : `${wf}.${wi}`;
-  if (widthUnavailable(dataKey(model), exact)) return null;
   const grid = RESIDENTIAL_PRICES[dataKey(model)] ?? {};
   const widthsForTier = Object.keys(grid)
     .filter((k) => k.endsWith("x" + tier))
