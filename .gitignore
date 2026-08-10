@@ -11,3 +11,7 @@ test-results
 next-env.d.ts
 .DS_Store
 *.patch
+
+# python bytecode from the price-book generators
+__pycache__/
+*.pyc

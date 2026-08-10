@@ -144,3 +144,76 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# --- window tables -----------------------------------------------------------
+# Emitted separately from the door grid: window prices key off a WIDTH BAND, not
+# the door's width/height cell, so they need their own shape.
+
+WIN_HEAD = re.compile(r"^(?:INSULATED)?ARCHITECTURALWINDOWS-(.+)$")
+BAND_RE = re.compile(r"^(\d+'\d*\"?)to(\d+'\d*\"?)$")
+
+
+def parse_window_tables(path):
+    out = {}
+    with pdfplumber.open(path) as pdf:
+        for page in pdf.pages:
+            for tbl in page.extract_tables():
+                cells = [squash(c) for r in tbl for c in r if c]
+                m = next((WIN_HEAD.match(c) for c in cells if WIN_HEAD.match(c)), None)
+                if not m:
+                    continue
+                insulated = any(c.startswith("INSULATEDARCHITECTURAL") for c in cells)
+                rows = [[squash(c) for c in r] for r in tbl]
+                gi = next(i for i, r in enumerate(rows) if "NoInserts" in r)
+                glass, cur = [], None
+                for c in rows[gi - 1]:
+                    if c:
+                        cur = c
+                    glass.append(cur)
+                entry = out.setdefault(m.group(1), {"bands": [], "bands_by_key": {}})
+                for r in rows[gi + 1:]:
+                    b = BAND_RE.match(r[0] or "")
+                    if not b:
+                        continue
+                    key = b.group(1)
+                    if key not in entry["bands_by_key"]:
+                        entry["bands"].append({"from": b.group(1), "to": b.group(2)})
+                        entry["bands_by_key"][key] = {}
+                    slot = entry["bands_by_key"][key]
+                    for ci, cell in enumerate(r):
+                        if not MONEY.match(cell) or ci < gi:
+                            continue
+                        col = rows[gi][ci]
+                        # Wrought Iron / Leaded are single columns with no
+                        # insert variant. Without this guard they inherit the
+                        # neighbouring merged header ("Obscure Glass") and
+                        # overwrite that glass type's price.
+                        if col == "WroughtIron":
+                            slot.setdefault("WroughtIron", {})["plain"] = float(cell)
+                            continue
+                        if col not in ("NoInserts", "w/Inserts"):
+                            continue
+                        name = (glass[ci] or "").replace("Glass", "").replace("Insulated", "")
+                        name = {"DSB": "DSB", "Obscure": "Obscure", "Frosted": "Frosted",
+                                "Rain": "Rain", "Seeded": "Seeded", "WroughtIron": "WroughtIron"}.get(name)
+                        if not name:
+                            continue
+                        if insulated:
+                            name = "Insulated" + name
+                        kind = "inserts" if rows[gi][ci] == "w/Inserts" else "plain"
+                        val = float(cell.replace(",", ""))
+                        if val > 0:
+                            slot.setdefault(name, {})[kind] = val
+    return out
+
+
+def width_bands_main():
+    import sys
+    out = {}
+    for p in sys.argv[1:]:
+        got = parse_window_tables(p)
+        print(f"# {p}: {len(got)} window tables", file=sys.stderr)
+        for k, v in got.items():
+            out.setdefault(k, v)
+    print(json.dumps(out, indent=1, sort_keys=True))

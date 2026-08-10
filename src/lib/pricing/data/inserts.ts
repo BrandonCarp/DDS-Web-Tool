@@ -35,6 +35,25 @@ export const ARCHITECTURAL: InsertDesign[] = [
 
 // Which window designs each specific model can take.
 // short = plain short windows (508/509/510 + Sunsets); shortlong adds long panels; all = everything.
+/**
+ * Bridgeport uses its own ordering codes (BDS15), not the Sunset/Colonial
+ * designs the Classic Steel models take. All of these price identically -- the
+ * book charges one "w/ Inserts" figure per glass type regardless of design --
+ * so the choice is descriptive on the quote, not a price input.
+ */
+export const BRIDGEPORT_DESIGNS: InsertDesign[] = [
+  { id: "SQ22", name: "SQ22 square (short panel)", cat: "short" },
+  { id: "REC12", name: "REC12 rectangle (short panel)", cat: "short" },
+  { id: "SQ24", name: "SQ24 square (long panel)", cat: "long" },
+  { id: "REC14", name: "REC14 rectangle (long panel)", cat: "long" },
+  { id: "ARCH1", name: "ARCH1", cat: "long" },
+  { id: "ARCH2", name: "ARCH2", cat: "long" },
+  { id: "ARCH3", name: "ARCH3", cat: "long" },
+  { id: "GRVA1", name: "GRVA1 grille on ARCH1", cat: "long" },
+  { id: "GRVA2", name: "GRVA2 grille on ARCH2", cat: "long" },
+  { id: "GRVA3", name: "GRVA3 grille on ARCH3", cat: "long" },
+];
+
 export const INSERT_RULES: Record<string, "short" | "shortlong" | "all"> = {
   T50S: "short", T52S: "short", "4050": "short", "4300": "short", "9130": "short",
   "4051": "shortlong", "4053": "all", "9133": "all",
@@ -59,6 +78,7 @@ export function windowDesigns(unit: string, style: string, widthCode: string | n
   // "insert" (style === "inserts"). Plain glass gets no design on any model,
   // Gallery included — otherwise an insert could ride along at the glass price.
   if (style !== "inserts") return [];
+  if (String(unit).indexOf("BD") === 0) return BRIDGEPORT_DESIGNS; // Bridgeport ordering codes
   if (String(unit).indexOf("GD") === 0) return ARCHITECTURAL; // Gallery -> architectural inserts
   const rule = INSERT_RULES[unit] ?? "all";
   return DECORATIVE.filter((d) => {
@@ -71,6 +91,6 @@ export function windowDesigns(unit: string, style: string, widthCode: string | n
 
 export function designName(id: string | undefined | null): string | null {
   if (!id) return null;
-  const d = [...DECORATIVE, ...ARCHITECTURAL].find((x) => x.id === id);
+  const d = [...DECORATIVE, ...ARCHITECTURAL, ...BRIDGEPORT_DESIGNS].find((x) => x.id === id);
   return d ? d.name : null;
 }

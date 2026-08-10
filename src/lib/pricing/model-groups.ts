@@ -15,6 +15,10 @@ export const MODEL_SPLIT: Record<string, string[]> = {
   "4300": ["4300", "4301", "4310"],
   "9130-9133": ["9130", "9133"],
   "GD1LP-GD1SP": ["GD1LP", "GD1SP"],
+  // Bridgeport 3-layer: NU = narrow panel, EU = extended. Same frame price
+  // within a family; only the panel emboss differs.
+  "BD1NU-BD1EU": ["BD1NU", "BD1EU"],
+  "BD2NU-BD2EU": ["BD2NU", "BD2EU"],
 };
 
 /** Individual model -> the catalog key that holds its data. */
@@ -33,7 +37,7 @@ export function expandModels(keys: string[]): string[] {
 }
 
 /** Display order for the model selector within each collection. */
-export const MODEL_ORDER = ["T50S", "T52S", "4050", "4051", "4053", "4300", "4301", "4310", "9130", "9133", "GD1LP", "GD1SP"];
+export const MODEL_ORDER = ["T50S", "T52S", "4050", "4051", "4053", "4300", "4301", "4310", "9130", "9133", "GD1LP", "GD1SP", "BD1NU", "BD1EU", "BD2NU", "BD2EU"];
 
 export function modelSort(a: string, b: string): number {
   const ia = MODEL_ORDER.indexOf(a), ib = MODEL_ORDER.indexOf(b);

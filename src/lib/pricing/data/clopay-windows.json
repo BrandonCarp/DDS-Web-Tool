@@ -1,0 +1,406 @@
+{
+ "BD1NU|BD1EU": {
+  "bands": [
+   {
+    "from": "7'8\"",
+    "to": "10'0\""
+   },
+   {
+    "from": "11'6\"",
+    "to": "14'6\""
+   },
+   {
+    "from": "14'10\"",
+    "to": "19'0\""
+   },
+   {
+    "from": "19'2\"",
+    "to": "20'0\""
+   }
+  ],
+  "bands_by_key": {
+   "11'6\"": {
+    "DSB": {
+     "inserts": 366.66,
+     "plain": 288.09
+    },
+    "Frosted": {
+     "inserts": 576.18,
+     "plain": 497.61
+    },
+    "InsulatedDSB": {
+     "inserts": 434.75,
+     "plain": 356.18
+    },
+    "InsulatedFrosted": {
+     "inserts": 811.89,
+     "plain": 733.32
+    },
+    "InsulatedObscure": {
+     "inserts": 487.13,
+     "plain": 408.56
+    },
+    "InsulatedRain": {
+     "inserts": 811.89,
+     "plain": 733.32
+    },
+    "InsulatedSeeded": {
+     "inserts": 995.22,
+     "plain": 916.65
+    },
+    "Obscure": {
+     "inserts": 419.04,
+     "plain": 340.47
+    },
+    "Rain": {
+     "inserts": 576.18,
+     "plain": 497.61
+    },
+    "Seeded": {
+     "inserts": 759.51,
+     "plain": 680.94
+    },
+    "WroughtIron": {
+     "plain": 738.56
+    }
+   },
+   "14'10\"": {
+    "DSB": {
+     "inserts": 488.88,
+     "plain": 384.12
+    },
+    "Frosted": {
+     "inserts": 768.24,
+     "plain": 663.48
+    },
+    "InsulatedDSB": {
+     "inserts": 579.67,
+     "plain": 474.91
+    },
+    "InsulatedFrosted": {
+     "inserts": 1082.52,
+     "plain": 977.76
+    },
+    "InsulatedObscure": {
+     "inserts": 649.51,
+     "plain": 544.75
+    },
+    "InsulatedRain": {
+     "inserts": 1082.52,
+     "plain": 977.76
+    },
+    "InsulatedSeeded": {
+     "inserts": 1326.96,
+     "plain": 1222.2
+    },
+    "Obscure": {
+     "inserts": 558.72,
+     "plain": 453.96
+    },
+    "Rain": {
+     "inserts": 768.24,
+     "plain": 663.48
+    },
+    "Seeded": {
+     "inserts": 1012.68,
+     "plain": 907.92
+    },
+    "WroughtIron": {
+     "plain": 984.74
+    }
+   },
+   "19'2\"": {
+    "DSB": {
+     "inserts": 611.1,
+     "plain": 480.15
+    },
+    "Frosted": {
+     "inserts": 960.3,
+     "plain": 829.35
+    },
+    "InsulatedDSB": {
+     "inserts": 724.59,
+     "plain": 593.64
+    },
+    "InsulatedFrosted": {
+     "inserts": 1353.15,
+     "plain": 977.76
+    },
+    "InsulatedObscure": {
+     "inserts": 811.89,
+     "plain": 680.94
+    },
+    "InsulatedRain": {
+     "inserts": 1353.15,
+     "plain": 1222.2
+    },
+    "InsulatedSeeded": {
+     "inserts": 1658.7,
+     "plain": 1527.75
+    },
+    "Obscure": {
+     "inserts": 698.4,
+     "plain": 567.45
+    },
+    "Rain": {
+     "inserts": 960.3,
+     "plain": 829.35
+    },
+    "Seeded": {
+     "inserts": 1265.85,
+     "plain": 1134.9
+    },
+    "WroughtIron": {
+     "plain": 0.0
+    }
+   },
+   "7'8\"": {
+    "DSB": {
+     "inserts": 244.44,
+     "plain": 192.06
+    },
+    "Frosted": {
+     "inserts": 384.12,
+     "plain": 331.74
+    },
+    "InsulatedDSB": {
+     "inserts": 289.84,
+     "plain": 237.46
+    },
+    "InsulatedFrosted": {
+     "inserts": 541.26,
+     "plain": 488.88
+    },
+    "InsulatedObscure": {
+     "inserts": 324.76,
+     "plain": 272.38
+    },
+    "InsulatedRain": {
+     "inserts": 541.26,
+     "plain": 488.88
+    },
+    "InsulatedSeeded": {
+     "inserts": 663.48,
+     "plain": 611.1
+    },
+    "Obscure": {
+     "inserts": 279.36,
+     "plain": 226.98
+    },
+    "Rain": {
+     "inserts": 384.12,
+     "plain": 331.74
+    },
+    "Seeded": {
+     "inserts": 506.34,
+     "plain": 453.96
+    },
+    "WroughtIron": {
+     "plain": 492.37
+    }
+   }
+  }
+ },
+ "BD2NU|BD2EU": {
+  "bands": [
+   {
+    "from": "7'8\"",
+    "to": "10'0\""
+   },
+   {
+    "from": "11'6\"",
+    "to": "14'6\""
+   },
+   {
+    "from": "14'10\"",
+    "to": "19'0\""
+   },
+   {
+    "from": "19'2\"",
+    "to": "20'0\""
+   }
+  ],
+  "bands_by_key": {
+   "11'6\"": {
+    "DSB": {
+     "inserts": 336.0,
+     "plain": 264.0
+    },
+    "Frosted": {
+     "inserts": 528.0,
+     "plain": 456.0
+    },
+    "InsulatedDSB": {
+     "inserts": 398.4,
+     "plain": 326.4
+    },
+    "InsulatedFrosted": {
+     "inserts": 744.0,
+     "plain": 672.0
+    },
+    "InsulatedObscure": {
+     "inserts": 446.4,
+     "plain": 374.4
+    },
+    "InsulatedRain": {
+     "inserts": 744.0,
+     "plain": 672.0
+    },
+    "InsulatedSeeded": {
+     "inserts": 912.0,
+     "plain": 840.0
+    },
+    "Obscure": {
+     "inserts": 384.0,
+     "plain": 312.0
+    },
+    "Rain": {
+     "inserts": 528.0,
+     "plain": 456.0
+    },
+    "Seeded": {
+     "inserts": 696.0,
+     "plain": 624.0
+    },
+    "WroughtIron": {
+     "plain": 676.8
+    }
+   },
+   "14'10\"": {
+    "DSB": {
+     "inserts": 448.0,
+     "plain": 352.0
+    },
+    "Frosted": {
+     "inserts": 704.0,
+     "plain": 608.0
+    },
+    "InsulatedDSB": {
+     "inserts": 531.2,
+     "plain": 435.2
+    },
+    "InsulatedFrosted": {
+     "inserts": 992.0,
+     "plain": 896.0
+    },
+    "InsulatedObscure": {
+     "inserts": 595.2,
+     "plain": 499.2
+    },
+    "InsulatedRain": {
+     "inserts": 992.0,
+     "plain": 896.0
+    },
+    "InsulatedSeeded": {
+     "inserts": 1216.0,
+     "plain": 1120.0
+    },
+    "Obscure": {
+     "inserts": 512.0,
+     "plain": 416.0
+    },
+    "Rain": {
+     "inserts": 704.0,
+     "plain": 608.0
+    },
+    "Seeded": {
+     "inserts": 928.0,
+     "plain": 832.0
+    },
+    "WroughtIron": {
+     "plain": 902.4
+    }
+   },
+   "19'2\"": {
+    "DSB": {
+     "inserts": 560.0,
+     "plain": 440.0
+    },
+    "Frosted": {
+     "inserts": 880.0,
+     "plain": 760.0
+    },
+    "InsulatedDSB": {
+     "inserts": 664.0,
+     "plain": 544.0
+    },
+    "InsulatedFrosted": {
+     "inserts": 1240.0,
+     "plain": 1120.0
+    },
+    "InsulatedObscure": {
+     "inserts": 744.0,
+     "plain": 624.0
+    },
+    "InsulatedRain": {
+     "inserts": 1240.0,
+     "plain": 1120.0
+    },
+    "InsulatedSeeded": {
+     "inserts": 1520.0,
+     "plain": 1400.0
+    },
+    "Obscure": {
+     "inserts": 640.0,
+     "plain": 520.0
+    },
+    "Rain": {
+     "inserts": 880.0,
+     "plain": 760.0
+    },
+    "Seeded": {
+     "inserts": 1160.0,
+     "plain": 1040.0
+    },
+    "WroughtIron": {
+     "plain": 1128.0
+    }
+   },
+   "7'8\"": {
+    "DSB": {
+     "inserts": 224.0,
+     "plain": 176.0
+    },
+    "Frosted": {
+     "inserts": 352.0,
+     "plain": 304.0
+    },
+    "InsulatedDSB": {
+     "inserts": 265.6,
+     "plain": 217.6
+    },
+    "InsulatedFrosted": {
+     "inserts": 496.0,
+     "plain": 448.0
+    },
+    "InsulatedObscure": {
+     "inserts": 297.6,
+     "plain": 249.6
+    },
+    "InsulatedRain": {
+     "inserts": 496.0,
+     "plain": 448.0
+    },
+    "InsulatedSeeded": {
+     "inserts": 608.0,
+     "plain": 560.0
+    },
+    "Obscure": {
+     "inserts": 256.0,
+     "plain": 208.0
+    },
+    "Rain": {
+     "inserts": 352.0,
+     "plain": 304.0
+    },
+    "Seeded": {
+     "inserts": 464.0,
+     "plain": 416.0
+    },
+    "WroughtIron": {
+     "plain": 451.2
+    }
+   }
+  }
+ }
+}

@@ -10,6 +10,7 @@ import { dataKey, expandModels } from "./model-groups";
 import { windowDesigns, designName } from "./data/inserts";
 import { RES_SECTIONS } from "./data/res-sections";
 import { colorInStock } from "./data/stock-colors";
+import { widthUnavailable } from "./data/catalog-meta";
 import type { Dimensions, PriceResult, PriceTriple, Quote, QuoteOptions, SizeCode, Tier, WindowStyle, QuoteLine } from "./types";
 
 /**
@@ -53,7 +54,12 @@ export function resolveSizeCode(model: string, dim: Dimensions): SizeCode | null
   if (Number.isNaN(wf) || Number.isNaN(hf)) return null;
 
   const tier = tierForHeight(hf * 12 + hi);
-  if (tier === null) return null; // taller than 9'0" — no prices loaded, Special Order
+  if (tier === null) return null; // taller than the book — Special Order
+
+  // Check the EXACT width before any row collapsing: a size the series is not
+  // built in must not fall through onto a neighbouring row.
+  const exact = wi === 0 ? String(wf) : `${wf}.${wi}`;
+  if (widthUnavailable(dataKey(model), exact)) return null;
   const grid = RESIDENTIAL_PRICES[dataKey(model)] ?? {};
   const widthsForTier = Object.keys(grid)
     .filter((k) => k.endsWith("x" + tier))
@@ -198,9 +204,14 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
     });
   }
 
-  // Springs — 9' tall includes torsion at no charge
-  const is9 = size.tier === "9";
-  if (is9) lines.push({ name: "Torsion springs (included)", value: 0 });
+  // Springs. Extension springs are only offered up to 8' high — the book prints
+  // Extension columns for the 6'0"-7' and 7'6"-8' bands and nothing above. Every
+  // taller band is torsion, included at no charge. This used to test tier === "9"
+  // only, which was correct while 9'0" was the ceiling; once the 10/12/14/16
+  // bands were loaded a 12-foot door could be quoted on extension springs and
+  // charged the torsion adder on top.
+  const torsionOnly = size.tier !== "7" && size.tier !== "8";
+  if (torsionOnly) lines.push({ name: "Torsion springs (included)", value: 0 });
   else if (opts.spring === "torsion")
     lines.push({ name: "Torsion springs", value: ADDONS.torsion, kind: "add" as const });
 
@@ -218,7 +229,7 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
     const dn = opts.windesign && validDesigns.includes(opts.windesign) ? designName(opts.windesign) : null;
     winTxt = `${grade ? grade + " windows" : "windows"} in the top section${dn ? ", " + dn + " inserts" : ""}`;
   }
-  const springTxt = is9 || opts.spring === "torsion" ? "torsion springs" : "extension springs";
+  const springTxt = torsionOnly || opts.spring === "torsion" ? "torsion springs" : "extension springs";
   const lockTxt =
     ({ none: "no lock", slide: "inside slide lock", lockbar: "lockbar", lockbar_installed: "lockbar installed" } as Record<string, string>)[opts.lock] ||
     "no lock";
