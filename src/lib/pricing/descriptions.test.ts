@@ -114,27 +114,34 @@ describe("18-foot doors: only a White 4050 is on the floor", () => {
   });
 });
 
-describe("doors taller than 9'0\" are not priced", () => {
+describe("door height ceiling", () => {
   const o = { style: "solid", color: "White", track: "r12", spring: "extension", lock: "none" } as const;
   const tall = (hf: number, hi = 0) =>
     quoteResidential("T50S", { widthFt: 9, widthIn: 0, heightFt: hf, heightIn: hi }, o);
 
-  it("still prices the three tiers it has", () => {
-    for (const h of [7, 8, 9]) expect(tall(h).priced).toBe(true);
+  it("prices every band the books carry, 7' through 16'", () => {
+    for (const h of [7, 8, 9, 10, 12, 14, 16]) expect(tall(h).priced).toBe(true);
   });
 
-  it("9'0\" is the ceiling — 9'3\" and up return no price", () => {
-    expect(tall(9, 0).priced).toBe(true);
-    expect(tall(9, 3).priced).toBe(false);
+  it("16'0\" is the ceiling — 16'3\" and up return no price", () => {
+    expect(tall(16, 0).priced).toBe(true);
+    expect(tall(16, 3).priced).toBe(false);
   });
 
   it("does NOT quote a tall door at the 9-ft price", () => {
+    // The original bug: tierForHeight returned "9" for any height, so a 16-ft
+    // door silently took the 9-ft price. Each band must now price distinctly.
     const nine = tall(9).unitPrice;
     for (const h of [10, 12, 14, 16]) {
       const q = tall(h);
-      expect(q.priced).toBe(false);
+      expect(q.priced).toBe(true);
       expect(q.unitPrice).not.toBe(nine);
     }
+  });
+
+  it("price rises monotonically with height at a fixed width", () => {
+    const prices = [7, 8, 9, 10, 12, 14, 16].map((h) => tall(h).unitPrice);
+    for (let i = 1; i < prices.length; i++) expect(prices[i]).toBeGreaterThan(prices[i - 1]);
   });
 });
 

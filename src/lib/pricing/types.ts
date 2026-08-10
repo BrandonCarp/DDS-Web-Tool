@@ -1,7 +1,12 @@
 // Core pricing types (shared by the engine, the API, and the UI).
 
 export type WindowStyle = "solid" | "glass" | "inserts";
-export type Tier = "7" | "8" | "9";
+/**
+ * Door height band. Named for the top of the band in feet, matching the Clopay
+ * grid columns: 7 = 6'0"-7', 8 = 7'6"-8', 9 = 8'3"-9', 10 = 9'3"-10',
+ * 12 = 10'3"-12', 14 = 12'3"-14', 16 = 14'3"-16'.
+ */
+export type Tier = "7" | "8" | "9" | "10" | "12" | "14" | "16";
 
 /** Full base-door sell price for a given size, by window style. */
 export interface PriceTriple {

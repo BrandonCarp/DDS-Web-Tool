@@ -12,22 +12,31 @@ import { RES_SECTIONS } from "./data/res-sections";
 import { colorInStock } from "./data/stock-colors";
 import type { Dimensions, PriceResult, PriceTriple, Quote, QuoteOptions, SizeCode, Tier, WindowStyle, QuoteLine } from "./types";
 
-const TIER_7_MAX_IN = 84; // <= 7'0"
-const TIER_8_MAX_IN = 96; // <= 8'0"
-const TIER_9_MAX_IN = 108; // <= 9'0" — the tallest tier the app carries prices for
-
 /**
- * Height (in total inches) -> door height tier, or null above 9'0".
+ * Upper bound (total inches) of each Clopay height band, in order. 16'0" = 192"
+ * is the tallest door either book prices; anything above still returns null and
+ * lands on Special Order.
  *
- * The books run to 16' in five more columns (9'3"-10', 10'3"-12', 12'3"-14',
- * 14'3"-16'), none of which are loaded here. Before this returned "9" for ANY
- * height, so a 16-ft door quoted silently at the 9-ft price — badly under. Tall
- * doors now return no price and the tool sends them to Special Order.
+ * History: this function once returned "9" for ANY height, so a 16-ft door
+ * quoted silently at the 9-ft price — badly under. It was then capped at 9'0"
+ * to stop the misquote. The four tall bands are now loaded for real (generated
+ * by scripts/gen_tall_tiers.py), so the cap moves up to the book's own ceiling.
  */
+const TIER_MAX_IN: ReadonlyArray<readonly [number, Tier]> = [
+  [84, "7"], //  6'0" to 7'0"
+  [96, "8"], //  7'6" to 8'0"
+  [108, "9"], //  8'3" to 9'0"
+  [120, "10"], //  9'3" to 10'0"
+  [144, "12"], // 10'3" to 12'0"
+  [168, "14"], // 12'3" to 14'0"
+  [192, "16"], // 14'3" to 16'0"
+];
+
+/** Height (in total inches) -> door height tier, or null above 16'0". */
 export function tierForHeight(totalInches: number): Tier | null {
-  if (totalInches <= TIER_7_MAX_IN) return "7";
-  if (totalInches <= TIER_8_MAX_IN) return "8";
-  if (totalInches <= TIER_9_MAX_IN) return "9";
+  for (const [maxIn, tier] of TIER_MAX_IN) {
+    if (totalInches <= maxIn) return tier;
+  }
   return null;
 }
 

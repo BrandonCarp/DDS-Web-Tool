@@ -16,6 +16,55 @@ describe("tierForHeight", () => {
     expect(tierForHeight(8 * 12)).toBe("8"); // 8'0"
     expect(tierForHeight(8 * 12 + 1)).toBe("9");
   });
+
+  it("maps the four tall bands to their Clopay grid columns", () => {
+    expect(tierForHeight(9 * 12)).toBe("9"); // 9'0"
+    expect(tierForHeight(9 * 12 + 3)).toBe("10"); // 9'3"
+    expect(tierForHeight(10 * 12)).toBe("10"); // 10'0"
+    expect(tierForHeight(10 * 12 + 3)).toBe("12"); // 10'3"
+    expect(tierForHeight(12 * 12)).toBe("12"); // 12'0"
+    expect(tierForHeight(12 * 12 + 3)).toBe("14"); // 12'3"
+    expect(tierForHeight(14 * 12)).toBe("14"); // 14'0"
+    expect(tierForHeight(14 * 12 + 3)).toBe("16"); // 14'3"
+    expect(tierForHeight(16 * 12)).toBe("16"); // 16'0"
+  });
+
+  it("still returns null above 16'0\", the tallest the books price", () => {
+    expect(tierForHeight(16 * 12 + 3)).toBeNull();
+    expect(tierForHeight(20 * 12)).toBeNull();
+  });
+});
+
+describe("tall height tiers", () => {
+  // 4300 16'0" x 9'3" reconciles against a live iStore order: book net 1400.83,
+  // x .99 = 1386.82 cost, at the 4300's 44 margin -> 2476.47 sell.
+  it("prices a 4300 16' x 9'3\" off the 9'3\"-10' column", () => {
+    const r = priceResidential("4300", dim(16, 0, 9, 3), "solid");
+    expect(r.priced).toBe(true);
+    expect(r.size?.tier).toBe("10");
+    expect(r.price).toBe(2476.47);
+  });
+
+  it("keeps the 9'0\" price on its own tier (stock book wins there)", () => {
+    const r = priceResidential("4300", dim(16, 0, 9, 0), "solid");
+    expect(r.size?.tier).toBe("9");
+    expect(r.source).toBe("stock");
+    expect(r.price).toBe(2398.25);
+  });
+
+  it("applies the book's next-larger-plus-15% rule to an off-grid width", () => {
+    // 8'2" is not a printed 4300 grid row; the book prices it off 9' + 15%.
+    const off = priceResidential("4300", dim(8, 2, 10, 0), "solid");
+    const on = priceResidential("4300", dim(8, 0, 10, 0), "solid");
+    expect(off.size?.widthCode).toBe("8.2");
+    expect(off.price).toBeGreaterThan(on.price!);
+  });
+
+  it("sends a height above the book to Special Order, not a silent price", () => {
+    const r = priceResidential("4300", dim(16, 0, 17, 0), "solid");
+    expect(r.priced).toBe(false);
+    expect(r.price).toBeNull();
+  });
 });
 
 describe("resolveSizeCode", () => {
