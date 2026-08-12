@@ -515,135 +515,186 @@ html, body { margin: 0; padding: 0; }
   .tool-shell .jobfield{flex:1.5;min-width:150px;width:auto}
 }
 
-/* ── QuickBooks line demo ──────────────────────────────────────────────────
-   A CSS-only loop showing how a finished quote gets into QuickBooks. Every
-   element shares one 13s timeline so the row, the caret and the step list can
-   never drift apart. Percentages below map to: 0-8% idle, 8-22% typing the
-   item, 30-38% description pastes, 46-54% rate pastes, 54-88% hold, 88-100%
-   clear back to empty.                                                      */
-.tool-shell .qbdemo{
-  border-top:1px solid var(--line-2);
-  padding:14px 22px 18px;
-  background:linear-gradient(180deg,var(--accent-soft) 0%,#fff 70%);
-}
-.tool-shell .qbd-cap{display:flex;align-items:baseline;gap:8px;margin-bottom:9px}
-.tool-shell .qbd-cap-t{
-  font-size:10.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--accent-ink);
-}
-.tool-shell .qbd-cap-s{
-  font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--muted-2);
-}
-.tool-shell .qbd-cap-s::before{content:"·";margin-right:8px}
+/* ── QuickBooks handoff demo ───────────────────────────────────────────────
+   A full-width band under the tool showing how a finished quote reaches
+   QuickBooks: mini quote card on the left, estimate row on the right, the two
+   Copy buttons lighting up as the cells they feed fill in.
 
-/* The grid apes a QuickBooks estimate line: hairline rules, tiny caps header,
-   left-aligned text with the money column hard right. */
+   Everything shares one 14s timeline so the buttons, the row and the step list
+   cannot drift apart. Percentages map to: 0-8% idle, 8-24% typing the item,
+   30-40% description pastes, 48-58% rate pastes, 58-90% hold, 90-100% clear.
+
+   Sized up deliberately — this is read across a parts counter, not at desk
+   distance.                                                                 */
+.tool-shell .qbdemo{
+  border-top:1px solid var(--line);
+  background:linear-gradient(180deg,var(--accent-soft) 0%,#fff 60%);
+}
+.tool-shell .qbd-inner{max-width:1300px;margin:0 auto;padding:18px 22px 22px}
+.tool-shell .qbd-cap{
+  font-size:12px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;
+  color:var(--accent-ink);margin-bottom:12px;
+}
+
+.tool-shell .qbd-flow{display:flex;align-items:center;gap:14px}
+
+/* left — miniature of the quote card, incl. the two real buttons */
+.tool-shell .qbd-src{
+  width:232px;flex:none;border:1px solid var(--line);border-radius:9px;
+  background:#fff;overflow:hidden;box-shadow:var(--shadow);
+}
+.tool-shell .qbd-src-hd{
+  background:var(--brand);color:#fff;padding:8px 11px;display:flex;
+  align-items:baseline;gap:8px;
+}
+.tool-shell .qbd-src-model{font-size:15px;font-weight:800;letter-spacing:.3px}
+.tool-shell .qbd-src-size{font-size:11px;opacity:.82}
+.tool-shell .qbd-src-row{
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  padding:9px 11px;font-size:12.5px;color:var(--ink);border-bottom:1px solid var(--line-2);
+}
+.tool-shell .qbd-src-row b{font-family:var(--mono);font-size:13px}
+.tool-shell .qbd-src-btns{display:flex;gap:6px;padding:9px 11px}
+.tool-shell .qbd-btn{
+  flex:1;text-align:center;font-size:10.5px;font-weight:600;line-height:1.2;
+  padding:6px 4px;border-radius:6px;border:1px solid var(--line);
+  background:var(--surface);color:var(--muted);
+}
+.tool-shell .qbd-btn-desc{animation:qbd-press-desc 14s ease-in-out infinite}
+.tool-shell .qbd-btn-rate{animation:qbd-press-rate 14s ease-in-out infinite}
+
+.tool-shell .qbd-arrow{
+  flex:none;width:26px;height:2px;background:var(--accent-line);position:relative;
+}
+.tool-shell .qbd-arrow::after{
+  content:"";position:absolute;right:-1px;top:-4px;
+  border-left:8px solid var(--accent-line);
+  border-top:5px solid transparent;border-bottom:5px solid transparent;
+}
+
+/* right — the QuickBooks estimate line */
 .tool-shell .qbd-grid{
-  border:1px solid var(--line);border-radius:7px;overflow:hidden;background:#fff;
-  font-family:var(--mono);
+  flex:1 1 auto;min-width:0;border:1px solid var(--line);border-radius:9px;
+  overflow:hidden;background:#fff;font-family:var(--mono);box-shadow:var(--shadow);
 }
 .tool-shell .qbd-hrow,.tool-shell .qbd-row{display:flex;align-items:stretch}
 .tool-shell .qbd-hrow{background:var(--accent-soft);border-bottom:1px solid var(--line)}
 .tool-shell .qbd-h{
-  font-size:8.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;
-  color:var(--muted);padding:5px 7px;
+  font-size:10px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;
+  color:var(--muted);padding:7px 10px;
 }
 .tool-shell .qbd-cell{
-  position:relative;padding:7px;font-size:9.5px;line-height:1.35;color:var(--ink);
-  min-height:34px;display:flex;align-items:flex-start;
+  position:relative;padding:10px;font-size:12.5px;line-height:1.4;color:var(--ink);
+  min-height:52px;display:flex;align-items:flex-start;
 }
 .tool-shell .qbd-h + .qbd-h,.tool-shell .qbd-cell + .qbd-cell{border-left:1px solid var(--line-2)}
-.tool-shell .qbd-c-item{width:29%;flex:none}
+.tool-shell .qbd-c-item{width:150px;flex:none}
 .tool-shell .qbd-c-desc{flex:1 1 auto;min-width:0}
-.tool-shell .qbd-c-qty{width:9%;flex:none;text-align:center;justify-content:center}
-.tool-shell .qbd-c-rate{width:20%;flex:none;text-align:right;justify-content:flex-end}
+.tool-shell .qbd-c-qty{width:52px;flex:none;text-align:center;justify-content:center}
+.tool-shell .qbd-c-rate{width:104px;flex:none;text-align:right;justify-content:flex-end}
 .tool-shell .qbd-clamp{
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
 }
 
-/* Shared hook for every value that lands in a cell. */
 .tool-shell .qbd-fill{display:inline-block;max-width:100%}
-
-/* Item types in character by character; the others snap in like a paste. */
 .tool-shell .qbd-f-item{display:inline-flex;overflow:hidden;white-space:nowrap;max-width:100%}
 .tool-shell .qbd-type{
   display:inline-block;overflow:hidden;white-space:nowrap;width:0;
-  animation:qbd-type 13s steps(10,end) infinite;
+  animation:qbd-type 14s steps(10,end) infinite;
 }
 .tool-shell .qbd-caret{
-  width:1px;height:11px;margin-top:1px;background:var(--accent);flex:none;
-  animation:qbd-caret 13s steps(1,end) infinite;
+  width:2px;height:15px;margin-top:1px;background:var(--accent);flex:none;
+  animation:qbd-caret 14s steps(1,end) infinite;
 }
-.tool-shell .qbd-f-desc,.tool-shell .qbd-f-qty,.tool-shell .qbd-f-rate{opacity:0}
-.tool-shell .qbd-f-desc{animation:qbd-paste-desc 13s ease-out infinite}
-.tool-shell .qbd-f-qty{animation:qbd-paste-desc 13s ease-out infinite}
-.tool-shell .qbd-f-rate{animation:qbd-paste-rate 13s ease-out infinite}
-/* the cell flashes as the paste lands, the way a filled field does */
+.tool-shell .qbd-f-desc,.tool-shell .qbd-f-rate{opacity:0}
+.tool-shell .qbd-f-desc{animation:qbd-paste-desc 14s ease-out infinite}
+.tool-shell .qbd-f-rate{animation:qbd-paste-rate 14s ease-out infinite}
 .tool-shell .qbd-c-desc::after,.tool-shell .qbd-c-rate::after{
   content:"";position:absolute;inset:0;background:var(--accent);opacity:0;pointer-events:none;
 }
-.tool-shell .qbd-c-desc::after{animation:qbd-flash 13s ease-out infinite}
-.tool-shell .qbd-c-rate::after{animation:qbd-flash-rate 13s ease-out infinite}
+.tool-shell .qbd-c-desc::after{animation:qbd-flash 14s ease-out infinite}
+.tool-shell .qbd-c-rate::after{animation:qbd-flash-rate 14s ease-out infinite}
 
 .tool-shell .qbd-steps{
-  display:flex;gap:5px;margin:9px 0 0;padding:0;list-style:none;flex-wrap:wrap;
+  display:flex;gap:8px;margin:12px 0 0;padding:0;list-style:none;flex-wrap:wrap;
 }
 .tool-shell .qbd-step{
-  display:flex;align-items:center;gap:5px;
-  font-size:9.5px;letter-spacing:.2px;color:var(--muted-2);
-  border:1px solid var(--line-2);border-radius:999px;padding:3px 9px 3px 4px;background:#fff;
+  display:flex;align-items:center;gap:7px;
+  font-size:12px;letter-spacing:.2px;color:var(--muted-2);
+  border:1px solid var(--line-2);border-radius:999px;padding:5px 13px 5px 5px;background:#fff;
 }
 .tool-shell .qbd-step b{
-  display:grid;place-items:center;width:14px;height:14px;border-radius:50%;
-  background:var(--accent-soft);color:var(--muted);font-size:8.5px;font-weight:700;
+  display:grid;place-items:center;width:19px;height:19px;border-radius:50%;
+  background:var(--accent-soft);color:var(--muted);font-size:11px;font-weight:700;
 }
-.tool-shell .qbd-s1{animation:qbd-lit-1 13s ease-in-out infinite}
-.tool-shell .qbd-s2{animation:qbd-lit-2 13s ease-in-out infinite}
-.tool-shell .qbd-s3{animation:qbd-lit-3 13s ease-in-out infinite}
+.tool-shell .qbd-s1{animation:qbd-lit-1 14s ease-in-out infinite}
+.tool-shell .qbd-s2{animation:qbd-lit-2 14s ease-in-out infinite}
+.tool-shell .qbd-s3{animation:qbd-lit-3 14s ease-in-out infinite}
+
+@media(max-width:980px){
+  .tool-shell .qbd-flow{flex-direction:column;align-items:stretch;gap:10px}
+  .tool-shell .qbd-src{width:auto}
+  .tool-shell .qbd-arrow{width:2px;height:20px;margin:0 auto}
+  .tool-shell .qbd-arrow::after{
+    right:-4px;top:auto;bottom:-8px;border-left:5px solid transparent;
+    border-right:5px solid transparent;border-top:8px solid var(--accent-line);border-bottom:0;
+  }
+}
 
 @keyframes qbd-type{
-  0%,8%{width:0} 22%,88%{width:10ch} 89%,100%{width:0}
+  0%,8%{width:0} 24%,90%{width:10ch} 91%,100%{width:0}
 }
 @keyframes qbd-caret{
-  0%,6%{opacity:1} 7%{opacity:0} 8%,22%{opacity:1} 23%,100%{opacity:0}
+  0%,5%{opacity:1} 6%{opacity:0} 8%,24%{opacity:1} 25%,100%{opacity:0}
+}
+@keyframes qbd-press-desc{
+  0%,28%{background:var(--surface);color:var(--muted);border-color:var(--line);transform:none}
+  30%,34%{background:var(--brand);color:#fff;border-color:var(--brand);transform:translateY(1px)}
+  38%,100%{background:var(--surface);color:var(--muted);border-color:var(--line);transform:none}
+}
+@keyframes qbd-press-rate{
+  0%,46%{background:var(--surface);color:var(--muted);border-color:var(--line);transform:none}
+  48%,52%{background:var(--brand);color:#fff;border-color:var(--brand);transform:translateY(1px)}
+  56%,100%{background:var(--surface);color:var(--muted);border-color:var(--line);transform:none}
 }
 @keyframes qbd-paste-desc{
-  0%,29%{opacity:0;transform:translateY(-2px)}
-  32%,88%{opacity:1;transform:none}
-  89%,100%{opacity:0;transform:none}
+  0%,32%{opacity:0;transform:translateY(-3px)}
+  36%,90%{opacity:1;transform:none}
+  91%,100%{opacity:0;transform:none}
 }
 @keyframes qbd-paste-rate{
-  0%,45%{opacity:0;transform:translateY(-2px)}
-  48%,88%{opacity:1;transform:none}
-  89%,100%{opacity:0;transform:none}
+  0%,50%{opacity:0;transform:translateY(-3px)}
+  54%,90%{opacity:1;transform:none}
+  91%,100%{opacity:0;transform:none}
 }
 @keyframes qbd-flash{
-  0%,29%{opacity:0} 31%{opacity:.13} 40%,100%{opacity:0}
+  0%,32%{opacity:0} 34%{opacity:.14} 44%,100%{opacity:0}
 }
 @keyframes qbd-flash-rate{
-  0%,45%{opacity:0} 47%{opacity:.13} 56%,100%{opacity:0}
+  0%,50%{opacity:0} 52%{opacity:.14} 62%,100%{opacity:0}
 }
 @keyframes qbd-lit-1{
-  0%,7%{color:var(--muted-2);border-color:var(--line-2)}
-  9%,22%{color:var(--accent-ink);border-color:var(--accent-line)}
-  25%,100%{color:var(--muted-2);border-color:var(--line-2)}
+  0%,6%{color:var(--muted-2);border-color:var(--line-2)}
+  9%,24%{color:var(--accent-ink);border-color:var(--accent-line)}
+  27%,100%{color:var(--muted-2);border-color:var(--line-2)}
 }
 @keyframes qbd-lit-2{
-  0%,26%{color:var(--muted-2);border-color:var(--line-2)}
-  29%,40%{color:var(--accent-ink);border-color:var(--accent-line)}
-  43%,100%{color:var(--muted-2);border-color:var(--line-2)}
+  0%,28%{color:var(--muted-2);border-color:var(--line-2)}
+  30%,44%{color:var(--accent-ink);border-color:var(--accent-line)}
+  47%,100%{color:var(--muted-2);border-color:var(--line-2)}
 }
 @keyframes qbd-lit-3{
-  0%,43%{color:var(--muted-2);border-color:var(--line-2)}
-  46%,56%{color:var(--accent-ink);border-color:var(--accent-line)}
-  59%,100%{color:var(--muted-2);border-color:var(--line-2)}
+  0%,46%{color:var(--muted-2);border-color:var(--line-2)}
+  48%,62%{color:var(--accent-ink);border-color:var(--accent-line)}
+  65%,100%{color:var(--muted-2);border-color:var(--line-2)}
 }
 
-/* A counter screen that has motion turned off gets the finished row, which is
-   the useful half of the message anyway. */
+/* A counter screen with motion turned off gets the finished row, which is the
+   useful half of the message anyway. */
 @media (prefers-reduced-motion:reduce){
   .tool-shell .qbdemo *{animation:none!important}
   .tool-shell .qbd-type{width:10ch}
   .tool-shell .qbd-caret{opacity:0}
-  .tool-shell .qbd-f-desc,.tool-shell .qbd-f-qty,.tool-shell .qbd-f-rate{opacity:1}
+  .tool-shell .qbd-f-desc,.tool-shell .qbd-f-rate{opacity:1}
 }
 @media print{ .tool-shell .qbdemo{display:none!important} }

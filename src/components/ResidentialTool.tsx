@@ -552,10 +552,6 @@ export function ResidentialTool({ models }: { models: string[] }) {
                 <CopyButton text={fmt(total)} label="Copy price" testId="copy-price" />
                 <button className="btn" type="button" onClick={clearAll}>Clear</button>
               </div>
-              {/* Shows where the two Copy buttons above actually go. Fed the
-                  live description and price so it demos THIS quote, not a
-                  canned one. */}
-              <QbLineDemo description={description.toUpperCase()} rate={fmt(total).replace("$", "")} />
             </>
           ) : (
             <div className="empty" data-testid="not-priced">
@@ -567,6 +563,17 @@ export function ResidentialTool({ models }: { models: string[] }) {
       </aside>
 
     </div>
+    {/* Full-width band under the tool: where the two Copy buttons actually go.
+        Fed the live model, size, description and price so it demos THIS quote
+        rather than a canned one. */}
+    {priced && (
+      <QbLineDemo
+        model={model}
+        size={dims}
+        description={description.toUpperCase()}
+        rate={fmt(total).replace("$", "")}
+      />
+    )}
     {priced && (
       <EstimateSheet lines={[{ item: QB_ITEMS.residential, desc: description, qty: Math.max(1, qty), rate: unit }]} />
     )}
