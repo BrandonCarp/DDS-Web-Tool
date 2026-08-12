@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { EstimateSheet } from "@/components/EstimateSheet";
 import { CopyButton } from "@/components/CopyButton";
+import { QbLineDemo } from "@/components/QbLineDemo";
 import { QB_ITEMS } from "@/lib/qb/iif";
 import { useCustomerJob } from "@/components/CustomerJobFields";
 import type { LockKey, Quote, SpringKey, TrackKey, WindowStyle } from "@/lib/pricing/types";
@@ -551,6 +552,10 @@ export function ResidentialTool({ models }: { models: string[] }) {
                 <CopyButton text={fmt(total)} label="Copy price" testId="copy-price" />
                 <button className="btn" type="button" onClick={clearAll}>Clear</button>
               </div>
+              {/* Shows where the two Copy buttons above actually go. Fed the
+                  live description and price so it demos THIS quote, not a
+                  canned one. */}
+              <QbLineDemo description={description.toUpperCase()} rate={fmt(total).replace("$", "")} />
             </>
           ) : (
             <div className="empty" data-testid="not-priced">
