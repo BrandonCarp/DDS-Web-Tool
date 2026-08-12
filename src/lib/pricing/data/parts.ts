@@ -6,6 +6,8 @@
 // Vinyl stop molding is deliberately absent: it takes a door size rather
 // than a footage and bills the other way round. See data/vinyl.ts.
 
+import { handSuffix } from "./torsion";
+
 export interface Part {
   name: string;
   /** Verbiage copied into the QuickBooks description column. */
@@ -16,6 +18,8 @@ export interface Part {
   sub?: string;
   /** Sold by the linear foot — the counter enters how many. */
   perFoot?: boolean;
+  /** Ordered by hand — the counter sets how many rights and lefts. */
+  hands?: boolean;
 }
 
 export interface PartCategory {
@@ -436,44 +440,64 @@ export const PART_CATEGORIES: PartCategory[] = [
     "items": [
       {"desc": "7FT TORSION KIT", "name": "7FT TOR KIT", "price": 39.95},
       {"desc": "8FT TORSION KIT", "name": "8FT TOR KIT", "price": 44.95},
-      {"desc": "TORSION SPRINGS,  2\" ID,  218 WIRE,  23-1/4\" LONG [1] - RIGHT AND [1] - LEFT", "name": "100LBS,  2 X 218 X 23-1/4\"", "price": 46.95, "sub": "TORSION SPRINGS, 7FT"},
-      {"desc": "TORSION SPRINGS,  2\" ID,  225 WIRE,  24-1/2\" LONG [1] - RIGHT AND [1] - LEFT", "name": "110LBS,  2 X 225 X 24-1/2\"", "price": 49.95, "sub": "TORSION SPRINGS, 7FT"},
-      {"desc": "TORSION SPRINGS,  2\" ID,  234 WIRE,  27-1/4\" LONG [1] - RIGHT AND [1] - LEFT", "name": "120LBS,  2 X 234 X 27-1/4\"", "price": 55.95, "sub": "TORSION SPRINGS, 7FT"},
-      {"desc": "TORSION SPRINGS,  2\" ID,  234 WIRE,  25-1/4\" LONG [1] - RIGHT AND [1] - LEFT", "name": "130LBS,  2 X 234 X 25-1/4\"", "price": 52.95, "sub": "TORSION SPRINGS, 7FT"},
-      {"desc": "TORSION SPRINGS,  2\" ID,  243 WIRE,  28-1/4\" LONG [1] - RIGHT AND [1] - LEFT", "name": "140LBS,  2 X 243 X 28-1/4\"", "price": 59.95, "sub": "TORSION SPRINGS, 7FT"},
-      {"desc": "TORSION SPRINGS,  2\" ID,  250 WIRE,  29-3/4\" LONG [1] - RIGHT AND [1] - LEFT", "name": "150LBS,  2 X 250 X 29-3/4\"", "price": 63.95, "sub": "TORSION SPRINGS, 7FT"},
-      {"desc": "TORSION SPRINGS,  2\" ID,  262 WIRE, 35-1/4\" LONG [1] - RIGHT AND [1] - LEFT", "name": "160LBS,  2 X 262 X 35-1/4\"", "price": 77.95, "sub": "TORSION SPRINGS, 7FT"},
-      {"desc": "TORSION SPRINGS,  2\" ID,  262 WIRE, 33-1/4\" LONG [1] - RIGHT AND [1] - LEFT", "name": "170LBS,  2 X 262 X 33-1/4\"", "price": 73.95, "sub": "TORSION SPRINGS, 7FT"},
-      {"desc": "TORSION SPRINGS,  2\" ID,  262 WIRE, 31-1/2\" LONG [1] - RIGHT AND [1] - LEFT", "name": "180LBS,  2 X 262 X 31-1/2\"", "price": 69.95, "sub": "TORSION SPRINGS, 7FT"},
-      {"desc": "TORSION SPRINGS,  2\" ID,  207 WIRE,  22-1/4\" LONG [1] - RIGHT AND [1] - LEFT", "name": "80LBS,  2 X 207 X 22-1/4\"", "price": 42.95, "sub": "TORSION SPRINGS, 7FT"},
-      {"desc": "TORSION SPRINGS,  2\" ID,  207 WIRE,  20\" LONG [1] - RIGHT AND [1] - LEFT", "name": "90LBS,  2 X 207 X 20\"", "price": 39.95, "sub": "TORSION SPRINGS, 7FT"},
-      {"desc": "TORSION SPRINGS,  2\" ID,  218 WIRE,  26\" LONG [1] - RIGHT AND [1] - LEFT", "name": "100LBS,  2 X 218 X 26\"", "price": 50.95, "sub": "TORSION SPRINGS, 8FT"},
-      {"desc": "TORSION SPRINGS,  2\" ID,  225 WIRE,  27-1/4\" LONG [1] - RIGHT AND [1] - LEFT", "name": "110LBS,  2 X 225 X 27-1/4\"", "price": 53.95, "sub": "TORSION SPRINGS, 8FT"},
-      {"desc": "TORSION SPRINGS,  2\" ID,  234 WIRE,  30-1/4\" LONG [1] - RIGHT AND [1] - LEFT", "name": "120LBS,  2 X 234 X 30-1/4\"", "price": 60.95, "sub": "TORSION SPRINGS, 8FT"},
-      {"desc": "TORSION SPRINGS,  2\" ID,  234 WIRE,  28\" LONG [1] - RIGHT AND [1] - LEFT", "name": "130LBS,  2 X 234 X 28\"", "price": 56.95, "sub": "TORSION SPRINGS, 8FT"},
-      {"desc": "TORSION SPRINGS,  2\" ID,  243 WIRE,  31-1/2\" LONG [1] - RIGHT AND [1] - LEFT", "name": "140LBS,  2 X 243 X 31-1/2\"", "price": 65.95, "sub": "TORSION SPRINGS, 8FT"},
-      {"desc": "TORSION SPRINGS,  2\" ID,  250 WIRE,  33-1/4\" LONG [1] - RIGHT AND [1] - LEFT", "name": "150LBS,  2 X 250 X 33-1/4\"", "price": 69.95, "sub": "TORSION SPRINGS, 8FT"},
-      {"desc": "TORSION SPRINGS,  2\" ID,  262 WIRE,  39-1/4\" LONG [1] - RIGHT AND [1] - LEFT", "name": "160LBS,  2 X 262 X 39-1/4\"", "price": 85.95, "sub": "TORSION SPRINGS, 8FT"},
-      {"desc": "TORSION SPRINGS,  2\" ID,  207 WIRE,  24-3/4\" LONG [1] - RIGHT AND [1] - LEFT", "name": "80LBS,  2 X 207 X 24-3/4\"", "price": 46.95, "sub": "TORSION SPRINGS, 8FT"},
-      {"desc": "TORSION SPRINGS,  2\" ID,  207 WIRE,  22-1/4\" LONG [1] - RIGHT AND [1] - LEFT", "name": "90LBS,  2 X 207 X 22-1/4\"", "price": 42.95, "sub": "TORSION SPRINGS, 8FT"},
-      {"desc": "TORSION SPRINGS,  2\" ID,  218 WIRE,  28-1/4\" LONG [1] - RIGHT AND [1] - LEFT", "name": "100LBS,  2 X 218 X 28-1/4\"", "price": 54.95, "sub": "TORSION SPRINGS, 9FT"},
-      {"desc": "TORSION SPRINGS,  2\" ID,  225 WIRE,  29-3/4\" LONG [1] - RIGHT AND [1] - LEFT", "name": "110LBS,  2 X 225 X 29-3/4\"", "price": 57.95, "sub": "TORSION SPRINGS, 9FT"},
-      {"desc": "TORSION SPRINGS,  2\" ID,  234 WIRE,  32-3/4\" LONG [1] - RIGHT AND [1] - LEFT", "name": "120LBS,  2 X 234 X 32-3/4\"", "price": 64.95, "sub": "TORSION SPRINGS, 9FT"},
-      {"desc": "TORSION SPRINGS,  2\" ID,  234 WIRE,  30-1/4\" LONG [1] - RIGHT AND [1] - LEFT", "name": "130LBS,  2 X 234 X 30-1/4\"", "price": 60.95, "sub": "TORSION SPRINGS, 9FT"},
-      {"desc": "TORSION SPRINGS,  2\" ID,  243 WIRE,  34\" LONG [1] - RIGHT AND [1] - LEFT", "name": "140LBS,  2 X 243 X 34\"", "price": 70.95, "sub": "TORSION SPRINGS, 9FT"},
-      {"desc": "TORSION SPRINGS,  2\" ID,  250 WIRE,  36\" LONG [1] - RIGHT AND [1] - LEFT", "name": "150LBS,  2 X 250 X 36\"", "price": 74.95, "sub": "TORSION SPRINGS, 9FT"},
-      {"desc": "TORSION SPRINGS,  2\" ID,  262 WIRE,  42-3/4\" LONG [1] - RIGHT AND [1] - LEFT", "name": "160LBS,  2 X 262 X 42-3/4\"", "price": 92.95, "sub": "TORSION SPRINGS, 9FT"},
-      {"desc": "TORSION SPRINGS,  2\" ID,  207 WIRE,  27\" LONG [1] - RIGHT AND [1] - LEFT", "name": "80LBS,  2 X 207 X 27\"", "price": 49.95, "sub": "TORSION SPRINGS, 9FT"},
-      {"desc": "TORSION SPRINGS,  2\" ID,  207 WIRE,  24\" LONG [1] - RIGHT AND [1] - LEFT", "name": "90LBS,  2 X 207 X 24\"", "price": 45.95, "sub": "TORSION SPRINGS, 9FT"},
+      {"desc": "TORSION SPRINGS,  2\" ID,  218 WIRE,  23-1/4\" LONG", "hands": true, "name": "100LBS,  2 X 218 X 23-1/4\"", "price": 46.95, "sub": "TORSION SPRINGS, 7FT"},
+      {"desc": "TORSION SPRINGS,  2\" ID,  225 WIRE,  24-1/2\" LONG", "hands": true, "name": "110LBS,  2 X 225 X 24-1/2\"", "price": 49.95, "sub": "TORSION SPRINGS, 7FT"},
+      {"desc": "TORSION SPRINGS,  2\" ID,  234 WIRE,  27-1/4\" LONG", "hands": true, "name": "120LBS,  2 X 234 X 27-1/4\"", "price": 55.95, "sub": "TORSION SPRINGS, 7FT"},
+      {"desc": "TORSION SPRINGS,  2\" ID,  234 WIRE,  25-1/4\" LONG", "hands": true, "name": "130LBS,  2 X 234 X 25-1/4\"", "price": 52.95, "sub": "TORSION SPRINGS, 7FT"},
+      {"desc": "TORSION SPRINGS,  2\" ID,  243 WIRE,  28-1/4\" LONG", "hands": true, "name": "140LBS,  2 X 243 X 28-1/4\"", "price": 59.95, "sub": "TORSION SPRINGS, 7FT"},
+      {"desc": "TORSION SPRINGS,  2\" ID,  250 WIRE,  29-3/4\" LONG", "hands": true, "name": "150LBS,  2 X 250 X 29-3/4\"", "price": 63.95, "sub": "TORSION SPRINGS, 7FT"},
+      {"desc": "TORSION SPRINGS,  2\" ID,  262 WIRE, 35-1/4\" LONG", "hands": true, "name": "160LBS,  2 X 262 X 35-1/4\"", "price": 77.95, "sub": "TORSION SPRINGS, 7FT"},
+      {"desc": "TORSION SPRINGS,  2\" ID,  262 WIRE, 33-1/4\" LONG", "hands": true, "name": "170LBS,  2 X 262 X 33-1/4\"", "price": 73.95, "sub": "TORSION SPRINGS, 7FT"},
+      {"desc": "TORSION SPRINGS,  2\" ID,  262 WIRE, 31-1/2\" LONG", "hands": true, "name": "180LBS,  2 X 262 X 31-1/2\"", "price": 69.95, "sub": "TORSION SPRINGS, 7FT"},
+      {"desc": "TORSION SPRINGS,  2\" ID,  207 WIRE,  22-1/4\" LONG", "hands": true, "name": "80LBS,  2 X 207 X 22-1/4\"", "price": 42.95, "sub": "TORSION SPRINGS, 7FT"},
+      {"desc": "TORSION SPRINGS,  2\" ID,  207 WIRE,  20\" LONG", "hands": true, "name": "90LBS,  2 X 207 X 20\"", "price": 39.95, "sub": "TORSION SPRINGS, 7FT"},
+      {"desc": "TORSION SPRINGS,  2\" ID,  218 WIRE,  26\" LONG", "hands": true, "name": "100LBS,  2 X 218 X 26\"", "price": 50.95, "sub": "TORSION SPRINGS, 8FT"},
+      {"desc": "TORSION SPRINGS,  2\" ID,  225 WIRE,  27-1/4\" LONG", "hands": true, "name": "110LBS,  2 X 225 X 27-1/4\"", "price": 53.95, "sub": "TORSION SPRINGS, 8FT"},
+      {"desc": "TORSION SPRINGS,  2\" ID,  234 WIRE,  30-1/4\" LONG", "hands": true, "name": "120LBS,  2 X 234 X 30-1/4\"", "price": 60.95, "sub": "TORSION SPRINGS, 8FT"},
+      {"desc": "TORSION SPRINGS,  2\" ID,  234 WIRE,  28\" LONG", "hands": true, "name": "130LBS,  2 X 234 X 28\"", "price": 56.95, "sub": "TORSION SPRINGS, 8FT"},
+      {"desc": "TORSION SPRINGS,  2\" ID,  243 WIRE,  31-1/2\" LONG", "hands": true, "name": "140LBS,  2 X 243 X 31-1/2\"", "price": 65.95, "sub": "TORSION SPRINGS, 8FT"},
+      {"desc": "TORSION SPRINGS,  2\" ID,  250 WIRE,  33-1/4\" LONG", "hands": true, "name": "150LBS,  2 X 250 X 33-1/4\"", "price": 69.95, "sub": "TORSION SPRINGS, 8FT"},
+      {"desc": "TORSION SPRINGS,  2\" ID,  262 WIRE,  39-1/4\" LONG", "hands": true, "name": "160LBS,  2 X 262 X 39-1/4\"", "price": 85.95, "sub": "TORSION SPRINGS, 8FT"},
+      {"desc": "TORSION SPRINGS,  2\" ID,  207 WIRE,  24-3/4\" LONG", "hands": true, "name": "80LBS,  2 X 207 X 24-3/4\"", "price": 46.95, "sub": "TORSION SPRINGS, 8FT"},
+      {"desc": "TORSION SPRINGS,  2\" ID,  207 WIRE,  22-1/4\" LONG", "hands": true, "name": "90LBS,  2 X 207 X 22-1/4\"", "price": 42.95, "sub": "TORSION SPRINGS, 8FT"},
+      {"desc": "TORSION SPRINGS,  2\" ID,  218 WIRE,  28-1/4\" LONG", "hands": true, "name": "100LBS,  2 X 218 X 28-1/4\"", "price": 54.95, "sub": "TORSION SPRINGS, 9FT"},
+      {"desc": "TORSION SPRINGS,  2\" ID,  225 WIRE,  29-3/4\" LONG", "hands": true, "name": "110LBS,  2 X 225 X 29-3/4\"", "price": 57.95, "sub": "TORSION SPRINGS, 9FT"},
+      {"desc": "TORSION SPRINGS,  2\" ID,  234 WIRE,  32-3/4\" LONG", "hands": true, "name": "120LBS,  2 X 234 X 32-3/4\"", "price": 64.95, "sub": "TORSION SPRINGS, 9FT"},
+      {"desc": "TORSION SPRINGS,  2\" ID,  234 WIRE,  30-1/4\" LONG", "hands": true, "name": "130LBS,  2 X 234 X 30-1/4\"", "price": 60.95, "sub": "TORSION SPRINGS, 9FT"},
+      {"desc": "TORSION SPRINGS,  2\" ID,  243 WIRE,  34\" LONG", "hands": true, "name": "140LBS,  2 X 243 X 34\"", "price": 70.95, "sub": "TORSION SPRINGS, 9FT"},
+      {"desc": "TORSION SPRINGS,  2\" ID,  250 WIRE,  36\" LONG", "hands": true, "name": "150LBS,  2 X 250 X 36\"", "price": 74.95, "sub": "TORSION SPRINGS, 9FT"},
+      {"desc": "TORSION SPRINGS,  2\" ID,  262 WIRE,  42-3/4\" LONG", "hands": true, "name": "160LBS,  2 X 262 X 42-3/4\"", "price": 92.95, "sub": "TORSION SPRINGS, 9FT"},
+      {"desc": "TORSION SPRINGS,  2\" ID,  207 WIRE,  27\" LONG", "hands": true, "name": "80LBS,  2 X 207 X 27\"", "price": 49.95, "sub": "TORSION SPRINGS, 9FT"},
+      {"desc": "TORSION SPRINGS,  2\" ID,  207 WIRE,  24\" LONG", "hands": true, "name": "90LBS,  2 X 207 X 24\"", "price": 45.95, "sub": "TORSION SPRINGS, 9FT"},
     ],
   },
 ];
 
-/** Description with the footage written on, e.g. `2" RAW TRACK,  10FT`. */
-export function partDescription(part: Part, feet?: number): string {
+/**
+ * Description ready for QuickBooks.
+ *
+ * Per-foot parts get the footage written on (`2" RAW TRACK,  10FT`).
+ * Hand-ordered parts get the counts appended (`... [2] - RIGHTS AND [1] - LEFT`).
+ */
+export function partDescription(
+  part: Part,
+  feet?: number,
+  right?: number,
+  left?: number,
+): string {
+  if (part.hands) {
+    const suffix = handSuffix(right ?? 0, left ?? 0);
+    return suffix ? `${part.desc} ${suffix}` : part.desc;
+  }
   if (!part.perFoot || !feet) return part.desc;
   const base = part.desc.replace(/,\s*$/, "");
   return `${base},  ${feet}FT`;
+}
+
+/** Springs are priced each — the pair shows up as quantity 2, not a doubled rate. */
+export function partQuantity(part: Part, right?: number, left?: number): number {
+  if (!part.hands) return 1;
+  return Math.max(0, Math.trunc(right ?? 0)) + Math.max(0, Math.trunc(left ?? 0));
 }
 
 /** Extended price: per-foot parts charge rate x footage, others charge each. */

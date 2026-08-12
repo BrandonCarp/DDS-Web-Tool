@@ -243,6 +243,22 @@ export function springBase(wire: string, id: string, lengthIn: number): string {
  *   0R 2L  -> `... [2] - LEFTS`
  * Right is listed first, matching how the counter calls a pair.
  */
+/**
+ * `[2] - RIGHTS AND [1] - LEFT`, or "" when neither hand is wanted.
+ *
+ * Right is listed first, matching how the counter calls a pair. No wind colour
+ * here — red/black label the on-screen quantity fields, but the description is
+ * copied into QuickBooks where it reads as noise.
+ */
+export function handSuffix(right: number, left: number): string {
+  const one = (n: number, hand: "right" | "left") =>
+    `[${n}] - ${hand.toUpperCase()}${n > 1 ? "S" : ""}`;
+  const parts: string[] = [];
+  if (right > 0) parts.push(one(right, "right"));
+  if (left > 0) parts.push(one(left, "left"));
+  return parts.join(" AND ");
+}
+
 export function springDescription(
   wire: string,
   id: string,
@@ -251,13 +267,6 @@ export function springDescription(
   left: number,
 ): string {
   const base = springBase(wire, id, lengthIn);
-  // No wind colour here — red/black label the on-screen quantity fields, but
-  // the description is copied into QuickBooks where it reads as noise.
-  const part = (n: number, hand: "right" | "left") =>
-    `[${n}] - ${hand.toUpperCase()}${n > 1 ? "S" : ""}`;
-  const parts: string[] = [];
-  if (right > 0) parts.push(part(right, "right"));
-  if (left > 0) parts.push(part(left, "left"));
-  if (!parts.length) return base;
-  return `${base} ${parts.join(" AND ")}`;
+  const suffix = handSuffix(right, left);
+  return suffix ? `${base} ${suffix}` : base;
 }

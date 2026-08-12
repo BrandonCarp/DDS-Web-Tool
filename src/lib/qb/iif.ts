@@ -14,6 +14,9 @@ export const QB_ITEMS: Record<string, string> = {
   residential: "STOCK DOOR",
   commercial: "STOCK DOOR",
   spring: "SPRINGS",        // PLACEHOLDER — verify against the Item List
+  parts: "PARTS",           // every shelf part bills to the one item
+  vinyl: "VINYL",           // stop molding is measured off a door, so its own
+  operators: "OPERATORS",   // LiftMaster, once pricing arrives
   special: "SPECIAL ORDER", // PLACEHOLDER — verify against the Item List
 };
 

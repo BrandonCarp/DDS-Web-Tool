@@ -6,6 +6,7 @@ import { CommercialTool } from "./CommercialTool";
 import { SpecialTool } from "./SpecialTool";
 import { TorsionTool } from "./TorsionTool";
 import { PartsTool } from "./PartsTool";
+import { VinylTool } from "./VinylTool";
 import { CustomerJobProvider, useCustomerJob } from "./CustomerJobFields";
 
 const BASE_TABS = [
@@ -14,6 +15,7 @@ const BASE_TABS = [
   { id: "special", label: "Special Order" },
   { id: "torsion", label: "Torsion Springs" },
   { id: "parts", label: "Parts" },
+  { id: "vinyl", label: "Vinyl" },
 ] as const;
 // Inventory is visible ONLY to the master admin (role "admin") — it's a
 // placeholder until that build starts.
@@ -91,6 +93,7 @@ function Shell({
       {mode === "special" && <SpecialTool />}
       {mode === "torsion" && <TorsionTool />}
       {mode === "parts" && <PartsTool />}
+      {mode === "vinyl" && <VinylTool />}
       {mode === "inventory" && isMaster && (
         <div className="wrap"><section className="config-col"><div className="panel" style={{ padding: 40, textAlign: "center" }}>
           <div className="ghdr" style={{ marginBottom: 12 }}>Inventory — coming soon</div>

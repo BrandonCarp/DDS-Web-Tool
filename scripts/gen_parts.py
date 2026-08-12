@@ -66,6 +66,12 @@ def cell(row, i):
     return "" if v is None else str(v).strip()
 
 
+# The sheet writes a default pair onto every torsion spring
+# ("... 23-1/4\" LONG [1] - RIGHT AND [1] - LEFT"). The counter sets the hands,
+# so the suffix is stripped here and rebuilt from their numbers.
+HANDS_RE = re.compile(r"\s*\[\d+\]\s*-\s*(?:RIGHT|LEFT)S?(?:\s+AND\s+\[\d+\]\s*-\s*(?:RIGHT|LEFT)S?)*\s*$", re.I)
+
+
 def is_per_foot(name, desc):
     if desc.endswith(","):
         return True
@@ -102,7 +108,12 @@ def main():
         if p <= 0:
             continue
 
+        hands = bool(HANDS_RE.search(desc))
+        if hands:
+            desc = HANDS_RE.sub("", desc).rstrip()
         item = {"name": name, "desc": desc, "price": round(p, 2)}
+        if hands:
+            item["hands"] = True
         if sub:
             item["sub"] = sub
         if is_per_foot(name, desc):
@@ -137,6 +148,7 @@ def main():
         "// rate, so the per-foot figure never lands on the QuickBooks line.\n"
         "// Vinyl stop molding is deliberately absent: it takes a door size rather\n"
         "// than a footage and bills the other way round. See data/vinyl.ts.\n\n"
+        'import { handSuffix } from "./torsion";\n\n'
         "export interface Part {\n"
         "  name: string;\n"
         "  /** Verbiage copied into the QuickBooks description column. */\n"
@@ -147,6 +159,8 @@ def main():
         "  sub?: string;\n"
         "  /** Sold by the linear foot — the counter enters how many. */\n"
         "  perFoot?: boolean;\n"
+        "  /** Ordered by hand — the counter sets how many rights and lefts. */\n"
+        "  hands?: boolean;\n"
         "}\n\n"
         "export interface PartCategory {\n"
         "  /** Also the QuickBooks item name for everything inside it. */\n"
@@ -156,11 +170,30 @@ def main():
         "export const PART_CATEGORIES: PartCategory[] = [\n"
         + "\n".join(body)
         + "\n];\n\n"
-        "/** Description with the footage written on, e.g. `2\" RAW TRACK,  10FT`. */\n"
-        "export function partDescription(part: Part, feet?: number): string {\n"
+        "/**\n"
+        " * Description ready for QuickBooks.\n"
+        " *\n"
+        " * Per-foot parts get the footage written on (`2\" RAW TRACK,  10FT`).\n"
+        " * Hand-ordered parts get the counts appended (`... [2] - RIGHTS AND [1] - LEFT`).\n"
+        " */\n"
+        "export function partDescription(\n"
+        "  part: Part,\n"
+        "  feet?: number,\n"
+        "  right?: number,\n"
+        "  left?: number,\n"
+        "): string {\n"
+        "  if (part.hands) {\n"
+        "    const suffix = handSuffix(right ?? 0, left ?? 0);\n"
+        "    return suffix ? `${part.desc} ${suffix}` : part.desc;\n"
+        "  }\n"
         "  if (!part.perFoot || !feet) return part.desc;\n"
         "  const base = part.desc.replace(/,\\s*$/, \"\");\n"
         "  return `${base},  ${feet}FT`;\n"
+        "}\n\n"
+        "/** Springs are priced each — the pair shows up as quantity 2, not a doubled rate. */\n"
+        "export function partQuantity(part: Part, right?: number, left?: number): number {\n"
+        "  if (!part.hands) return 1;\n"
+        "  return Math.max(0, Math.trunc(right ?? 0)) + Math.max(0, Math.trunc(left ?? 0));\n"
         "}\n\n"
         "/** Extended price: per-foot parts charge rate x footage, others charge each. */\n"
         "export function partPrice(part: Part, feet?: number): number {\n"
