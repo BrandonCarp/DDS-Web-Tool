@@ -28,6 +28,8 @@ interface QbLineDemoProps {
   typed?: string;
   /** Quantity cell — linear feet for per-foot parts, otherwise 1. */
   qty?: string;
+  /** Tighten the band when something above it has grown, so it stays in view. */
+  compact?: boolean;
 }
 
 export function QbLineDemo({
@@ -38,9 +40,10 @@ export function QbLineDemo({
   rate = "1,471.84",
   typed = "STO",
   qty = "1",
+  compact = false,
 }: QbLineDemoProps) {
   return (
-    <div className="qbdemo" aria-hidden="true">
+    <div className={`qbdemo${compact ? " qbd-compact" : ""}`} aria-hidden="true">
       <div className="qbd-inner">
         <div className="qbd-cap">Getting this quote into QuickBooks</div>
 

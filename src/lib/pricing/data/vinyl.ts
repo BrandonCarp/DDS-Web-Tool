@@ -147,8 +147,10 @@ function coveringLength(color: string, need: number): number | null {
 /**
  * Work out the molding for one door opening.
  *
- * `qty` is a whole-set multiplier — two doors of the same size take two sets,
- * which doubles the footage on the line rather than changing the piece sizes.
+ * `sets` covers more than one identical opening: it multiplies the footage and
+ * the piece counts, never the piece sizes. The tool does not expose it — one
+ * opening is one set — but it is kept so a multi-door quote stays a one-liner.
+ *
  * Returns null when the opening is larger than the colour is stocked in, which
  * is a special order rather than something to quote here.
  */
@@ -156,13 +158,13 @@ export function vinylForDoor(
   color: string,
   widthFt: number,
   heightFt: number,
-  qty = 1,
+  setCount = 1,
 ): VinylQuote | null {
   const headerFt = coveringLength(color, widthFt);
   const legFt = coveringLength(color, heightFt);
   if (headerFt == null || legFt == null) return null;
 
-  const sets = Math.max(1, Math.trunc(qty) || 1);
+  const sets = Math.max(1, Math.trunc(setCount) || 1);
   const feetPerDoor = headerFt + legFt * 2;
   const feet = feetPerDoor * sets;
   const pricePerFt = VINYL_PRICE_PER_FT[color] ?? 0;

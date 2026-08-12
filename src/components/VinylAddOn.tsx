@@ -17,6 +17,9 @@ interface VinylAddOnProps {
   doorColor: string;
   widthFt: number;
   heightFt: number;
+  /** Open state is owned by the tool so it can shrink the demo to suit. */
+  open: boolean;
+  onToggle: (open: boolean) => void;
 }
 
 /**
@@ -30,10 +33,8 @@ interface VinylAddOnProps {
  * This is its own line in QuickBooks, not part of the door, so it carries its
  * own description, quantity and price to copy.
  */
-export function VinylAddOn({ doorColor, widthFt, heightFt }: VinylAddOnProps) {
+export function VinylAddOn({ doorColor, widthFt, heightFt, open, onToggle }: VinylAddOnProps) {
   const suggested = vinylForDoorColor(doorColor) ?? "";
-  const [open, setOpen] = useState(false);
-  const [sets, setSets] = useState(1);
   // The colour follows the door unless the counter picks a different one. Held
   // as an override rather than synced in an effect, so changing the door colour
   // cannot leave a stale vinyl colour on screen for a frame.
@@ -51,22 +52,20 @@ export function VinylAddOn({ doorColor, widthFt, heightFt }: VinylAddOnProps) {
   const isUltraGrain = /ultra[\s-]*grain/i.test(doorColor);
   const needsFinish = isUltraGrain && !suggested;
   const choices: readonly string[] = needsFinish ? ULTRAGRAIN_VINYL : VINYL_COLORS;
-  const quote = color ? vinylForDoor(color, widthFt, heightFt, sets) : null;
+  const quote = color ? vinylForDoor(color, widthFt, heightFt) : null;
 
   return (
     <div className="ggroup vinylbox no-print">
-      <div className="ghdr vinylhdr">
+      <button
+        type="button"
+        className="ghdr vinylhdr"
+        aria-expanded={open}
+        onClick={() => onToggle(!open)}
+        data-testid="vinyl-toggle"
+      >
         <span>Vinyl stop molding</span>
-        <label className="vinyltoggle">
-          <input
-            type="checkbox"
-            checked={open}
-            onChange={(e) => setOpen(e.target.checked)}
-            data-testid="vinyl-toggle"
-          />
-          <span>Add to this quote</span>
-        </label>
-      </div>
+        <span className="vinylcue">{open ? "Remove" : "Add to this quote"}</span>
+      </button>
 
       {open && (
         <div className="vinylbody">
@@ -92,22 +91,6 @@ export function VinylAddOn({ doorColor, widthFt, heightFt }: VinylAddOnProps) {
                 Ultra Grain — pick the finish to match the door
               </div>
             )}
-          </div>
-
-          <div className="grow">
-            <label>Sets</label>
-            <div className="ctl">
-              <input
-                data-testid="vinyl-sets"
-                type="number"
-                min={1}
-                value={sets}
-                onChange={(e) => setSets(Math.max(1, Math.trunc(Number(e.target.value)) || 1))}
-              />
-            </div>
-            <div className="muted-note" style={{ marginTop: 6 }}>
-              One set covers one opening
-            </div>
           </div>
 
           {quote ? (
