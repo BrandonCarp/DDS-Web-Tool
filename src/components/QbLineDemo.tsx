@@ -26,8 +26,6 @@ interface QbLineDemoProps {
   rate?: string;
   /** The few characters typed before the QuickBooks list narrows down. */
   typed?: string;
-  /** Other entries shown in the list, so it reads like a real lookup. */
-  others?: string[];
   /** Quantity cell — linear feet for per-foot parts, otherwise 1. */
   qty?: string;
 }
@@ -39,7 +37,6 @@ export function QbLineDemo({
   description = 'CLOPAY MODEL 4300, 16\u20320" X 7\u20320", IN THE COLOR WHITE, SOLID, NO WINDOWS, 12" RADIUS TRACK, TORSION SPRINGS, NO LOCK',
   rate = "1,471.84",
   typed = "STO",
-  others = ["STOCK DOOR - COMM", "SPECIAL ORDER"],
   qty = "1",
 }: QbLineDemoProps) {
   return (
@@ -82,11 +79,10 @@ export function QbLineDemo({
                 </span>
                 <span className="qbd-caret" />
                 <span className="qbd-picked">{item}</span>
+                {/* Only the item being picked — a list of decoys would just
+                    give the counter something to misread. */}
                 <span className="qbd-menu">
                   <span className="qbd-opt qbd-opt-hit">{item}</span>
-                  {others.map((o) => (
-                    <span className="qbd-opt" key={o}>{o}</span>
-                  ))}
                 </span>
               </span>
               <span className="qbd-cell qbd-c-desc">

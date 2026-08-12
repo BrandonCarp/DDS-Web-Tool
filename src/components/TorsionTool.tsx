@@ -133,7 +133,6 @@ export function TorsionTool() {
         size={`${id} ID \u00b7 ${wire} wire \u00b7 ${len}\u2033`}
         item={QB_ITEMS.spring}
         typed="SPR"
-        others={["SPRINGS - EXT", "STOCK DOOR"]}
         description={description.toUpperCase()}
         rate={fmt(price).replace("$", "")}
       />

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { EstimateSheet } from "@/components/EstimateSheet";
 import { CopyButton } from "@/components/CopyButton";
 import { QbLineDemo } from "@/components/QbLineDemo";
+import { VinylAddOn } from "@/components/VinylAddOn";
 import { QB_ITEMS } from "@/lib/qb/iif";
 import { useCustomerJob } from "@/components/CustomerJobFields";
 import type { LockKey, Quote, SpringKey, TrackKey, WindowStyle } from "@/lib/pricing/types";
@@ -552,6 +553,9 @@ export function ResidentialTool({ models }: { models: string[] }) {
                 <CopyButton text={fmt(total)} label="Copy price" testId="copy-price" />
                 <button className="btn" type="button" onClick={clearAll}>Clear</button>
               </div>
+              {/* Molding is its own QuickBooks line, so it gets its own small
+                  quote here rather than folding into the door total. */}
+              <VinylAddOn doorColor={color} widthFt={wf} heightFt={hf} />
             </>
           ) : (
             <div className="empty" data-testid="not-priced">
