@@ -600,7 +600,30 @@ html, body { margin: 0; padding: 0; }
 .tool-shell .qbd-f-item{display:inline-flex;overflow:hidden;white-space:nowrap;max-width:100%}
 .tool-shell .qbd-type{
   display:inline-block;overflow:hidden;white-space:nowrap;width:0;
-  animation:qbd-type 14s steps(10,end) infinite;
+  animation:qbd-type 14s steps(3,end) infinite;
+}
+
+/* The QuickBooks item lookup: a few characters narrow the list, the counter
+   picks a row, and the cell fills with the full name. */
+.tool-shell .qbd-menu{
+  position:absolute;left:6px;right:6px;top:calc(100% - 10px);z-index:3;
+  background:#fff;border:1px solid var(--line);border-radius:6px;
+  box-shadow:0 8px 18px rgba(60,10,15,.16);overflow:hidden;
+  display:flex;flex-direction:column;opacity:0;transform:translateY(-4px);
+  pointer-events:none;animation:qbd-menu 14s ease-out infinite;
+}
+.tool-shell .qbd-opt{
+  font-size:11px;padding:6px 9px;color:var(--muted);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;
+}
+.tool-shell .qbd-opt + .qbd-opt{border-top:1px solid var(--line-2)}
+.tool-shell .qbd-opt-hit{
+  color:var(--ink);font-weight:700;
+  animation:qbd-opt-hit 14s steps(1,end) infinite;
+}
+.tool-shell .qbd-picked{
+  position:absolute;left:10px;top:10px;font-size:12.5px;color:var(--ink);
+  opacity:0;animation:qbd-picked 14s ease-out infinite;
 }
 .tool-shell .qbd-caret{
   width:2px;height:15px;margin-top:1px;background:var(--accent);flex:none;
@@ -642,10 +665,25 @@ html, body { margin: 0; padding: 0; }
 }
 
 @keyframes qbd-type{
-  0%,8%{width:0} 24%,90%{width:10ch} 91%,100%{width:0}
+  0%,8%{width:0} 16%,26%{width:3ch} 27%,100%{width:0}
 }
 @keyframes qbd-caret{
-  0%,5%{opacity:1} 6%{opacity:0} 8%,24%{opacity:1} 25%,100%{opacity:0}
+  0%,5%{opacity:1} 6%{opacity:0} 8%,26%{opacity:1} 27%,100%{opacity:0}
+}
+@keyframes qbd-menu{
+  0%,15%{opacity:0;transform:translateY(-4px)}
+  18%,25%{opacity:1;transform:none}
+  27%,100%{opacity:0;transform:none}
+}
+@keyframes qbd-opt-hit{
+  0%,21%{background:#fff}
+  22%,26%{background:var(--accent-soft)}
+  27%,100%{background:#fff}
+}
+@keyframes qbd-picked{
+  0%,26%{opacity:0}
+  28%,90%{opacity:1}
+  91%,100%{opacity:0}
 }
 @keyframes qbd-press-desc{
   0%,28%{background:var(--surface);color:var(--muted);border-color:var(--line);transform:none}
@@ -675,8 +713,8 @@ html, body { margin: 0; padding: 0; }
 }
 @keyframes qbd-lit-1{
   0%,6%{color:var(--muted-2);border-color:var(--line-2)}
-  9%,24%{color:var(--accent-ink);border-color:var(--accent-line)}
-  27%,100%{color:var(--muted-2);border-color:var(--line-2)}
+  9%,27%{color:var(--accent-ink);border-color:var(--accent-line)}
+  29%,100%{color:var(--muted-2);border-color:var(--line-2)}
 }
 @keyframes qbd-lit-2{
   0%,28%{color:var(--muted-2);border-color:var(--line-2)}
@@ -693,8 +731,10 @@ html, body { margin: 0; padding: 0; }
    useful half of the message anyway. */
 @media (prefers-reduced-motion:reduce){
   .tool-shell .qbdemo *{animation:none!important}
-  .tool-shell .qbd-type{width:10ch}
+  .tool-shell .qbd-type{width:0}
   .tool-shell .qbd-caret{opacity:0}
+  .tool-shell .qbd-menu{display:none}
+  .tool-shell .qbd-picked{opacity:1}
   .tool-shell .qbd-f-desc,.tool-shell .qbd-f-rate{opacity:1}
 }
 @media print{ .tool-shell .qbdemo{display:none!important} }

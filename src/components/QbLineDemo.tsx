@@ -24,6 +24,12 @@ interface QbLineDemoProps {
   description?: string;
   /** Rate, already formatted, without a currency symbol. */
   rate?: string;
+  /** The few characters typed before the QuickBooks list narrows down. */
+  typed?: string;
+  /** Other entries shown in the list, so it reads like a real lookup. */
+  others?: string[];
+  /** Quantity cell — linear feet for per-foot parts, otherwise 1. */
+  qty?: string;
 }
 
 export function QbLineDemo({
@@ -32,6 +38,9 @@ export function QbLineDemo({
   item = "STOCK DOOR",
   description = 'CLOPAY MODEL 4300, 16\u20320" X 7\u20320", IN THE COLOR WHITE, SOLID, NO WINDOWS, 12" RADIUS TRACK, TORSION SPRINGS, NO LOCK',
   rate = "1,471.84",
+  typed = "STO",
+  others = ["STOCK DOOR - COMM", "SPECIAL ORDER"],
+  qty = "1",
 }: QbLineDemoProps) {
   return (
     <div className="qbdemo" aria-hidden="true">
@@ -67,16 +76,24 @@ export function QbLineDemo({
             </div>
             <div className="qbd-row">
               <span className="qbd-cell qbd-c-item">
+                {/* what the counter types, then what they pick from the list */}
                 <span className="qbd-fill qbd-f-item">
-                  <span className="qbd-type">{item}</span>
+                  <span className="qbd-type">{typed}</span>
                 </span>
                 <span className="qbd-caret" />
+                <span className="qbd-picked">{item}</span>
+                <span className="qbd-menu">
+                  <span className="qbd-opt qbd-opt-hit">{item}</span>
+                  {others.map((o) => (
+                    <span className="qbd-opt" key={o}>{o}</span>
+                  ))}
+                </span>
               </span>
               <span className="qbd-cell qbd-c-desc">
                 <span className="qbd-fill qbd-f-desc qbd-clamp">{description}</span>
               </span>
               <span className="qbd-cell qbd-c-qty">
-                <span className="qbd-fill qbd-f-desc">1</span>
+                <span className="qbd-fill qbd-f-desc">{qty}</span>
               </span>
               <span className="qbd-cell qbd-c-rate">
                 <span className="qbd-fill qbd-f-rate">{rate}</span>
@@ -86,7 +103,7 @@ export function QbLineDemo({
         </div>
 
         <ol className="qbd-steps">
-          <li className="qbd-step qbd-s1"><b>1</b> Type the item</li>
+          <li className="qbd-step qbd-s1"><b>1</b> Select the item</li>
           <li className="qbd-step qbd-s2"><b>2</b> Copy description, paste</li>
           <li className="qbd-step qbd-s3"><b>3</b> Copy price, paste</li>
         </ol>

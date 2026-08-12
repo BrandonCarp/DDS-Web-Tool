@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { EstimateSheet } from "@/components/EstimateSheet";
 import { CopyButton } from "@/components/CopyButton";
+import { QbLineDemo } from "@/components/QbLineDemo";
 import { QB_ITEMS } from "@/lib/qb/iif";
 import { useCustomerJob } from "@/components/CustomerJobFields";
 import {
@@ -437,6 +438,15 @@ export function CommercialTool() {
         </div>
       </aside>
     </div>
+    {result?.priced && (
+      <QbLineDemo
+        model={model}
+        size={result.sub}
+        item={QB_ITEMS.commercial}
+        description={(result.description ?? "").toUpperCase()}
+        rate={fmt(result.unitPrice).replace("$", "")}
+      />
+    )}
     {result?.priced && (
       <EstimateSheet lines={[{ item: QB_ITEMS.commercial, desc: result.description ?? "", qty: Math.max(1, qty), rate: result.unitPrice }]} />
     )}

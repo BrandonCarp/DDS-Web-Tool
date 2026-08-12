@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { CopyButton } from "@/components/CopyButton";
+import { QbLineDemo } from "@/components/QbLineDemo";
+import { QB_ITEMS } from "@/lib/qb/iif";
 import { useCustomerJob } from "@/components/CustomerJobFields";
 import { TORSION, ID_ORDER, torsionPrice, fmtWire, springDescription } from "@/lib/pricing/data/torsion";
 
@@ -45,6 +47,7 @@ export function TorsionTool() {
   function clear() { setWire(""); setLength(""); setRight(0); setLeft(0); }
 
   return (
+    <>
     <div className="wrap two">
       <section className="config-col">
         <div className="panel">
@@ -124,5 +127,17 @@ export function TorsionTool() {
         </div>
       </aside>
     </div>
+    {price != null && (
+      <QbLineDemo
+        model="Torsion spring"
+        size={`${id} ID \u00b7 ${wire} wire \u00b7 ${len}\u2033`}
+        item={QB_ITEMS.spring}
+        typed="SPR"
+        others={["SPRINGS - EXT", "STOCK DOOR"]}
+        description={description.toUpperCase()}
+        rate={fmt(price).replace("$", "")}
+      />
+    )}
+    </>
   );
 }
