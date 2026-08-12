@@ -4,8 +4,8 @@ import { useState } from "react";
 import { CopyButton } from "@/components/CopyButton";
 import {
   vinylForDoor,
+  vinylForDoorColor,
   VINYL_COLORS,
-  DOOR_COLOR_TO_VINYL,
   ULTRAGRAIN_VINYL,
 } from "@/lib/pricing/data/vinyl";
 
@@ -31,7 +31,7 @@ interface VinylAddOnProps {
  * own description, quantity and price to copy.
  */
 export function VinylAddOn({ doorColor, widthFt, heightFt }: VinylAddOnProps) {
-  const suggested = DOOR_COLOR_TO_VINYL[doorColor] ?? "";
+  const suggested = vinylForDoorColor(doorColor) ?? "";
   const [open, setOpen] = useState(false);
   const [sets, setSets] = useState(1);
   // The colour follows the door unless the counter picks a different one. Held
@@ -46,7 +46,11 @@ export function VinylAddOn({ doorColor, widthFt, heightFt }: VinylAddOnProps) {
   const color = override ?? suggested;
   const setColor = setOverride;
 
-  const isUltraGrain = doorColor === "Ultra Grain";
+  // An Ultra Grain door with no finish named cannot resolve on its own, so the
+  // list narrows to the five finishes rather than all sixteen colours.
+  const isUltraGrain = /ultra[\s-]*grain/i.test(doorColor);
+  const needsFinish = isUltraGrain && !suggested;
+  const choices: readonly string[] = needsFinish ? ULTRAGRAIN_VINYL : VINYL_COLORS;
   const quote = color ? vinylForDoor(color, widthFt, heightFt, sets) : null;
 
   return (
@@ -75,7 +79,7 @@ export function VinylAddOn({ doorColor, widthFt, heightFt }: VinylAddOnProps) {
                 onChange={(e) => setColor(e.target.value)}
               >
                 {!color && <option value="">Select a color</option>}
-                {VINYL_COLORS.map((c) => (
+                {choices.map((c) => (
                   <option key={c} value={c}>
                     {c}
                     {c === suggested ? "  (matches door)" : ""}
@@ -83,9 +87,9 @@ export function VinylAddOn({ doorColor, widthFt, heightFt }: VinylAddOnProps) {
                 ))}
               </select>
             </div>
-            {isUltraGrain && (
+            {needsFinish && (
               <div className="muted-note" style={{ marginTop: 6 }}>
-                Ultra Grain — pick the finish: {ULTRAGRAIN_VINYL.join(", ")}
+                Ultra Grain — pick the finish to match the door
               </div>
             )}
           </div>

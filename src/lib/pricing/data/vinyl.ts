@@ -61,8 +61,8 @@ export const VINYL_PRICE_PER_FT: Record<string, number> = {
  *
  * Glacier White takes plain white molding (there is no glacier vinyl), and
  * Chocolate Brown takes BROWN rather than MOCHA BROWN, which is its own colour.
- * Ultra Grain has no single match — the finish decides — so it is absent here
- * and the tool asks rather than guessing.
+ * Ultra Grain is absent because the FINISH decides, not the family — see
+ * vinylForDoorColor(), which reads the finish word out of the colour name.
  */
 export const DOOR_COLOR_TO_VINYL: Record<string, string> = {
   White: "WHITE",
@@ -87,6 +87,35 @@ export const ULTRAGRAIN_VINYL = [
   "CHERRY",
   "SLATE",
 ] as const;
+
+/**
+ * Ultra Grain vinyl follows the FINISH word, not the wood family — Oak Dark,
+ * Classic Dark and Cypress Dark all take DARK FINISH molding.
+ */
+const UG_FINISH: [RegExp, string][] = [
+  [/\bdark\b/i, "DARK FINISH"],
+  [/\bwalnut\b/i, "WALNUT FINISH"],
+  [/\bmedium\b/i, "MEDIUM FINISH"],
+  [/\bcherry\b/i, "CHERRY"],
+  [/\bslate\b/i, "SLATE"],
+];
+
+/**
+ * Vinyl colour for a door colour, or null when it cannot be decided.
+ *
+ * Named colours resolve from DOOR_COLOR_TO_VINYL. Ultra Grain resolves from its
+ * finish word, so this keeps working the day the colour list gains the real
+ * finish names. A bare "Ultra Grain" carries no finish, so it returns null and
+ * the counter is asked instead of being given a guess.
+ */
+export function vinylForDoorColor(doorColor: string): string | null {
+  const exact = DOOR_COLOR_TO_VINYL[doorColor];
+  if (exact) return exact;
+  if (/ultra[\s-]*grain/i.test(doorColor)) {
+    for (const [re, vinyl] of UG_FINISH) if (re.test(doorColor)) return vinyl;
+  }
+  return null;
+}
 
 export const VINYL_COLORS = Object.keys(VINYL_STOCK).sort();
 

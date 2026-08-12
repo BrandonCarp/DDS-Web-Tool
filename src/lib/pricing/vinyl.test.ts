@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { vinylForDoor, DOOR_COLOR_TO_VINYL, VINYL_STOCK } from "./data/vinyl";
+import { vinylForDoor, vinylForDoorColor, DOOR_COLOR_TO_VINYL, VINYL_STOCK } from "./data/vinyl";
 import { COLORS } from "./data/catalog-meta";
 
 describe("vinyl stop molding", () => {
@@ -46,6 +46,25 @@ describe("vinyl stop molding", () => {
   it("returns nothing when the opening outruns the stocked lengths", () => {
     expect(vinylForDoor("WHITE", 20, 7)).toBeNull(); // white tops out at 18
     expect(vinylForDoor("BRONZE", 18, 7)).toBeNull(); // bronze is 16 only
+  });
+
+  it("resolves Ultra Grain from the finish word, not the wood family", () => {
+    // Oak Dark, Classic Dark and Cypress Dark all take DARK FINISH molding.
+    expect(vinylForDoorColor("Ultra-Grain Oak Dark Finish")).toBe("DARK FINISH");
+    expect(vinylForDoorColor("Ultra-Grain Classic Walnut Finish")).toBe("WALNUT FINISH");
+    expect(vinylForDoorColor("Ultra-Grain Cypress Medium Finish")).toBe("MEDIUM FINISH");
+    expect(vinylForDoorColor("Ultra-Grain Classic Cherry Finish")).toBe("CHERRY");
+    expect(vinylForDoorColor("Ultra-Grain Oak Slate Finish")).toBe("SLATE");
+  });
+
+  it("asks when an Ultra Grain door names no finish", () => {
+    expect(vinylForDoorColor("Ultra Grain")).toBeNull();
+  });
+
+  it("sends chocolate to plain brown, not mocha", () => {
+    expect(vinylForDoorColor("Chocolate Brown")).toBe("BROWN");
+    expect(vinylForDoorColor("Mocha Brown")).toBe("MOCHA BROWN");
+    expect(vinylForDoorColor("Glacier White")).toBe("WHITE");
   });
 
   it("maps every door colour except Ultra Grain, which needs a finish", () => {
