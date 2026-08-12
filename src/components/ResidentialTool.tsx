@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { EstimateSheet } from "@/components/EstimateSheet";
 import { CopyButton } from "@/components/CopyButton";
 import { QbLineDemo } from "@/components/QbLineDemo";
-import { VinylAddOn } from "@/components/VinylAddOn";
 import { QB_ITEMS } from "@/lib/qb/iif";
 import { useCustomerJob } from "@/components/CustomerJobFields";
 import type { LockKey, Quote, SpringKey, TrackKey, WindowStyle } from "@/lib/pricing/types";
@@ -64,10 +63,6 @@ export function ResidentialTool({ models }: { models: string[] }) {
   const [heightFt, setHeightFt] = useState("");
   const [heightIn, setHeightIn] = useState("0");
   const [assembly, setAssembly] = useState("complete");
-  // Owned here, not in the card: opening the molding quote makes the column
-  // taller, so the demo below shrinks to keep it on screen instead of being
-  // shoved off the bottom.
-  const [vinylOpen, setVinylOpen] = useState(false);
   // "Sections only" mode — mirrors the Commercial replacement-section flow.
   // Widths are STOCK-SIZE DROPDOWNS from the 2026 V2 workbook, never typed.
   const [secKind, setSecKind] = useState<"bt" | "int">("bt");
@@ -557,9 +552,6 @@ export function ResidentialTool({ models }: { models: string[] }) {
                 <CopyButton text={fmt(total)} label="Copy price" testId="copy-price" />
                 <button className="btn" type="button" onClick={clearAll}>Clear</button>
               </div>
-              {/* Molding is its own QuickBooks line, so it gets its own small
-                  quote here rather than folding into the door total. */}
-              <VinylAddOn doorColor={color} widthFt={wf} heightFt={hf} open={vinylOpen} onToggle={setVinylOpen} />
             </>
           ) : (
             <div className="empty" data-testid="not-priced">
@@ -576,7 +568,6 @@ export function ResidentialTool({ models }: { models: string[] }) {
         rather than a canned one. */}
     {priced && (
       <QbLineDemo
-        compact={vinylOpen}
         model={model}
         size={dims}
         description={description.toUpperCase()}

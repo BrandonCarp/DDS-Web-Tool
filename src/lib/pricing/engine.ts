@@ -9,7 +9,7 @@ import { ADDONS, ULTRAGRAIN, GRADE_RES, COLLECTIONS_RES } from "./data/addons";
 import { dataKey, expandModels } from "./model-groups";
 import { windowDesigns, designName } from "./data/inserts";
 import { RES_SECTIONS } from "./data/res-sections";
-import { colorInStock } from "./data/stock-colors";
+import { colorInStock, sectionColorInStock, sizeCode } from "./data/stock-colors";
 import { colorTakesPremium } from "./data/catalog-meta";
 import type { Dimensions, PriceResult, PriceTriple, Quote, QuoteOptions, SizeCode, Tier, WindowStyle, QuoteLine } from "./types";
 
@@ -246,7 +246,9 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
   // series are White-only). A stock-size door in a non-stocked color still
   // PRICES from the stock sheet (source stays "stock"), but reads as a special
   // order in the badge and description.
-  const inStock = stock !== null && colorInStock(model, opts.color, size.wf);
+  const inStock =
+    stock !== null &&
+    colorInStock(model, opts.color, sizeCode(size.wf, size.wi), sizeCode(size.hf, size.hi));
   // The stock/special status is NOT in the description — it is shown in the
   // stock badge on screen. The description is copied verbatim into QuickBooks,
   // where the status is a DDS-internal fact, not part of the product line.
@@ -296,7 +298,7 @@ export function quoteResidentialSection(model: string, input: ResSectionInput): 
   const lockbar = input.kind === "int" && !glazed && !!input.lockbar;
   if (lockbar) lines.push({ name: "Lockbar installed", value: ADDONS.lockbar_installed, kind: "add" });
   const unitPrice = lines.reduce((a, l) => a + (l.kind === "minus" ? -l.value : l.value), 0);
-  const secStock = colorInStock(model, input.color || "White");
+  const secStock = sectionColorInStock(model, input.color || "White");
   const desc =
     `Clopay Model ${model}, ${kindNm.toLowerCase()} replacement section` +
     (input.kind === "int" ? (glazed ? " with glass" : ", solid") : "") +

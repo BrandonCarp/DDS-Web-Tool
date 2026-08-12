@@ -515,3 +515,66 @@ describe("stock status requires a stocked COLOR, not just a stock size", () => {
     expect(white.isStock).toBe(true);
   });
 });
+
+describe("stock badge follows the DDS stock list exactly", () => {
+  const o = (color: string) => ({
+    style: "solid" as const, color, track: "r12" as const,
+    spring: "torsion" as const, lock: "none" as const,
+  });
+  const q = (model: string, wf: number, wi: number, hf: number, hi: number, color: string) =>
+    quoteResidential(model, { widthFt: wf, widthIn: wi, heightFt: hf, heightIn: hi }, o(color));
+
+  it("does NOT floor a 10' Black 4050 — Black runs 8', 9' and 16' only", () => {
+    expect(q("4050", 10, 0, 7, 0, "Black").isStock).toBe(false);
+    expect(q("4050", 8, 0, 7, 0, "Black").isStock).toBe(true);
+    expect(q("4050", 9, 0, 7, 0, "Black").isStock).toBe(true);
+    expect(q("4050", 16, 0, 7, 0, "Black").isStock).toBe(true);
+  });
+
+  it("still prices an unstocked colour off the stock sheet", () => {
+    // Not on the floor, but the price is the stock price — it just reads
+    // special order, the same way Bronze does.
+    const black = q("4050", 10, 0, 7, 0, "Black");
+    const white = q("4050", 10, 0, 7, 0, "White");
+    expect(black.unitPrice).toBe(white.unitPrice);
+    expect(black.isStock).toBe(false);
+    expect(white.isStock).toBe(true);
+  });
+
+  it("floors White above 8' tall but no other colour", () => {
+    expect(q("4050", 9, 0, 9, 0, "White").isStock).toBe(true);
+    expect(q("4050", 9, 0, 9, 0, "Almond").isStock).toBe(false);
+    expect(q("4050", 9, 0, 8, 0, "Almond").isStock).toBe(true);
+  });
+
+  it("keeps 18' to a White 4050 and nothing else", () => {
+    expect(q("4050", 18, 0, 7, 0, "White").isStock).toBe(true);
+    expect(q("4050", 18, 0, 7, 0, "Black").isStock).toBe(false);
+    expect(q("4051", 18, 0, 7, 0, "White").isStock).toBe(false);
+  });
+
+  it("gives 4051/4053 the narrower width range they actually carry", () => {
+    expect(q("4051", 8, 0, 7, 0, "Black").isStock).toBe(true);
+    expect(q("4051", 10, 0, 7, 0, "White").isStock).toBe(false);
+    expect(q("4050", 10, 0, 7, 0, "White").isStock).toBe(true);
+  });
+
+  it("matches T52S's shorter width list against T50S", () => {
+    expect(q("T50S", 7, 6, 7, 0, "White").isStock).toBe(true);
+    expect(q("T52S", 7, 6, 7, 0, "White").isStock).toBe(false);
+    expect(q("T52S", 16, 0, 7, 0, "White").isStock).toBe(true);
+    expect(q("T50S", 18, 0, 7, 0, "White").isStock).toBe(false);
+  });
+
+  it("floors the odd heights the list names, and not the ones it skips", () => {
+    expect(q("4050", 8, 0, 6, 9, "White").isStock).toBe(true);
+    expect(q("4050", 8, 0, 7, 6, "White").isStock).toBe(true);
+    expect(q("4050", 8, 0, 7, 3, "White").isStock).toBe(false);
+  });
+
+  it("never floors a 4300 or 9130 complete door", () => {
+    for (const m of ["4300", "9130-9133"]) {
+      expect(q(m, 8, 0, 7, 0, "White").isStock).toBe(false);
+    }
+  });
+});

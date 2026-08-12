@@ -741,49 +741,31 @@ html, body { margin: 0; padding: 0; }
   .tool-shell .qbd-picked{opacity:1}
   .tool-shell .qbd-f-desc,.tool-shell .qbd-f-rate{opacity:1}
 }
-/* Trimmed down when the molding quote is open above it. Same content, less
-   air, so the band stays on screen instead of being pushed off. */
-.tool-shell .qbd-compact .qbd-inner{padding:12px 22px 14px}
-.tool-shell .qbd-compact .qbd-cap{margin-bottom:8px;font-size:11px}
-.tool-shell .qbd-compact .qbd-src{width:208px}
-.tool-shell .qbd-compact .qbd-src-hd{padding:6px 10px}
-.tool-shell .qbd-compact .qbd-src-model{font-size:13.5px}
-.tool-shell .qbd-compact .qbd-src-row{padding:7px 10px;font-size:11.5px}
-.tool-shell .qbd-compact .qbd-src-btns{padding:7px 10px}
-.tool-shell .qbd-compact .qbd-cell{min-height:44px;padding:8px;font-size:11.5px}
-.tool-shell .qbd-compact .qbd-steps{margin-top:9px}
-.tool-shell .qbd-compact .qbd-step{font-size:11px;padding:4px 11px 4px 4px}
-.tool-shell .qbd-compact .qbd-step b{width:17px;height:17px;font-size:10px}
-
 @media print{ .tool-shell .qbdemo{display:none!important} }
 
-/* ── Vinyl stop molding add-on ─────────────────────────────────────────────
-   Sits under the door quote as its own small quote: separate description,
-   quantity and price, because it is a separate QuickBooks line.            */
-.tool-shell .vinylbox{margin:14px 22px 18px}
-/* The whole header is the control — a checkbox in a dark bar is easy to miss
-   and hard to hit with a work glove on. */
-.tool-shell button.vinylhdr{
-  display:flex;align-items:center;justify-content:space-between;gap:12px;
-  width:100%;border:0;text-align:left;cursor:pointer;font:inherit;
-  font-size:12.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;
-  color:#fff;background:var(--brand);padding:11px 16px;
+
+/* ── Parts list ────────────────────────────────────────────────────────────
+   A scrolling shelf list. Rows are buttons, not links — nothing navigates,
+   picking one just loads it into the quote on the right.                    */
+.tool-shell .partlist{
+  list-style:none;margin:0;padding:0;max-height:520px;overflow-y:auto;background:#fff;
 }
-.tool-shell button.vinylhdr:hover{background:var(--brand-2)}
-.tool-shell button.vinylhdr:focus-visible{outline:2px solid var(--accent-line);outline-offset:-3px}
-.tool-shell .vinylcue{
-  font-size:11px;font-weight:600;letter-spacing:.3px;text-transform:none;opacity:.85;
+.tool-shell .partlist li + li{border-top:1px solid var(--line-2)}
+.tool-shell .partrow{
+  display:flex;align-items:baseline;justify-content:space-between;gap:14px;
+  width:100%;border:0;background:none;cursor:pointer;font:inherit;text-align:left;
+  padding:11px 15px;color:var(--ink);
 }
-.tool-shell .vinylbody{padding:12px 14px 14px;display:flex;flex-direction:column;gap:12px}
-.tool-shell .vinyldesc{
-  font-family:var(--mono);font-size:12px;line-height:1.45;color:var(--ink);
-  background:var(--surface);border:1px solid var(--line-2);border-radius:7px;padding:10px 12px;
+.tool-shell .partrow:hover{background:var(--accent-soft)}
+.tool-shell .partrow:focus-visible{outline:2px solid var(--accent-line);outline-offset:-2px}
+.tool-shell .partrow.on{background:var(--accent-soft);box-shadow:inset 4px 0 0 var(--accent)}
+.tool-shell .partname{font-size:13.5px;line-height:1.35;min-width:0}
+.tool-shell .partsub,.tool-shell .partcat{
+  display:block;font-size:10.5px;letter-spacing:.4px;text-transform:uppercase;color:var(--muted-2);
+  margin-top:2px;
 }
-.tool-shell .vinyltotals{
-  display:flex;align-items:baseline;justify-content:space-between;gap:12px;
-  font-size:13px;color:var(--muted);
+.tool-shell .partprice{
+  font-family:var(--mono);font-size:13.5px;white-space:nowrap;color:var(--ink);
 }
-.tool-shell .vinyltotals b{font-family:var(--mono);font-size:15px;color:var(--ink);margin:0 2px}
-.tool-shell .vinylprice{font-family:var(--mono);font-size:19px;font-weight:700;color:var(--ink)}
-.tool-shell .vinylfoot{display:flex;gap:8px;flex-wrap:wrap}
-@media print{ .tool-shell .vinylbox{display:none!important} }
+.tool-shell .perft{font-size:10.5px;color:var(--muted-2);margin-left:2px}
+.tool-shell .partempty{padding:16px 15px;font-size:13px;color:var(--muted-2)}
