@@ -28,19 +28,19 @@ describe("torsion spring description", () => {
 
   it("lists right before left on a mixed pair, with the cone colours", () => {
     expect(springDescription("0.234", "3.75", 52, 1, 1)).toBe(
-      '3-3/4" ID, 234 WIRE, 52" LONG [1] - RIGHT(RED) AND [1] - LEFT(BLACK)',
+      '3-3/4" ID, 234 WIRE, 52" LONG [1] - RIGHT AND [1] - LEFT',
     );
   });
 
   it("pluralises a same-hand pair", () => {
     expect(springDescription("0.234", "3.75", 52, 0, 2)).toBe(
-      '3-3/4" ID, 234 WIRE, 52" LONG [2] - LEFTS(BLACK)',
+      '3-3/4" ID, 234 WIRE, 52" LONG [2] - LEFTS',
     );
   });
 
   it("handles a single hand on its own", () => {
     expect(springDescription("0.234", "3.75", 52, 1, 0)).toBe(
-      '3-3/4" ID, 234 WIRE, 52" LONG [1] - RIGHT(RED)',
+      '3-3/4" ID, 234 WIRE, 52" LONG [1] - RIGHT',
     );
   });
 });

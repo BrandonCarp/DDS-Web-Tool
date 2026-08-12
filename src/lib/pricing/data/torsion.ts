@@ -221,6 +221,11 @@ export function wireCode(w: string): string {
 }
 
 /** Winding-cone colour convention: right-hand wound = red, left-hand = black. */
+/**
+ * Wind colours as the counter calls them out. These label the quantity fields
+ * on screen only — they are deliberately NOT in the copied description, which
+ * goes to a customer-facing QuickBooks line.
+ */
 export const HAND_COLOR = { right: "RED", left: "BLACK" } as const;
 
 /**
@@ -234,8 +239,8 @@ export function springBase(wire: string, id: string, lengthIn: number): string {
 /**
  * Full description with hand counts appended.
  *   0 / 0  -> `3-3/4" ID, 234 WIRE, 52" LONG`
- *   1R 1L  -> `... [1] - RIGHT(RED) AND [1] - LEFT(BLACK)`
- *   0R 2L  -> `... [2] - LEFTS(BLACK)`
+ *   1R 1L  -> `... [1] - RIGHT AND [1] - LEFT`
+ *   0R 2L  -> `... [2] - LEFTS`
  * Right is listed first, matching how the counter calls a pair.
  */
 export function springDescription(
@@ -246,8 +251,10 @@ export function springDescription(
   left: number,
 ): string {
   const base = springBase(wire, id, lengthIn);
+  // No wind colour here — red/black label the on-screen quantity fields, but
+  // the description is copied into QuickBooks where it reads as noise.
   const part = (n: number, hand: "right" | "left") =>
-    `[${n}] - ${hand.toUpperCase()}${n > 1 ? "S" : ""}(${HAND_COLOR[hand]})`;
+    `[${n}] - ${hand.toUpperCase()}${n > 1 ? "S" : ""}`;
   const parts: string[] = [];
   if (right > 0) parts.push(part(right, "right"));
   if (left > 0) parts.push(part(left, "left"));
