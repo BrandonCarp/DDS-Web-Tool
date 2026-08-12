@@ -9,6 +9,7 @@ import {
   COMM_COMPLETE, COMM_MATRIX_SIZES,
   SLAB_RATE, SLAB_LABEL, commMfrs, commModelsFor, maxWindows, roundedFeet,
   SECTION_MAX_WIDTH_IN, maxWidthLabel, sectionColors,
+  STOCK_SECTION_WIDTHS, sectionWidthLabel,
 } from "@/lib/pricing/data/commercial-meta";
 
 interface CommQuote {
@@ -49,7 +50,17 @@ export function CommercialTool() {
 
   const canComplete = COMM_COMPLETE.has(model);
   const hasRate = SLAB_RATE[model] != null;
+  const stockWidths = STOCK_SECTION_WIDTHS[model];
   const perFoot = hasRate; // per-foot rate models; others price from the section cost table
+  // End stiles and colour apply to per-foot AND stocked-width sections. Only the
+  // cost-table models (3720/3717/3150) price a bare section with neither.
+  const hasStileChoice = hasRate || stockWidths != null;
+  // Is the typed width one of the stocked ones? Blank reads as OK so the hint
+  // stays neutral until the counter has actually entered a size.
+  const stockOk =
+    !stockWidths ||
+    manFt === "" ||
+    stockWidths.includes(`${Math.trunc(Number(manFt)) || 0}.${Math.trunc(Number(manIn)) || 0}`);
 
   const rFeet = useMemo(() => {
     if (order !== "section") return null;
@@ -233,7 +244,17 @@ export function CommercialTool() {
                           <input data-testid="comm-width-in" type="number" min={0} max={11} value={manIn} onChange={(e) => { const v = e.target.value; if (v === "" || (Number(v) >= 0 && Number(v) <= 11)) setManIn(v); }} />
                           <span className="u">in</span>
                         </div>
-                        {maxIn != null && (
+                        {stockWidths ? (
+                          <div
+                            className={stockOk ? "muted-note" : "note warn"}
+                            style={{ marginTop: 6 }}
+                            data-testid="comm-width-limit"
+                          >
+                            {stockOk
+                              ? `Stocked: ${stockWidths.map(sectionWidthLabel).join(", ")}`
+                              : `${model} sections are stocked in ${stockWidths.map(sectionWidthLabel).join(", ")} only — use Special Order for this size`}
+                          </div>
+                        ) : maxIn != null && (
                           <div className={overMax ? "note warn" : "muted-note"} style={{ marginTop: 6 }} data-testid="comm-width-limit">
                             {overMax ? `Too wide — ${model} sections go up to ${maxWidthLabel(maxIn)}` : `Up to ${maxWidthLabel(maxIn)}`}
                           </div>
@@ -319,7 +340,7 @@ export function CommercialTool() {
                       </select>
                     </div>
                   </div>
-                ) : perFoot ? (
+                ) : hasStileChoice ? (
                   <>
                     <div className="grow">
                       <label>End stiles</label>

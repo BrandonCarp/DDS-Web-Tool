@@ -160,6 +160,21 @@ export const COMM_SECTION_WIDTHS: Record<string, string[]> = {
     "16.2"
   ]
 };
+/**
+ * Models whose replacement sections are stocked in fixed widths only (sell
+ * prices live in COMM_SECTION_STOCK). Mirrored here so the UI can show the
+ * stile selector and the right hint without importing the price data.
+ */
+export const STOCK_SECTION_WIDTHS: Record<string, string[]> = {
+  "3200": ["8.2", "9.2", "10.2", "12.2"],
+};
+
+/** "8.2" -> 8\u20322\u2033 for hints and messages. */
+export function sectionWidthLabel(key: string): string {
+  const [ft, inch] = key.split(".");
+  return `${ft}\u2032${inch && inch !== "0" ? inch + "\u2033" : ""}`;
+}
+
 export const SLAB_RATE: Record<string, number> = {
   "591": 49.5,
   "592": 54.5,
