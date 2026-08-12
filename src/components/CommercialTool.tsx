@@ -407,9 +407,9 @@ export function CommercialTool() {
                 </div>
               )}
               <div className="qfoot">
-                <button className="btn" type="button" onClick={resetConfig}>Clear</button>
-                <CopyButton text={fmt(total)} label="Copy price" testId="comm-copy-price" />
                 <CopyButton text={(result.description ?? "").toUpperCase()} label="Copy description" primary testId="comm-copy-desc" />
+                <CopyButton text={fmt(total)} label="Copy price" testId="comm-copy-price" />
+                <button className="btn" type="button" onClick={resetConfig}>Clear</button>
               </div>
             </>
           )}

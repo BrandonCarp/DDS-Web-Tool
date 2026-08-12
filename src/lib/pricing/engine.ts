@@ -23,16 +23,22 @@ import type { Dimensions, PriceResult, PriceTriple, Quote, QuoteOptions, SizeCod
  * by scripts/gen_tall_tiers.py), so the cap moves up to the book's own ceiling.
  */
 const TIER_MAX_IN: ReadonlyArray<readonly [number, Tier]> = [
-  [84, "7"], //  6'0" to 7'0"
-  [96, "8"], //  7'6" to 8'0"
-  [108, "9"], //  8'3" to 9'0"
-  [120, "10"], //  9'3" to 10'0"
-  [144, "12"], // 10'3" to 12'0"
-  [168, "14"], // 12'3" to 14'0"
-  [192, "16"], // 14'3" to 16'0"
+  [84, "7"], // 6'0" to 7'0"
+  [96, "8"], // 7'6" to 8'0"
+  [108, "9"], // 8'3" to 9'0" -- the tallest tier the app carries prices for
 ];
 
-/** Height (in total inches) -> door height tier, or null above 16'0". */
+/**
+ * Height (in total inches) -> door height tier, or null above 9'0".
+ *
+ * The books run to 16' in four more columns. Those were loaded on 08/11 from the
+ * 07/2026 net books and pulled back out on 08/12: the supplemental pages are
+ * dated March 2021 and the colour/availability text is demonstrably stale, so
+ * tall doors go to Special Order until updated sheets arrive.
+ *
+ * This must never fall through to a lower tier. It once returned "9" for ANY
+ * height, so a 16-ft door quoted silently at the 9-ft price.
+ */
 export function tierForHeight(totalInches: number): Tier | null {
   for (const [maxIn, tier] of TIER_MAX_IN) {
     if (totalInches <= maxIn) return tier;
@@ -205,7 +211,10 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
   // bands were loaded a 12-foot door could be quoted on extension springs and
   // charged the torsion adder on top.
   const torsionOnly = size.tier !== "7" && size.tier !== "8";
-  if (torsionOnly) lines.push({ name: "Torsion springs (included)", value: 0 });
+  // No line is pushed when torsion is included in the door price -- a $0.00 row
+  // reads as a charge the counter has to explain. The description still says
+  // "torsion springs" so the customer sees what they are getting.
+  if (torsionOnly) { /* included at no charge, nothing to show */ }
   else if (opts.spring === "torsion")
     lines.push({ name: "Torsion springs", value: ADDONS.torsion, kind: "add" as const });
 

@@ -115,9 +115,9 @@ export function TorsionTool() {
               </div>
 
               <div className="qfoot">
-                <button className="btn" type="button" onClick={clear}>Clear</button>
-                <CopyButton text={fmt(price)} label="Copy price" onCopy={record} testId="tor-copy-price" />
                 <CopyButton text={description} label="Copy description" primary onCopy={record} testId="tor-copy-desc" />
+                <CopyButton text={fmt(price)} label="Copy price" onCopy={record} testId="tor-copy-price" />
+                <button className="btn" type="button" onClick={clear}>Clear</button>
               </div>
             </>
           )}

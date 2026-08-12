@@ -547,9 +547,9 @@ export function ResidentialTool({ models }: { models: string[] }) {
                 <div className="desctext">{description.toUpperCase()}</div>
               </div>
               <div className="qfoot">
-                <button className="btn" type="button" onClick={clearAll}>Clear</button>
-                <CopyButton text={fmt(total)} label="Copy price" testId="copy-price" />
                 <CopyButton text={description.toUpperCase()} label="Copy description" primary testId="copy-desc" />
+                <CopyButton text={fmt(total)} label="Copy price" testId="copy-price" />
+                <button className="btn" type="button" onClick={clearAll}>Clear</button>
               </div>
             </>
           ) : (

@@ -231,9 +231,9 @@ export function SpecialTool() {
                 <span className="tv">{fmt(total)}</span>
               </div>
               <div className="qfoot">
-                <button className="btn" type="button" onClick={() => pickScope(scope)}>Clear</button>
-                <CopyButton text={fmt(total)} label="Copy price" onCopy={saveQuote} testId="so-copy-price" />
                 <CopyButton text={label.toUpperCase()} label="Copy description" primary onCopy={saveQuote} testId="so-copy-desc" />
+                <CopyButton text={fmt(total)} label="Copy price" onCopy={saveQuote} testId="so-copy-price" />
+                <button className="btn" type="button" onClick={() => pickScope(scope)}>Clear</button>
               </div>
             </>
           )}
