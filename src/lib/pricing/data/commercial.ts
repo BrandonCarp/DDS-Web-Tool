@@ -534,32 +534,6 @@ export const COMM_SECTIONS: { margin: number; cost: Record<string, Record<string
         "int": 358.44
       }
     },
-    "3200": {
-      "8.2": {
-        "bt": 190.78,
-        "int": 176.7
-      },
-      "9.2": {
-        "bt": 214.62,
-        "int": 198.78
-      },
-      "10.2": {
-        "bt": 238.48,
-        "int": 220.87
-      },
-      "12.2": {
-        "bt": 286.17,
-        "int": 265.04
-      },
-      "14.2": {
-        "bt": 333.87,
-        "int": 309.22
-      },
-      "16.2": {
-        "bt": 381.57,
-        "int": 353.39
-      }
-    },
     "3720": {
       "8.2": {
         "bt": 208.83,
@@ -643,6 +617,38 @@ export const COMM_SECTIONS: { margin: number; cost: Record<string, Record<string
 };
 
 /** Per-foot section rates + adders (also shown in the UI, mirrored in commercial-meta). */
+/**
+ * Clopay 3200 replacement sections -- SELL prices, straight off Brandon's
+ * new_pricing_2026_V2.xlsx "3200 SECTIONS" sheet. Not cost, not per-foot.
+ *
+ * 3200 sections are stocked in four widths only. Anything else is a special
+ * order and must be quoted on the Special Order screen, so there is deliberately
+ * NO round-up-to-next-size here and no per-foot fallback -- 3200 is not a
+ * per-foot model. (3720 and the slab models still price per foot.)
+ *
+ * These prices already include a SINGLE end stile. Choosing double end stiles
+ * adds only the difference (stile_double - stile_single), not the full adder.
+ *
+ * NOTE: the 8'2" intermediate reads 293.61 on the sheet. Every other
+ * intermediate in this table sits on a clean $44.51/ft line, which would put
+ * 8'2" at 356.09. It was flagged and is stored here exactly as printed -- the
+ * sheet is the source of truth and is never hand-edited.
+ */
+export const COMM_SECTION_STOCK: {
+  includesSingleStile: true;
+  price: Record<string, Record<string, { bt: number; int: number }>>;
+} = {
+  "includesSingleStile": true,
+  "price": {
+    "3200": {
+      "8.2": { "bt": 384.49, "int": 293.61 },
+      "9.2": { "bt": 432.53, "int": 400.60 },
+      "10.2": { "bt": 480.60, "int": 445.11 },
+      "12.2": { "bt": 576.72, "int": 534.13 }
+    }
+  }
+};
+
 export const COMM_SLAB: { rate: Record<string, number>; label: Record<string, string>; adders: { retainer: number; stile_single: number; stile_double: number; window: number }; widths: number[] } = {
   "rate": {
     "591": 49.5,

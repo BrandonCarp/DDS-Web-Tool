@@ -1,7 +1,7 @@
 // Ported 1:1 from the production single-file tool: buildCommQuote() +
 // commStockCheck() + the complete-door description builder. Server-side only.
 
-import { COMM_MATRIX, COMM_SECTIONS, COMM_SLAB, STOCK_COMM, GRADE_COMM } from "./data/commercial";
+import { COMM_MATRIX, COMM_SECTIONS, COMM_SECTION_STOCK, COMM_SLAB, STOCK_COMM, GRADE_COMM } from "./data/commercial";
 import { COMM_COMPLETE, maxWindows, roundedFeet, SECTION_MAX_WIDTH_IN, maxWidthLabel, sectionColors } from "./data/commercial-meta";
 
 export interface CommQuoteLine { name: string; value: number; kind: "base" | "add" | "minus" }
@@ -99,6 +99,7 @@ export function quoteCommercial(input: CommInput): CommQuote {
   //    stock-cost table at the next standard width UP, at the section margin.
   const hasCost = !!COMM_SECTIONS.cost[model];
   const hasRate = COMM_SLAB.rate[model] != null;
+  const stockSec = COMM_SECTION_STOCK.price[model];
 
   const ft = Math.trunc(Number(input.manFt));
   const inch = Math.trunc(Number(input.manIn)) || 0;
@@ -121,7 +122,31 @@ export function quoteCommercial(input: CommInput): CommQuote {
   const sub = `${widthLabel} · ${kindNm} · ${input.secHeight}″`;
   const lines: CommQuoteLine[] = [];
 
-  if (hasRate) {
+  if (stockSec) {
+    // Stocked sizes only — exact match, no rounding up to the next width. An
+    // unstocked size is a special order and must be quoted on that screen.
+    const key = `${ft}.${inch}`;
+    const hit = stockSec[key];
+    if (!hit) {
+      const sizes = Object.keys(stockSec)
+        .map((k) => k.replace(".", "′") + "″")
+        .join(", ");
+      return {
+        ...base,
+        sub,
+        incomplete: `${model} sections are stocked in ${sizes} only — this size must be entered in the Special Order category`,
+      };
+    }
+    lines.push({ name: `${kindNm} section · ${widthLabel}`, value: hit[input.secKind], kind: "base" });
+    // The sheet price already includes a single end stile, so double adds only
+    // the difference — not the full double adder on top of a price that has one.
+    if (input.stile === "double")
+      lines.push({
+        name: "Double end stiles",
+        value: COMM_SLAB.adders.stile_double - COMM_SLAB.adders.stile_single,
+        kind: "add",
+      });
+  } else if (hasRate) {
     const rate = COMM_SLAB.rate[model];
     lines.push({ name: `${kindNm} section · ${rFeet}′ × $${rate}/ft`, value: rate * rFeet, kind: "base" });
     // Bottom retainer & rubber is ALWAYS included on a bottom section — it is

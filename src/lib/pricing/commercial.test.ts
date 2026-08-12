@@ -54,7 +54,7 @@ describe("commercial replacement sections (any customer width)", () => {
     expect(qi.unitPrice).toBeCloseTo(29 * 10 + 300, 2); // intermediate: no retainer
   });
   it("cost-table bottom sections (Clopay panel models) are unchanged — no retainer adder", () => {
-    const q = quoteCommercial(section({ model: "3200", manFt: 9, manIn: 4, secKind: "bt" }));
+    const q = quoteCommercial(section({ model: "3720", manFt: 9, manIn: 4, secKind: "bt" }));
     expect(q.lines.some((l) => /retainer/i.test(l.name))).toBe(false);
   });
   it("caps windows at the max for the width (≤9ft -> 2)", () => {
@@ -63,15 +63,51 @@ describe("commercial replacement sections (any customer width)", () => {
   });
   it("Clopay panel model without a per-foot rate rounds UP to the next standard width cost", () => {
     // 9'4" wanted -> priced as the 10'2" standard section, cost / (1 - 49%)
-    const q = quoteCommercial(section({ model: "3200", manFt: 9, manIn: 4, secKind: "int" }));
-    expect(q.unitPrice).toBeCloseTo(220.87 / 0.51, 2);
+    const q = quoteCommercial(section({ model: "3720", manFt: 9, manIn: 4, secKind: "int" }));
+    expect(q.unitPrice).toBeCloseTo(242.73 / 0.51, 2);
     expect(q.lines[0].name).toContain("priced as 10′2″ standard");
     // exact standard width prices straight from its own cost row
-    const q2 = quoteCommercial(section({ model: "3200", manFt: 9, manIn: 2, secKind: "int" }));
-    expect(q2.unitPrice).toBeCloseTo(198.78 / 0.51, 2);
+    const q2 = quoteCommercial(section({ model: "3720", manFt: 9, manIn: 2, secKind: "int" }));
+    expect(q2.unitPrice).toBeCloseTo(218.45 / 0.51, 2);
   });
   it("rejects widths beyond the widest standard section for cost-table models", () => {
-    expect(quoteCommercial(section({ model: "3200", manFt: 18, manIn: 0 })).incomplete).toMatch(/Too wide/);
+    expect(quoteCommercial(section({ model: "3720", manFt: 18, manIn: 0 })).incomplete).toMatch(/Too wide/);
+  });
+});
+
+describe("3200 sections — stocked sizes only", () => {
+  // Sell prices come straight off the workbook's "3200 SECTIONS" sheet.
+  it("prices the four stocked widths exactly as the sheet reads", () => {
+    const cases: [number, number, "bt" | "int", number][] = [
+      [8, 2, "bt", 384.49], [8, 2, "int", 293.61],
+      [9, 2, "bt", 432.53], [9, 2, "int", 400.6],
+      [10, 2, "bt", 480.6], [10, 2, "int", 445.11],
+      [12, 2, "bt", 576.72], [12, 2, "int", 534.13],
+    ];
+    for (const [ft, inch, kind, want] of cases) {
+      const q = quoteCommercial(section({ model: "3200", manFt: ft, manIn: inch, secKind: kind }));
+      expect(q.unitPrice).toBeCloseTo(want, 2);
+    }
+  });
+
+  it("sends an unstocked size to Special Order instead of rounding up", () => {
+    for (const [ft, inch] of [[9, 4], [11, 0], [14, 2], [18, 0]] as const) {
+      const q = quoteCommercial(section({ model: "3200", manFt: ft, manIn: inch }));
+      expect(q.incomplete).toMatch(/Special Order/i);
+      expect(q.unitPrice).toBe(0);
+    }
+  });
+
+  it("adds only the DIFFERENCE for double end stiles — the sheet already has a single", () => {
+    const single = quoteCommercial(section({ model: "3200", manFt: 9, manIn: 2, secKind: "bt" }));
+    const dbl = quoteCommercial(section({ model: "3200", manFt: 9, manIn: 2, secKind: "bt", stile: "double" }));
+    expect(single.unitPrice).toBeCloseTo(432.53, 2);
+    expect(dbl.unitPrice).toBeCloseTo(432.53 + 30, 2);
+  });
+
+  it("never charges a separate single-stile line on a 3200 section", () => {
+    const q = quoteCommercial(section({ model: "3200", manFt: 9, manIn: 2, secKind: "int" }));
+    expect(q.lines.some((l) => /single end stile/i.test(l.name))).toBe(false);
   });
 });
 
