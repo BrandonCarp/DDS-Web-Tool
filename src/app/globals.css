@@ -808,3 +808,9 @@ html, body { margin: 0; padding: 0; }
 }
 .tool-shell .perft{font-size:10.5px;color:var(--muted-2);margin-left:2px}
 .tool-shell .partempty{padding:16px 15px;font-size:13px;color:var(--muted-2)}
+
+/* Operator pricing is not set, so the card says so where the figure would be
+   rather than showing a zero somebody could copy. */
+.tool-shell .nopricing{
+  font-size:13px;font-weight:600;color:var(--muted-2);letter-spacing:.2px;
+}

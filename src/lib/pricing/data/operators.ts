@@ -1,0 +1,258 @@
+// AUTO-GENERATED from NEW_PARTS_LIST.xlsx by scripts/gen_operators.py.
+// Do not edit by hand — re-run the script when the sheet changes.
+//
+// There are no prices here on purpose: DDS has not set operator pricing.
+// The tool copies the description and leaves the rate blank so nobody
+// quotes off a number the company has not agreed to.
+
+export interface Operator {
+  /** Model number, as it reads on the box. */
+  name: string;
+  /** Verbiage copied into the QuickBooks description column. */
+  desc: string;
+}
+
+export interface OperatorSection {
+  name: string;
+  /** "Operators" for the machine itself, "Accessories" for what hangs off it. */
+  group: string;
+  items: Operator[];
+}
+
+export const OPERATOR_SECTIONS: OperatorSection[] = [
+  {
+    "name": "LIFTMASTER LOGIC 5",
+    "group": "Operators",
+    "items": [
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL GH101L5", "name": "GH101L5"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL GH103L5", "name": "GH103L5"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL GH501L5", "name": "GH501L5"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL GH503L5", "name": "GH503L5"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL GH751L5", "name": "GH751L5"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL GH753L5", "name": "GH753L5"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL H101L5", "name": "H101L5"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL H103L5", "name": "H103L5"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL H501L5", "name": "H501L5"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL H503L5", "name": "H503L5"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL H751L5", "name": "H751L5"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL H753L5", "name": "H753L5"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL MH5011U", "name": "MH5011U"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL MJ5011U", "name": "MJ5011U"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL MT5011U,  10FT TROLLEY RAIL", "name": "MT5011U,  10FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL MT5011U,  12FT TROLLEY RAIL", "name": "MT5011U,  12FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL MT5011U,  14FT TROLLEY RAIL", "name": "MT5011U,  14FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL MT5011U,  16FT TROLLEY RAIL", "name": "MT5011U,  16FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL MT5011U,  8FT TROLLEY RAIL", "name": "MT5011U,  8FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL T101L5,  10FT TROLLEY RAIL", "name": "T101L5,  10FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL T101L5,  12FT TROLLEY RAIL", "name": "T101L5,  12FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL T101L5,  14FT TROLLEY RAIL", "name": "T101L5,  14FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL T101L5,  16FT TROLLEY RAIL", "name": "T101L5,  16FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL T101L5,  8FT TROLLEY RAIL", "name": "T101L5,  8FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL T103L5,  10FT TROLLEY RAIL", "name": "T103L5,  10FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL T103L5,  12FT TROLLEY RAIL", "name": "T103L5,  12FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL T103L5,  14FT TROLLEY RAIL", "name": "T103L5,  14FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL T103L5,  16FT TROLLEY RAIL", "name": "T103L5,  16FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL T103L5,  8FT TROLLEY RAIL", "name": "T103L5,  8FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL T501L5,  10FT TROLLEY RAIL", "name": "T501L5,  10FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL T501L5,  12FT TROLLEY RAIL", "name": "T501L5,  12FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL T501L5,  14FT TROLLEY RAIL", "name": "T501L5,  14FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL T501L5,  16FT TROLLEY RAIL", "name": "T501L5,  16FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL T501L5,  8FT TROLLEY RAIL", "name": "T501L5,  8FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL T503L5,  10FT TROLLEY RAIL", "name": "T503L5,  10FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL T503L5,  12FT TROLLEY RAIL", "name": "T503L5,  12FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL T503L5,  14FT TROLLEY RAIL", "name": "T503L5,  14FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL T503L5,  16FT TROLLEY RAIL", "name": "T503L5,  16FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL T751L5,  10FT TROLLEY RAIL", "name": "T751L5,  10FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL T751L5,  12FT TROLLEY RAIL", "name": "T751L5,  12FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL T751L5,  14FT TROLLEY RAIL", "name": "T751L5,  14FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL T751L5,  16FT TROLLEY RAIL", "name": "T751L5,  16FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL T751L5,  8FT TROLLEY RAIL", "name": "T751L5,  8FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL T753L5,  10FT TROLLEY RAIL", "name": "T753L5,  10FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL T753L5,  12FT TROLLEY RAIL", "name": "T753L5,  12FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL T753L5,  14FT TROLLEY RAIL", "name": "T753L5,  14FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL T753L5,  16FT TROLLEY RAIL", "name": "T753L5,  16FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL T753L5,  8FT TROLLEY RAIL", "name": "T753L5,  8FT"},
+    ],
+  },
+  {
+    "name": "MAXUM OPERATORS",
+    "group": "Operators",
+    "items": [
+      {"desc": "LIFTMASTER MODEL DC7AH,  MAXUM BATTERY BACK UP", "name": "DC7AH, MAXUM BBU"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL JDC7S1BMC,  STANDARD,  700 LBS,  20 CYCLES", "name": "JDC7S1BMC"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL JHC7S1BMC,  STANDARD,  700 LBS,  20 CYCLES", "name": "JHC7S1BMC"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL JHDC12S1BMC,  STANDARD,  1200 LBS,  20 CYCLES", "name": "JHDC12S1BMC"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL JHDC12X1BMC,  EXTENDED,  1200 LBS,  30 CYCLES", "name": "JHDC12X1BMC"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL TDC12S1BMC,  STANDARD,  1200 LBS,  20 CYCLES,  10FT TROLLEY RAIL", "name": "TDC12S1BMC - 10FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL TDC12S1BMC,  STANDARD,  1200 LBS,  20 CYCLES,  12FT TROLLEY RAIL", "name": "TDC12S1BMC - 12FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL TDC12S1BMC,  STANDARD,  1200 LBS,  20 CYCLES,  14FT TROLLEY RAIL", "name": "TDC12S1BMC - 14FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL TDC12S1BMC,  STANDARD,  1200 LBS,  20 CYCLES,  16FT TROLLEY RAIL", "name": "TDC12S1BMC - 16FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL TDC12S1BMC,  STANDARD,  1200 LBS,  20 CYCLES,  8FT TROLLEY RAIL", "name": "TDC12S1BMC - 8FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL TDC12S1BMC,  EXTENDED,  1200 LBS,  30 CYCLES,  10FT TROLLEY RAIL", "name": "TDC12X1BMC - 10FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL TDC12S1BMC,  EXTENDED,  1200 LBS,  30 CYCLES,  12FT TROLLEY RAIL", "name": "TDC12X1BMC - 12FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL TDC12S1BMC,  EXTENDED,  1200 LBS,  30 CYCLES,  14FT TROLLEY RAIL", "name": "TDC12X1BMC - 14FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL TDC12S1BMC,  EXTENDED,  1200 LBS,  30 CYCLES,  16FT TROLLEY RAIL", "name": "TDC12X1BMC - 16FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL TDC12S1BMC,  EXTENDED,  1200 LBS,  30 CYCLES,  8FT TROLLEY RAIL", "name": "TDC12X1BMC - 8FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL TDC7S1BMC,  STANDARD,  700 LBS,  20 CYCLES,  10FT TROLLEY RAIL", "name": "TDC7S1BMC - 10FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL TDC7S1BMC,  STANDARD,  700 LBS,  20 CYCLES,  12FT TROLLEY RAIL", "name": "TDC7S1BMC - 12FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL TDC7S1BMC,  STANDARD,  700 LBS,  20 CYCLES,  14FT TROLLEY RAIL", "name": "TDC7S1BMC - 14FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL TDC7S1BMC,  STANDARD,  700 LBS,  20 CYCLES,  16FT TROLLEY RAIL", "name": "TDC7S1BMC - 16FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL TDC7S1BMC,  STANDARD,  700 LBS,  20 CYCLES,  8FT TROLLEY RAIL", "name": "TDC7S1BMC - 8FT"},
+    ],
+  },
+  {
+    "name": "CONTROL PANELS",
+    "group": "Accessories",
+    "items": [
+      {"desc": "LIFTMASTER 378LM,  WIRELESS SECONDARY CONTROL PANEL", "name": "378LM"},
+      {"desc": "LIFTMASTER L958W,  SMART CONTROL PANEL", "name": "L958W"},
+      {"desc": "LIFTMASTER 880LM,  SMART CONTROL PANEL", "name": "880LM"},
+      {"desc": "LIFTMASTER L955W,  MULTI FUNCTION CONTROL PANEL", "name": "L955W"},
+      {"desc": "LIFTMASTER 882LM,  MULTI FUNCTION CONTROL PANEL", "name": "882LM"},
+      {"desc": "LIFTMASTER L956W,  WIRELESS CONTROL PANEL", "name": "L956W"},
+      {"desc": "LIFTMASTER 885LM,  WIRELESS CONTROL PANEL", "name": "885LM"},
+      {"desc": "LIFTMASTER L957W,  MOTION DETECTING CONTROL PANEL", "name": "L957W"},
+      {"desc": "LIFTMASTER 886LM,  MOTION DETECTING CONTROL PANEL", "name": "886LM"},
+      {"desc": "LIFTMASTER 889LM,  CONTROL PANEL", "name": "889LM"},
+    ],
+  },
+  {
+    "name": "KEYPADS",
+    "group": "Accessories",
+    "items": [
+      {"desc": "LIFTMASTER 387LM,  UNIVERSAL WIRELESS KEYPAD", "name": "387LM"},
+      {"desc": "LIFTMASTER 877LM,  WIRELESS KEYPAD", "name": "877LM"},
+      {"desc": "LIFTMASTER 878MAX,  WIRELESS KEYPAD", "name": "878MAX"},
+      {"desc": "LIFTMASTER L979M,  WIRELESS MAX KEYPAD 3.0", "name": "L979M"},
+      {"desc": "LIFTMASTER L979S,  WIRELESS KEYPAD 3.0", "name": "L979S"},
+    ],
+  },
+  {
+    "name": "LIFTMASTER ACCESSORIES",
+    "group": "Accessories",
+    "items": [
+      {"desc": "LIFTMASTER 485LM,  BATTERY BACKUP", "name": "485LM"},
+      {"desc": "LIFTMASTER 828LM,  INTERNET GATEWAY", "name": "828LM"},
+      {"desc": "LIFTMASTER 850LM,  UNIVERSAL RECEIVER", "name": "850LM"},
+      {"desc": "LIFTMASTER EXTENSION BRACKETS", "name": "EXTENSION BRACKETS"},
+      {"desc": "LIFTMASTER G197LM,  WIRE HIDE", "name": "G197LM"},
+    ],
+  },
+  {
+    "name": "PHOTOEYES",
+    "group": "Accessories",
+    "items": [
+      {"desc": "LIFTMASTER COMMERCIAL PHOTO EYES, CPSU", "name": "COM PHOTO EYES"},
+      {"desc": "LIFTMASTER RESIDENTIAL PHOTO EYES", "name": "RES PHOTO EYES"},
+    ],
+  },
+  {
+    "name": "REMOTES",
+    "group": "Accessories",
+    "items": [
+      {"desc": "LIFTMASTER 380UT,  2 BUTTON UNIVERSAL REMOTE CONTROL", "name": "380UT"},
+      {"desc": "LIFTMASTER 811LMX, SINGLE BUTTON DIP REMOTE CONTROL", "name": "811LMX"},
+      {"desc": "LIFTMASTER 890MAX,  3 BUTTON MINI REMOTE CONTROL", "name": "890MAX"},
+      {"desc": "LIFTMASTER 891LM,  1 BUTTON REMOTE CONTROL", "name": "891LM"},
+      {"desc": "LIFTMASTER 893LM,  3 BUTTON REMOTE CONTROL", "name": "893LM"},
+      {"desc": "LIFTMASTER 893MAX,  3 BUTTON REMOTE CONTROL", "name": "893MAX"},
+      {"desc": "LIFTMASTER 894LT,  4 BUTTON REMOTE CONTROL", "name": "894LT"},
+      {"desc": "LIFTMASTER L993M,  3 BUTTON MAX REMOTE CONTROL 3.0", "name": "L993M"},
+      {"desc": "LIFTMASTER L993S,  3 BUTTON REMOTE CONTROL 3.0", "name": "L993S"},
+    ],
+  },
+  {
+    "name": "RESIDENTIAL BELT DRIVES",
+    "group": "Operators",
+    "items": [
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL 6580L,  10FT BELT RAIL", "name": "6580L, 10FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL 6580L,  7FT BELT RAIL", "name": "6580L, 7FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL 6580L,  8FT BELT RAIL", "name": "6580L, 8FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL 6690L,  10FT BELT RAIL", "name": "6690L, 10FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL 6690L,  7FT BELT RAIL", "name": "6690L, 7FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL 6690L,  8FT BELT RAIL", "name": "6690L, 8FT"},
+    ],
+  },
+  {
+    "name": "RESIDENTIAL CHAIN DRIVES",
+    "group": "Operators",
+    "items": [
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL 2220L,  10FT CHAIN RAIL", "name": "2220L, 10FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL 2220L,  7FT CHAIN RAIL", "name": "2220L, 7FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL 2220L,  8FT CHAIN RAIL", "name": "2220L, 8FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL 2420L,  10FT CHAIN RAIL", "name": "2420L, 10FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL 2420L,  7FT CHAIN RAIL", "name": "2420L, 7FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL 2420L,  8FT CHAIN RAIL", "name": "2420L, 8FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL 87802,  10FT I-BEAM RAIL", "name": "87802, 10FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL 87802,  12FT I-BEAM RAIL", "name": "87802, 12FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL 87802,  14FT I-BEAM RAIL", "name": "87802, 14FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL 87802,  7FT I-BEAM RAIL", "name": "87802, 7FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL 87802,  8FT I-BEAM RAIL", "name": "87802, 8FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL ATSWT,  10FT I-BEAM RAIL", "name": "ATSW, 10FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL ATSWT,  12FT I-BEAM RAIL", "name": "ATSW, 12FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL ATSWT,  14FT I-BEAM RAIL", "name": "ATSW, 14FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL ATSWT,  7FT I-BEAM RAIL", "name": "ATSW, 7FT"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL ATSWT,  8FT I-BEAM RAIL", "name": "ATSW, 8FT"},
+    ],
+  },
+  {
+    "name": "RESIDENTIAL SIDEMOUNT",
+    "group": "Operators",
+    "items": [
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL 8500", "name": "8500"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL 98022", "name": "98022"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL 98032", "name": "98032"},
+    ],
+  },
+  {
+    "name": "LIGHT COMMERCIAL SIDEMOUNT",
+    "group": "Operators",
+    "items": [
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL LJ8900W", "name": "LJ8900W"},
+      {"desc": "LIFTMASTER ELECTRIC OPERATOR MODEL LJ8950W", "name": "LJ89590W"},
+    ],
+  },
+  {
+    "name": "BELT RAILS",
+    "group": "Accessories",
+    "items": [
+      {"desc": "LIFTMASTER G2770  10FT BELT RAIL", "name": "10FT BELT RAIL"},
+      {"desc": "LIFTMASTER G2777,  7FT BELT RAIL", "name": "7FT BELT RAIL"},
+      {"desc": "LIFTMASTER G2778,  8FT BELT RAIL", "name": "8FT BELT RAIL"},
+    ],
+  },
+  {
+    "name": "CHAIN RAILS",
+    "group": "Accessories",
+    "items": [
+      {"desc": "LIFTMASTER G1710,  10FT CHAIN RAIL", "name": "10FT CHAIN RAIL"},
+      {"desc": "LIFTMASTER G1707,  7FT CHAIN RAIL", "name": "7FT CHAIN RAIL"},
+      {"desc": "LIFTMASTER G1708,  8FT CHAIN RAIL", "name": "8FT CHAIN RAIL"},
+    ],
+  },
+  {
+    "name": "I BEAM RAILS",
+    "group": "Accessories",
+    "items": [
+      {"desc": "LIFTMASTER G37010CH,  10FT I-BEAM RAIL", "name": "10FT IBEAM RAIL"},
+      {"desc": "LIFTMASTER G37012CH,  12FT I-BEAM RAIL", "name": "12FT I BEAM RAIL"},
+      {"desc": "LIFTMASTER G37014CH,  14FT I-BEAM RAIL", "name": "14FT I BEAM RAIL"},
+      {"desc": "LIFTMASTER G3707CH,  7FT I-BEAM RAIL", "name": "7FT I BEAM RAIL"},
+      {"desc": "LIFTMASTER G3708CH,  8FT I-BEAM RAIL", "name": "8FT I BEAM RAIL"},
+    ],
+  },
+  {
+    "name": "SPROCKET",
+    "group": "Accessories",
+    "items": [
+      {"desc": "1'' SPROCKET,  50B22", "name": "1\" SPROCKET 50B22"},
+      {"desc": "1'' SPROCKET,  50B32", "name": "1\" SPROCKET 50B32"},
+      {"desc": "1-1/4'' SPROCKET,  50B60", "name": "1-1/4\" SPROCKET 50B60"},
+      {"desc": "1'' SPROCKET,  50B60", "name": "1\" SPROCKET 50B60"},
+      {"desc": "1-1/4'' SPROCKET,  50B72", "name": "1-1/4\" SPROCKET 50B72"},
+      {"desc": "1' SPROCKET,  50B72", "name": "1\" SPROCKET 50B72"},
+    ],
+  },
+];
+
+export const OPERATOR_GROUPS = ["Operators", "Accessories"] as const;
