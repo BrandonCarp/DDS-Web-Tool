@@ -386,12 +386,10 @@ export const PART_CATEGORIES: PartCategory[] = [
     ],
   },
   {
-    "name": "SPRINGS",
+    "name": "EXTENSION SPRINGS",
     "items": [
       {"desc": "7FT EXTENSION KIT", "name": "7FT EXT KIT", "price": 24.95},
-      {"desc": "7FT TORSION KIT", "name": "7FT TOR KIT", "price": 39.95},
       {"desc": "8FT EXTENSION KIT", "name": "8FT EXT KIT", "price": 28.95},
-      {"desc": "8FT TORSION KIT", "name": "8FT TOR KIT", "price": 44.95},
       {"desc": "EXTENSION SPRINGS,  25-42-100", "name": "25-42-100,  TAN", "price": 15.95, "sub": "EXTENSION SPRINGS, 7FT"},
       {"desc": "EXTENSION SPRINGS,  25-42-110", "name": "25-42-110,  WHITE", "price": 16.95, "sub": "EXTENSION SPRINGS, 7FT"},
       {"desc": "EXTENSION SPRINGS,  25-42-120", "name": "25-42-120,  GREEN", "price": 17.95, "sub": "EXTENSION SPRINGS, 7FT"},
@@ -431,6 +429,13 @@ export const PART_CATEGORIES: PartCategory[] = [
       {"desc": "EXTENSION SPRINGS,  27-48-400", "name": "27-48-400,  TAN", "price": 65.95, "sub": "EXTENSION SPRINGS, 8FT"},
       {"desc": "EXTENSION SPRINGS,  27-48-80", "name": "27-48-80,  GOLD", "price": 15.95, "sub": "EXTENSION SPRINGS, 8FT"},
       {"desc": "EXTENSION SPRINGS,  27-48-90", "name": "27-48-90,  LIGHT BLUE", "price": 16.95, "sub": "EXTENSION SPRINGS, 8FT"},
+    ],
+  },
+  {
+    "name": "TORSION SPRINGS",
+    "items": [
+      {"desc": "7FT TORSION KIT", "name": "7FT TOR KIT", "price": 39.95},
+      {"desc": "8FT TORSION KIT", "name": "8FT TOR KIT", "price": 44.95},
       {"desc": "TORSION SPRINGS,  2\" ID,  218 WIRE,  23-1/4\" LONG [1] - RIGHT AND [1] - LEFT", "name": "100LBS,  2 X 218 X 23-1/4\"", "price": 46.95, "sub": "TORSION SPRINGS, 7FT"},
       {"desc": "TORSION SPRINGS,  2\" ID,  225 WIRE,  24-1/2\" LONG [1] - RIGHT AND [1] - LEFT", "name": "110LBS,  2 X 225 X 24-1/2\"", "price": 49.95, "sub": "TORSION SPRINGS, 7FT"},
       {"desc": "TORSION SPRINGS,  2\" ID,  234 WIRE,  27-1/4\" LONG [1] - RIGHT AND [1] - LEFT", "name": "120LBS,  2 X 234 X 27-1/4\"", "price": 55.95, "sub": "TORSION SPRINGS, 7FT"},

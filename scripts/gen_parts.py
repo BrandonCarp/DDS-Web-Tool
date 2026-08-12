@@ -41,6 +41,22 @@ SUBHEADINGS = {
     "RESIDENTIAL TRACKS",
 }
 
+# The sheet files all springs under one SPRINGS heading, but the counter looks
+# for torsion or extension, never "springs" — so they are split into two
+# categories here. That also makes the QuickBooks item name right, since the
+# item is the category.
+SPRING_SPLIT = "SPRINGS"
+
+
+def spring_category(name, sub):
+    """Which spring category a row belongs to, from its sub-heading or name."""
+    text = f"{sub or ''} {name}".upper()
+    if "TORSION" in text or " TOR " in f" {text} ":
+        return "TORSION SPRINGS"
+    if "EXTENSION" in text or " EXT " in f" {text} ":
+        return "EXTENSION SPRINGS"
+    return None
+
 # Vinyl has its own module — the calculator takes a door size, not a footage.
 SKIP_CATEGORIES = {"VINYL"}
 
@@ -91,7 +107,16 @@ def main():
             item["sub"] = sub
         if is_per_foot(name, desc):
             item["perFoot"] = True
-        cur["items"].append(item)
+
+        target = cur
+        if cur["name"] == SPRING_SPLIT:
+            split = spring_category(name, sub)
+            if split:
+                target = next((c for c in cats if c["name"] == split), None)
+                if target is None:
+                    target = {"name": split, "items": []}
+                    cats.append(target)
+        target["items"].append(item)
 
     cats = [c for c in cats if c["items"]]
     n = sum(len(c["items"]) for c in cats)

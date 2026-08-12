@@ -10,8 +10,10 @@ import {
   type Part,
 } from "@/lib/pricing/data/parts";
 import { vinylForDoor, VINYL_COLORS } from "@/lib/pricing/data/vinyl";
+import { cableQuote, CABLE_GAUGES } from "@/lib/pricing/data/cables";
 
 const VINYL = "VINYL";
+const CUSTOM_CABLE = "Custom cut cable";
 
 const fmt = (n: number) =>
   "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -35,8 +37,14 @@ export function PartsTool() {
   // Vinyl is measured off the opening, not off a length of stock.
   const [vinylW, setVinylW] = useState("");
   const [vinylH, setVinylH] = useState("");
+  // Cut-to-length cables: measured feet + inches, priced as a pair.
+  const [cabGauge, setCabGauge] = useState(CABLE_GAUGES[0].label);
+  const [cabFt, setCabFt] = useState("");
+  const [cabIn, setCabIn] = useState("");
 
   const onVinyl = catName === VINYL && !query.trim();
+  const onCable = catName === "CABLES" && pickedName === CUSTOM_CABLE && !query.trim();
+  const cabQ = onCable ? cableQuote(cabGauge, Number(cabFt) || 0, Number(cabIn) || 0) : null;
   const vinylQuote =
     onVinyl && pickedName && Number(vinylW) > 0 && Number(vinylH) > 0
       ? vinylForDoor(pickedName, Math.trunc(Number(vinylW)), Math.trunc(Number(vinylH)))
@@ -63,7 +71,7 @@ export function PartsTool() {
     ).slice(0, 60);
   }, [searching, query, catName]);
 
-  const hit = onVinyl ? null : results.find((r) => r.part.name === pickedName) ?? null;
+  const hit = onVinyl || onCable ? null : results.find((r) => r.part.name === pickedName) ?? null;
   const part: Part | null = hit?.part ?? null;
   const itemName = onVinyl ? VINYL : hit?.category ?? catName;
 
@@ -72,9 +80,22 @@ export function PartsTool() {
   // Vinyl bills the other way round from every other per-foot part: the
   // QuickBooks quantity is the total footage and the rate is the per-foot
   // figure, because that is how the molding sheet is written.
-  const ready = onVinyl ? !!vinylQuote : !!part && (!needsFeet || ft > 0);
-  const description = onVinyl ? vinylQuote?.description ?? "" : part ? partDescription(part, ft) : "";
-  const price = onVinyl ? vinylQuote?.total ?? 0 : part ? partPrice(part, ft) : 0;
+  const ready = onVinyl ? !!vinylQuote : onCable ? !!cabQ : !!part && (!needsFeet || ft > 0);
+  const description = onVinyl
+    ? vinylQuote?.description ?? ""
+    : onCable
+      ? cabQ?.description ?? ""
+      : part
+        ? partDescription(part, ft)
+        : "";
+  const price = onVinyl
+    ? vinylQuote?.total ?? 0
+    : onCable
+      ? cabQ?.total ?? 0
+      : part
+        ? partPrice(part, ft)
+        : 0;
+  // Cables bill as one pair; vinyl bills its footage.
   const qtyText = onVinyl ? String(vinylQuote?.feet ?? 0) : "1";
 
   function pick(name: string) {
@@ -159,6 +180,25 @@ export function PartsTool() {
                         </button>
                       </li>
                     ))}
+                  {!onVinyl && catName === "CABLES" && !searching && (
+                    <li>
+                      <button
+                        type="button"
+                        className={`partrow ${onCable ? "on" : ""}`}
+                        onClick={() => {
+                          setPickedName(CUSTOM_CABLE);
+                          setCabFt("");
+                          setCabIn("");
+                        }}
+                      >
+                        <span className="partname">
+                          {CUSTOM_CABLE}
+                          <span className="partsub">cut to length, priced per pair</span>
+                        </span>
+                        <span className="partprice">from $1.00<span className="perft">/ft</span></span>
+                      </button>
+                    </li>
+                  )}
                   {!onVinyl && results.map(({ part: p, category }) => (
                     <li key={`${category}-${p.name}`}>
                       <button
@@ -192,7 +232,7 @@ export function PartsTool() {
               {part && <div className="qsub">QuickBooks item: {itemName}</div>}
             </div>
 
-            {!part && !(onVinyl && pickedName) ? (
+            {!part && !(onVinyl && pickedName) && !onCable ? (
               <div className="empty">
                 <div className="emptymsg">{onVinyl ? "Pick a color" : "Pick a part from the list"}</div>
               </div>
@@ -227,6 +267,56 @@ export function PartsTool() {
                       </div>
                       <div className="muted-note" style={{ marginTop: 6 }}>
                         One piece across the header, two down the sides
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {onCable && (
+                  <div className="gbody">
+                    <div className="grow">
+                      <label>Cable size</label>
+                      <div className="ctl selectwrap">
+                        <select
+                          data-testid="cable-gauge"
+                          value={cabGauge}
+                          onChange={(e) => setCabGauge(e.target.value)}
+                        >
+                          {CABLE_GAUGES.map((g) => (
+                            <option key={g.label} value={g.label}>
+                              {g.label} — ${g.perFoot.toFixed(2)}/ft
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grow">
+                      <label>Length</label>
+                      <div className="ctl dimrow">
+                        <input
+                          data-testid="cable-ft"
+                          type="number"
+                          min={0}
+                          value={cabFt}
+                          onChange={(e) => setCabFt(e.target.value)}
+                          placeholder="ft"
+                        />
+                        <span className="u">ft</span>
+                        <input
+                          data-testid="cable-in"
+                          type="number"
+                          min={0}
+                          max={11}
+                          value={cabIn}
+                          onChange={(e) => setCabIn(e.target.value)}
+                          placeholder="in"
+                        />
+                        <span className="u">in</span>
+                      </div>
+                      <div className="muted-note" style={{ marginTop: 6 }}>
+                        {cabQ
+                          ? `Charged at ${cabQ.billableFeet}ft — 5″ and over rounds up`
+                          : "5″ and over rounds up to the next foot"}
                       </div>
                     </div>
                   </div>
@@ -286,11 +376,13 @@ export function PartsTool() {
                 ) : (
                   <div className="empty">
                     <div className="emptymsg">
-                      {onVinyl
+                      {onCable
+                        ? "Enter the cable length"
+                        : onVinyl
                         ? Number(vinylW) > 0 && Number(vinylH) > 0
                           ? `${pickedName} is not stocked long enough for that opening — special order it.`
                           : "Enter the door size to price the molding"
-                        : "Enter the footage to price this part"}
+                          : "Enter the footage to price this part"}
                     </div>
                   </div>
                 )}
@@ -300,9 +392,9 @@ export function PartsTool() {
         </aside>
       </div>
 
-      {ready && (part || onVinyl) && (
+      {ready && (part || onVinyl || onCable) && (
         <QbLineDemo
-          model={onVinyl ? "Vinyl stop molding" : itemName}
+          model={onVinyl ? "Vinyl stop molding" : onCable ? "Cut cable" : itemName}
           size={onVinyl ? `${pickedName} · ${vinylW}\u2032 x ${vinylH}\u2032` : part!.name}
           item={itemName}
           typed={itemName.slice(0, 3).toUpperCase()}

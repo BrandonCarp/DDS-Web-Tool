@@ -747,9 +747,16 @@ html, body { margin: 0; padding: 0; }
 /* ── Parts list ────────────────────────────────────────────────────────────
    A scrolling shelf list. Rows are buttons, not links — nothing navigates,
    picking one just loads it into the quote on the right.                    */
+/* Deliberately short: the results box scrolls so the QuickBooks band below
+   stays on screen instead of being pushed off by a long category. */
 .tool-shell .partlist{
-  list-style:none;margin:0;padding:0;max-height:520px;overflow-y:auto;background:#fff;
+  list-style:none;margin:0;padding:0;max-height:260px;overflow-y:auto;background:#fff;
+  overscroll-behavior:contain;
 }
+.tool-shell .partrow{padding:9px 15px}
+.tool-shell .partname{font-size:13px}
+.tool-shell .dimrow{display:flex;align-items:center;gap:6px}
+.tool-shell .dimrow input{width:74px}
 .tool-shell .partlist li + li{border-top:1px solid var(--line-2)}
 .tool-shell .partrow{
   display:flex;align-items:baseline;justify-content:space-between;gap:14px;
@@ -772,9 +779,16 @@ html, body { margin: 0; padding: 0; }
 /* ── Parts list ────────────────────────────────────────────────────────────
    A scrolling shelf list. Rows are buttons, not links — nothing navigates,
    picking one just loads it into the quote on the right.                    */
+/* Deliberately short: the results box scrolls so the QuickBooks band below
+   stays on screen instead of being pushed off by a long category. */
 .tool-shell .partlist{
-  list-style:none;margin:0;padding:0;max-height:520px;overflow-y:auto;background:#fff;
+  list-style:none;margin:0;padding:0;max-height:260px;overflow-y:auto;background:#fff;
+  overscroll-behavior:contain;
 }
+.tool-shell .partrow{padding:9px 15px}
+.tool-shell .partname{font-size:13px}
+.tool-shell .dimrow{display:flex;align-items:center;gap:6px}
+.tool-shell .dimrow input{width:74px}
 .tool-shell .partlist li + li{border-top:1px solid var(--line-2)}
 .tool-shell .partrow{
   display:flex;align-items:baseline;justify-content:space-between;gap:14px;
