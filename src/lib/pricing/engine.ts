@@ -10,6 +10,7 @@ import { dataKey, expandModels } from "./model-groups";
 import { windowDesigns, designName } from "./data/inserts";
 import { RES_SECTIONS } from "./data/res-sections";
 import { colorInStock } from "./data/stock-colors";
+import { colorTakesPremium } from "./data/catalog-meta";
 import type { Dimensions, PriceResult, PriceTriple, Quote, QuoteOptions, SizeCode, Tier, WindowStyle, QuoteLine } from "./types";
 
 /**
@@ -183,12 +184,14 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
   const lines = [];
   lines.push({ name: `Base door (${STYLE_NAME[opts.style]})`, value: triple[opts.style] });
 
-  // Ultra Grain color upcharge (single < 12', double >= 12')
+  // Premium-colour upcharge: single under 12' wide, double at 12' and over.
+  // Driven by the model's PREMIUM_COLORS set rather than the literal string
+  // "Ultra Grain", because Iron Ore takes it too — and Charcoal does on 4300.
   const ug = ULTRAGRAIN[dataKey(model)];
-  if (ug && opts.color === "Ultra Grain") {
+  if (ug && colorTakesPremium(dataKey(model), opts.color)) {
     const isDouble = size.wf >= 12;
     lines.push({
-      name: `Ultra Grain (${isDouble ? "double" : "single"})`,
+      name: `${opts.color} (${isDouble ? "double" : "single"})`,
       value: isDouble ? ug.double : ug.single,
       kind: "add" as const,
     });

@@ -174,9 +174,37 @@ describe("quoteResidential — full quote with add-on upcharges", () => {
     expect(q.lines.some((l) => /torsion|included/i.test(l.name))).toBe(false);
   });
 
+  it("charges the premium adder on Iron Ore and, on 4300, Charcoal", () => {
+    const base = priceResidential("4300", dim(9, 0, 7, 0), "solid").price!;
+    const plain = quoteResidential("4300", dim(9, 0, 7, 0), opts({ color: "White" }));
+    expect(plain.unitPrice).toBeCloseTo(base, 2);
+    for (const c of ["Iron Ore", "Charcoal", "Ultra-Grain Classic Walnut Finish"]) {
+      const q = quoteResidential("4300", dim(9, 0, 7, 0), opts({ color: c }));
+      expect(q.unitPrice, `${c} should carry the adder`).toBeCloseTo(base + 211.02, 2);
+    }
+  });
+
+  it("does NOT charge Charcoal on Gallery — that is a 4300-family rule", () => {
+    const base = priceResidential("GD1LP-GD1SP", dim(9, 0, 7, 0), "solid").price!;
+    const q = quoteResidential("GD1LP-GD1SP", dim(9, 0, 7, 0), opts({ color: "Charcoal" }));
+    expect(q.unitPrice).toBeCloseTo(base, 2);
+    const ug = quoteResidential("GD1LP-GD1SP", dim(9, 0, 7, 0), opts({ color: "Iron Ore" }));
+    expect(ug.unitPrice).toBeCloseTo(base + 216.72, 2);
+  });
+
+  it("doubles the adder at 12ft and over", () => {
+    const base = priceResidential("4300", dim(16, 0, 7, 0), "solid").price!;
+    const q = quoteResidential("4300", dim(16, 0, 7, 0), opts({ color: "Iron Ore" }));
+    expect(q.unitPrice).toBeCloseTo(base + 422.04, 2);
+  });
+
   it("applies the Ultra Grain single upcharge (+211.02) under 12ft", () => {
     const base = priceResidential("9130-9133", dim(9, 0, 7, 0), "solid").price!;
-    const q = quoteResidential("9130-9133", dim(9, 0, 7, 0), opts({ color: "Ultra Grain" }));
+    const q = quoteResidential(
+      "9130-9133",
+      dim(9, 0, 7, 0),
+      opts({ color: "Ultra-Grain Classic Walnut Finish" }),
+    );
     expect(q.unitPrice).toBeCloseTo(base + 211.02, 2);
   });
 });

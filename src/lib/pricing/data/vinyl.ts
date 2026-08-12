@@ -75,6 +75,8 @@ export const DOOR_COLOR_TO_VINYL: Record<string, string> = {
   Bronze: "BRONZE",
   Gray: "GRAY",
   Charcoal: "CHARCOAL",
+  // No molding is made in Iron Ore — charcoal is what goes on those doors.
+  "Iron Ore": "CHARCOAL",
   "Hunter Green": "HUNTER GREEN",
   Black: "BLACK",
 };

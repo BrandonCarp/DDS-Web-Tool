@@ -44,13 +44,10 @@ export const COLORS: Record<string, string[]> = {
   "4050-4051-4053": [
     "White",
     "Almond",
-    "Desert Tan",
     "Sandtone",
     "Chocolate Brown",
-    "Hunter Green",
-    "Gray",
-    "Bronze",
-    "Black"
+    "Black",
+    "Bronze"
   ],
   "9130-9133": [
     "White",
@@ -59,12 +56,14 @@ export const COLORS: Record<string, string[]> = {
     "Sandtone",
     "Chocolate Brown",
     "Hunter Green",
-    "Gray",
     "Bronze",
-    "Glacier White",
     "Mocha Brown",
+    "Charcoal",
+    "Iron Ore",
     "Black",
-    "Ultra Grain"
+    "Ultra-Grain Classic Medium Finish",
+    "Ultra-Grain Classic Cherry Finish",
+    "Ultra-Grain Classic Walnut Finish"
   ],
   "4300": [
     "White",
@@ -73,24 +72,70 @@ export const COLORS: Record<string, string[]> = {
     "Sandtone",
     "Chocolate Brown",
     "Hunter Green",
-    "Gray",
     "Bronze",
-    "Glacier White",
     "Mocha Brown",
+    "Charcoal",
+    "Iron Ore",
     "Black",
-    "Ultra Grain"
+    "Ultra-Grain Classic Medium Finish",
+    "Ultra-Grain Classic Cherry Finish",
+    "Ultra-Grain Classic Walnut Finish"
   ],
   "GD1LP-GD1SP": [
     "White",
     "Almond",
     "Sandtone",
+    "Desert Tan",
     "Chocolate Brown",
     "Bronze",
-    "Gray",
+    "Mocha Brown",
+    "Charcoal",
+    "Iron Ore",
     "Black",
-    "Ultra Grain"
+    "Ultra-Grain Oak Medium Finish",
+    "Ultra-Grain Oak Dark Finish",
+    "Ultra-Grain Oak Walnut Finish",
+    "Ultra-Grain Oak Slate Finish"
   ]
 };
+
+/**
+ * Colours that carry the Ultra Grain net adder (ULTRAGRAIN in addons.ts).
+ *
+ * It is not just the wood finishes — Iron Ore takes the adder on every model
+ * that offers it, and the 4300 family charges it on Charcoal as well. Listing
+ * them per model rather than pattern-matching the name keeps that difference
+ * visible instead of buried in a regex.
+ */
+export const PREMIUM_COLORS: Record<string, string[]> = {
+  // 9130/9133 runs the same colours and the same adder rules as the 4300.
+  "9130-9133": [
+    "Iron Ore",
+    "Charcoal",
+    "Ultra-Grain Classic Medium Finish",
+    "Ultra-Grain Classic Cherry Finish",
+    "Ultra-Grain Classic Walnut Finish"
+  ],
+  "GD1LP-GD1SP": [
+    "Iron Ore",
+    "Ultra-Grain Oak Medium Finish",
+    "Ultra-Grain Oak Dark Finish",
+    "Ultra-Grain Oak Walnut Finish",
+    "Ultra-Grain Oak Slate Finish"
+  ],
+  "4300": [
+    "Iron Ore",
+    "Charcoal",
+    "Ultra-Grain Classic Medium Finish",
+    "Ultra-Grain Classic Cherry Finish",
+    "Ultra-Grain Classic Walnut Finish"
+  ]
+};
+
+/** Does this colour carry the Ultra Grain adder on this model? */
+export function colorTakesPremium(catalogKey: string, color: string): boolean {
+  return (PREMIUM_COLORS[catalogKey] ?? []).includes(color);
+}
 
 export const COLLECTIONS: Record<string, string> = {
   "GD1LP-GD1SP": "Gallery Collection",

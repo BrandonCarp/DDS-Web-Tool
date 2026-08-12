@@ -61,22 +61,39 @@ describe("vinyl stop molding", () => {
     expect(vinylForDoorColor("Ultra Grain")).toBeNull();
   });
 
+  it("puts charcoal molding on an Iron Ore door — there is no Iron Ore vinyl", () => {
+    expect(vinylForDoorColor("Iron Ore")).toBe("CHARCOAL");
+  });
+
   it("sends chocolate to plain brown, not mocha", () => {
     expect(vinylForDoorColor("Chocolate Brown")).toBe("BROWN");
     expect(vinylForDoorColor("Mocha Brown")).toBe("MOCHA BROWN");
     expect(vinylForDoorColor("Glacier White")).toBe("WHITE");
   });
 
-  it("maps every door colour except Ultra Grain, which needs a finish", () => {
-    const doorColors = new Set(Object.values(COLORS).flat());
-    for (const c of doorColors) {
-      if (c === "Ultra Grain") {
-        expect(DOOR_COLOR_TO_VINYL[c]).toBeUndefined();
+  it("resolves every door colour that has a vinyl equivalent", () => {
+    // A bare "Ultra Grain" names no finish, so it correctly returns null and
+    // the tool asks. Everything else must resolve to a stocked colour.
+    const NO_VINYL = new Set(["Ultra Grain"]);
+    for (const c of new Set(Object.values(COLORS).flat())) {
+      const mapped = vinylForDoorColor(c);
+      if (NO_VINYL.has(c)) {
+        expect(mapped, `${c} should not auto-resolve`).toBeNull();
         continue;
       }
-      const mapped = DOOR_COLOR_TO_VINYL[c];
-      expect(mapped, `no vinyl mapped for door colour ${c}`).toBeTruthy();
-      expect(VINYL_STOCK[mapped], `${mapped} has no stock lengths`).toBeTruthy();
+      expect(mapped, `no vinyl resolved for door colour ${c}`).toBeTruthy();
+      expect(VINYL_STOCK[mapped!], `${mapped} has no stock lengths`).toBeTruthy();
+    }
+  });
+
+  it("resolves the named Ultra Grain finishes now on the colour lists", () => {
+    for (const [door, want] of [
+      ["Ultra-Grain Oak Dark Finish", "DARK FINISH"],
+      ["Ultra-Grain Oak Slate Finish", "SLATE"],
+      ["Ultra-Grain Classic Cherry Finish", "CHERRY"],
+      ["Ultra-Grain Classic Medium Finish", "MEDIUM FINISH"],
+    ] as const) {
+      expect(vinylForDoorColor(door)).toBe(want);
     }
   });
 });
