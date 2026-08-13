@@ -85,7 +85,7 @@ function Shell({
         </nav>
         <div className="right">
           {(user.role === "admin" || user.role === "semiadmin") && (
-            <a href="/admin" style={{ color: "#fff", fontWeight: 700 }}>ADMIN DASHBOARD</a>
+            <a href="/admin" className="dash-btn" title="Admin dashboard">DASH</a>
           )}
           {user.username} · <a href="/api/logout" style={{ color: "#fff" }}>Sign out</a>
         </div>
