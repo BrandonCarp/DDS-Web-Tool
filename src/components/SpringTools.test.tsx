@@ -59,6 +59,14 @@ describe("Torsion Springs tab", () => {
     expect(screen.queryByTestId("stock-list")).toBeNull();
   });
 
+  it("puts Stock springs left of the configurator", () => {
+    renderTool();
+    const order = Array.from(document.querySelectorAll(".modeswitch .modebtn")).map((b) =>
+      b.getAttribute("data-testid"),
+    );
+    expect(order).toEqual(["mode-stock", "mode-config"]);
+  });
+
   it("swaps the whole column when Stock springs is picked", () => {
     renderTool();
     fireEvent.click(screen.getByTestId("mode-stock"));

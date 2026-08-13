@@ -77,15 +77,6 @@ export function TorsionTool() {
       <section className="config-col">
         <div className="modeswitch" role="tablist" aria-label="Spring source">
           <button
-            type="button" role="tab" data-testid="mode-config"
-            aria-selected={view === "config"}
-            className={`modebtn ${view === "config" ? "sel" : ""}`}
-            onClick={() => setView("config")}
-          >
-            Spring configurator
-            <span className="modesub">Cut to size</span>
-          </button>
-          <button
             type="button" role="tab" data-testid="mode-stock"
             aria-selected={view === "stock"}
             className={`modebtn ${view === "stock" ? "sel" : ""}`}
@@ -93,6 +84,15 @@ export function TorsionTool() {
           >
             Stock springs
             <span className="modesub">{STOCK_TORSION_SPRINGS.items.length} off the shelf</span>
+          </button>
+          <button
+            type="button" role="tab" data-testid="mode-config"
+            aria-selected={view === "config"}
+            className={`modebtn ${view === "config" ? "sel" : ""}`}
+            onClick={() => setView("config")}
+          >
+            Spring configurator
+            <span className="modesub">Cut to size</span>
           </button>
         </div>
 
