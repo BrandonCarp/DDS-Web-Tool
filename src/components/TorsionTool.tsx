@@ -21,9 +21,12 @@ export function TorsionTool() {
   // spec, with no quantities appended.
   const [right, setRight] = useState(0);
   const [left, setLeft] = useState(0);
-  // Stock springs off the shelf list below. They are their own quote source:
-  // picking one takes over the card, touching a custom field hands it back.
-  // One card, never two competing totals.
+  // Two jobs on one tab, one at a time. The switch below decides which is on
+  // screen AND which drives the quote card, so there is never a total on the
+  // card sourced from something you cannot see. Both sets of state survive the
+  // switch — flip to check a stock size and your cut-to-size entry is still
+  // there when you flip back.
+  const [view, setView] = useState<"config" | "stock">("config");
   const [stockName, setStockName] = useState<string | null>(null);
   const [stockRight, setStockRight] = useState(1);
   const [stockLeft, setStockLeft] = useState(1);
@@ -38,11 +41,11 @@ export function TorsionTool() {
   const stockPart = stockName
     ? (STOCK_TORSION_SPRINGS.items.find((p) => p.name === stockName) ?? null)
     : null;
-  const onStock = stockPart != null;
+  const onStock = view === "stock";
   const stockDesc = stockPart ? partDescription(stockPart, 0, stockRight, stockLeft) : "";
   const stockUnit = stockPart ? partPrice(stockPart) : 0;
   const stockQty = stockPart ? partQuantity(stockPart, stockRight, stockLeft) : 0;
-  const stockReady = onStock && stockQty > 0;
+  const stockReady = onStock && stockPart != null && stockQty > 0;
 
   // Spring quotes are still recorded — copying now stands in for the old
   // "Save quote" button, so the admin dashboard keeps seeing them.
@@ -61,10 +64,7 @@ export function TorsionTool() {
     }).catch(() => {/* ignore */});
   }
 
-  // Any edit to the custom configurator hands the quote card back to it.
-  function pickId(v: string) { setId(v); setWire(""); setStockName(null); }
-  function editWire(v: string) { setWire(v); setStockName(null); }
-  function editLength(v: string) { setLength(v); setStockName(null); }
+  function pickId(v: string) { setId(v); setWire(""); }
   function pickStock(name: string) { setStockName(name); setStockRight(1); setStockLeft(1); }
   function clear() {
     setWire(""); setLength(""); setRight(0); setLeft(0);
@@ -75,6 +75,28 @@ export function TorsionTool() {
     <>
     <div className="wrap two">
       <section className="config-col">
+        <div className="modeswitch" role="tablist" aria-label="Spring source">
+          <button
+            type="button" role="tab" data-testid="mode-config"
+            aria-selected={view === "config"}
+            className={`modebtn ${view === "config" ? "sel" : ""}`}
+            onClick={() => setView("config")}
+          >
+            Spring configurator
+            <span className="modesub">Cut to size</span>
+          </button>
+          <button
+            type="button" role="tab" data-testid="mode-stock"
+            aria-selected={view === "stock"}
+            className={`modebtn ${view === "stock" ? "sel" : ""}`}
+            onClick={() => setView("stock")}
+          >
+            Stock springs
+            <span className="modesub">{STOCK_TORSION_SPRINGS.items.length} off the shelf</span>
+          </button>
+        </div>
+
+        {view === "config" && (
         <div className="panel">
           <div className="step">
             <div className="step-h"><span className="step-n">1</span><h3>Spring inside diameter</h3></div>
@@ -91,31 +113,31 @@ export function TorsionTool() {
             <div className="row2">
               <div className="field"><label className="lbl">Wire size <span className="req">*</span></label>
                 <div className="selectwrap">
-                  <select data-testid="tor-wire" value={wire} onChange={(e) => editWire(e.target.value)}>
+                  <select data-testid="tor-wire" value={wire} onChange={(e) => setWire(e.target.value)}>
                     <option value="">Select…</option>
                     {wires.map((w) => <option key={w} value={w}>{fmtWire(w)}″ wire</option>)}
                   </select>
                 </div>
               </div>
               <div className="field"><label className="lbl">Length (inches) <span className="req">*</span></label>
-                <input data-testid="tor-length" type="text" inputMode="decimal" value={length} onChange={(e) => editLength(e.target.value)} placeholder="e.g. 24.5" />
+                <input data-testid="tor-length" type="text" inputMode="decimal" value={length} onChange={(e) => setLength(e.target.value)} placeholder="e.g. 24.5" />
               </div>
             </div>
           </div>
         </div>
+        )}
 
-        {/* Stock springs sit BELOW the configurator: cutting to size is the
-            main job on this tab, the shelf is the fallback when a stock spring
-            happens to fit. */}
-        <div className="panel" style={{ marginTop: 14 }}>
+        {view === "stock" && (
+        <div className="panel">
           <SpringPicker
             category={STOCK_TORSION_SPRINGS}
             picked={stockName}
             onPick={pickStock}
             testId="stock"
-            heading="Or pick a stock spring"
+            heading="Pick a stock spring"
           />
         </div>
+        )}
       </section>
 
       <aside className="quote">
@@ -130,6 +152,11 @@ export function TorsionTool() {
             </div>
           </div>
           {onStock ? (
+            stockPart == null ? (
+              <div className="empty">
+                <div className="emptymsg">Pick a stock spring from the list</div>
+              </div>
+            ) : (
             <>
               <div className="total" style={{ borderTop: 0, paddingTop: 18 }}>
                 <span className="tl">Spring price (each)</span>
@@ -174,6 +201,7 @@ export function TorsionTool() {
                 </div>
               )}
             </>
+            )
           ) : price == null ? (
             <div className="lines" />
           ) : (

@@ -364,6 +364,38 @@ html, body { margin: 0; padding: 0; }
 .tool-shell .chip { font-size: 14px; padding: 10px 16px; }
 
 /* ---- responsive ---- */
+/* Two-way switch between a configurator and a picker. Reads as navigation
+   rather than a filter chip, because it swaps the whole column. */
+.tool-shell .modeswitch { display: flex; gap: 10px; margin-bottom: 14px; }
+.tool-shell .modebtn {
+  flex: 1; display: flex; flex-direction: column; gap: 3px;
+  padding: 12px 16px; border: 1.5px solid var(--line); border-radius: var(--radius);
+  background: var(--surface); color: var(--ink);
+  font-family: inherit; font-size: 14px; font-weight: 700; text-align: left;
+  cursor: pointer; transition: .12s;
+}
+.tool-shell .modebtn:hover { border-color: var(--accent-line); }
+.tool-shell .modebtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tool-shell .modebtn.sel { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
+.tool-shell .modesub { font-size: 11px; font-weight: 600; letter-spacing: .3px; color: var(--muted-2); }
+.tool-shell .modebtn.sel .modesub { color: var(--accent-ink); opacity: .75; }
+@media (max-width: 560px) { .tool-shell .modeswitch { flex-direction: column; } }
+/* Tab bar collapses to a dropdown at the same width the layout goes
+   single-column. Both are always in the DOM; only one is ever shown. */
+.tool-shell .tabsel { display: none; margin-left: 6px; }
+.tool-shell .tabsel select {
+  appearance: none; -webkit-appearance: none;
+  background: var(--surface) url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%2382181A' d='M1 1.5 6 6.5l5-5'/%3E%3C/svg%3E") no-repeat right 12px center/12px 8px;
+  color: var(--brand); border: 0; border-radius: 8px;
+  padding: 10px 34px 10px 14px;
+  font-family: inherit; font-size: 14px; font-weight: 700;
+  cursor: pointer; max-width: 100%;
+}
+.tool-shell .tabsel select:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+@media (max-width: 1240px) {
+  .tool-shell .tabs { display: none; }
+  .tool-shell .tabsel { display: block; }
+}
 @media (max-width: 1240px) {
   .tool-shell .wrap {
     grid-template-columns: 1fr;
@@ -378,6 +410,7 @@ html, body { margin: 0; padding: 0; }
   .tool-shell .top { flex-wrap: wrap; gap: 10px; padding: 12px 16px; }
   .tool-shell .top img.logo { height: 50px; }
   .tool-shell .tabs { order: 2; flex-wrap: wrap; margin-left: 0; }
+  .tool-shell .tabsel { order: 2; margin-left: 0; flex: 1; min-width: 0; }
   .tool-shell .top .right { order: 3; width: 100%; margin-left: 0; }
 }
 @media (max-width: 560px) {

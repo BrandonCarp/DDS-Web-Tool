@@ -85,6 +85,26 @@ function Shell({
             </button>
           ))}
         </nav>
+        {/* Same tabs, one dropdown. Eight of them will not sit on a laptop
+            header, and wrapping them pushed the tools below the fold. Both are
+            rendered and CSS picks one at 1240px — a matchMedia switch would
+            mismatch on hydration, and the server does not know the width. The
+            DASH button is deliberately NOT in here: it stays reachable in one
+            click on every size. */}
+        <div className="tabsel">
+          <select
+            aria-label="Tool"
+            data-testid="tabsel"
+            value={mode}
+            onChange={(e) => pickTab(e.target.value)}
+          >
+            {tabs.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="right">
           {(user.role === "admin" || user.role === "semiadmin") && (
             <a href="/admin" className="dash-btn" title="Admin dashboard">DASH</a>

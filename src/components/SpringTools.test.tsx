@@ -3,6 +3,7 @@ import { describe, it, expect, afterEach } from "vitest";
 import { cleanup, render, screen, fireEvent, within } from "@testing-library/react";
 import { ExtensionTool } from "./ExtensionTool";
 import { TorsionTool } from "./TorsionTool";
+import { AppShell } from "./AppShell";
 import { CustomerJobProvider } from "./CustomerJobFields";
 import { EXTENSION_SPRINGS, STOCK_TORSION_SPRINGS } from "@/lib/pricing/data/springs";
 
@@ -52,20 +53,27 @@ describe("Torsion Springs tab", () => {
       </CustomerJobProvider>,
     );
 
-  it("shows the stock list below the cut-to-size configurator", () => {
+  it("opens on the configurator with the stock list not on screen", () => {
     renderTool();
     expect(screen.getByTestId("tor-wire")).toBeTruthy();
-    expect(screen.getByTestId("stock-list")).toBeTruthy();
+    expect(screen.queryByTestId("stock-list")).toBeNull();
   });
 
-  it("hands the quote card to a stock spring when one is picked", () => {
+  it("swaps the whole column when Stock springs is picked", () => {
     renderTool();
+    fireEvent.click(screen.getByTestId("mode-stock"));
+    expect(screen.getByTestId("stock-list")).toBeTruthy();
+    expect(screen.queryByTestId("tor-wire")).toBeNull();
+  });
+
+  it("prices a stock spring as a pair by default", () => {
+    renderTool();
+    fireEvent.click(screen.getByTestId("mode-stock"));
     const handed = STOCK_TORSION_SPRINGS.items.find((p) => p.hands);
     expect(handed).toBeTruthy();
 
     clickRow("stock-list", handed?.name ?? "");
 
-    // Defaults to one right and one left, so the pair is priced immediately.
     expect(screen.getByTestId("stock-desc").textContent).toContain("[1] - RIGHT");
     expect(screen.getByTestId("stock-price").textContent).toContain(
       (handed?.price ?? 0).toFixed(2),
@@ -73,13 +81,44 @@ describe("Torsion Springs tab", () => {
     expect(screen.queryByTestId("tor-price")).toBeNull();
   });
 
-  it("hands it back the moment a custom field is touched", () => {
+  it("keeps both entries alive across a switch", () => {
     renderTool();
+    fireEvent.change(screen.getByTestId("tor-length"), { target: { value: "24.5" } });
+
+    fireEvent.click(screen.getByTestId("mode-stock"));
     const handed = STOCK_TORSION_SPRINGS.items.find((p) => p.hands);
     clickRow("stock-list", handed?.name ?? "");
     expect(screen.getByTestId("stock-desc")).toBeTruthy();
 
-    fireEvent.change(screen.getByTestId("tor-length"), { target: { value: "24.5" } });
+    // Back to the configurator: the length typed before the detour survives,
+    // and the stock spring is no longer driving the card.
+    fireEvent.click(screen.getByTestId("mode-config"));
+    expect(screen.getByTestId("tor-length").getAttribute("value")).toBe("24.5");
     expect(screen.queryByTestId("stock-desc")).toBeNull();
+  });
+});
+
+describe("header tab dropdown", () => {
+  it("offers every tab the button bar does, and leaves DASH out of it", () => {
+    render(<AppShell models={["4050"]} user={{ username: "bc", role: "admin" }} />);
+    const select = screen.getByTestId("tabsel");
+    const options = within(select).getAllByRole("option").map((o) => o.textContent);
+    const buttons = screen
+      .getAllByRole("button")
+      .filter((b) => b.className.includes("tab"))
+      .map((b) => b.textContent);
+
+    expect(options).toEqual(buttons);
+    expect(options).toContain("Extension Springs");
+    // The admin link is an anchor in .right, not a tab — it stays on screen at
+    // every width rather than hiding inside the dropdown.
+    expect(options).not.toContain("DASH");
+    expect(screen.getByText("DASH")).toBeTruthy();
+  });
+
+  it("switches tools from the dropdown", () => {
+    render(<AppShell models={["4050"]} user={{ username: "bc", role: "counter" }} />);
+    fireEvent.change(screen.getByTestId("tabsel"), { target: { value: "extension" } });
+    expect(screen.getByTestId("ext-list")).toBeTruthy();
   });
 });
