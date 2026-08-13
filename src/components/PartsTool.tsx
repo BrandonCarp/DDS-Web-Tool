@@ -5,12 +5,12 @@ import { CopyButton } from "@/components/CopyButton";
 import { QbLineDemo } from "@/components/QbLineDemo";
 import { QB_ITEMS } from "@/lib/qb/iif";
 import {
-  PART_CATEGORIES,
   partDescription,
   partPrice,
   partQuantity,
   type Part,
 } from "@/lib/pricing/data/parts";
+import { SHELF_PART_CATEGORIES } from "@/lib/pricing/data/springs";
 import { cableQuote, CABLE_GAUGES } from "@/lib/pricing/data/cables";
 
 const fmt = (n: number) =>
@@ -29,9 +29,16 @@ const CUSTOM_CABLE = "Custom cut cable";
  * Everything here bills to the one QuickBooks item, PARTS. Vinyl has its own
  * tab and its own item because it is measured off a door rather than picked off
  * a shelf.
+ *
+ * Springs are gone from this shelf entirely — not hidden, gone. Extension
+ * springs have their own tab and stock torsion springs sit under the
+ * configurator on the Torsion Springs tab, so browsing AND search here run over
+ * SHELF_PART_CATEGORIES. Searching "spring" on this tab finds spring bumpers
+ * and nothing else; that is deliberate, so there is exactly one place to quote
+ * a spring from.
  */
 export function PartsTool() {
-  const [catName, setCatName] = useState(PART_CATEGORIES[0].name);
+  const [catName, setCatName] = useState(SHELF_PART_CATEGORIES[0]?.name ?? "");
   const [query, setQuery] = useState("");
   const [pickedName, setPickedName] = useState<string | null>(null);
   const [feet, setFeet] = useState("");
@@ -50,11 +57,11 @@ export function PartsTool() {
   // Search spans every category; browsing stays inside the chosen one.
   const results = useMemo(() => {
     if (!searching) {
-      const cat = PART_CATEGORIES.find((c) => c.name === catName);
+      const cat = SHELF_PART_CATEGORIES.find((c) => c.name === catName);
       return (cat?.items ?? []).map((p) => ({ part: p, category: cat?.name ?? catName }));
     }
     const q = query.trim().toLowerCase();
-    return PART_CATEGORIES.flatMap((c) =>
+    return SHELF_PART_CATEGORIES.flatMap((c) =>
       c.items
         .filter(
           (p) =>
@@ -121,7 +128,7 @@ export function PartsTool() {
                           setQuery("");
                         }}
                       >
-                        {PART_CATEGORIES.map((c) => (
+                        {SHELF_PART_CATEGORIES.map((c) => (
                           <option key={c.name} value={c.name}>
                             {c.name} ({c.items.length})
                           </option>

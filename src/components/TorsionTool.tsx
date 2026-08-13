@@ -5,7 +5,10 @@ import { CopyButton } from "@/components/CopyButton";
 import { QbLineDemo } from "@/components/QbLineDemo";
 import { QB_ITEMS } from "@/lib/qb/iif";
 import { useCustomerJob } from "@/components/CustomerJobFields";
+import { SpringPicker } from "@/components/SpringPicker";
 import { TORSION, ID_ORDER, torsionPrice, fmtWire, springDescription } from "@/lib/pricing/data/torsion";
+import { STOCK_TORSION_SPRINGS } from "@/lib/pricing/data/springs";
+import { partDescription, partPrice, partQuantity } from "@/lib/pricing/data/parts";
 
 const fmt = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -18,6 +21,12 @@ export function TorsionTool() {
   // spec, with no quantities appended.
   const [right, setRight] = useState(0);
   const [left, setLeft] = useState(0);
+  // Stock springs off the shelf list below. They are their own quote source:
+  // picking one takes over the card, touching a custom field hands it back.
+  // One card, never two competing totals.
+  const [stockName, setStockName] = useState<string | null>(null);
+  const [stockRight, setStockRight] = useState(1);
+  const [stockLeft, setStockLeft] = useState(1);
 
   const wires = TORSION.stock_wires[id] ?? Object.keys(TORSION.ppi).filter((w) => TORSION.ppi[w][id] != null);
   const len = parseFloat(length);
@@ -25,6 +34,15 @@ export function TorsionTool() {
 
   const springs = Math.max(0, right) + Math.max(0, left);
   const description = price != null ? springDescription(wire, id, len, right, left) : "";
+
+  const stockPart = stockName
+    ? (STOCK_TORSION_SPRINGS.items.find((p) => p.name === stockName) ?? null)
+    : null;
+  const onStock = stockPart != null;
+  const stockDesc = stockPart ? partDescription(stockPart, 0, stockRight, stockLeft) : "";
+  const stockUnit = stockPart ? partPrice(stockPart) : 0;
+  const stockQty = stockPart ? partQuantity(stockPart, stockRight, stockLeft) : 0;
+  const stockReady = onStock && stockQty > 0;
 
   // Spring quotes are still recorded — copying now stands in for the old
   // "Save quote" button, so the admin dashboard keeps seeing them.
@@ -43,8 +61,15 @@ export function TorsionTool() {
     }).catch(() => {/* ignore */});
   }
 
-  function pickId(v: string) { setId(v); setWire(""); }
-  function clear() { setWire(""); setLength(""); setRight(0); setLeft(0); }
+  // Any edit to the custom configurator hands the quote card back to it.
+  function pickId(v: string) { setId(v); setWire(""); setStockName(null); }
+  function editWire(v: string) { setWire(v); setStockName(null); }
+  function editLength(v: string) { setLength(v); setStockName(null); }
+  function pickStock(name: string) { setStockName(name); setStockRight(1); setStockLeft(1); }
+  function clear() {
+    setWire(""); setLength(""); setRight(0); setLeft(0);
+    setStockName(null); setStockRight(1); setStockLeft(1);
+  }
 
   return (
     <>
@@ -66,17 +91,30 @@ export function TorsionTool() {
             <div className="row2">
               <div className="field"><label className="lbl">Wire size <span className="req">*</span></label>
                 <div className="selectwrap">
-                  <select data-testid="tor-wire" value={wire} onChange={(e) => setWire(e.target.value)}>
+                  <select data-testid="tor-wire" value={wire} onChange={(e) => editWire(e.target.value)}>
                     <option value="">Select…</option>
                     {wires.map((w) => <option key={w} value={w}>{fmtWire(w)}″ wire</option>)}
                   </select>
                 </div>
               </div>
               <div className="field"><label className="lbl">Length (inches) <span className="req">*</span></label>
-                <input data-testid="tor-length" type="text" inputMode="decimal" value={length} onChange={(e) => setLength(e.target.value)} placeholder="e.g. 24.5" />
+                <input data-testid="tor-length" type="text" inputMode="decimal" value={length} onChange={(e) => editLength(e.target.value)} placeholder="e.g. 24.5" />
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Stock springs sit BELOW the configurator: cutting to size is the
+            main job on this tab, the shelf is the fallback when a stock spring
+            happens to fit. */}
+        <div className="panel" style={{ marginTop: 14 }}>
+          <SpringPicker
+            category={STOCK_TORSION_SPRINGS}
+            picked={stockName}
+            onPick={pickStock}
+            testId="stock"
+            heading="Or pick a stock spring"
+          />
         </div>
       </section>
 
@@ -84,10 +122,59 @@ export function TorsionTool() {
         <div className="panel">
           <div className="qhead">
             <div className="ql">Torsion spring</div>
-            <div className="qmodel">Cut to size</div>
-            <div className="qsub">{wire ? `${fmtWire(wire)}″ · ${TORSION.id_labels[id]}` : "Select options"}</div>
+            <div className="qmodel">{onStock ? "Stock" : "Cut to size"}</div>
+            <div className="qsub">
+              {onStock
+                ? (stockPart?.sub ?? STOCK_TORSION_SPRINGS.name)
+                : wire ? `${fmtWire(wire)}″ · ${TORSION.id_labels[id]}` : "Select options"}
+            </div>
           </div>
-          {price == null ? (
+          {onStock ? (
+            <>
+              <div className="total" style={{ borderTop: 0, paddingTop: 18 }}>
+                <span className="tl">Spring price (each)</span>
+                <span className="tv" data-testid="stock-price">{fmt(stockUnit)}</span>
+              </div>
+              <div className="descbox no-print">
+                <div className="desclbl">Spring description</div>
+                <div className="desctext" data-testid="stock-desc">{stockDesc}</div>
+              </div>
+
+              <div className="row2" style={{ margin: "0 20px 16px" }}>
+                <div className="field">
+                  <label className="lbl">Right springs (red)</label>
+                  <input
+                    data-testid="stock-right" type="number" min={0} value={stockRight}
+                    onChange={(e) => setStockRight(Math.max(0, Math.trunc(Number(e.target.value)) || 0))}
+                  />
+                </div>
+                <div className="field">
+                  <label className="lbl">Left springs (black)</label>
+                  <input
+                    data-testid="stock-left" type="number" min={0} value={stockLeft}
+                    onChange={(e) => setStockLeft(Math.max(0, Math.trunc(Number(e.target.value)) || 0))}
+                  />
+                </div>
+              </div>
+
+              <div className="muted-note" style={{ margin: "0 20px 14px" }}>
+                Quantity {stockQty} · QuickBooks item {QB_ITEMS.parts}
+              </div>
+
+              {stockReady ? (
+                <div className="qfoot">
+                  <CopyButton text={stockDesc} label="Copy description" primary testId="stock-copy-desc" />
+                  <CopyButton text={fmt(stockUnit)} label="Copy price" testId="stock-copy-price" />
+                  <button className="btn" type="button" onClick={clear}>Clear</button>
+                </div>
+              ) : (
+                <div className="qfoot">
+                  <span className="muted-note">Enter how many rights and lefts</span>
+                  <button className="btn" type="button" onClick={clear}>Clear</button>
+                </div>
+              )}
+            </>
+          ) : price == null ? (
             <div className="lines" />
           ) : (
             <>
@@ -127,7 +214,17 @@ export function TorsionTool() {
         </div>
       </aside>
     </div>
-    {price != null && (
+    {stockReady ? (
+      <QbLineDemo
+        model={stockPart?.name ?? "Torsion spring"}
+        size={stockPart?.sub ?? STOCK_TORSION_SPRINGS.name}
+        item={QB_ITEMS.parts}
+        typed="PAR"
+        description={stockDesc.toUpperCase()}
+        qty={String(stockQty)}
+        rate={fmt(stockUnit).replace("$", "")}
+      />
+    ) : !onStock && price != null ? (
       <QbLineDemo
         model="Torsion spring"
         size={`${id} ID \u00b7 ${wire} wire \u00b7 ${len}\u2033`}
@@ -136,7 +233,7 @@ export function TorsionTool() {
         description={description.toUpperCase()}
         rate={fmt(price).replace("$", "")}
       />
-    )}
+    ) : null}
     </>
   );
 }

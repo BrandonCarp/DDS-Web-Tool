@@ -5,6 +5,7 @@ import { ResidentialTool } from "./ResidentialTool";
 import { CommercialTool } from "./CommercialTool";
 import { SpecialTool } from "./SpecialTool";
 import { TorsionTool } from "./TorsionTool";
+import { ExtensionTool } from "./ExtensionTool";
 import { PartsTool } from "./PartsTool";
 import { VinylTool } from "./VinylTool";
 import { OperatorsTool } from "./OperatorsTool";
@@ -15,6 +16,7 @@ const BASE_TABS = [
   { id: "commercial", label: "Commercial" },
   { id: "special", label: "Special Order" },
   { id: "torsion", label: "Torsion Springs" },
+  { id: "extension", label: "Extension Springs" },
   { id: "parts", label: "Parts" },
   { id: "vinyl", label: "Vinyl" },
   { id: "operators", label: "Operators" },
@@ -94,6 +96,7 @@ function Shell({
       {mode === "commercial" && <CommercialTool />}
       {mode === "special" && <SpecialTool />}
       {mode === "torsion" && <TorsionTool />}
+      {mode === "extension" && <ExtensionTool />}
       {mode === "parts" && <PartsTool />}
       {mode === "vinyl" && <VinylTool />}
       {mode === "operators" && <OperatorsTool />}
