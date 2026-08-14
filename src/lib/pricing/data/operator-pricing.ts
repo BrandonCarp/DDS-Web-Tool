@@ -13,14 +13,7 @@
 
 import { OPERATOR_SECTIONS, type Operator } from "./operators";
 import { OPERATOR_PRICES } from "./operator-prices";
-<<<<<<< ours
-<<<<<<< ours
-=======
 import { MANUAL_OPERATOR_PRICES } from "./operator-prices-manual";
->>>>>>> theirs
-=======
-import { MANUAL_OPERATOR_PRICES } from "./operator-prices-manual";
->>>>>>> theirs
 
 /** Normalise a description into the shared join key. */
 export function priceKey(desc: string): string {
@@ -37,13 +30,6 @@ export function priceKey(desc: string): string {
  * quote a free operator.
  */
 export function operatorPrice(item: Operator): number | null {
-<<<<<<< ours
-<<<<<<< ours
-  const price = OPERATOR_PRICES[priceKey(item.desc)];
-  return typeof price === "number" ? price : null;
-=======
-=======
->>>>>>> theirs
   const key = priceKey(item.desc);
   // Estimate-derived beats hand-entered, always. A number read off a
   // QuickBooks estimate has a subtotal behind it; a number somebody typed does
@@ -58,10 +44,6 @@ export function operatorPrice(item: Operator): number | null {
 export function isManualPrice(item: Operator): boolean {
   const key = priceKey(item.desc);
   return !(key in OPERATOR_PRICES) && key in MANUAL_OPERATOR_PRICES;
-<<<<<<< ours
->>>>>>> theirs
-=======
->>>>>>> theirs
 }
 
 /** How much of the catalogue currently carries a price. */

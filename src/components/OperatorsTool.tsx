@@ -196,15 +196,7 @@ export function OperatorsTool() {
                 <div className="qfoot">
                   <CopyButton text={chosen.desc} label="Copy description" primary testId="op-copy-desc" />
                   {price != null && (
-<<<<<<< ours
-<<<<<<< ours
-                    <CopyButton text={fmt(price)} label="Copy price" testId="op-copy-price" />
-=======
                     <CopyPrice amount={price} testId="op-copy-price" />
->>>>>>> theirs
-=======
-                    <CopyPrice amount={price} testId="op-copy-price" />
->>>>>>> theirs
                   )}
                   <button className="btn" type="button" onClick={() => setPicked(null)}>
                     Clear
@@ -224,15 +216,7 @@ export function OperatorsTool() {
           typed="OPE"
           description={chosen.desc}
           qty="1"
-<<<<<<< ours
-<<<<<<< ours
-          rate={price == null ? "" : fmt(price).replace("$", "")}
-=======
           rate={price == null ? "" : priceText(price)}
->>>>>>> theirs
-=======
-          rate={price == null ? "" : priceText(price)}
->>>>>>> theirs
         />
       )}
     </>
