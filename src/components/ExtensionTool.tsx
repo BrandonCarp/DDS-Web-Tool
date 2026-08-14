@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CopyButton } from "@/components/CopyButton";
+import { CopyButton, CopyPrice, priceText } from "@/components/CopyButton";
 import { QbLineDemo } from "@/components/QbLineDemo";
 import { SpringPicker } from "@/components/SpringPicker";
 import { QB_ITEMS } from "@/lib/qb/iif";
@@ -75,7 +75,7 @@ export function ExtensionTool() {
                 </div>
                 <div className="qfoot">
                   <CopyButton text={description} label="Copy description" primary testId="ext-copy-desc" />
-                  <CopyButton text={fmt(price)} label="Copy price" testId="ext-copy-price" />
+                  <CopyPrice amount={price} testId="ext-copy-price" />
                   <button className="btn" type="button" onClick={() => setPickedName(null)}>
                     Clear
                   </button>
@@ -94,7 +94,7 @@ export function ExtensionTool() {
           typed="PAR"
           description={description}
           qty={qtyText}
-          rate={fmt(price).replace("$", "")}
+          rate={priceText(price)}
         />
       )}
     </>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CopyButton } from "@/components/CopyButton";
+import { CopyButton, CopyPrice, priceText } from "@/components/CopyButton";
 import { QbLineDemo } from "@/components/QbLineDemo";
 import { QB_ITEMS } from "@/lib/qb/iif";
 import { vinylForDoor, VINYL_COLORS } from "@/lib/pricing/data/vinyl";
@@ -119,7 +119,7 @@ export function VinylTool() {
                 <div className="qfoot">
                   <CopyButton text={quote.description} label="Copy description" primary testId="vinyl-copy-desc" />
                   <CopyButton text={String(quote.feet)} label="Copy quantity" testId="vinyl-copy-qty" />
-                  <CopyButton text={fmt(quote.total)} label="Copy price" testId="vinyl-copy-price" />
+                  <CopyPrice amount={quote.total} testId="vinyl-copy-price" />
                   <button
                     className="btn"
                     type="button"

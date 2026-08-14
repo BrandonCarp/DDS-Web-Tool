@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { EstimateSheet } from "@/components/EstimateSheet";
-import { CopyButton } from "@/components/CopyButton";
+import { CopyButton, CopyPrice, priceText } from "@/components/CopyButton";
 import { QbLineDemo } from "@/components/QbLineDemo";
 import { QB_ITEMS } from "@/lib/qb/iif";
 import { useCustomerJob } from "@/components/CustomerJobFields";
@@ -549,7 +549,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
               </div>
               <div className="qfoot">
                 <CopyButton text={description.toUpperCase()} label="Copy description" primary testId="copy-desc" />
-                <CopyButton text={fmt(total)} label="Copy price" testId="copy-price" />
+                <CopyPrice amount={total} testId="copy-price" />
                 <button className="btn" type="button" onClick={clearAll}>Clear</button>
               </div>
             </>
@@ -571,7 +571,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
         model={model}
         size={dims}
         description={description.toUpperCase()}
-        rate={fmt(total).replace("$", "")}
+        rate={priceText(total)}
       />
     )}
     {priced && (

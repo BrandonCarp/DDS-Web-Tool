@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CopyButton } from "@/components/CopyButton";
+import { CopyButton, CopyPrice, priceText } from "@/components/CopyButton";
 import { QbLineDemo } from "@/components/QbLineDemo";
 import { QB_ITEMS } from "@/lib/qb/iif";
 import { useCustomerJob } from "@/components/CustomerJobFields";
@@ -191,7 +191,7 @@ export function TorsionTool() {
               {stockReady ? (
                 <div className="qfoot">
                   <CopyButton text={stockDesc} label="Copy description" primary testId="stock-copy-desc" />
-                  <CopyButton text={fmt(stockUnit)} label="Copy price" testId="stock-copy-price" />
+                  <CopyPrice amount={stockUnit} testId="stock-copy-price" />
                   <button className="btn" type="button" onClick={clear}>Clear</button>
                 </div>
               ) : (
@@ -234,7 +234,7 @@ export function TorsionTool() {
 
               <div className="qfoot">
                 <CopyButton text={description} label="Copy description" primary onCopy={record} testId="tor-copy-desc" />
-                <CopyButton text={fmt(price)} label="Copy price" onCopy={record} testId="tor-copy-price" />
+                <CopyPrice amount={price} onCopy={record} testId="tor-copy-price" />
                 <button className="btn" type="button" onClick={clear}>Clear</button>
               </div>
             </>
@@ -250,7 +250,7 @@ export function TorsionTool() {
         typed="PAR"
         description={stockDesc.toUpperCase()}
         qty={String(stockQty)}
-        rate={fmt(stockUnit).replace("$", "")}
+        rate={priceText(stockUnit)}
       />
     ) : !onStock && price != null ? (
       <QbLineDemo
@@ -259,7 +259,7 @@ export function TorsionTool() {
         item={QB_ITEMS.spring}
         typed="SPR"
         description={description.toUpperCase()}
-        rate={fmt(price).replace("$", "")}
+        rate={priceText(price)}
       />
     ) : null}
     </>

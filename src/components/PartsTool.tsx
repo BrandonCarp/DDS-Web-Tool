@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CopyButton } from "@/components/CopyButton";
+import { CopyButton, CopyPrice, priceText } from "@/components/CopyButton";
 import { QbLineDemo } from "@/components/QbLineDemo";
 import { QB_ITEMS } from "@/lib/qb/iif";
 import {
@@ -334,7 +334,7 @@ export function PartsTool() {
                     </div>
                     <div className="qfoot">
                       <CopyButton text={description} label="Copy description" primary testId="parts-copy-desc" />
-                      <CopyButton text={fmt(price)} label="Copy price" testId="parts-copy-price" />
+                      <CopyPrice amount={price} testId="parts-copy-price" />
                       <button className="btn" type="button" onClick={clear}>
                         Clear
                       </button>
@@ -365,7 +365,7 @@ export function PartsTool() {
           typed="PAR"
           description={description}
           qty={qtyText}
-          rate={fmt(price).replace("$", "")}
+          rate={priceText(price)}
         />
       )}
     </>

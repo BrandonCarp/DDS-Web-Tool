@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CopyButton } from "@/components/CopyButton";
+import { CopyButton, CopyPrice, priceText } from "@/components/CopyButton";
 import { QbLineDemo } from "@/components/QbLineDemo";
+import { operatorPrice } from "@/lib/pricing/data/operator-pricing";
 import { QB_ITEMS } from "@/lib/qb/iif";
 import {
   OPERATOR_SECTIONS,
@@ -18,6 +19,9 @@ import {
  * the description and says so instead of showing a rate. Nobody should be able
  * to lift a number off this screen that the company has not set.
  */
+const fmt = (n: number) =>
+  "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 export function OperatorsTool() {
   const [group, setGroup] = useState<string>(OPERATOR_GROUPS[0]);
   const [sectionName, setSectionName] = useState(OPERATOR_SECTIONS[0].name);
@@ -47,6 +51,8 @@ export function OperatorsTool() {
 
   const hit = results.find((r) => r.item.name === picked) ?? null;
   const chosen: Operator | null = hit?.item ?? null;
+  // null means DDS has not priced this one yet — a real state, not an error.
+  const price = chosen ? operatorPrice(chosen) : null;
 
   function pickGroup(g: string) {
     setGroup(g);
@@ -174,15 +180,28 @@ export function OperatorsTool() {
                 </div>
                 <div className="total">
                   <span>Quantity 1</span>
-                  <b className="nopricing" data-testid="op-price">
-                    Price not set
-                  </b>
+                  {price == null ? (
+                    <b className="nopricing" data-testid="op-price">
+                      Price not set
+                    </b>
+                  ) : (
+                    <b data-testid="op-price">{fmt(price)}</b>
+                  )}
                 </div>
-                <div className="muted-note" style={{ padding: "0 22px 4px" }}>
-                  Operator pricing has not been set yet — look the price up before the order goes out.
-                </div>
+                {price == null && (
+                  <div className="muted-note" style={{ padding: "0 22px 4px" }}>
+                    This one has no price yet — look it up before the order goes out.
+                  </div>
+                )}
                 <div className="qfoot">
                   <CopyButton text={chosen.desc} label="Copy description" primary testId="op-copy-desc" />
+                  {price != null && (
+<<<<<<< ours
+                    <CopyButton text={fmt(price)} label="Copy price" testId="op-copy-price" />
+=======
+                    <CopyPrice amount={price} testId="op-copy-price" />
+>>>>>>> theirs
+                  )}
                   <button className="btn" type="button" onClick={() => setPicked(null)}>
                     Clear
                   </button>
@@ -201,7 +220,11 @@ export function OperatorsTool() {
           typed="OPE"
           description={chosen.desc}
           qty="1"
-          rate=""
+<<<<<<< ours
+          rate={price == null ? "" : fmt(price).replace("$", "")}
+=======
+          rate={price == null ? "" : priceText(price)}
+>>>>>>> theirs
         />
       )}
     </>

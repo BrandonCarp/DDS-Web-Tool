@@ -10,6 +10,53 @@ import { useEffect, useRef, useState } from "react";
  * only available in a secure context (https / localhost); the textarea path is
  * the fallback for anything else.
  */
+/**
+ * The clipboard form of a price: no currency symbol.
+ *
+ * The counter copies out of here and pastes straight into the Rate column in
+ * QuickBooks, which wants a number — a leading "$" had to be deleted by hand
+ * on every single paste. On screen the price still reads "$1,234.50"; only the
+ * copied text differs.
+ */
+export function priceText(amount: number): string {
+  return amount.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+/**
+ * Copy a price to the clipboard.
+ *
+ * Exists so the no-symbol rule lives in exactly one place. Every tool copies a
+ * price, and nine separate `text={fmt(price)}` call sites meant nine chances
+ * for the tenth one to get it wrong. Pass the number, not the formatted
+ * string.
+ */
+export function CopyPrice({
+  amount,
+  label = "Copy price",
+  primary = false,
+  testId,
+  onCopy,
+}: {
+  amount: number;
+  label?: string;
+  primary?: boolean;
+  testId?: string;
+  onCopy?: () => void;
+}) {
+  return (
+    <CopyButton
+      text={priceText(amount)}
+      label={label}
+      primary={primary}
+      testId={testId}
+      onCopy={onCopy}
+    />
+  );
+}
+
 export function CopyButton({
   text,
   label,

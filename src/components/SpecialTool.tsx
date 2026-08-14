@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useCustomerJob } from "@/components/CustomerJobFields";
-import { CopyButton } from "@/components/CopyButton";
+import { CopyButton, CopyPrice, priceText } from "@/components/CopyButton";
 import { SPECIAL, SPECIAL_COMMERCIAL } from "@/lib/pricing/data/special-orders";
 
 const fmt = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -232,7 +232,7 @@ export function SpecialTool() {
               </div>
               <div className="qfoot">
                 <CopyButton text={label.toUpperCase()} label="Copy description" primary onCopy={saveQuote} testId="so-copy-desc" />
-                <CopyButton text={fmt(total)} label="Copy price" onCopy={saveQuote} testId="so-copy-price" />
+                <CopyPrice amount={total} onCopy={saveQuote} testId="so-copy-price" />
                 <button className="btn" type="button" onClick={() => pickScope(scope)}>Clear</button>
               </div>
             </>
