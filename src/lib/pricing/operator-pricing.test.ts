@@ -2,7 +2,12 @@ import { describe, it, expect } from "vitest";
 import { OPERATOR_SECTIONS } from "./data/operators";
 import { OPERATOR_PRICES } from "./data/operator-prices";
 <<<<<<< ours
+<<<<<<< ours
 import { operatorPrice, pricedCount, priceKey } from "./data/operator-pricing";
+=======
+import { MANUAL_OPERATOR_PRICES } from "./data/operator-prices-manual";
+import { isManualPrice, operatorPrice, pricedCount, priceKey } from "./data/operator-pricing";
+>>>>>>> theirs
 =======
 import { MANUAL_OPERATOR_PRICES } from "./data/operator-prices-manual";
 import { isManualPrice, operatorPrice, pricedCount, priceKey } from "./data/operator-pricing";
@@ -24,13 +29,19 @@ describe("operator prices join to the catalogue", () => {
   it("prices the 52 rows read off the four estimates", () => {
     expect(Object.keys(OPERATOR_PRICES).length).toBe(52);
 <<<<<<< ours
+<<<<<<< ours
     expect(pricedCount()).toEqual({ priced: 52, total: ALL.length });
 =======
+=======
+>>>>>>> theirs
   });
 
   it("adds the hand-entered rows on top", () => {
     const manual = Object.keys(MANUAL_OPERATOR_PRICES).length;
     expect(pricedCount()).toEqual({ priced: 52 + manual, total: ALL.length });
+<<<<<<< ours
+>>>>>>> theirs
+=======
 >>>>>>> theirs
   });
 
@@ -45,7 +56,11 @@ describe("operator prices join to the catalogue", () => {
   it("returns null rather than zero for anything unpriced", () => {
     const unpriced = ALL.filter((o) => operatorPrice(o) == null);
 <<<<<<< ours
+<<<<<<< ours
     expect(unpriced.length).toBe(ALL.length - 52);
+=======
+    expect(unpriced.length).toBe(ALL.length - pricedCount().priced);
+>>>>>>> theirs
 =======
     expect(unpriced.length).toBe(ALL.length - pricedCount().priced);
 >>>>>>> theirs
@@ -93,7 +108,10 @@ describe("descriptions parsed off the estimates are clean", () => {
   });
 });
 <<<<<<< ours
+<<<<<<< ours
 =======
+=======
+>>>>>>> theirs
 
 describe("hand-entered prices", () => {
   it("matches a real catalogue item", () => {
@@ -135,4 +153,7 @@ describe("hand-entered prices", () => {
     ]);
   });
 });
+<<<<<<< ours
+>>>>>>> theirs
+=======
 >>>>>>> theirs
