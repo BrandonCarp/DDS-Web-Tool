@@ -232,8 +232,31 @@ export const HAND_COLOR = { right: "RED", left: "BLACK" } as const;
  * Base spring description, e.g. `3-3/4" ID, 234 WIRE, 52" LONG`.
  * Quantities are appended by springDescription().
  */
+/** Every spring line opens with this, stock or cut-to-size. */
+export const SPRING_LABEL = "TORSION SPRINGS";
+
+/**
+ * Comma then TWO spaces, which is how the parts sheet separates the fields of
+ * a spring line: "TORSION SPRINGS,  2" ID,  218 WIRE,  23-1/4" LONG".
+ *
+ * It reads like a typo and is not. Matching it exactly is the whole point — a
+ * cut-to-size spring and a stock spring off the shelf have to line up on the
+ * same estimate. Do not "tidy" this to a single space; springDescription's
+ * tests pin it.
+ */
+const FIELD_SEP = ",  ";
+
 export function springBase(wire: string, id: string, lengthIn: number): string {
-  return `${ID_LABELS_ASCII[id] ?? id}, ${wireCode(wire)} WIRE, ${lengthIn}" LONG`;
+  // The stock springs already describe themselves this way, straight off the
+  // parts sheet. A cut-to-size spring is the same product at a different
+  // length, so it is worded identically. Before this, a custom spring landed
+  // on an estimate as a bare spec with nothing naming it.
+  return [
+    SPRING_LABEL,
+    ID_LABELS_ASCII[id] ?? id,
+    `${wireCode(wire)} WIRE`,
+    `${lengthIn}" LONG`,
+  ].join(FIELD_SEP);
 }
 
 /**

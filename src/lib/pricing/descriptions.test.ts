@@ -1,12 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { springDescription, springBase, wireCode, ID_LABELS_ASCII } from "./data/torsion";
+import { springDescription, springBase, wireCode, ID_LABELS_ASCII, SPRING_LABEL } from "./data/torsion";
+import { STOCK_TORSION_SPRINGS } from "./data/springs";
 import { quoteCommercial } from "./commercial";
 import { quoteResidential } from "./engine";
 
 describe("torsion spring description", () => {
   it("writes the spec in plain ASCII — no prime marks, no fraction ligatures", () => {
     const d = springBase("0.234", "3.75", 52);
-    expect(d).toBe('3-3/4" ID, 234 WIRE, 52" LONG');
+    expect(d).toBe('TORSION SPRINGS,  3-3/4" ID,  234 WIRE,  52" LONG');
     expect(d).not.toMatch(/[″¾⅝]/);
   });
 
@@ -22,25 +23,48 @@ describe("torsion spring description", () => {
     }
   });
 
+  it("opens with TORSION SPRINGS, matching the stock springs off the shelf", () => {
+    // Brandon's example: TORSION SPRINGS, 2" ID, 218 WIRE, 23-1/4" LONG ...
+    expect(springDescription("0.218", "2", 23.25, 1, 1)).toBe(
+      'TORSION SPRINGS,  2" ID,  218 WIRE,  23.25" LONG [1] - RIGHT AND [1] - LEFT',
+    );
+    expect(springBase("0.218", "2", 23.25).startsWith(`${SPRING_LABEL},`)).toBe(true);
+  });
+
+  it("separates fields with a comma and two spaces, exactly like the sheet", () => {
+    // Parity with the stock rows in data/parts.ts, which read
+    // "TORSION SPRINGS,  2\" ID,  218 WIRE,  23-1/4\" LONG". A single space
+    // here is the thing that makes a cut-to-size line look wrong next to a
+    // stock one on the same estimate, so it is pinned rather than trusted.
+    const stock = STOCK_TORSION_SPRINGS.items.find((p) => p.hands && p.desc.includes("218 WIRE"));
+    expect(stock?.desc).toBe('TORSION SPRINGS,  2" ID,  218 WIRE,  23-1/4" LONG');
+    expect(springBase("0.218", "2", 23.25)).toBe('TORSION SPRINGS,  2" ID,  218 WIRE,  23.25" LONG');
+
+    // Same shape either side of the join: label, then three comma-two-space
+    // fields. Only the length differs, because one is cut and one is stocked.
+    const shape = (d: string) => d.split(",  ").length;
+    expect(shape(springBase("0.218", "2", 23.25))).toBe(shape(stock?.desc ?? ""));
+  });
+
   it("appends nothing when both hand counts are zero", () => {
-    expect(springDescription("0.234", "3.75", 52, 0, 0)).toBe('3-3/4" ID, 234 WIRE, 52" LONG');
+    expect(springDescription("0.234", "3.75", 52, 0, 0)).toBe('TORSION SPRINGS,  3-3/4" ID,  234 WIRE,  52" LONG');
   });
 
   it("lists right before left on a mixed pair, with the cone colours", () => {
     expect(springDescription("0.234", "3.75", 52, 1, 1)).toBe(
-      '3-3/4" ID, 234 WIRE, 52" LONG [1] - RIGHT AND [1] - LEFT',
+      'TORSION SPRINGS,  3-3/4" ID,  234 WIRE,  52" LONG [1] - RIGHT AND [1] - LEFT',
     );
   });
 
   it("pluralises a same-hand pair", () => {
     expect(springDescription("0.234", "3.75", 52, 0, 2)).toBe(
-      '3-3/4" ID, 234 WIRE, 52" LONG [2] - LEFTS',
+      'TORSION SPRINGS,  3-3/4" ID,  234 WIRE,  52" LONG [2] - LEFTS',
     );
   });
 
   it("handles a single hand on its own", () => {
     expect(springDescription("0.234", "3.75", 52, 1, 0)).toBe(
-      '3-3/4" ID, 234 WIRE, 52" LONG [1] - RIGHT',
+      'TORSION SPRINGS,  3-3/4" ID,  234 WIRE,  52" LONG [1] - RIGHT',
     );
   });
 });
