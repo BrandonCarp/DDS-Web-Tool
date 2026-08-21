@@ -146,7 +146,7 @@ export function SpecialTool() {
             <div className="step">
               <div className="step-h"><span className="step-n">2</span><h3>{series}</h3></div>
               <div className="field" style={{ marginTop: 4 }}>
-                <label className="lbl">Clopay list price <span className="req">*</span></label>
+                <label className="lbl">Enter total = sub total + energy surcharge — do not apply MPQ <span className="req">*</span></label>
                 <input type="text" inputMode="decimal" value={price} onChange={(e) => { setPrice(e.target.value); setSaved(false); }} placeholder="0.00" />
               </div>
             </div>
