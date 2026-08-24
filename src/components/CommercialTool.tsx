@@ -241,8 +241,22 @@ export function CommercialTool() {
                         <div className="dimrow">
                           <input data-testid="comm-width-ft" type="number" min={0} max={maxFt ?? undefined} placeholder="ft" value={manFt} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setManFt(v); }} />
                           <span className="u">ft</span>
-                          {/* Inches are inches. The engine re-checks this — the browser is not the gate. */}
-                          <input data-testid="comm-width-in" type="number" min={0} max={11} value={manIn} onChange={(e) => { const v = e.target.value; if (v === "" || (Number(v) >= 0 && Number(v) <= 11)) setManIn(v); }} />
+                          {/* A picker, not a number box: 12 or 20 inches used to price a
+                              section that cannot be built. The engine re-checks this
+                              too — the browser is not the gate. */}
+                          <div className="selectwrap inpick">
+                            <select
+                              data-testid="comm-width-in"
+                              value={manIn}
+                              onChange={(e) => setManIn(e.target.value)}
+                            >
+                              {Array.from({ length: 12 }, (_, i) => (
+                                <option key={i} value={String(i)}>
+                                  {i}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                           <span className="u">in</span>
                         </div>
                         {stockWidths ? (

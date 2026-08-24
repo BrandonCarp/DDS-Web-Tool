@@ -336,13 +336,22 @@ describe("4300 family (4301/4310 share 4300 pricing; 7/5/2026 odd-size sheets)",
   it("4301 and 4310 appear as their own selections and price identically to 4300", () => {
     const models = listModels();
     for (const m of ["4300", "4301", "4310"]) expect(models).toContain(m);
-    const a = quoteResidential("4300", dim(8, 4, 7, 0), o);
-    const b = quoteResidential("4301", dim(8, 4, 7, 0), o);
-    const c = quoteResidential("4310", dim(8, 4, 7, 0), o);
-    expect(a.unitPrice).toBeCloseTo(1023.63, 2); // new 7' odd band
+    // At a STOCK size the three share one sheet and one price.
+    const a = quoteResidential("4300", dim(9, 0, 7, 0), o);
+    const b = quoteResidential("4301", dim(9, 0, 7, 0), o);
+    const c = quoteResidential("4310", dim(9, 0, 7, 0), o);
+    expect(a.priced).toBe(true);
     expect(b.unitPrice).toBeCloseTo(a.unitPrice, 2);
     expect(c.unitPrice).toBeCloseTo(a.unitPrice, 2);
     expect(c.description).toContain("Model 4310");
+  });
+
+  it("sends an odd size to Special Order instead of pricing it off the grid", () => {
+    // 8'4" is not a stocked width. It used to price off the odd-size grid;
+    // it is now a special order, quoted on the margins over there.
+    const q = quoteResidential("4300", dim(8, 4, 7, 0), o);
+    expect(q.priced).toBe(false);
+    expect(q.unitPrice).toBe(0);
   });
   it("prices the new 7-ft odd bands (incl. the 15'6/15'8 split)", () => {
     expect(priceResidential("4300", dim(6, 2, 7, 0), "solid").price).toBeCloseTo(818.96, 2);
@@ -478,8 +487,16 @@ describe("stock vs special-order is reported on isStock, NOT in the description"
     expect(q.description.startsWith("Clopay ")).toBe(true);
     expect(q.description).not.toContain("Stock door");
   });
-  it("an odd/standard-priced door reports !isStock without saying so in the description", () => {
-    const q = quoteResidential("T50S", { widthFt: 8, widthIn: 4, heightFt: 7, heightIn: 0 }, opts2);
+  it("a stock-size door in an unstocked colour still prices, and still reads special order", () => {
+    // The badge and the price answer different questions: this one has a stock
+    // price but is not floored in that colour.
+    // T50S is floored in White only, so Almond at a stock size is the case.
+    const q = quoteResidential(
+      "T50S",
+      { widthFt: 8, widthIn: 0, heightFt: 7, heightIn: 0 },
+      { ...opts2, color: "Almond" },
+    );
+    expect(q.priced).toBe(true);
     expect(q.isStock).toBe(false);
     expect(q.description.startsWith("Clopay ")).toBe(true);
     expect(q.description).not.toContain("Special order");

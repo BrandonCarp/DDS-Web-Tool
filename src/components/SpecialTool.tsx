@@ -16,8 +16,14 @@ function soNumbers(series: string, model: string, kind: "door" | "section", pric
   if (!ser || Number.isNaN(list)) return null;
   let costBasis: number, margin: number;
   if (ser.type === "multiplier") {
-    costBasis = list * ser.multiplier;
-    margin = ser.cost_margin;
+    // A cheap section costs the same to handle and freight as an expensive one,
+    // so anything under the threshold is doubled before margin is applied.
+    const small =
+      kind === "section" &&
+      ser.small_section_under != null &&
+      list < ser.small_section_under;
+    costBasis = list * (small ? 2 : 1) * ser.multiplier;
+    margin = kind === "section" ? (ser.section_margin ?? ser.cost_margin) : ser.cost_margin;
   } else {
     const md = ser.models[model];
     if (!md) return null;
@@ -145,9 +151,23 @@ export function SpecialTool() {
           {scope === "residential" && ser && ser.type === "multiplier" && (
             <div className="step">
               <div className="step-h"><span className="step-n">2</span><h3>{series}</h3></div>
+              {ser.section_margin != null && (
+                <div className="field">
+                  <label className="lbl">Ordering</label>
+                  <div className="chips">
+                    <button type="button" className={`chip ${kind === "door" ? "sel" : ""}`} onClick={() => { setKind("door"); setSaved(false); }}>Door</button>
+                    <button type="button" className={`chip ${kind === "section" ? "sel" : ""}`} onClick={() => { setKind("section"); setSaved(false); }}>Sections</button>
+                  </div>
+                </div>
+              )}
               <div className="field" style={{ marginTop: 4 }}>
                 <label className="lbl">Enter total = sub total + energy surcharge — do not apply MPQ <span className="req">*</span></label>
                 <input type="text" inputMode="decimal" value={price} onChange={(e) => { setPrice(e.target.value); setSaved(false); }} placeholder="0.00" />
+                {kind === "section" && ser.small_section_under != null && (
+                  <div className="muted-note" style={{ marginTop: 6 }}>
+                    Sections under ${ser.small_section_under} are doubled before margin
+                  </div>
+                )}
               </div>
             </div>
           )}

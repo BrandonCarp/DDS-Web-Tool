@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { SPECIAL } from "./data/special-orders";
 import { springDescription, springBase, wireCode, ID_LABELS_ASCII, SPRING_LABEL } from "./data/torsion";
 import { STOCK_TORSION_SPRINGS } from "./data/springs";
 import { quoteCommercial } from "./commercial";
@@ -224,5 +225,45 @@ describe("section colour availability", () => {
   it("colour reaches the description", () => {
     expect(sec("TS150", "Brown").description).toContain("in the color Brown");
     expect(sec("TS200", "White").description).toContain("in the color White");
+  });
+});
+
+describe("outside manufacturer special orders", () => {
+  const MFRS = ["Haas", "Amarr", "CHI", "Overhead", "Wayne Dalton"];
+  const sell = (cost: number, mult: number, margin: number) => (cost * mult) / (1 - margin / 100);
+
+  it("carries all five on 1.09 with 29 door / 37 section", () => {
+    for (const m of MFRS) {
+      const ser = SPECIAL[m];
+      expect(ser, m).toBeTruthy();
+      expect(ser.type).toBe("multiplier");
+      if (ser.type !== "multiplier") return;
+      expect(ser.multiplier, m).toBe(1.09);
+      expect(ser.cost_margin, m).toBe(29);
+      expect(ser.section_margin, m).toBe(37);
+      expect(ser.small_section_under, m).toBe(300);
+    }
+  });
+
+  it("prices a complete door at 1.09 x 29", () => {
+    expect(sell(1000, 1.09, 29)).toBeCloseTo(1535.21, 2);
+  });
+
+  it("prices a normal section at 1.09 x 37", () => {
+    expect(sell(500, 1.09, 37)).toBeCloseTo(865.08, 2);
+  });
+
+  it("doubles a section under $300 before margin", () => {
+    // $250 section -> treated as $500 of cost, then 1.09 and 37.
+    expect(sell(500, 1.09, 37)).toBeCloseTo(sell(250 * 2, 1.09, 37), 2);
+  });
+
+  it("leaves Canyon Ridge and Avante on a single margin", () => {
+    for (const m of ["Canyon Ridge Collection", "Avante Collection"]) {
+      const ser = SPECIAL[m];
+      if (ser.type !== "multiplier") throw new Error(`${m} changed type`);
+      expect(ser.section_margin, m).toBeUndefined();
+      expect(ser.small_section_under, m).toBeUndefined();
+    }
   });
 });

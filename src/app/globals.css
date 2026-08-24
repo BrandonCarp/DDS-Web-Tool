@@ -849,3 +849,7 @@ html, body { margin: 0; padding: 0; }
 .tool-shell .nopricing{
   font-size:13px;font-weight:600;color:var(--muted-2);letter-spacing:.2px;
 }
+
+/* Inches picker inside a ft/in row — narrow enough to read as one field. */
+.tool-shell .dimrow .inpick{flex:none;width:84px}
+.tool-shell .dimrow .inpick select{width:100%}

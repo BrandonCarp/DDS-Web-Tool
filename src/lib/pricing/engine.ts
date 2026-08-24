@@ -249,6 +249,23 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
   const inStock =
     stock !== null &&
     colorInStock(model, opts.color, sizeCode(size.wf, size.wi), sizeCode(size.hf, size.hi));
+
+  // Residential only quotes a STOCK PRICE. A size that falls through to the
+  // odd-size grid is a special order and is priced there, on the margins,
+  // rather than off a sheet that does not cover it.
+  //
+  // Note this is about the PRICE, not the badge: a stock size in a colour DDS
+  // does not floor still prices here and still reads "special order" in the
+  // badge, which is the behaviour the counter already relies on.
+  //
+  // The grids stay in place — this is a routing rule, so dropping the check
+  // restores the old behaviour.
+  if (stock === null) {
+    return {
+      model, size, priced: false, isStock: false,
+      source: "none", lines: [], unitPrice: 0, description: "",
+    };
+  }
   // The stock/special status is NOT in the description — it is shown in the
   // stock badge on screen. The description is copied verbatim into QuickBooks,
   // where the status is a DDS-internal fact, not part of the product line.

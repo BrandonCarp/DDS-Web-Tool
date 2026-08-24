@@ -5,7 +5,20 @@
 export type SpecialModel = { door: number; section: number; ug?: boolean; new?: boolean };
 export type SpecialSeries =
   | { type: "margin"; models: Record<string, SpecialModel>; ug?: { single: number; double: number }; ug_margin?: number }
-  | { type: "multiplier"; multiplier: number; cost_margin: number };
+  | {
+      type: "multiplier";
+      multiplier: number;
+      /** Margin on a complete door. */
+      cost_margin: number;
+      /** Margin on replacement sections, when it differs from the door. */
+      section_margin?: number;
+      /**
+       * Sections costing under this are doubled before margin. A small section
+       * costs the same to handle, freight and stage as a large one, so the raw
+       * cost does not cover the work.
+       */
+      small_section_under?: number;
+    };
 
 export const SPECIAL: Record<string, SpecialSeries> = {
   "Gallery Collection": {
@@ -30,6 +43,10 @@ export const SPECIAL: Record<string, SpecialSeries> = {
       "GD2LP/GD2SP": {
         "door": 45,
         "section": 43
+      },
+      "GD1LP/GD1SP": {
+        "door": 43,
+        "section": 51
       },
       "GD1LU/GD1SU": {
         "door": 43,
@@ -146,6 +163,65 @@ export const SPECIAL: Record<string, SpecialSeries> = {
     "type": "multiplier",
     "multiplier": 1.09,
     "cost_margin": 29
+  },
+<<<<<<< ours
+=======
+  // The residential steel lines. DDS floors only a handful of sizes in these
+  // (see STOCK_MATRIX); everything else is a special order and is priced here on
+  // the margins rather than off the stock sheet. Margins match MARGINS in
+  // catalog-meta.ts, which is the same table the residential grid was built to.
+  "Value Steel Collection": {
+    "type": "margin",
+    "models": {
+      "T50S/T50L": { "door": 49, "section": 53 },
+      "T52S/T52L": { "door": 44, "section": 49 }
+    }
+  },
+  "Premium Steel Collection": {
+    "type": "margin",
+    "models": {
+      "4050/4051/4053": { "door": 43, "section": 48 },
+      "4300/4301/4310": { "door": 44, "section": 49 },
+      "9130/9133": { "door": 43, "section": 48 }
+    }
+  },
+>>>>>>> theirs
+  // Outside manufacturers. DDS pays list x 1.09, then 29 on a complete door and
+  // 37 on sections. Same terms across all five, so they share one shape.
+  "Haas": {
+    "type": "multiplier",
+    "multiplier": 1.09,
+    "cost_margin": 29,
+    "section_margin": 37,
+    "small_section_under": 300
+  },
+  "Amarr": {
+    "type": "multiplier",
+    "multiplier": 1.09,
+    "cost_margin": 29,
+    "section_margin": 37,
+    "small_section_under": 300
+  },
+  "CHI": {
+    "type": "multiplier",
+    "multiplier": 1.09,
+    "cost_margin": 29,
+    "section_margin": 37,
+    "small_section_under": 300
+  },
+  "Overhead": {
+    "type": "multiplier",
+    "multiplier": 1.09,
+    "cost_margin": 29,
+    "section_margin": 37,
+    "small_section_under": 300
+  },
+  "Wayne Dalton": {
+    "type": "multiplier",
+    "multiplier": 1.09,
+    "cost_margin": 29,
+    "section_margin": 37,
+    "small_section_under": 300
   },
   "Modern Collection": {
     "type": "margin",
