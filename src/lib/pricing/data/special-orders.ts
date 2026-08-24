@@ -164,8 +164,6 @@ export const SPECIAL: Record<string, SpecialSeries> = {
     "multiplier": 1.09,
     "cost_margin": 29
   },
-<<<<<<< ours
-=======
   // The residential steel lines. DDS floors only a handful of sizes in these
   // (see STOCK_MATRIX); everything else is a special order and is priced here on
   // the margins rather than off the stock sheet. Margins match MARGINS in
@@ -185,7 +183,6 @@ export const SPECIAL: Record<string, SpecialSeries> = {
       "9130/9133": { "door": 43, "section": 48 }
     }
   },
->>>>>>> theirs
   // Outside manufacturers. DDS pays list x 1.09, then 29 on a complete door and
   // 37 on sections. Same terms across all five, so they share one shape.
   "Haas": {
