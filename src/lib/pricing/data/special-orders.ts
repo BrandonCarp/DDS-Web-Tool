@@ -284,3 +284,31 @@ export const SPECIAL: Record<string, SpecialSeries> = {
 export const SPECIAL_COMMERCIAL: Record<string, { models: string[]; door: number; section: number }> = {
   Clopay: { models: ["3200", "524"], door: 45, section: 49 },
 };
+
+/**
+ * Residential special orders, grouped by who makes the door.
+ *
+ * Clopay carries a collection under it — Gallery, Coachman, Value Steel and so
+ * on — while the outside manufacturers are a single choice each, since DDS
+ * prices every one of their doors on the same terms. Keeping Clopay's
+ * collections behind one manufacturer stops a fifteen-entry flat list where
+ * "Amarr" sits between "Avante" and "Canyon Ridge".
+ */
+export const SO_OUTSIDE_MFRS = ["Haas", "Amarr", "CHI", "Overhead", "Wayne Dalton"] as const;
+
+export const SO_MANUFACTURERS = ["Clopay", ...SO_OUTSIDE_MFRS] as const;
+
+/** Series selectable under a manufacturer. Outside makers have exactly one. */
+export function seriesFor(mfr: string): string[] {
+  if (mfr === "Clopay") {
+    return Object.keys(SPECIAL).filter(
+      (s) => !(SO_OUTSIDE_MFRS as readonly string[]).includes(s),
+    );
+  }
+  return Object.keys(SPECIAL).filter((s) => s === mfr);
+}
+
+/** True when the manufacturer needs no second dropdown. */
+export function isOutsideMfr(mfr: string): boolean {
+  return (SO_OUTSIDE_MFRS as readonly string[]).includes(mfr);
+}

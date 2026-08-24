@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { SPECIAL } from "./data/special-orders";
+import { SPECIAL, SO_MANUFACTURERS, SO_OUTSIDE_MFRS, seriesFor, isOutsideMfr } from "./data/special-orders";
 import { springDescription, springBase, wireCode, ID_LABELS_ASCII, SPRING_LABEL } from "./data/torsion";
 import { STOCK_TORSION_SPRINGS } from "./data/springs";
 import { quoteCommercial } from "./commercial";
@@ -265,5 +265,28 @@ describe("outside manufacturer special orders", () => {
       expect(ser.section_margin, m).toBeUndefined();
       expect(ser.small_section_under, m).toBeUndefined();
     }
+  });
+});
+
+describe("special order manufacturer grouping", () => {
+  it("puts every Clopay collection under Clopay and nothing else", () => {
+    const clopay = seriesFor("Clopay");
+    for (const s of ["Gallery Collection", "Value Steel Collection", "Premium Steel Collection", "Canyon Ridge Collection"]) {
+      expect(clopay, s).toContain(s);
+    }
+    for (const m of SO_OUTSIDE_MFRS) expect(clopay, m).not.toContain(m);
+  });
+
+  it("gives each outside maker exactly one series, named after itself", () => {
+    for (const m of SO_OUTSIDE_MFRS) {
+      expect(seriesFor(m), m).toEqual([m]);
+      expect(isOutsideMfr(m), m).toBe(true);
+    }
+    expect(isOutsideMfr("Clopay")).toBe(false);
+  });
+
+  it("leaves no series unreachable from some manufacturer", () => {
+    const reachable = new Set(SO_MANUFACTURERS.flatMap((m) => seriesFor(m)));
+    for (const s of Object.keys(SPECIAL)) expect(reachable, `${s} is orphaned`).toContain(s);
   });
 });

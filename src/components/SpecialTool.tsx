@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useCustomerJob } from "@/components/CustomerJobFields";
 import { CopyButton, CopyPrice, priceText } from "@/components/CopyButton";
-import { SPECIAL, SPECIAL_COMMERCIAL } from "@/lib/pricing/data/special-orders";
+import { SPECIAL, SPECIAL_COMMERCIAL, SO_MANUFACTURERS, seriesFor, isOutsideMfr } from "@/lib/pricing/data/special-orders";
 
 const fmt = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -52,6 +52,7 @@ export function SpecialTool() {
   const { custName, custPo, custJob } = useCustomerJob();
   const [scope, setScope] = useState<"residential" | "commercial">("residential");
   // residential
+  const [rMfr, setRMfr] = useState("Clopay");
   const [series, setSeries] = useState("");
   const [model, setModel] = useState("");
   // commercial
@@ -119,14 +120,35 @@ export function SpecialTool() {
             </div>
 
             {scope === "residential" ? (
-              <div className="field"><label className="lbl">Collection / series <span className="req">*</span></label>
-                <div className="selectwrap">
-                  <select data-testid="so-series" value={series} onChange={(e) => pickSeries(e.target.value)}>
-                    <option value="">Select…</option>
-                    {Object.keys(SPECIAL).map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
+              <>
+                <div className="field"><label className="lbl">Manufacturer <span className="req">*</span></label>
+                  <div className="selectwrap">
+                    <select
+                      data-testid="so-mfr"
+                      value={rMfr}
+                      onChange={(e) => {
+                        const m = e.target.value;
+                        setRMfr(m);
+                        // An outside maker has one series, so pick it outright
+                        // rather than making the counter choose from a list of one.
+                        pickSeries(isOutsideMfr(m) ? m : "");
+                      }}
+                    >
+                      {SO_MANUFACTURERS.map((m) => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                  </div>
                 </div>
-              </div>
+                {!isOutsideMfr(rMfr) && (
+                  <div className="field"><label className="lbl">Collection / series <span className="req">*</span></label>
+                    <div className="selectwrap">
+                      <select data-testid="so-series" value={series} onChange={(e) => pickSeries(e.target.value)}>
+                        <option value="">Select…</option>
+                        {seriesFor(rMfr).map((s) => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </>
             ) : (
               <>
                 <div className="field"><label className="lbl">Manufacturer <span className="req">*</span></label>
