@@ -32,6 +32,9 @@ export function CommercialTool() {
   const [mount, setMount] = useState<"continuous" | "reverse">("continuous");
   const [cspring, setCspring] = useState<"torsion" | "extension">("torsion");
   const [clock, setClock] = useState<"none" | "slide">("none");
+  const [cColor, setCColor] = useState("White");
+  // Windows are called out by section on the description; third is the common one.
+  const [winSection, setWinSection] = useState("3");
   // section config
   const [order, setOrder] = useState<"complete" | "section">("section");
   const [manFt, setManFt] = useState("");
@@ -79,7 +82,7 @@ export function CommercialTool() {
   const maxFt = maxIn != null ? Math.floor(maxIn / 12) : null;
   const overMax = maxIn != null && manFt !== "" && (Number(manFt) * 12 + (Number(manIn) || 0)) > maxIn;
 
-  const cfgSig = JSON.stringify([mfr, model, order, size, glass, track, mount, cspring, clock, manFt, manIn, secKind, secHeight, windows, stile, secColor]);
+  const cfgSig = JSON.stringify([mfr, model, order, size, glass, track, mount, cspring, clock, cColor, winSection, manFt, manIn, secKind, secHeight, windows, stile, secColor]);
   const result = resultRaw && resultSig === cfgSig ? resultRaw : null;
   const liveError = errorRaw && resultSig === cfgSig ? errorRaw : null;
   const priced = result?.priced ?? false;
@@ -105,7 +108,7 @@ export function CommercialTool() {
     try {
       const body =
         order === "complete"
-          ? { order, mfr, model, size, glass, track, mount, cspring, clock }
+          ? { order, mfr, model, size, glass, track, mount, cspring, clock, color: cColor, winSection: Number(winSection) || 3 }
           : { order, mfr, model, manFt: Number(manFt), manIn: Number(manIn) || 0, secKind, secHeight, windows: Number(windows) || 0, stile, color: secColor };
       const res = await fetch("/api/price/commercial", {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
@@ -133,7 +136,7 @@ export function CommercialTool() {
       setError(e instanceof Error ? e.message : "Something went wrong");
       setResult(null); setResultSig(cfgSig);
     }
-  }, [order, mfr, model, size, glass, track, mount, cspring, clock, manFt, manIn, secKind, secHeight, windows, stile, secColor, qty, cfgSig, custName, custPo, custJob]);
+  }, [order, mfr, model, size, glass, track, mount, cspring, clock, cColor, winSection, manFt, manIn, secKind, secHeight, windows, stile, secColor, qty, cfgSig, custName, custPo, custJob]);
 
 
   // ---------------- STEP 1 ----------------
@@ -322,6 +325,26 @@ export function CommercialTool() {
                       </select>
                     </div>
                   </div>
+                  <div className="grow">
+                    <label>Color</label>
+                    <div className="ctl selectwrap">
+                      <select data-testid="comm-door-color" value={cColor} onChange={(e) => setCColor(e.target.value)}>
+                        {colorOpts.map((c) => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  {glass === "glass" && (
+                    <div className="grow">
+                      <label>Windows in section</label>
+                      <div className="ctl selectwrap">
+                        <select data-testid="comm-win-section" value={winSection} onChange={(e) => setWinSection(e.target.value)}>
+                          {["1","2","3","4","5","6"].map((n) => (
+                            <option key={n} value={n}>{["First","Second","Third","Fourth","Fifth","Sixth"][Number(n)-1]}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
                   <div className="grow">
                     <label>Track mount</label>
                     <div className="ctl selectwrap">

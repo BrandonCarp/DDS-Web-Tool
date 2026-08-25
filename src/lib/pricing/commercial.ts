@@ -25,6 +25,9 @@ export interface CommCompleteInput {
   mount: "continuous" | "reverse";
   cspring: "torsion" | "extension";
   clock: "none" | "slide";
+  color?: string;
+  /** Which section the windows sit in, 1-based. Defaults to the third. */
+  winSection?: number;
 }
 export interface CommSectionInput {
   order: "section";
@@ -53,6 +56,16 @@ export function commStockCheck(model: string, sizeLabel: string): { inStock: boo
   return { inStock: !!hit };
 }
 
+/** 3 -> "third". Commercial doors top out well under ten sections. */
+const ORDINALS = [
+  "first", "second", "third", "fourth", "fifth",
+  "sixth", "seventh", "eighth", "ninth", "tenth",
+];
+function ordinal(n?: number): string {
+  const i = Math.trunc(n ?? 3);
+  return ORDINALS[i - 1] ?? `${i}th`;
+}
+
 export function quoteCommercial(input: CommInput): CommQuote {
   const base: CommQuote = { priced: false, lines: [], unitPrice: 0, sub: "" };
   const model = input.model;
@@ -74,12 +87,24 @@ export function quoteCommercial(input: CommInput): CommQuote {
         : undefined;
     const glassNm = input.glass === "solid" ? "Solid" : "Glass";
     const trackNm = { "15R": "15R standard", FV: "Full view", LHR: "Low headroom" }[input.track];
-    const dimTxt = String(input.size).replace(/x/i, " x ");
+    // The matrix size label carries typographic marks (8′2″ × 8′0″). QuickBooks
+    // gets plain ASCII, same as the torsion descriptions.
+    const dimTxt = String(input.size)
+      .replace(/\u2032/g, "'")
+      .replace(/\u2033/g, '"')
+      .replace(/\s*[x\u00d7]\s*/i, " x ");
     const cgrade = GRADE_COMM[model] || "insulated";
+
+    // Windows are called out by the section they sit in — "in the third
+    // section" — because that is what the installer needs off the line. Plain
+    // ASCII inch marks throughout: this string is pasted into QuickBooks.
     const winTxt =
-      input.glass === "glass" ? (model === "3200" ? "insulated 24x12 windows" : `${cgrade} windows`) : "solid, no windows";
-    const mountTxt = input.mount === "reverse" ? "2″ angle mount track to steel" : "2″ angle mount track to wood";
-    const radiusTxt = { "15R": "15″ radius track", FV: "full view", LHR: "low headroom track" }[input.track];
+      input.glass === "glass"
+        ? `${model === "3200" ? "insulated 24x12" : cgrade} windows in the ${ordinal(input.winSection)} section`
+        : "solid, no windows";
+    const colorTxt = `in the color ${(input.color || "White").toLowerCase()}`;
+    const mountTxt = input.mount === "reverse" ? '2" angle mount track to steel' : '2" angle mount track to wood';
+    const radiusTxt = { "15R": '15" radius track', FV: "full view", LHR: "low headroom track" }[input.track];
     const cspringTxt = input.cspring === "extension" ? "extension springs" : "torsion springs";
     const clockTxt = input.clock === "slide" ? "inside slide lock" : "no lock";
     return {
@@ -89,7 +114,7 @@ export function quoteCommercial(input: CommInput): CommQuote {
       unitPrice: val,
       sub: `${input.size} · ${glassNm} · ${trackNm}`,
       stock: commStockCheck(model, input.size),
-      description: `${input.mfr || "Clopay"} Model ${model}, ${dimTxt}, ${winTxt}, ${mountTxt}, ${radiusTxt}, ${cspringTxt}, ${clockTxt}`,
+      description: `${input.mfr || "Clopay"} Model ${model}, ${dimTxt}, ${colorTxt}, ${winTxt}, ${mountTxt}, ${radiusTxt}, ${cspringTxt}, ${clockTxt}`,
     };
   }
 

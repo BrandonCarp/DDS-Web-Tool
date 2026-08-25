@@ -27,7 +27,7 @@ describe("commercial complete-door matrix (ported from the legacy tool)", () => 
     const q = quoteCommercial(complete({ glass: "glass", mount: "reverse", clock: "slide" }));
     expect(q.description).toContain("Clopay Model 3200");
     expect(q.description).toContain("insulated 24x12 windows");
-    expect(q.description).toContain("2″ angle mount track to steel");
+    expect(q.description).toContain('2" angle mount track to steel');
     expect(q.description).toContain("inside slide lock");
   });
   it("asks for a size before pricing", () => {
@@ -136,5 +136,41 @@ describe("special orders (margin + multiplier collections)", () => {
     const cr = SPECIAL["Canyon Ridge Collection"];
     if (cr.type !== "multiplier") throw new Error("expected multiplier series");
     expect((1000 * cr.multiplier) / (1 - cr.cost_margin / 100)).toBeCloseTo(1090 / 0.71, 2);
+  });
+});
+
+describe("complete-door description format", () => {
+  const door = (o: Record<string, unknown> = {}) =>
+    quoteCommercial({
+      order: "complete", mfr: "Clopay", model: "3200", size: "12′2″ × 10′0″",
+      glass: "glass", track: "15R", mount: "continuous", cspring: "torsion",
+      clock: "slide", color: "White", winSection: 3, ...o,
+    } as never);
+
+  it("reads the way the counter writes it", () => {
+    expect(door().description).toBe(
+      'Clopay Model 3200, 12\'2" x 10\'0", in the color white, insulated 24x12 windows in the third section, ' +
+      '2" angle mount track to wood, 15" radius track, torsion springs, inside slide lock',
+    );
+  });
+
+  it("names the section the windows actually sit in", () => {
+    expect(door({ winSection: 2 }).description).toContain("in the second section");
+    expect(door({ winSection: 5 }).description).toContain("in the fifth section");
+  });
+
+  it("says solid instead of a section when there are no windows", () => {
+    const d = door({ glass: "solid" }).description ?? "";
+    expect(d).toContain("solid, no windows");
+    expect(d).not.toContain("section");
+  });
+
+  it("carries the colour through", () => {
+    expect(door({ color: "Brown" }).description).toContain("in the color brown");
+  });
+
+  it("uses plain ASCII inch marks — this gets pasted into QuickBooks", () => {
+    const d = door().description ?? "";
+    expect(d).not.toMatch(/[\u2032\u2033\u00d7]/);
   });
 });
