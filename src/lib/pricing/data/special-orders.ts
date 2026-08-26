@@ -26,23 +26,23 @@ export const SPECIAL: Record<string, SpecialSeries> = {
     "models": {
       "GD4L/GD4S": {
         "door": 56,
-        "section": 43
+        "section": 49
       },
       "GD5L/GD5S": {
         "door": 52,
-        "section": 43
+        "section": 49
       },
       "GD4LV/GD4SV": {
         "door": 55,
-        "section": 43
+        "section": 49
       },
       "GD5LV/GD5SV": {
         "door": 51,
-        "section": 43
+        "section": 49
       },
       "GD2LP/GD2SP": {
         "door": 45,
-        "section": 43
+        "section": 49
       },
       "GD1LP/GD1SP": {
         "door": 43,
@@ -50,12 +50,12 @@ export const SPECIAL: Record<string, SpecialSeries> = {
       },
       "GD1LU/GD1SU": {
         "door": 43,
-        "section": 43,
+        "section": 49,
         "ug": true
       },
       "GD2LU/GD2SU": {
         "door": 45,
-        "section": 43,
+        "section": 49,
         "ug": true
       }
     },
@@ -70,7 +70,7 @@ export const SPECIAL: Record<string, SpecialSeries> = {
     "models": {
       "GH": {
         "door": 41,
-        "section": 43
+        "section": 49
       }
     }
   },
@@ -79,15 +79,15 @@ export const SPECIAL: Record<string, SpecialSeries> = {
     "models": {
       "CD": {
         "door": 41,
-        "section": 43
+        "section": 49
       },
       "CG": {
         "door": 41,
-        "section": 43
+        "section": 49
       },
       "CGU": {
         "door": 40,
-        "section": 43
+        "section": 49
       }
     }
   },
@@ -96,56 +96,56 @@ export const SPECIAL: Record<string, SpecialSeries> = {
     "models": {
       "BD4E/BD4N": {
         "door": 56,
-        "section": 43
+        "section": 49
       },
       "BD4C": {
         "door": 40,
-        "section": 43,
+        "section": 49,
         "new": true
       },
       "BD5E/BD5N": {
         "door": 52,
-        "section": 43
+        "section": 49
       },
       "BD5C": {
         "door": 40,
-        "section": 43,
+        "section": 49,
         "new": true
       },
       "BD4EV/BD4NV": {
         "door": 55,
-        "section": 43
+        "section": 49
       },
       "BD4CV": {
         "door": 40,
-        "section": 43,
+        "section": 49,
         "new": true
       },
       "BD5EV/BD5NV": {
         "door": 51,
-        "section": 43
+        "section": 49
       },
       "BD5CV": {
         "door": 40,
-        "section": 43,
+        "section": 49,
         "new": true
       },
       "BD1EU/BD1NU": {
         "door": 43,
-        "section": 43
+        "section": 49
       },
       "BD1CU": {
         "door": 40,
-        "section": 43,
+        "section": 49,
         "new": true
       },
       "BD2EU/BD2NU": {
         "door": 48,
-        "section": 43
+        "section": 49
       },
       "BD2CU": {
         "door": 40,
-        "section": 43,
+        "section": 49,
         "new": true
       }
     },
@@ -178,9 +178,10 @@ export const SPECIAL: Record<string, SpecialSeries> = {
   "Premium Steel Collection": {
     "type": "margin",
     "models": {
-      "4050/4051/4053": { "door": 45, "section": 48 },
+      "4050/4051/4053": { "door": 45, "section": 49 },
       "4300/4301/4310": { "door": 44, "section": 49 },
-      "9130/9133": { "door": 43, "section": 48 }
+      "9130/9133": { "door": 43, "section": 49 },
+      "9200/9203": { "door": 47, "section": 49 }
     }
   },
   // Outside manufacturers. DDS pays list x 1.09, then 29 on a complete door and
@@ -225,55 +226,55 @@ export const SPECIAL: Record<string, SpecialSeries> = {
     "models": {
       "4308": {
         "door": 45,
-        "section": 43
+        "section": 49
       },
       "4305": {
         "door": 45,
-        "section": 43
+        "section": 49
       },
       "4132": {
         "door": 45,
-        "section": 43
+        "section": 49
       },
       "4138": {
         "door": 45,
-        "section": 43
+        "section": 49
       },
       "9132": {
         "door": 45,
-        "section": 43
+        "section": 49
       },
       "9131": {
         "door": 43,
-        "section": 43
+        "section": 49
       },
       "9138": {
         "door": 45,
-        "section": 43
+        "section": 49
       },
       "9139": {
         "door": 45,
-        "section": 43
+        "section": 49
       },
       "9202": {
         "door": 45,
-        "section": 43
+        "section": 49
       },
       "9201": {
         "door": 43,
-        "section": 43
+        "section": 49
       },
       "9208": {
         "door": 45,
-        "section": 43
+        "section": 49
       },
       "9205": {
         "door": 45,
-        "section": 43
+        "section": 49
       },
       "9209": {
         "door": 45,
-        "section": 43
+        "section": 49
       }
 
     }
