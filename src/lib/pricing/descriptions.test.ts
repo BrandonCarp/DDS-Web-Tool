@@ -241,7 +241,7 @@ describe("outside manufacturer special orders", () => {
       expect(ser.multiplier, m).toBe(1.09);
       expect(ser.cost_margin, m).toBe(29);
       expect(ser.section_margin, m).toBe(37);
-      expect(ser.small_section_under, m).toBe(300);
+      expect(ser.small_section_under, m).toBe(250);
     }
   });
 
@@ -253,9 +253,11 @@ describe("outside manufacturer special orders", () => {
     expect(sell(500, 1.09, 37)).toBeCloseTo(865.08, 2);
   });
 
-  it("doubles a section under $300 before margin", () => {
-    // $250 section -> treated as $500 of cost, then 1.09 and 37.
-    expect(sell(500, 1.09, 37)).toBeCloseTo(sell(250 * 2, 1.09, 37), 2);
+  it("prices a section under $250 at exactly double the entered price", () => {
+    // No multiplier and no margin below the threshold — a $200 section is $400.
+    expect(200 * 2).toBe(400);
+    // At the threshold itself the margins take over again.
+    expect(sell(250, 1.09, 37)).toBeCloseTo(432.54, 2);
   });
 
   it("leaves Canyon Ridge and Avante on a single margin", () => {

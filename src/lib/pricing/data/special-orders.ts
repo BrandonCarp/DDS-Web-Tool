@@ -13,9 +13,9 @@ export type SpecialSeries =
       /** Margin on replacement sections, when it differs from the door. */
       section_margin?: number;
       /**
-       * Sections costing under this are doubled before margin. A small section
-       * costs the same to handle, freight and stage as a large one, so the raw
-       * cost does not cover the work.
+       * Sections entered under this price are simply doubled — no multiplier,
+       * no margin. A small section costs the same to handle, freight and stage
+       * as a large one, so the margins do not cover the work.
        */
       small_section_under?: number;
     };
@@ -190,35 +190,35 @@ export const SPECIAL: Record<string, SpecialSeries> = {
     "multiplier": 1.09,
     "cost_margin": 29,
     "section_margin": 37,
-    "small_section_under": 300
+    "small_section_under": 250
   },
   "Amarr": {
     "type": "multiplier",
     "multiplier": 1.09,
     "cost_margin": 29,
     "section_margin": 37,
-    "small_section_under": 300
+    "small_section_under": 250
   },
   "CHI": {
     "type": "multiplier",
     "multiplier": 1.09,
     "cost_margin": 29,
     "section_margin": 37,
-    "small_section_under": 300
+    "small_section_under": 250
   },
   "Overhead": {
     "type": "multiplier",
     "multiplier": 1.09,
     "cost_margin": 29,
     "section_margin": 37,
-    "small_section_under": 300
+    "small_section_under": 250
   },
   "Wayne Dalton": {
     "type": "multiplier",
     "multiplier": 1.09,
     "cost_margin": 29,
     "section_margin": 37,
-    "small_section_under": 300
+    "small_section_under": 250
   },
   "Modern Collection": {
     "type": "margin",

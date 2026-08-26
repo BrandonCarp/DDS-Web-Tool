@@ -16,13 +16,18 @@ function soNumbers(series: string, model: string, kind: "door" | "section", pric
   if (!ser || Number.isNaN(list)) return null;
   let costBasis: number, margin: number;
   if (ser.type === "multiplier") {
-    // A cheap section costs the same to handle and freight as an expensive one,
-    // so anything under the threshold is doubled before margin is applied.
-    const small =
+    // A cheap section costs the same to handle, freight and stage as an
+    // expensive one, so under the threshold the margins are set aside entirely
+    // and the entered price is simply doubled. No multiplier, no margin — a
+    // $250 section sells for $500.
+    if (
       kind === "section" &&
       ser.small_section_under != null &&
-      list < ser.small_section_under;
-    costBasis = list * (small ? 2 : 1) * ser.multiplier;
+      list < ser.small_section_under
+    ) {
+      return { sell: list * 2, margin: null as number | null, doubled: true };
+    }
+    costBasis = list * ser.multiplier;
     margin = kind === "section" ? (ser.section_margin ?? ser.cost_margin) : ser.cost_margin;
   } else {
     const md = ser.models[model];
@@ -36,7 +41,7 @@ function soNumbers(series: string, model: string, kind: "door" | "section", pric
     margin = kind === "section" ? md.section : md.door;
     costBasis = list;
   }
-  return { sell: costBasis / (1 - margin / 100), margin };
+  return { sell: costBasis / (1 - margin / 100), margin: margin as number | null, doubled: false };
 }
 
 // Commercial special orders: Clopay 3200/524 — 45% margin complete door, 49% sections.
@@ -187,7 +192,7 @@ export function SpecialTool() {
                 <input type="text" inputMode="decimal" value={price} onChange={(e) => { setPrice(e.target.value); setSaved(false); }} placeholder="0.00" />
                 {kind === "section" && ser.small_section_under != null && (
                   <div className="muted-note" style={{ marginTop: 6 }}>
-                    Sections under ${ser.small_section_under} are doubled before margin
+                    Sections under ${ser.small_section_under} are priced at double the entered price
                   </div>
                 )}
               </div>
