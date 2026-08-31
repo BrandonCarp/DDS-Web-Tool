@@ -23,12 +23,11 @@ describe("operator prices join to the catalogue", () => {
   });
 
   it("adds the hand-entered rows and the price sheet on top", () => {
-    // 52 estimate rows + 3 hand-entered + the 16 the LiftMaster sheet priced
-    // for the first time (five I-beam rails, two jackshafts, the 485LM battery
-    // backup, and the eight hand-added 2240L/4690L rows). The sheet's other
-    // rows overlap items already priced, so they change a number without
-    // changing the count.
-    expect(pricedCount()).toEqual({ priced: 71, total: ALL.length });
+    // 129 of 151. The LiftMaster sheets carry both a RES and a COMM tab, and
+    // the commercial tab is what filled in LOGIC 5, MAXUM and the sprockets —
+    // sections that had no price at all when the estimates were the only
+    // source. What is left unpriced is listed by the generator on every run.
+    expect(pricedCount()).toEqual({ priced: 129, total: ALL.length });
   });
 
   it("survives the double-space the OPERATORS sheet writes", () => {
@@ -151,9 +150,10 @@ describe("the LiftMaster price sheet", () => {
   });
 
   it("keeps the hyphen in the I-beam rails", () => {
-    // Five standalone G37xxCH rails plus the five hand-added 4690L rows.
+    // Five standalone G37xxCH rails, five hand-added 4690L rows, and the four
+    // ATSWT lengths the commercial tab priced.
     const beams = Object.keys(SHEET_OPERATOR_PRICES).filter((k) => k.includes("BEAM"));
-    expect(beams.length).toBe(10);
+    expect(beams.length).toBe(14);
     for (const key of beams) expect(key).toContain("I-BEAM");
   });
 
@@ -169,6 +169,54 @@ describe("the LiftMaster price sheet", () => {
   it("carries no zero or negative price", () => {
     for (const [key, price] of Object.entries(SHEET_OPERATOR_PRICES)) {
       expect(price, key).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("the commercial tab's trickier joins", () => {
+  it("prices only the STANDARD trolley, never the mislabelled EXTENDED row", () => {
+    // The catalogue carries TDC12S1BMC twice per length — once STANDARD / 20
+    // CYCLES, once EXTENDED / 30 CYCLES. The second is wrong: the sheet sells
+    // the extended unit as TDC12X1BMC at its own price, and the jackshaft pair
+    // (JHDC12S1BMC STANDARD, JHDC12X1BMC EXTENDED) establishes that S means
+    // standard. Until NEW_PARTS_LIST.xlsx is corrected, the EXTENDED rows must
+    // stay unpriced rather than inherit the standard unit's number — they are
+    // about $490 apart.
+    const extended = ALL.filter(
+      (o) => o.desc.includes("TDC12S1BMC") && o.desc.includes("EXTENDED"),
+    );
+    expect(extended.length).toBe(5);
+    for (const o of extended) {
+      expect(operatorPrice(o), o.desc).toBeNull();
+    }
+    const standard = ALL.filter(
+      (o) => o.desc.includes("TDC12S1BMC") && o.desc.includes("STANDARD"),
+    );
+    expect(standard.length).toBe(5);
+    for (const o of standard) {
+      expect(operatorPrice(o), o.desc).toBeGreaterThan(0);
+    }
+  });
+
+  it("prices both sprocket bores the same, which is what makes the join safe", () => {
+    // The sheet keys sprockets by part number (71-1550B60LGH) and the
+    // catalogue by bore and chain size (1'' SPROCKET, 50B60). The generator
+    // maps L to 1'' and Q to 1-1/4''. That mapping is an inference, and it is
+    // harmless only for as long as the two bores carry the same price. If a
+    // future sheet prices them apart, this fails and the mapping needs
+    // confirming against LiftMaster before the next regenerate.
+    const sprockets = Object.entries(SHEET_OPERATOR_PRICES).filter(([k]) =>
+      k.includes("SPROCKET"),
+    );
+    expect(sprockets.length).toBeGreaterThan(0);
+    const bySize = new Map<string, Set<number>>();
+    for (const [key, price] of sprockets) {
+      const size = key.match(/50B\d+/)?.[0] ?? key;
+      if (!bySize.has(size)) bySize.set(size, new Set());
+      bySize.get(size)!.add(price);
+    }
+    for (const [size, prices] of bySize) {
+      expect([...prices], `${size} bores priced apart`).toHaveLength(1);
     }
   });
 });
