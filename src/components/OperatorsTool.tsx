@@ -5,11 +5,8 @@ import { CopyButton, CopyPrice, priceText } from "@/components/CopyButton";
 import { QbLineDemo } from "@/components/QbLineDemo";
 import { operatorPrice } from "@/lib/pricing/data/operator-pricing";
 import { QB_ITEMS } from "@/lib/qb/iif";
-import {
-  OPERATOR_SECTIONS,
-  OPERATOR_GROUPS,
-  type Operator,
-} from "@/lib/pricing/data/operators";
+import { OPERATOR_CATALOGUE } from "@/lib/pricing/data/operator-catalogue";
+import { OPERATOR_GROUPS, type Operator } from "@/lib/pricing/data/operators";
 
 /**
  * LiftMaster operators and the accessories that hang off them.
@@ -24,20 +21,20 @@ const fmt = (n: number) =>
 
 export function OperatorsTool() {
   const [group, setGroup] = useState<string>(OPERATOR_GROUPS[0]);
-  const [sectionName, setSectionName] = useState(OPERATOR_SECTIONS[0].name);
+  const [sectionName, setSectionName] = useState(OPERATOR_CATALOGUE[0].name);
   const [query, setQuery] = useState("");
   const [picked, setPicked] = useState<string | null>(null);
 
   const searching = query.trim().length > 0;
-  const sections = OPERATOR_SECTIONS.filter((s) => s.group === group);
+  const sections = OPERATOR_CATALOGUE.filter((s) => s.group === group);
 
   const results = useMemo(() => {
     if (!searching) {
-      const s = OPERATOR_SECTIONS.find((x) => x.name === sectionName);
+      const s = OPERATOR_CATALOGUE.find((x) => x.name === sectionName);
       return (s?.items ?? []).map((o) => ({ item: o, section: s?.name ?? sectionName }));
     }
     const q = query.trim().toLowerCase();
-    return OPERATOR_SECTIONS.flatMap((s) =>
+    return OPERATOR_CATALOGUE.flatMap((s) =>
       s.items
         .filter(
           (o) =>
@@ -56,7 +53,7 @@ export function OperatorsTool() {
 
   function pickGroup(g: string) {
     setGroup(g);
-    const first = OPERATOR_SECTIONS.find((s) => s.group === g);
+    const first = OPERATOR_CATALOGUE.find((s) => s.group === g);
     if (first) setSectionName(first.name);
     setPicked(null);
     setQuery("");
