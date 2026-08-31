@@ -10,6 +10,7 @@ import { PartsTool } from "./PartsTool";
 import { VinylTool } from "./VinylTool";
 import { OperatorsTool } from "./OperatorsTool";
 import { CustomerJobProvider, useCustomerJob } from "./CustomerJobFields";
+import { IDLE_MS } from "@/lib/session-timeout";
 
 const BASE_TABS = [
   { id: "residential", label: "Residential" },
@@ -44,11 +45,11 @@ function Shell({
   user: { username: string; role: string };
 }) {
   const [mode, setMode] = useState<string>("residential");
-  // Idle watcher: 20 minutes with no interaction -> log out and land on the
+  // Idle watcher: no interaction for IDLE_MINUTES -> log out and land on the
   // login screen. The SERVER enforces the same window on the session itself;
   // this just makes the logout visible instead of surprising the next click.
+  // Both sides read the window from lib/session-timeout.
   useEffect(() => {
-    const IDLE_MS = 20 * 60 * 1000; // keep in sync with IDLE_MS in lib/auth.ts
     let t: ReturnType<typeof setTimeout>;
     const kick = () => window.location.assign("/api/logout");
     const reset = () => { clearTimeout(t); t = setTimeout(kick, IDLE_MS); };

@@ -4,10 +4,10 @@ import { redirect } from "next/navigation";
 import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { query } from "./db";
+import { IDLE_MS } from "./session-timeout";
 
 export const SESSION_COOKIE = "dds_session";
 const TTL_MS = 30 * 24 * 60 * 60 * 1000; // absolute cap — a session can never outlive this
-const IDLE_MS = 20 * 60 * 1000; // inactivity logout — 20 idle minutes and you sign in again
 
 export type Role = "admin" | "semiadmin" | "user";
 export interface User {
