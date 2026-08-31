@@ -29,6 +29,15 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run test
+      # `next build` catches a class the other steps do not: client/server
+      # boundary mistakes, a missing "use client", bad route exports. It is the
+      # only step that compiles the app the way Vercel does.
+      #
+      # NOTE: this does not gate the deploy. Vercel builds every push to main
+      # independently of Actions, so a red pipeline here is advisory only. To
+      # actually stop a bad commit reaching production, turn on a required
+      # status check for this workflow on the main branch.
+      - run: npm run build
       - run: npm run db:init
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
