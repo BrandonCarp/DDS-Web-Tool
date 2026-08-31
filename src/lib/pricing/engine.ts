@@ -316,11 +316,15 @@ export function quoteResidentialSection(model: string, input: ResSectionInput): 
   if (lockbar) lines.push({ name: "Lockbar installed", value: ADDONS.lockbar_installed, kind: "add" });
   const unitPrice = lines.reduce((a, l) => a + (l.kind === "minus" ? -l.value : l.value), 0);
   const secStock = sectionColorInStock(model, input.color || "White");
+  // Size first, then what the section is, then the colour — the same order the
+  // commercial sections read in, and the order the counter says it out loud.
+  // "Replacement" and the "sections only" tail are dropped: the line already
+  // says SECTION, and the trailing dash read as part of the colour.
+  const sectionTxt =
+    input.kind === "bt" ? "bottom section" : glazed ? "glazed intermediate section" : "solid intermediate section";
   const desc =
-    `Clopay Model ${model}, ${kindNm.toLowerCase()} replacement section` +
-    (input.kind === "int" ? (glazed ? " with glass" : ", solid") : "") +
-    `, ${input.height}" high, ${widthTxt} wide, in the color ${input.color || "White"}` +
-    (lockbar ? ", lockbar installed" : "") +
-    ` — sections only`;
+    `Clopay Model ${model}, ${widthTxt} x ${input.height}", ${sectionTxt}, ` +
+    `in the color ${input.color || "White"}` +
+    (lockbar ? ", lockbar installed" : "");
   return { model, size: null, priced: true, isStock: secStock, source: "standard", lines, unitPrice, description: desc };
 }

@@ -595,3 +595,35 @@ describe("stock badge follows the DDS stock list exactly", () => {
     }
   });
 });
+
+describe("replacement section verbiage", () => {
+  const sec = (o: Record<string, unknown> = {}) =>
+    quoteResidentialSection("4050", {
+      widthKey: "8", height: 21, kind: "bt", color: "White", ...o,
+    } as never).description;
+
+  it("reads size, then what it is, then colour", () => {
+    expect(sec()).toBe('Clopay Model 4050, 8\'0" x 21", bottom section, in the color White');
+    expect(sec({ kind: "int" })).toBe(
+      'Clopay Model 4050, 8\'0" x 21", solid intermediate section, in the color White',
+    );
+  });
+
+  it("calls a glazed intermediate what it is", () => {
+    expect(sec({ kind: "int", glazed: true })).toContain("glazed intermediate section");
+  });
+
+  it("keeps the lockbar note on the end", () => {
+    expect(sec({ kind: "int", lockbar: true })).toMatch(/, lockbar installed$/);
+  });
+
+  it("drops the old wording that read badly on a quote", () => {
+    const d = sec();
+    // "replacement" is redundant next to SECTION, and the trailing em dash ran
+    // into the colour: "...IN THE COLOR WHITE — SECTIONS ONLY".
+    expect(d).not.toMatch(/replacement/i);
+    expect(d).not.toMatch(/sections only/i);
+    expect(d).not.toContain("—");
+    expect(d).not.toMatch(/high|wide/i);
+  });
+});
