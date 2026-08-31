@@ -51,6 +51,11 @@ SPROCKET_CAT = re.compile(r"SPROCKET,?\s*(50B\d+)", re.I)
 # two identically, so this mapping changes no number today — but it would the
 # moment they diverge, which operator-pricing.test.ts watches for.
 BORE = {"L": "1", "Q": "1-1/4"}
+# Model numbers the sheet gets wrong. L995W is not a LiftMaster product; the
+# control panel is L955W, and the sheet's other three panel rows (L956W, L957W,
+# L958W) all match the catalogue exactly while L955W is the one absent. Aliased
+# rather than added, so the typo does not become a phantom model in the tab.
+ALIASES = {"L995W": "L955W"}
 
 
 def norm(text: str) -> str:
@@ -133,10 +138,13 @@ def read_catalogue():
     exactly as operator-catalogue.ts merges them at runtime.
     """
     generated = re.findall(r'\{"desc":\s*"([^"]+)"', CATALOGUE.read_text(encoding="utf-8"))
+    # Not line-anchored: entries in that file are hand-written and may sit on
+    # one line or several. A parser that only sees the multi-line form drops
+    # the others silently, and the symptom is an unpriced item rather than an
+    # error.
     manual = re.findall(
-        r'^\s*desc:\s*"([^"]+)"',
+        r'\bdesc:\s*"([^"]+)"',
         CATALOGUE_MANUAL.read_text(encoding="utf-8"),
-        re.M,
     )
     return generated + manual
 
@@ -160,7 +168,7 @@ def sprocket_candidates(match, catalogue):
 
 
 def candidates(row, catalogue):
-    model = row["model"].upper()
+    model = ALIASES.get(row["model"].upper(), row["model"].upper())
 
     sprocket = SPROCKET_SHEET.match(model)
     if sprocket:

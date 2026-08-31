@@ -43,7 +43,10 @@ describe("hand-added catalogue entries", () => {
     // price files and the item would read "price not set" with no error.
     for (const m of MANUAL_OPERATORS) {
       expect(priceKey(m.desc), m.desc).toBe(m.desc.replace(/\s+/g, " ").trim());
-      expect(m.desc.startsWith("LIFTMASTER"), m.desc).toBe(true);
+      // Sprockets are the one family the catalogue does not prefix with the
+      // brand — the generated rows read "1'' SPROCKET,  50B22".
+      const branded = m.desc.startsWith("LIFTMASTER") || m.desc.includes("SPROCKET");
+      expect(branded, m.desc).toBe(true);
       expect(m.desc, m.desc).toContain(m.name);
     }
   });
@@ -53,12 +56,32 @@ describe("hand-added catalogue entries", () => {
     expect(seen.length - new Set(seen).size, "duplicate catalogue rows").toBe(0);
   });
 
-  it("merges into the catalogue without losing a generated row", () => {
-    expect(ALL_OPERATORS.length).toBe(GENERATED.length + MANUAL_OPERATORS.length);
+  it("merges without losing a generated row it did not mean to replace", () => {
+    const replaced = MANUAL_OPERATORS.filter((m) => m.replaces);
+    expect(ALL_OPERATORS.length).toBe(
+      GENERATED.length + MANUAL_OPERATORS.length - replaced.length,
+    );
     expect(OPERATOR_CATALOGUE.length).toBe(OPERATOR_SECTIONS.length);
-    const generated = new Set(GENERATED.map((o) => priceKey(o.desc)));
+    const superseded = new Set(replaced.map((m) => priceKey(m.replaces!)));
     const merged = new Set(ALL_OPERATORS.map((o) => priceKey(o.desc)));
-    for (const key of generated) expect(merged.has(key), key).toBe(true);
+    for (const o of GENERATED) {
+      const key = priceKey(o.desc);
+      expect(merged.has(key) || superseded.has(key), key).toBe(true);
+    }
+  });
+
+  it("only supersedes a description the generated file actually has", () => {
+    // When gen_operators.py is re-run off a corrected NEW_PARTS_LIST.xlsx the
+    // named description stops existing, and this fails — which is the signal
+    // that the replacement entry has done its job and can be deleted.
+    const generated = new Set(GENERATED.map((o) => o.desc));
+    for (const m of MANUAL_OPERATORS) {
+      if (!m.replaces) continue;
+      expect(
+        generated.has(m.replaces),
+        `nothing left to replace — remove the ${m.name} entry`,
+      ).toBe(true);
+    }
   });
 
   it("survives a gen_operators.py rewrite, which is the whole point", () => {

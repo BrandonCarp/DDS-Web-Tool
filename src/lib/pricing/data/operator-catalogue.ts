@@ -17,15 +17,21 @@ import {
 } from "./operators";
 import { MANUAL_OPERATORS } from "./operators-manual";
 
-/** Generated sections, with hand-added items appended to their section. */
+/** Descriptions a manual entry supersedes, so the generated row drops out. */
+const REPLACED = new Set(
+  MANUAL_OPERATORS.map((m) => m.replaces).filter((d): d is string => Boolean(d)),
+);
+
+/** Generated sections, with superseded rows removed and hand-added ones appended. */
 export const OPERATOR_CATALOGUE: OperatorSection[] = OPERATOR_SECTIONS.map(
   (section) => {
+    const kept = section.items.filter((o) => !REPLACED.has(o.desc));
     const extra: Operator[] = MANUAL_OPERATORS.filter(
       (m) => m.section === section.name,
     ).map(({ name, desc }) => ({ name, desc }));
-    return extra.length === 0
+    return kept.length === section.items.length && extra.length === 0
       ? section
-      : { ...section, items: [...section.items, ...extra] };
+      : { ...section, items: [...kept, ...extra] };
   },
 );
 

@@ -23,11 +23,11 @@ describe("operator prices join to the catalogue", () => {
   });
 
   it("adds the hand-entered rows and the price sheet on top", () => {
-    // 129 of 151. The LiftMaster sheets carry both a RES and a COMM tab, and
+    // 150 of 167. The LiftMaster sheets carry both a RES and a COMM tab, and
     // the commercial tab is what filled in LOGIC 5, MAXUM and the sprockets —
     // sections that had no price at all when the estimates were the only
     // source. What is left unpriced is listed by the generator on every run.
-    expect(pricedCount()).toEqual({ priced: 129, total: ALL.length });
+    expect(pricedCount()).toEqual({ priced: 150, total: ALL.length });
   });
 
   it("survives the double-space the OPERATORS sheet writes", () => {
@@ -182,12 +182,17 @@ describe("the commercial tab's trickier joins", () => {
     // standard. Until NEW_PARTS_LIST.xlsx is corrected, the EXTENDED rows must
     // stay unpriced rather than inherit the standard unit's number — they are
     // about $490 apart.
-    const extended = ALL.filter(
+    // The mislabelled rows are gone from the merged catalogue entirely —
+    // operators-manual.ts supersedes them — so there is no TDC12S1BMC that
+    // claims to be extended.
+    const mislabelled = ALL.filter(
       (o) => o.desc.includes("TDC12S1BMC") && o.desc.includes("EXTENDED"),
     );
+    expect(mislabelled).toEqual([]);
+    const extended = ALL.filter((o) => o.desc.includes("TDC12X1BMC"));
     expect(extended.length).toBe(5);
     for (const o of extended) {
-      expect(operatorPrice(o), o.desc).toBeNull();
+      expect(operatorPrice(o), o.desc).toBeGreaterThan(1000);
     }
     const standard = ALL.filter(
       (o) => o.desc.includes("TDC12S1BMC") && o.desc.includes("STANDARD"),
