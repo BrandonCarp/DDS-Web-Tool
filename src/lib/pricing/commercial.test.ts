@@ -126,11 +126,25 @@ describe("torsion springs (cut to size)", () => {
 
 describe("special orders (margin + multiplier collections)", () => {
   const sell = (list: number, margin: number) => list / (1 - margin / 100);
-  it("Gallery margins per model, door vs sections", () => {
+  it("applies a margin series as list / (1 - margin)", () => {
+    // The formula, checked against literals — NOT against the data, so that
+    // changing a margin in special-orders.ts is a pricing decision rather than
+    // a broken test. (Gallery sections moved 43 -> 49 on 08/13 and this
+    // assertion had been pinned to the old number.)
+    expect(sell(1000, 56)).toBeCloseTo(1000 / 0.44, 2);
+    expect(sell(1000, 49)).toBeCloseTo(1000 / 0.51, 2);
+  });
+
+  it("gives every Gallery model a door and a section margin in range", () => {
     const g = SPECIAL["Gallery Collection"];
     if (g.type !== "margin") throw new Error("expected margin series");
-    expect(sell(1000, g.models["GD4L/GD4S"].door)).toBeCloseTo(1000 / 0.44, 2);
-    expect(sell(1000, g.models["GD4L/GD4S"].section)).toBeCloseTo(1000 / 0.57, 2);
+    for (const [name, m] of Object.entries(g.models)) {
+      for (const [which, v] of [["door", m.door], ["section", m.section]] as const) {
+        expect(Number.isFinite(v), `${name} ${which}`).toBe(true);
+        expect(v, `${name} ${which} out of range`).toBeGreaterThan(0);
+        expect(v, `${name} ${which} out of range`).toBeLessThan(100);
+      }
+    }
   });
   it("multiplier collections: list × multiplier at the cost margin", () => {
     const cr = SPECIAL["Canyon Ridge Collection"];

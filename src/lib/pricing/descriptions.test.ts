@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { parsePrice } from "@/components/SpecialTool";
 import { SPECIAL, SO_MANUFACTURERS, SO_OUTSIDE_MFRS, seriesFor, isOutsideMfr } from "./data/special-orders";
 import { springDescription, springBase, wireCode, ID_LABELS_ASCII, SPRING_LABEL } from "./data/torsion";
 import { STOCK_TORSION_SPRINGS } from "./data/springs";
@@ -290,5 +291,32 @@ describe("special order manufacturer grouping", () => {
   it("leaves no series unreachable from some manufacturer", () => {
     const reachable = new Set(SO_MANUFACTURERS.flatMap((m) => seriesFor(m)));
     for (const s of Object.keys(SPECIAL)) expect(reachable, `${s} is orphaned`).toContain(s);
+  });
+});
+
+describe("price entry parsing", () => {
+  it("reads a price typed with a thousands separator", () => {
+    // Regression: parseFloat("1,741.92") is 1, which quoted a $1,741.92 door
+    // at $1.82 once the 45% margin was applied.
+    expect(parsePrice("1,741.92")).toBe(1741.92);
+    expect(parsePrice("1741.92")).toBe(1741.92);
+    expect(parsePrice("12,345.67")).toBe(12345.67);
+  });
+
+  it("tolerates a dollar sign and stray spaces", () => {
+    expect(parsePrice("$1,741.92")).toBe(1741.92);
+    expect(parsePrice(" 1741.92 ")).toBe(1741.92);
+    expect(parsePrice(".5")).toBe(0.5);
+  });
+
+  it("returns NaN for anything that is not a price, rather than a partial read", () => {
+    for (const bad of ["", "abc", "12abc", "1.2.3", "-5", "1,2,3.4.5"]) {
+      expect(Number.isNaN(parsePrice(bad)), bad).toBe(true);
+    }
+  });
+
+  it("quotes the 3200 door at the right number now", () => {
+    const list = parsePrice("1,741.92");
+    expect(list / (1 - 45 / 100)).toBeCloseTo(3167.13, 2);
   });
 });
