@@ -15,17 +15,23 @@ import {
   type Operator,
   type OperatorSection,
 } from "./operators";
-import { MANUAL_OPERATORS } from "./operators-manual";
+import { MANUAL_OPERATORS, SUPPRESSED_OPERATORS } from "./operators-manual";
 
 /** Descriptions a manual entry supersedes, so the generated row drops out. */
 const REPLACED = new Set(
   MANUAL_OPERATORS.map((m) => m.replaces).filter((d): d is string => Boolean(d)),
 );
 
+/** Descriptions removed outright, with nothing taking their place. */
+const SUPPRESSED = new Set(SUPPRESSED_OPERATORS.map((s) => s.desc));
+
+/** Both reasons a generated row does not reach the catalogue. */
+const DROPPED = new Set([...REPLACED, ...SUPPRESSED]);
+
 /** Generated sections, with superseded rows removed and hand-added ones appended. */
 export const OPERATOR_CATALOGUE: OperatorSection[] = OPERATOR_SECTIONS.map(
   (section) => {
-    const kept = section.items.filter((o) => !REPLACED.has(o.desc));
+    const kept = section.items.filter((o) => !DROPPED.has(o.desc));
     const extra: Operator[] = MANUAL_OPERATORS.filter(
       (m) => m.section === section.name,
     ).map(({ name, desc }) => ({ name, desc }));

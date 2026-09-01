@@ -3,7 +3,10 @@ import { ALL_OPERATORS } from "./data/operator-catalogue";
 import { OPERATOR_PRICES } from "./data/operator-prices";
 import { MANUAL_OPERATOR_PRICES } from "./data/operator-prices-manual";
 import { SHEET_OPERATOR_PRICES } from "./data/operator-sheet-prices";
+import { SUPPRESSED_OPERATORS } from "./data/operators-manual";
 import { isManualPrice, operatorPrice, pricedCount, priceKey } from "./data/operator-pricing";
+
+const SUPPRESSED = new Set(SUPPRESSED_OPERATORS.map((s) => priceKey(s.desc)));
 
 const ALL = ALL_OPERATORS;
 
@@ -13,8 +16,14 @@ describe("operator prices join to the catalogue", () => {
     // separately. If the OPERATORS sheet is re-exported with different wording,
     // rows stop matching and the tab quietly goes back to "price not set" —
     // this is the test that says so instead.
+    // A suppressed item is an allowed orphan: the estimate really did carry
+    // that row, and operator-prices.ts records what the estimates said rather
+    // than what DDS currently offers. Everything else must still join.
     const keys = new Set(ALL.map((o) => priceKey(o.desc)));
-    const orphans = Object.keys(OPERATOR_PRICES).filter((k) => !keys.has(k));
+    const hidden = new Set(SUPPRESSED_OPERATORS.map((s) => priceKey(s.desc)));
+    const orphans = Object.keys(OPERATOR_PRICES).filter(
+      (k) => !keys.has(k) && !hidden.has(k),
+    );
     expect(orphans).toEqual([]);
   });
 
@@ -23,11 +32,11 @@ describe("operator prices join to the catalogue", () => {
   });
 
   it("adds the hand-entered rows and the price sheet on top", () => {
-    // 150 of 167. The LiftMaster sheets carry both a RES and a COMM tab, and
+    // 149 of 166 — ATSWT 7FT is suppressed, see operators-manual.ts. The LiftMaster sheets carry both a RES and a COMM tab, and
     // the commercial tab is what filled in LOGIC 5, MAXUM and the sprockets —
     // sections that had no price at all when the estimates were the only
     // source. What is left unpriced is listed by the generator on every run.
-    expect(pricedCount()).toEqual({ priced: 150, total: ALL.length });
+    expect(pricedCount()).toEqual({ priced: 149, total: ALL.length });
   });
 
   it("survives the double-space the OPERATORS sheet writes", () => {
@@ -223,5 +232,34 @@ describe("the commercial tab's trickier joins", () => {
     for (const [size, prices] of bySize) {
       expect([...prices], `${size} bores priced apart`).toHaveLength(1);
     }
+  });
+});
+
+describe("suppressed items", () => {
+  it("are gone from the catalogue entirely", () => {
+    for (const { desc } of SUPPRESSED_OPERATORS) {
+      const found = ALL.find((o) => priceKey(o.desc) === priceKey(desc));
+      expect(found, `${desc} is still in the catalogue`).toBeUndefined();
+    }
+  });
+
+  it("say why, so the next person is not left guessing", () => {
+    for (const s of SUPPRESSED_OPERATORS) {
+      expect(s.reason.length, s.desc).toBeGreaterThan(20);
+    }
+  });
+
+  it("flags one a price sheet has since covered", () => {
+    // ATSWT 7FT is hidden because the 8-31 sheet stops at 8FT and its old
+    // estimate price had drifted $150 below the 8FT. If a later sheet carries
+    // the missing length, this fails — the reason for hiding it is gone and
+    // the item should come back.
+    const covered = SUPPRESSED_OPERATORS.filter(
+      (s) => priceKey(s.desc) in SHEET_OPERATOR_PRICES,
+    );
+    expect(
+      covered.map((s) => s.desc),
+      "now on a price sheet — remove from SUPPRESSED_OPERATORS",
+    ).toEqual([]);
   });
 });

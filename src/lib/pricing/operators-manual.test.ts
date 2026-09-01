@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { OPERATOR_SECTIONS } from "./data/operators";
-import { MANUAL_OPERATORS } from "./data/operators-manual";
+import { MANUAL_OPERATORS, SUPPRESSED_OPERATORS } from "./data/operators-manual";
 import { OPERATOR_CATALOGUE, ALL_OPERATORS } from "./data/operator-catalogue";
 import { priceKey } from "./data/operator-pricing";
+import { SHEET_OPERATOR_PRICES } from "./data/operator-sheet-prices";
 
 const GENERATED = OPERATOR_SECTIONS.flatMap((s) => s.items);
 
@@ -59,14 +60,28 @@ describe("hand-added catalogue entries", () => {
   it("merges without losing a generated row it did not mean to replace", () => {
     const replaced = MANUAL_OPERATORS.filter((m) => m.replaces);
     expect(ALL_OPERATORS.length).toBe(
-      GENERATED.length + MANUAL_OPERATORS.length - replaced.length,
+      GENERATED.length + MANUAL_OPERATORS.length - replaced.length -
+        SUPPRESSED_OPERATORS.length,
     );
     expect(OPERATOR_CATALOGUE.length).toBe(OPERATOR_SECTIONS.length);
-    const superseded = new Set(replaced.map((m) => priceKey(m.replaces!)));
+    const dropped = new Set([
+      ...replaced.map((m) => priceKey(m.replaces!)),
+      ...SUPPRESSED_OPERATORS.map((s) => priceKey(s.desc)),
+    ]);
     const merged = new Set(ALL_OPERATORS.map((o) => priceKey(o.desc)));
     for (const o of GENERATED) {
       const key = priceKey(o.desc);
-      expect(merged.has(key) || superseded.has(key), key).toBe(true);
+      expect(merged.has(key) || dropped.has(key), key).toBe(true);
+    }
+  });
+
+  it("only suppresses a description the generated file actually has", () => {
+    const generated = new Set(GENERATED.map((o) => o.desc));
+    for (const s of SUPPRESSED_OPERATORS) {
+      expect(
+        generated.has(s.desc),
+        `nothing left to suppress — remove "${s.desc}"`,
+      ).toBe(true);
     }
   });
 
@@ -91,5 +106,40 @@ describe("hand-added catalogue entries", () => {
     const chain = OPERATOR_CATALOGUE.find((s) => s.name === "RESIDENTIAL CHAIN DRIVES");
     expect(chain?.items.some((o) => o.name === "4690L")).toBe(true);
     expect(chain?.items.some((o) => o.name === "2240L")).toBe(true);
+  });
+});
+
+describe("suppressed catalogue entries", () => {
+  it("names a generated description that actually exists", () => {
+    const generated = new Set(GENERATED.map((o) => o.desc));
+    for (const s of SUPPRESSED_OPERATORS) {
+      expect(generated.has(s.desc), `nothing to suppress — remove ${s.desc}`).toBe(true);
+    }
+  });
+
+  it("keeps them out of the catalogue the tab renders", () => {
+    const merged = new Set(ALL_OPERATORS.map((o) => priceKey(o.desc)));
+    for (const s of SUPPRESSED_OPERATORS) {
+      expect(merged.has(priceKey(s.desc)), s.desc).toBe(false);
+    }
+  });
+
+  it("explains itself", () => {
+    for (const s of SUPPRESSED_OPERATORS) {
+      expect(s.reason.length, s.desc).toBeGreaterThan(30);
+    }
+  });
+
+  it("flags anything a price sheet has since covered", () => {
+    // ATSWT 7FT is hidden because the 8-31 sheet skipped that length and left
+    // it on a stale estimate price. If a later sheet carries it, the reason is
+    // gone and the item should come back — this is what says so.
+    const onSheet = SUPPRESSED_OPERATORS.filter(
+      (s) => priceKey(s.desc) in SHEET_OPERATOR_PRICES,
+    );
+    expect(
+      onSheet.map((s) => s.desc),
+      "a price sheet now covers this — unsuppress it",
+    ).toEqual([]);
   });
 });

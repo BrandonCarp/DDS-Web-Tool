@@ -199,3 +199,34 @@ export const MANUAL_OPERATORS: ManualOperator[] = [
   { name: "50B82", desc: "1-1/4'' SPROCKET,  50B82", section: "SPROCKET", source: SHEET },
 
 ];
+
+/**
+ * Generated rows to drop from the catalogue entirely.
+ *
+ * Separate from `replaces` because nothing takes their place — the item stops
+ * being offered. Use this when the only price available is one the counter
+ * should not quote, since an item showing a stale number is worse than an item
+ * that is not there: the stale one gets quoted.
+ *
+ * operators.ts is regenerated wholesale, so removal cannot happen there. The
+ * entry's price file is left alone too — operator-prices.ts is machine-written
+ * from the estimate PDFs and is a record of what those estimates said, not a
+ * list of what DDS sells.
+ */
+export interface SuppressedOperator {
+  /** Generated description to drop, verbatim. */
+  desc: string;
+  /** Why it is hidden, so the next person is not left guessing. */
+  reason: string;
+}
+
+export const SUPPRESSED_OPERATORS: SuppressedOperator[] = [
+  {
+    desc: "LIFTMASTER ELECTRIC OPERATOR MODEL ATSWT,  7FT I-BEAM RAIL",
+    reason:
+      "Removed at Brandon's request, 2026-08-31. The 8-31 COMM tab prices ATSWT " +
+      "at 8/10/12/14FT only, so 7FT kept its older estimate price of 490.95 while " +
+      "8FT moved to 641.26 — a $150 step where every other length steps $40-45. " +
+      "Restore it when a sheet carries a 7FT row.",
+  },
+];
