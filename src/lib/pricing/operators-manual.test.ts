@@ -59,7 +59,10 @@ describe("hand-added catalogue entries", () => {
 
   it("merges without losing a generated row it did not mean to replace", () => {
     const replaced = MANUAL_OPERATORS.filter((m) => m.replaces);
-    expect(ALL_OPERATORS.length).toBe(
+    // HEAD ONLY rows are derived, not merged from either file, so they are
+    // discounted before the merge arithmetic is checked.
+    const derived = ALL_OPERATORS.filter((o) => o.desc.includes("HEAD ONLY")).length;
+    expect(ALL_OPERATORS.length - derived).toBe(
       GENERATED.length + MANUAL_OPERATORS.length - replaced.length -
         SUPPRESSED_OPERATORS.length,
     );

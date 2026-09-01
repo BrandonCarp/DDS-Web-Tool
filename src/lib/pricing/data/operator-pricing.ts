@@ -12,15 +12,13 @@
 // fails if the two ever drift apart.
 
 import { type Operator } from "./operators";
-import { OPERATOR_CATALOGUE } from "./operator-catalogue";
+import { OPERATOR_CATALOGUE, HEAD_ONLY_PRICES } from "./operator-catalogue";
+import { priceKey } from "./price-key";
 import { OPERATOR_PRICES } from "./operator-prices";
 import { SHEET_OPERATOR_PRICES } from "./operator-sheet-prices";
 import { MANUAL_OPERATOR_PRICES } from "./operator-prices-manual";
 
-/** Normalise a description into the shared join key. */
-export function priceKey(desc: string): string {
-  return desc.replace(/\s+/g, " ").trim().toUpperCase();
-}
+export { priceKey };
 
 /**
  * Counter sell price for an operator or accessory, or null when DDS has not
@@ -44,6 +42,10 @@ export function operatorPrice(item: Operator): number | null {
   //
   // This ordering is the whole of the decision. Swap the first two lookups to
   // reverse it.
+  // Head-only rows carry no row in any price file — their number is derived
+  // from the shortest rail. See operator-head-only.ts.
+  const headOnly = HEAD_ONLY_PRICES[key];
+  if (typeof headOnly === "number") return headOnly;
   const sheet = SHEET_OPERATOR_PRICES[key];
   if (typeof sheet === "number") return sheet;
   const generated = OPERATOR_PRICES[key];

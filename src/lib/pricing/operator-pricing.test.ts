@@ -36,7 +36,7 @@ describe("operator prices join to the catalogue", () => {
     // the commercial tab is what filled in LOGIC 5, MAXUM and the sprockets —
     // sections that had no price at all when the estimates were the only
     // source. What is left unpriced is listed by the generator on every run.
-    expect(pricedCount()).toEqual({ priced: 149, total: ALL.length });
+    expect(pricedCount()).toEqual({ priced: 165, total: ALL.length });
   });
 
   it("survives the double-space the OPERATORS sheet writes", () => {
@@ -198,7 +198,10 @@ describe("the commercial tab's trickier joins", () => {
       (o) => o.desc.includes("TDC12S1BMC") && o.desc.includes("EXTENDED"),
     );
     expect(mislabelled).toEqual([]);
-    const extended = ALL.filter((o) => o.desc.includes("TDC12X1BMC"));
+    // Five rail lengths; the sixth TDC12X1BMC row is the derived HEAD ONLY.
+    const extended = ALL.filter(
+      (o) => o.desc.includes("TDC12X1BMC") && !o.desc.includes("HEAD ONLY"),
+    );
     expect(extended.length).toBe(5);
     for (const o of extended) {
       expect(operatorPrice(o), o.desc).toBeGreaterThan(1000);

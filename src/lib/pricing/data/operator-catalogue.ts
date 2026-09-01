@@ -16,6 +16,7 @@ import {
   type OperatorSection,
 } from "./operators";
 import { MANUAL_OPERATORS, SUPPRESSED_OPERATORS } from "./operators-manual";
+import { deriveHeadOnly } from "./operator-head-only";
 
 /** Descriptions a manual entry supersedes, so the generated row drops out. */
 const REPLACED = new Set(
@@ -29,7 +30,7 @@ const SUPPRESSED = new Set(SUPPRESSED_OPERATORS.map((s) => s.desc));
 const DROPPED = new Set([...REPLACED, ...SUPPRESSED]);
 
 /** Generated sections, with superseded rows removed and hand-added ones appended. */
-export const OPERATOR_CATALOGUE: OperatorSection[] = OPERATOR_SECTIONS.map(
+const BASE_CATALOGUE: OperatorSection[] = OPERATOR_SECTIONS.map(
   (section) => {
     const kept = section.items.filter((o) => !DROPPED.has(o.desc));
     const extra: Operator[] = MANUAL_OPERATORS.filter(
@@ -38,6 +39,22 @@ export const OPERATOR_CATALOGUE: OperatorSection[] = OPERATOR_SECTIONS.map(
     return kept.length === section.items.length && extra.length === 0
       ? section
       : { ...section, items: [...kept, ...extra] };
+  },
+);
+
+const HEAD_ONLY = deriveHeadOnly(BASE_CATALOGUE);
+
+/** Derived HEAD ONLY prices, keyed the same way every price file is. */
+export const HEAD_ONLY_PRICES: Record<string, number> = HEAD_ONLY.prices;
+
+/** Models with a rail but no price on the shortest one, so no head-only row. */
+export const HEAD_ONLY_SKIPPED: string[] = HEAD_ONLY.skipped;
+
+/** Generated + manual + derived head-only rows: what the tab renders. */
+export const OPERATOR_CATALOGUE: OperatorSection[] = BASE_CATALOGUE.map(
+  (section) => {
+    const extra = HEAD_ONLY.items.get(section.name);
+    return extra ? { ...section, items: [...section.items, ...extra] } : section;
   },
 );
 
