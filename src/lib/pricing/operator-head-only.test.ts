@@ -8,6 +8,10 @@ import {
 import { HEAD_ONLY_DEDUCTION } from "./data/operator-head-only";
 import { operatorPrice, priceKey } from "./data/operator-pricing";
 
+/** Model number out of a description, the way the derivation finds it. */
+const model = (desc: string) =>
+  desc.replace(/^LIFTMASTER ELECTRIC OPERATOR MODEL /, "").split(",")[0].trim();
+
 const HEAD_ONLY = ALL_OPERATORS.filter((o) => o.desc.includes("HEAD ONLY"));
 const RESIDENTIAL = new Set([
   "RESIDENTIAL CHAIN DRIVES",
@@ -19,7 +23,10 @@ describe("HEAD ONLY operators", () => {
   it("prices the 6580L at 375.95, the worked example", () => {
     // Brandon's own worked case: 6580L is floored at 7/8/10FT, the 7FT sells
     // for 385.95, residential deducts 10.
-    const head = HEAD_ONLY.find((o) => o.name === "6580L");
+    const head = HEAD_ONLY.find((o) => model(o.desc) === "6580L");
+    // The list column shows `name`; a rail row reads "6580L, 7FT" there, so the
+    // head-only row has to read "6580L, HEAD ONLY" rather than a bare model.
+    expect(head?.name).toBe("6580L, HEAD ONLY");
     expect(head?.desc).toBe(
       "LIFTMASTER ELECTRIC OPERATOR MODEL 6580L,  HEAD ONLY",
     );
@@ -35,13 +42,10 @@ describe("HEAD ONLY operators", () => {
         ? HEAD_ONLY_DEDUCTION.residential
         : HEAD_ONLY_DEDUCTION.commercial;
       for (const head of section.items.filter((o) => o.desc.includes("HEAD ONLY"))) {
-        // The catalogue's `name` for a rail row is "MT5011U,  8FT", not the
-        // bare model, so rails are matched on the model parsed out of the
-        // description — the same way the derivation finds them.
-        const model = (d: string) =>
-          d.replace(/^LIFTMASTER ELECTRIC OPERATOR MODEL /, "").split(",")[0].trim();
+        // The catalogue's `name` for a rail row is "MT5011U,  8FT", so both
+        // sides are matched on the model parsed out of the description.
         const rails = section.items
-          .filter((o) => model(o.desc) === head.name && /\d+FT/.test(o.desc))
+          .filter((o) => model(o.desc) === model(head.desc) && /\d+FT/.test(o.desc))
           .map((o) => ({ ft: Number(o.desc.match(/(\d+)FT/)![1]), item: o }))
           .sort((a, b) => a.ft - b.ft);
         expect(rails.length, `${head.name} has no rail rows`).toBeGreaterThan(0);
@@ -51,6 +55,13 @@ describe("HEAD ONLY operators", () => {
           Number((base! - deduct).toFixed(2)),
         );
       }
+    }
+  });
+
+  it("labels the list row HEAD ONLY where a rail row shows its length", () => {
+    for (const o of HEAD_ONLY) {
+      expect(o.name, o.desc).toBe(`${model(o.desc)}, HEAD ONLY`);
+      expect(o.name, o.name).not.toMatch(/\d+\s*FT/);
     }
   });
 
@@ -71,10 +82,10 @@ describe("HEAD ONLY operators", () => {
       OPERATOR_CATALOGUE.filter((s) => s.group === "Operators")
         .flatMap((s) => s.items)
         .filter((o) => !/\d+FT/.test(o.desc) && !o.desc.includes("HEAD ONLY"))
-        .map((o) => o.name),
+        .map((o) => model(o.desc)),
     );
     for (const o of HEAD_ONLY) {
-      expect(railless.has(o.name), `${o.name} has no rail to remove`).toBe(false);
+      expect(railless.has(model(o.desc)), `${o.name} has no rail to remove`).toBe(false);
     }
   });
 
@@ -82,8 +93,8 @@ describe("HEAD ONLY operators", () => {
     // T503L5 and T753L5 are N/A on the LiftMaster sheet. Deriving a head-only
     // price off a longer rail would overcharge; leaving them out is honest.
     expect([...HEAD_ONLY_SKIPPED].sort()).toEqual(["T503L5", "T753L5"]);
-    for (const model of HEAD_ONLY_SKIPPED) {
-      expect(HEAD_ONLY.some((o) => o.name === model), model).toBe(false);
+    for (const skipped of HEAD_ONLY_SKIPPED) {
+      expect(HEAD_ONLY.some((o) => model(o.desc) === skipped), skipped).toBe(false);
     }
   });
 

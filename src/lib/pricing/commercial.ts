@@ -1,6 +1,7 @@
 // Ported 1:1 from the production single-file tool: buildCommQuote() +
 // commStockCheck() + the complete-door description builder. Server-side only.
 
+import { collapseUpcharges } from "./types";
 import { COMM_MATRIX, COMM_SECTIONS, COMM_SECTION_STOCK, COMM_SLAB, STOCK_COMM, GRADE_COMM } from "./data/commercial";
 import { COMM_COMPLETE, maxWindows, roundedFeet, SECTION_MAX_WIDTH_IN, maxWidthLabel, sectionColors } from "./data/commercial-meta";
 
@@ -104,7 +105,11 @@ export function quoteCommercial(input: CommInput): CommQuote {
         : "solid, no windows";
     const colorTxt = `in the color ${(input.color || "White").toLowerCase()}`;
     const mountTxt = input.mount === "reverse" ? '2" angle mount track to steel' : '2" angle mount track to wood';
-    const radiusTxt = { "15R": '15" radius track', FV: "full view", LHR: "low headroom track" }[input.track];
+    // FV is FULL VERTICAL LIFT. It read "full view" here, which is a different
+    // product entirely — a full-view door is aluminium and glass. The dropdown
+    // has always said "Full vertical" and the parts catalogue says "FULL
+    // VERTICAL LIFT", so the description was the only place it was wrong.
+    const radiusTxt = { "15R": '15" radius track', FV: "full vertical lift track", LHR: "low headroom track" }[input.track];
     const cspringTxt = input.cspring === "extension" ? "extension springs" : "torsion springs";
     const clockTxt = input.clock === "slide" ? "inside slide lock" : "no lock";
     return {
@@ -224,5 +229,5 @@ export function quoteCommercial(input: CommInput): CommQuote {
     `${kindPhrase}, in the color ${color}` +
     (stilePhrase ? `, ${stilePhrase}` : "");
 
-  return { priced: true, lines, unitPrice, sub, description };
+  return { priced: true, lines: collapseUpcharges(lines), unitPrice, sub, description };
 }

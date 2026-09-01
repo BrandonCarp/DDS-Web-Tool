@@ -114,7 +114,10 @@ export function deriveHeadOnly(sections: OperatorSection[]): HeadOnlyDerivation 
         continue;
       }
       const desc = `${MODEL_PREFIX}${model},  HEAD ONLY`;
-      rows.push({ name: model, desc });
+      // The list column shows `name`, and rail rows put the length there
+      // ("2220L, 7FT"). A bare model would read as if the rail were simply
+      // missing, so HEAD ONLY sits in the same slot.
+      rows.push({ name: `${model}, HEAD ONLY`, desc });
       prices[priceKey(desc)] = Number((base - deduction).toFixed(2));
     }
     if (rows.length > 0) items.set(section.name, rows);

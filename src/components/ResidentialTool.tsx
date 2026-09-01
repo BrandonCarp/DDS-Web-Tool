@@ -91,6 +91,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
   const collection = COLLECTIONS[dataKey(model)] ?? coll;
   const isGallery = collection === "Gallery Collection";
   const sections = assembly === "sections";
+  const sectionsOnly = assembly === "sectionsonly";
   const secWidths = RES_SECTION_WIDTHS[dataKey(model)] ?? [];
   const activeSecWidth = secWidth && secWidths.includes(secWidth) ? secWidth : "";
   // Gallery Collection doors take double strength B grade ONLY (their sole
@@ -177,6 +178,10 @@ export function ResidentialTool({ models }: { models: string[] }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model,
+          // Sections only re-prices server-side as a plain 12R/extension/no-lock
+          // build at 90%, so track and spring are sent but ignored there. The
+          // lock is not: it goes back on at full price after the 90%.
+          assembly: sectionsOnly ? "sectionsonly" : "complete",
           widthFt: Number(widthFt), widthIn: Number(widthIn || 0),
           heightFt: Number(heightFt), heightIn: Number(heightIn || 0),
           style, color, track, spring, lock,
@@ -332,7 +337,8 @@ export function ResidentialTool({ models }: { models: string[] }) {
                   <div className="ctl selectwrap">
                     <select value={assembly} onChange={(e) => setAssembly(e.target.value)}>
                       <option value="complete">Complete door</option>
-                      <option value="sections">Sections only</option>
+                      <option value="sectionsonly">Sections only</option>
+                      <option value="sections">Replacement section</option>
                     </select>
                   </div>
                 </div>

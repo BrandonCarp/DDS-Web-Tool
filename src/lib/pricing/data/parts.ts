@@ -491,7 +491,9 @@ export function partDescription(
   }
   if (!part.perFoot || !feet) return part.desc;
   const base = part.desc.replace(/,\s*$/, "");
-  return `${base},  ${feet}FT`;
+  // The billed length, not the length asked for: a 12FT U retainer is sold as
+  // a 16FT stick, and the QuickBooks line has to say what left the building.
+  return `${base},  ${billedFeet(part, feet)}FT`;
 }
 
 /** Springs are priced each — the pair shows up as quantity 2, not a doubled rate. */
@@ -500,9 +502,39 @@ export function partQuantity(part: Part, right?: number, left?: number): number 
   return Math.max(0, Math.trunc(right ?? 0)) + Math.max(0, Math.trunc(left ?? 0));
 }
 
-/** Extended price: per-foot parts charge rate x footage, others charge each. */
+/**
+ * Retainers come off a stick, so past a point you are buying the long one.
+ *
+ * Brandon, 31/8/2026: a U retainer's longest stick is 16FT and an L retainer's
+ * is 18FT. Anything over 8FT of U has to come off a 16FT stick, and anything
+ * over 10FT of L off an 18FT one — the offcut is not sellable, so the customer
+ * pays for the whole stick.
+ *
+ * Under the threshold it still bills by the foot. Brandon: nobody asks for less
+ * than 7 or 8 feet in practice, so there is no minimum charge to worry about.
+ *
+ * Matches on " U RETAINER" / " L RETAINER" as the retainer TYPE. "UNIVERSAL
+ * BOTTOM RETAINER" is not a U retainer and is deliberately not caught, nor are
+ * the aluminium retainers, which are sold as fixed 10FT pieces rather than by
+ * the foot.
+ */
+const RETAINER_STICKS: { type: RegExp; overFeet: number; billFeet: number }[] = [
+  { type: /\bU\s+RETAINER/i, overFeet: 8, billFeet: 16 },
+  { type: /\bL\s+RETAINER/i, overFeet: 10, billFeet: 18 },
+];
+
+/** Feet actually billed for a part, which is not always the feet asked for. */
+export function billedFeet(part: Part, feet?: number): number {
+  const ft = Math.max(0, Math.trunc(feet ?? 0));
+  if (!part.perFoot) return ft;
+  for (const stick of RETAINER_STICKS) {
+    if (stick.type.test(part.desc) && ft > stick.overFeet) return stick.billFeet;
+  }
+  return ft;
+}
+
+/** Extended price: per-foot parts charge rate x billed footage, others each. */
 export function partPrice(part: Part, feet?: number): number {
   if (!part.perFoot) return part.price;
-  const ft = Math.max(0, Math.trunc(feet ?? 0));
-  return Math.round(part.price * ft * 100) / 100;
+  return Math.round(part.price * billedFeet(part, feet) * 100) / 100;
 }

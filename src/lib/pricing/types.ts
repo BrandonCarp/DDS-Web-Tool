@@ -62,6 +62,24 @@ export interface QuoteOptions {
   windesign?: string;
 }
 
+/**
+ * Fold every upcharge into the first line, so a quote shows one number.
+ *
+ * Brandon, 31/8/2026: the counter should never see "LOW HEADROOM TRACK +$45"
+ * broken out. The upcharges still apply — the door total is unchanged — they
+ * just stop being itemised on screen.
+ *
+ * Done here rather than in the two tools so there is a single place that
+ * decides it, and no way for one tab to keep showing them.
+ */
+export function collapseUpcharges<T extends { value: number; kind?: string }>(
+  lines: T[],
+): T[] {
+  if (lines.length === 0) return lines;
+  const total = lines.reduce((sum, l) => sum + (l.kind === "minus" ? -l.value : l.value), 0);
+  return [{ ...lines[0], value: Math.round(total * 100) / 100 }];
+}
+
 export interface Quote {
   model: string;
   size: SizeCode | null;

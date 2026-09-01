@@ -128,8 +128,13 @@ describe("springs", () => {
   });
 
   it("still charges the torsion adder below 9ft", () => {
-    const q = quoteResidential("4300", dim(16, 0, 7, 0), o("torsion"));
-    expect(q.lines.find((l) => l.name === "Torsion springs")?.value).toBe(30);
+    // The adder is no longer a line of its own — upcharges are folded into one
+    // number for the counter — so it is checked where it is still observable,
+    // as the difference the option makes to the total.
+    const withT = quoteResidential("4300", dim(16, 0, 7, 0), o("torsion"));
+    const without = quoteResidential("4300", dim(16, 0, 7, 0), o("extension"));
+    expect(withT.unitPrice - without.unitPrice).toBeCloseTo(30, 2);
+    expect(withT.lines).toHaveLength(1);
   });
 });
 

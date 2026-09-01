@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { quoteResidential, quoteResidentialSection } from "@/lib/pricing/engine";
+import { quoteResidential, quoteResidentialSection, quoteResidentialSectionsOnly } from "@/lib/pricing/engine";
 import type { LockKey, QuoteOptions, SpringKey, TrackKey, WindowStyle } from "@/lib/pricing/types";
 import { getSessionUser } from "@/lib/auth";
 import { DECORATIVE, ARCHITECTURAL } from "@/lib/pricing/data/inserts";
@@ -38,6 +38,7 @@ export async function POST(req: Request) {
 
   if (!STYLES.includes(style as WindowStyle)) return NextResponse.json({ error: "invalid style" }, { status: 400 });
 
+
   const opts: QuoteOptions = {
     style: style as WindowStyle,
     color: typeof color === "string" ? color : "White",
@@ -48,9 +49,15 @@ export async function POST(req: Request) {
     // for this model/style/width before it appears in the description.
     windesign: typeof windesign === "string" && DESIGN_IDS.has(windesign) ? windesign : undefined,
   };
-  const quote = quoteResidential(model, {
+  const dims = {
     widthFt: Number(widthFt), widthIn: Number(widthIn ?? 0),
     heightFt: Number(heightFt), heightIn: Number(heightIn ?? 0),
-  }, opts);
+  };
+  // "sectionsonly" is the whole set of sections for a door at 90% of the plain
+  // build. "sections" above is ONE replacement section off the sections tables.
+  const quote =
+    body.assembly === "sectionsonly"
+      ? quoteResidentialSectionsOnly(model, dims, opts)
+      : quoteResidential(model, dims, opts);
   return NextResponse.json(quote);
 }

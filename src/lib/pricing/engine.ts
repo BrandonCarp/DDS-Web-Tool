@@ -11,6 +11,7 @@ import { windowDesigns, designName } from "./data/inserts";
 import { RES_SECTIONS } from "./data/res-sections";
 import { colorInStock, sectionColorInStock, sizeCode } from "./data/stock-colors";
 import { colorTakesPremium } from "./data/catalog-meta";
+import { collapseUpcharges } from "./types";
 import type { Dimensions, PriceResult, PriceTriple, Quote, QuoteOptions, SizeCode, Tier, WindowStyle, QuoteLine } from "./types";
 
 /**
@@ -233,7 +234,10 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
   if (opts.style !== "solid") {
     const validDesigns = windowDesigns(model, opts.style, size.widthCode).map((d) => d.id);
     const dn = opts.windesign && validDesigns.includes(opts.windesign) ? designName(opts.windesign) : null;
-    winTxt = `${grade ? grade + " windows" : "windows"} in the top section${dn ? ", " + dn + " inserts" : ""}`;
+    // Windows with no insert design chosen says NO INSERTS outright. Trailing
+    // off after "in the top section" left the installer unable to tell a plain
+    // glazed door from one whose insert nobody filled in.
+    winTxt = `${grade ? grade + " windows" : "windows"} in the top section${dn ? ", " + dn + " inserts" : ", no inserts"}`;
   }
   const springTxt = torsionOnly || opts.spring === "torsion" ? "torsion springs" : "extension springs";
   const lockTxt =
@@ -274,7 +278,7 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
   return {
     model, size, priced: true, isStock: inStock,
     source: stock ? "stock" : "standard",
-    lines, unitPrice, description,
+    lines: collapseUpcharges(lines), unitPrice, description,
   };
 }
 
@@ -315,6 +319,7 @@ export function quoteResidentialSection(model: string, input: ResSectionInput): 
   const lockbar = input.kind === "int" && !glazed && !!input.lockbar;
   if (lockbar) lines.push({ name: "Lockbar installed", value: ADDONS.lockbar_installed, kind: "add" });
   const unitPrice = lines.reduce((a, l) => a + (l.kind === "minus" ? -l.value : l.value), 0);
+  const shown = collapseUpcharges(lines);
   const secStock = sectionColorInStock(model, input.color || "White");
   // Size first, then what the section is, then the colour — the same order the
   // commercial sections read in, and the order the counter says it out loud.
@@ -326,5 +331,72 @@ export function quoteResidentialSection(model: string, input: ResSectionInput): 
     `Clopay Model ${model}, ${widthTxt} x ${input.height}", ${sectionTxt}, ` +
     `in the color ${input.color || "White"}` +
     (lockbar ? ", lockbar installed" : "");
-  return { model, size: null, priced: true, isStock: secStock, source: "standard", lines, unitPrice, description: desc };
+  return { model, size: null, priced: true, isStock: secStock, source: "standard", lines: shown, unitPrice, description: desc };
+}
+
+/* ================= Sections only ================= */
+
+/** What a sections-only order costs as a fraction of the equivalent door. */
+export const SECTIONS_ONLY_FACTOR = 0.9;
+
+/**
+ * SECTIONS ONLY — the door's sections without track, springs or hardware.
+ *
+ * Brandon, 31/8/2026: 90% of what the door would cost as a plain 12" radius,
+ * extension-sprung, no-lock build, with a lock added back on top afterwards if
+ * one is wanted.
+ *
+ * The baseline is deliberately NOT whatever the counter has selected. A door
+ * configured with low headroom track and torsion springs would otherwise carry
+ * those upcharges into a price for parts that include neither. So the door is
+ * re-priced at the plain build first, taken to 90%, and only then does a lock
+ * go back on — at its full price, because the lock does ship.
+ *
+ * Colour still counts: an Ultra-Grain door's upcharge is the sections, so it
+ * survives into the baseline. Windows and inserts likewise.
+ *
+ * Not to be confused with quoteResidentialSection(), which prices ONE
+ * REPLACEMENT SECTION off the sections tables. This is the whole set of
+ * sections for a door.
+ */
+export function quoteResidentialSectionsOnly(
+  model: string,
+  dim: Dimensions,
+  opts: QuoteOptions,
+): Quote {
+  const plain = quoteResidential(model, dim, {
+    ...opts,
+    track: "r12",
+    spring: "extension",
+    lock: "none",
+  });
+  if (!plain.priced || !plain.size) return plain;
+
+  const sectionsPrice = Math.round(plain.unitPrice * SECTIONS_ONLY_FACTOR * 100) / 100;
+  const lockValue = LOCK_VALUE[opts.lock] ?? 0;
+  const unitPrice = Math.round((sectionsPrice + lockValue) * 100) / 100;
+
+  const lines: QuoteLine[] = [{ name: "Sections only", value: unitPrice }];
+
+  // Track and springs are dropped from the wording: neither ships, and a
+  // QuickBooks line that lists them invites a customer to expect them.
+  const lockTxt =
+    ({ none: "no lock", slide: "inside slide lock", lockbar: "lockbar", lockbar_installed: "lockbar installed" } as Record<string, string>)[opts.lock] ||
+    "no lock";
+  // Lock first, then "sections only" last — Brandon's wording, and it puts the
+  // fact that no hardware ships at the end of the line where it reads loudest.
+  // Note this inverts the complete-door pattern, where the lock comes last.
+  const head = plain.description.replace(/, 12″ radius track.*$/, "");
+  const description = `${head}, ${lockTxt}, sections only`;
+
+  return {
+    model,
+    size: plain.size,
+    priced: true,
+    isStock: plain.isStock,
+    source: plain.source,
+    lines,
+    unitPrice,
+    description,
+  };
 }
