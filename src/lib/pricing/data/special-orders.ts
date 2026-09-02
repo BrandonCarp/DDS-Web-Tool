@@ -178,7 +178,7 @@ export const SPECIAL: Record<string, SpecialSeries> = {
   "Premium Steel Collection": {
     "type": "margin",
     "models": {
-      "4050/4051/4053": { "door": 45, "section": 49 },
+      "4050/4051/4053": { "door": 43, "section": 49 },
       "4300/4301/4310": { "door": 44, "section": 49 },
       "9130/9133": { "door": 43, "section": 49 },
       "9200/9203": { "door": 47, "section": 49 }
