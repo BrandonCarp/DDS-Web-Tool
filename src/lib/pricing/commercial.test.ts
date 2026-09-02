@@ -138,7 +138,8 @@ describe("special orders (margin + multiplier collections)", () => {
   it("gives every Gallery model a door and a section margin in range", () => {
     const g = SPECIAL["Gallery Collection"];
     if (g.type !== "margin") throw new Error("expected margin series");
-    for (const [name, m] of Object.entries(g.models)) {
+    expect(g.models, "Gallery is a per-model collection").toBeTruthy();
+    for (const [name, m] of Object.entries(g.models!)) {
       for (const [which, v] of [["door", m.door], ["section", m.section]] as const) {
         expect(Number.isFinite(v), `${name} ${which}`).toBe(true);
         expect(v, `${name} ${which} out of range`).toBeGreaterThan(0);
@@ -146,10 +147,39 @@ describe("special orders (margin + multiplier collections)", () => {
       }
     }
   });
-  it("multiplier collections: list × multiplier at the cost margin", () => {
-    const cr = SPECIAL["Canyon Ridge Collection"];
-    if (cr.type !== "multiplier") throw new Error("expected multiplier series");
-    expect((1000 * cr.multiplier) / (1 - cr.cost_margin / 100)).toBeCloseTo(1090 / 0.71, 2);
+  it("outside makers: list × 1.09 at the cost margin", () => {
+    // The 1.09 belongs to the genuinely outside manufacturers, where DDS pays
+    // list plus 9%. Canyon Ridge and Avante are Clopay and no longer use it.
+    const haas = SPECIAL["Haas"];
+    if (haas.type !== "multiplier") throw new Error("expected multiplier series");
+    expect(haas.multiplier).toBe(1.09);
+    expect((1000 * haas.multiplier) / (1 - haas.cost_margin / 100)).toBeCloseTo(1090 / 0.71, 2);
+  });
+
+  it("Canyon Ridge and Avante price as flat Clopay margins", () => {
+    for (const name of ["Canyon Ridge Collection", "Avante Collection"]) {
+      const s = SPECIAL[name];
+      if (s.type !== "margin") throw new Error(`${name} should be a margin series`);
+      expect(s.models, `${name} has no per-model table`).toBeUndefined();
+      expect(s.door, name).toBe(35);
+      expect(s.section, name).toBe(49);
+      // 35 flat is what the old list × 1.09 at 29 already came to. Asserted as
+      // a percentage rather than an absolute, since the point is that the
+      // change restates the price rather than raising it — the two differ by
+      // about a fifth of one percent, and that gap grows with the door.
+      const flat = 1000 / (1 - s.door! / 100);
+      const oldWay = (1000 * 1.09) / (1 - 0.29);
+      expect(Math.abs(flat / oldWay - 1), name).toBeLessThan(0.005);
+    }
+  });
+
+  it("keeps 1.09 on the outside makers and nowhere else", () => {
+    const multipliers = Object.entries(SPECIAL)
+      .filter(([, v]) => v.type === "multiplier")
+      .map(([k]) => k);
+    expect(multipliers.sort()).toEqual(
+      ["Amarr", "CHI", "Haas", "Overhead", "Wayne Dalton"].sort(),
+    );
   });
 });
 

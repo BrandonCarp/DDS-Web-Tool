@@ -4,7 +4,20 @@
 
 export type SpecialModel = { door: number; section: number; ug?: boolean; new?: boolean };
 export type SpecialSeries =
-  | { type: "margin"; models: Record<string, SpecialModel>; ug?: { single: number; double: number }; ug_margin?: number }
+  | {
+      type: "margin";
+      /**
+       * Per-model margins. Absent when the whole collection shares one, as
+       * Canyon Ridge and Avante do — those have no model breakdown to choose
+       * from, just a collection margin.
+       */
+      models?: Record<string, SpecialModel>;
+      /** Collection-wide margins, used when there is no per-model table. */
+      door?: number;
+      section?: number;
+      ug?: { single: number; double: number };
+      ug_margin?: number;
+    }
   | {
       type: "multiplier";
       multiplier: number;
@@ -33,11 +46,11 @@ export const SPECIAL: Record<string, SpecialSeries> = {
         "section": 49
       },
       "GD4LV/GD4SV": {
-        "door": 55,
+        "door": 51,
         "section": 49
       },
       "GD5LV/GD5SV": {
-        "door": 51,
+        "door": 52,
         "section": 49
       },
       "GD2LP/GD2SP": {
@@ -46,7 +59,7 @@ export const SPECIAL: Record<string, SpecialSeries> = {
       },
       "GD1LP/GD1SP": {
         "door": 43,
-        "section": 51
+        "section": 49
       },
       "GD1LU/GD1SU": {
         "door": 43,
@@ -154,15 +167,22 @@ export const SPECIAL: Record<string, SpecialSeries> = {
       "double": 433.51
     }
   },
+  // Canyon Ridge and Avante are Clopay, so they price the way every other
+  // Clopay collection does: flat margin on the portal total, no 1.09. They ran
+  // on the outside-manufacturer shape (list x 1.09, then 29) until 31/8/2026,
+  // which came to list x 1.5352 — near enough the same number as a flat 35
+  // (list x 1.5385) that the change is a restatement rather than a price rise.
+  // The 1.09 belongs only to the genuinely outside makers further down, where
+  // DDS really does pay list plus 9%.
   "Canyon Ridge Collection": {
-    "type": "multiplier",
-    "multiplier": 1.09,
-    "cost_margin": 29
+    "type": "margin",
+    "door": 35,
+    "section": 49
   },
   "Avante Collection": {
-    "type": "multiplier",
-    "multiplier": 1.09,
-    "cost_margin": 29
+    "type": "margin",
+    "door": 35,
+    "section": 49
   },
   // The residential steel lines. DDS floors only a handful of sizes in these
   // (see STOCK_MATRIX); everything else is a special order and is priced here on
@@ -171,7 +191,7 @@ export const SPECIAL: Record<string, SpecialSeries> = {
   "Value Steel Collection": {
     "type": "margin",
     "models": {
-      "T50S/T50L": { "door": 49, "section": 53 },
+      "T50S/T50L": { "door": 49, "section": 49 },
       "T52S/T52L": { "door": 44, "section": 49 }
     }
   },
@@ -181,7 +201,7 @@ export const SPECIAL: Record<string, SpecialSeries> = {
       "4050/4051/4053": { "door": 43, "section": 49 },
       "4300/4301/4310": { "door": 44, "section": 49 },
       "9130/9133": { "door": 43, "section": 49 },
-      "9200/9203": { "door": 47, "section": 49 }
+      "9200/9203": { "door": 43, "section": 49 }
     }
   },
   // Outside manufacturers. DDS pays list x 1.09, then 29 on a complete door and

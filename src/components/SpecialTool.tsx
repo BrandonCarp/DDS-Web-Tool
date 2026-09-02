@@ -44,6 +44,14 @@ function soNumbers(series: string, model: string, kind: "door" | "section", pric
     }
     costBasis = list * ser.multiplier;
     margin = kind === "section" ? (ser.section_margin ?? ser.cost_margin) : ser.cost_margin;
+  } else if (!ser.models) {
+    // Collection-wide margin: Canyon Ridge and Avante have no model to pick,
+    // so the collection's own door/section margins apply to whatever total the
+    // counter entered.
+    if (ser.door == null || ser.section == null) return null;
+    margin = kind === "section" ? ser.section : ser.door;
+    costBasis = list;
+    return { sell: costBasis / (1 - margin / 100), margin, doubled: false };
   } else {
     const md = ser.models[model];
     if (!md) return null;
@@ -85,7 +93,9 @@ export function SpecialTool() {
   const [saved, setSaved] = useState(false);
 
   const ser = series ? SPECIAL[series] : null;
-  const md = ser && ser.type === "margin" && model ? ser.models[model] : null;
+  const md = ser && ser.type === "margin" && ser.models && model ? ser.models[model] : null;
+  // A margin collection with no model table needs no model chosen to price.
+  const flatMargin = ser?.type === "margin" && !ser.models;
 
   const n =
     scope === "residential"
@@ -95,7 +105,7 @@ export function SpecialTool() {
 
   const label =
     scope === "residential"
-      ? ser?.type === "multiplier"
+      ? ser?.type === "multiplier" || flatMargin
         ? `${series} special order`
         : `${model} ${kind === "section" ? "sections" : "door"}`
       : `${cMfr} ${cModel} ${kind === "section" ? "sections" : "complete door"}`;
@@ -216,16 +226,18 @@ export function SpecialTool() {
 
           {scope === "residential" && ser && ser.type === "margin" && (
             <div className="step">
-              <div className="step-h"><span className="step-n">2</span><h3>{series} model</h3></div>
-              <div className="field"><label className="lbl">Model <span className="req">*</span></label>
-                <div className="selectwrap">
-                  <select data-testid="so-model" value={model} onChange={(e) => { setModel(e.target.value); setSaved(false); }}>
-                    <option value="">Select…</option>
-                    {Object.keys(ser.models).map((m) => <option key={m} value={m}>{m}{ser.models[m].new ? " (new)" : ""}</option>)}
-                  </select>
+              <div className="step-h"><span className="step-n">2</span><h3>{series}{ser.models ? " model" : ""}</h3></div>
+              {ser.models && (
+                <div className="field"><label className="lbl">Model <span className="req">*</span></label>
+                  <div className="selectwrap">
+                    <select data-testid="so-model" value={model} onChange={(e) => { setModel(e.target.value); setSaved(false); }}>
+                      <option value="">Select…</option>
+                      {Object.keys(ser.models).map((m) => <option key={m} value={m}>{m}{ser.models![m].new ? " (new)" : ""}</option>)}
+                    </select>
+                  </div>
                 </div>
-              </div>
-              {md && (
+              )}
+              {(md || flatMargin) && (
                 <>
                   <div className="row2">
                     <div className="field"><label className="lbl">Ordering</label>
@@ -270,7 +282,7 @@ export function SpecialTool() {
             <div className="qmodel">{scope === "residential" ? series || "—" : `${cMfr} ${cModel || "—"}`}</div>
             <div className="qsub">
               {scope === "residential"
-                ? ser ? (ser.type === "multiplier" ? "Special order" : model ? `${model} · ${kind === "section" ? "Sections" : "Door"}` : "Select a model") : "Select a series"
+                ? ser ? (ser.type === "multiplier" || flatMargin ? `Special order · ${kind === "section" ? "Sections" : "Door"}` : model ? `${model} · ${kind === "section" ? "Sections" : "Door"}` : "Select a model") : "Select a series"
                 : cModel ? (kind === "section" ? "Sections" : "Complete door") : "Select a model"}
             </div>
           </div>

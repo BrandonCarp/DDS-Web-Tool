@@ -2,7 +2,7 @@
 export const MARGINS: Record<string, { door: number; section: number }> = {
   "T50S": {
     "door": 49,
-    "section": 53
+    "section": 49
   },
   "T52S": {
     "door": 44,
@@ -10,11 +10,11 @@ export const MARGINS: Record<string, { door: number; section: number }> = {
   },
   "4050-4051-4053": {
     "door": 43,
-    "section": 48
+    "section": 49
   },
   "9130-9133": {
     "door": 43,
-    "section": 48
+    "section": 49
   },
   "4300": {
     "door": 44,
@@ -22,7 +22,7 @@ export const MARGINS: Record<string, { door: number; section: number }> = {
   },
   "GD1LP-GD1SP": {
     "door": 43,
-    "section": 51
+    "section": 49
   }
 };
 

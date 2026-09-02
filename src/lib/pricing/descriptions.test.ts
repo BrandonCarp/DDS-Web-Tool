@@ -261,12 +261,17 @@ describe("outside manufacturer special orders", () => {
     expect(sell(250, 1.09, 37)).toBeCloseTo(432.54, 2);
   });
 
-  it("leaves Canyon Ridge and Avante on a single margin", () => {
+  it("keeps Canyon Ridge and Avante on one margin, with no model to pick", () => {
+    // They used to run on the outside-manufacturer shape (list x 1.09 at 29).
+    // They are Clopay, so as of 31/8/2026 they price on a flat margin like
+    // every other Clopay collection — still one number for the whole
+    // collection, with no per-model table.
     for (const m of ["Canyon Ridge Collection", "Avante Collection"]) {
       const ser = SPECIAL[m];
-      if (ser.type !== "multiplier") throw new Error(`${m} changed type`);
-      expect(ser.section_margin, m).toBeUndefined();
-      expect(ser.small_section_under, m).toBeUndefined();
+      if (ser.type !== "margin") throw new Error(`${m} should be a margin series`);
+      expect(ser.models, m).toBeUndefined();
+      expect(ser.door, m).toBe(35);
+      expect(ser.section, m).toBe(49);
     }
   });
 });
