@@ -71,7 +71,7 @@ describe("upcharges never itemise", () => {
     });
     expect(q.lines).toHaveLength(1);
     expect(q.lines[0].value).toBeCloseTo(q.unitPrice, 2);
-    expect(q.unitPrice).toBeCloseTo(995.01, 2);
+    expect(q.unitPrice).toBeCloseTo(1000.01, 2);
     for (const l of q.lines) expect(l.kind).not.toBe("add");
   });
 });

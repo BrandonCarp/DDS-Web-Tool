@@ -35,7 +35,7 @@ test.describe("authenticated", () => {
     await page.getByTestId("track").selectOption("r32");
     await page.getByTestId("lock").selectOption("lockbar_installed");
     await page.getByTestId("get-price").click();
-    await expect(page.getByTestId("total")).toHaveText("$920.58");
+    await expect(page.getByTestId("total")).toHaveText("$925.58");
   });
 });
 

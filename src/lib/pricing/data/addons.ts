@@ -1,7 +1,7 @@
 // AUTO-GENERATED add-on amounts / upcharges from the catalog (matches index.html).
 
 export const ADDONS = {
-  "torsion": 30,
+  "torsion": 35,
   "slidelock": 5,
   "lockbar_assembly": 45,
   "lockbar_installed": 70,

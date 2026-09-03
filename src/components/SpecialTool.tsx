@@ -4,6 +4,9 @@ import { useState } from "react";
 import { useCustomerJob } from "@/components/CustomerJobFields";
 import { CopyButton, CopyPrice, priceText } from "@/components/CopyButton";
 import { SPECIAL, SPECIAL_COMMERCIAL, SO_MANUFACTURERS, seriesFor, isOutsideMfr } from "@/lib/pricing/data/special-orders";
+import { specialDoorQuote, hasGrid, griddedWidths } from "@/lib/pricing/data/special-door-pricing";
+import { COLORS } from "@/lib/pricing/data/catalog-meta";
+import { windowDesigns } from "@/lib/pricing/data/inserts";
 
 const fmt = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -88,6 +91,15 @@ export function SpecialTool() {
   const [cModel, setCModel] = useState("");
   // shared
   const [kind, setKind] = useState<"door" | "section">("door");
+  // Gridded configurator (4050/4051/4053 today). Independent of the manual
+  // total below, which stays available for anything the grid does not cover.
+  const [gWidth, setGWidth] = useState("");
+  const [gStyle, setGStyle] = useState<"solid" | "glass" | "inserts">("solid");
+  const [gColor, setGColor] = useState("White");
+  const [gTrack, setGTrack] = useState("r12");
+  const [gSpring, setGSpring] = useState("extension");
+  const [gLock, setGLock] = useState("none");
+  const [gDesign, setGDesign] = useState("");
   const [price, setPrice] = useState("");
   const [qty, setQty] = useState(1);
   const [saved, setSaved] = useState(false);
@@ -97,12 +109,43 @@ export function SpecialTool() {
   // A margin collection with no model table needs no model chosen to price.
   const flatMargin = ser?.type === "margin" && !ser.models;
 
-  const n =
+  // The configurator appears only for models Clopay has gridded. Everything
+  // else keeps the manual total path exactly as it was.
+  const gridded = scope === "residential" && !!model && hasGrid(model);
+  const gWidths = gridded ? griddedWidths(model, "7") : [];
+  const gResult = gridded && gWidth
+    ? specialDoorQuote({ model, width: gWidth, height: "7", style: gStyle, color: gColor,
+        windesign: gDesign || undefined,
+        track: gTrack as never, spring: gSpring as never, lock: gLock as never })
+    : null;
+  const widthLabel = (w: string) => {
+    const [ft, inch] = w.split(".");
+    return `${ft}'${inch ?? 0}"`;
+  };
+  const gColors = COLORS["4050-4051-4053"] ?? COLORS[model] ?? ["White"];
+  // The same insert list a residential 4050 offers, filtered the same way — by
+  // model, style and door width.
+  const gDesigns = gridded && gStyle === "inserts" && gWidth
+    ? windowDesigns(model, "inserts", gWidth.split(".")[0])
+    : [];
+
+  // Grid first when it produced a price and the counter has not typed a total.
+  // A typed total always wins: it is what someone reaches for precisely when
+  // the grid is wrong for the job.
+  const manual =
     scope === "residential"
       ? series ? soNumbers(series, model, kind, price) : null
       : cModel ? soCommercial(cMfr, kind, price) : null;
+  const n =
+    !manual && gResult?.quote
+      ? { sell: gResult.quote.unitPrice, margin: null as number | null, doubled: false }
+      : manual;
   const total = n ? n.sell * Math.max(1, qty) : 0;
 
+  // A gridded door carries a real QuickBooks description. Everything else keeps
+  // the short label it has always had — there is nothing more to say about a
+  // typed-in total than which model and whether it is a door or sections.
+  const copyText = gResult?.quote?.description ?? null;
   const label =
     scope === "residential"
       ? ser?.type === "multiplier" || flatMargin
@@ -130,7 +173,7 @@ export function SpecialTool() {
         unitPrice: n.sell, qty: nQty, total: n.sell * nQty,
         // The entered list value is kept for audit; the MARGIN is not written into
         // the stored description — semi-admins can read the estimates table.
-        description: `${label} — Clopay list ${price}`,
+        description: copyText ?? `${label} — Clopay list ${price}`,
         customer: custName, poNumber: custPo, jobName: custJob,
       }),
     }).then(() => setSaved(true)).catch(() => {/* ignore */});
@@ -237,6 +280,90 @@ export function SpecialTool() {
                   </div>
                 </div>
               )}
+              {gridded && kind === "door" && (
+                <>
+                  <div className="ghdr" style={{ marginTop: 10 }}>Build a door</div>
+                  <div className="row2">
+                    <div className="field"><label className="lbl">Width <span className="req">*</span></label>
+                      <div className="selectwrap">
+                        <select data-testid="so-width" value={gWidth} onChange={(e) => { setGWidth(e.target.value); setSaved(false); }}>
+                          <option value="">Select…</option>
+                          {gWidths.map((w) => <option key={w} value={w}>{widthLabel(w)}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="field"><label className="lbl">Height</label>
+                      <div className="ctl"><span className="muted-note">7&#39;0&quot; — other heights are not gridded yet</span></div>
+                    </div>
+                  </div>
+                  <div className="row2">
+                    <div className="field"><label className="lbl">Color</label>
+                      <div className="selectwrap">
+                        <select value={gColor} onChange={(e) => { setGColor(e.target.value); setSaved(false); }}>
+                          {gColors.map((c) => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="field"><label className="lbl">Windows</label>
+                      <div className="selectwrap">
+                        <select data-testid="so-style" value={gStyle} onChange={(e) => { setGStyle(e.target.value as "solid" | "glass" | "inserts"); setSaved(false); }}>
+                          <option value="solid">Solid — no windows</option>
+                          <option value="glass">Glass</option>
+                          <option value="inserts">Inserts</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  {gDesigns.length > 0 && (
+                    <div className="field">
+                      <label className="lbl">Window design</label>
+                      <div className="selectwrap">
+                        <select data-testid="so-windesign" value={gDesign} onChange={(e) => { setGDesign(e.target.value); setSaved(false); }}>
+                          <option value="">Select a design…</option>
+                          {gDesigns.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                  <div className="row2">
+                    <div className="field"><label className="lbl">Spring</label>
+                      <div className="selectwrap">
+                        <select value={gSpring} onChange={(e) => { setGSpring(e.target.value); setSaved(false); }}>
+                          <option value="extension">Extension</option>
+                          <option value="torsion">Torsion</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="field"><label className="lbl">Track lift / radius</label>
+                      <div className="selectwrap">
+                        <select value={gTrack} onChange={(e) => { setGTrack(e.target.value); setSaved(false); }}>
+                          <option value="r10">10&quot; radius</option>
+                          <option value="r12">12&quot; radius</option>
+                          <option value="r15">15&quot; radius</option>
+                          <option value="low_headroom">Low headroom</option>
+                          <option value="r20">20&quot; radius</option>
+                          <option value="r32">32&quot; radius</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="field">
+                    <label className="lbl">Lock</label>
+                    <div className="selectwrap">
+                      <select value={gLock} onChange={(e) => { setGLock(e.target.value); setSaved(false); }}>
+                        <option value="none">No lock</option>
+                        <option value="slide">Inside slide lock</option>
+                        <option value="lockbar">Lockbar assembly</option>
+                        <option value="lockbar_installed">Lockbar installed</option>
+                      </select>
+                    </div>
+                  </div>
+                  {gResult?.reason && (
+                    <div className="muted-note" style={{ marginTop: 6 }}>{gResult.reason}</div>
+                  )}
+                </>
+              )}
+
               {(md || flatMargin) && (
                 <>
                   <div className="row2">
@@ -249,7 +376,9 @@ export function SpecialTool() {
                     <div />
                   </div>
                   <div className="field" style={{ marginTop: 6 }}>
-                    <label className="lbl">Enter total = sub total + energy surcharge — do not apply MPQ <span className="req">*</span></label>
+                    <label className="lbl">{gridded && kind === "door"
+                      ? "Or enter a Clopay total for a configuration not listed above"
+                      : "Enter total = sub total + energy surcharge — do not apply MPQ"} <span className="req">*</span></label>
                     <input type="text" inputMode="decimal" value={price} onChange={(e) => { setPrice(e.target.value); setSaved(false); }} placeholder="0.00" />
                   </div>
                 </>
@@ -305,7 +434,7 @@ export function SpecialTool() {
                 <span className="tv">{fmt(total)}</span>
               </div>
               <div className="qfoot">
-                <CopyButton text={label.toUpperCase()} label="Copy description" primary onCopy={saveQuote} testId="so-copy-desc" />
+                <CopyButton text={(copyText ?? label).toUpperCase()} label="Copy description" primary onCopy={saveQuote} testId="so-copy-desc" />
                 <CopyPrice amount={total} onCopy={saveQuote} testId="so-copy-price" />
                 <button className="btn" type="button" onClick={() => pickScope(scope)}>Clear</button>
               </div>

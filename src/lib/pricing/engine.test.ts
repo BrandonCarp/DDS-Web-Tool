@@ -133,7 +133,7 @@ describe("springs", () => {
     // as the difference the option makes to the total.
     const withT = quoteResidential("4300", dim(16, 0, 7, 0), o("torsion"));
     const without = quoteResidential("4300", dim(16, 0, 7, 0), o("extension"));
-    expect(withT.unitPrice - without.unitPrice).toBeCloseTo(30, 2);
+    expect(withT.unitPrice - without.unitPrice).toBeCloseTo(35, 2);
     expect(withT.lines).toHaveLength(1);
   });
 });
@@ -151,10 +151,10 @@ describe("quoteResidential — full quote with add-on upcharges", () => {
     expect(q.lines).toHaveLength(1);
   });
 
-  it("adds torsion (+30), lockbar installed (+70) and 32in track (+225)", () => {
+  it("adds torsion (+35), lockbar installed (+70) and 32in track (+225)", () => {
     const base = priceResidential("T50S", dim(9, 0, 7, 0), "solid").price!;
     const q = quoteResidential("T50S", dim(9, 0, 7, 0), opts({ track: "r32", spring: "torsion", lock: "lockbar_installed" }));
-    expect(q.unitPrice).toBeCloseTo(base + 225 + 30 + 70, 2);
+    expect(q.unitPrice).toBeCloseTo(base + 225 + 35 + 70, 2);
   });
 
   it("15in track and extension spring add nothing", () => {
@@ -232,7 +232,7 @@ describe("4050-4051-4053 odd-size resolution (finer width groups)", () => {
     expect(price(15, 10, 7)).toBeCloseTo(1473.98, 2);
   });
   it("splits 16' at 16'0-2 vs 16'4-10 (7' tall)", () => {
-    expect(price(16, 0, 7)).toBeCloseTo(1261.71, 2); // exact 16'0" is a stock size (V2 book)
+    expect(price(16, 0, 7)).toBeCloseTo(1303.18, 2); // exact 16'0" is a stock size (V2 book)
     expect(price(16, 2, 7)).toBeCloseTo(1284.21, 2); // odd widths stay on the odd band
     expect(price(16, 4, 7)).toBeCloseTo(1710.42, 2);
     expect(price(16, 10, 7)).toBeCloseTo(1710.42, 2);
@@ -280,7 +280,7 @@ describe("model split (independent selection, shared pricing)", () => {
 
 describe("2026 workbook authority (V2 stock + strict 9FT book)", () => {
   it("grouped models get stock prices at exact stock sizes (V2 book)", () => {
-    expect(priceResidential("4050", dim(8, 0, 7, 0), "solid")).toMatchObject({ price: 710.65, source: "stock" });
+    expect(priceResidential("4050", dim(8, 0, 7, 0), "solid")).toMatchObject({ price: 723.25, source: "stock" });
     expect(priceResidential("4051", dim(8, 0, 8, 0), "solid")).toMatchObject({ price: 852.78, source: "stock" });
     expect(priceResidential("9130", dim(9, 0, 7, 0), "glass")).toMatchObject({ price: 1109.48, source: "stock" });
     expect(priceResidential("GD1SP", dim(16, 0, 8, 0), "inserts")).toMatchObject({ price: 2347.17, source: "stock" });

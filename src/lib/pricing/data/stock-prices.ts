@@ -1,6 +1,7 @@
 // AUTO-GENERATED from the 2026 stock price workbooks. Do not edit by hand.
 //   Tiers 7/8: new_pricing_2026_V2.xlsx (authoritative stock-item book)
 //   Tier 9:    9FT_Pricing.xlsx (strict 9-ft-high prices for the sizes listed there)
+//   4050-4051-4053 tier 7: 4050-7FT.xlsx (STOCK tab, 43M)
 // Shape: model -> widthKey -> tier -> PriceTriple. Width keys use the catalog
 // convention: whole feet as "8", half-foot sizes as "7.6".
 import type { PriceTriple } from "../types";
@@ -78,50 +79,50 @@ export const STOCK_PRICES: Record<string, Record<string, Record<string, PriceTri
   },
   "4050-4051-4053": {
     "7": {
-      "7": { "solid": 775.65, "glass": 937.72, "inserts": 1015.02 },
+      "7": { "solid": 837.75, "glass": 968.32, "inserts": 1030.6 },
       "8": { "solid": 917.78, "glass": 1079.85, "inserts": 1157.15 },
     },
     "7.6": {
-      "7": { "solid": 775.65, "glass": 937.72, "inserts": 1015.02 },
+      "7": { "solid": 837.75, "glass": 968.32, "inserts": 1030.6 },
       "8": { "solid": 917.78, "glass": 1079.85, "inserts": 1157.15 },
     },
     "8": {
-      "7": { "solid": 710.65, "glass": 872.72, "inserts": 950.02 },
+      "7": { "solid": 723.25, "glass": 897.37, "inserts": 980.4 },
       "8": { "solid": 852.78, "glass": 1014.85, "inserts": 1092.15 },
       "9": { "solid": 1167.07, "glass": 1337.36, "inserts": 1418.56 },
     },
     "9": {
-      "7": { "solid": 765.5, "glass": 927.58, "inserts": 1004.88 },
+      "7": { "solid": 782.19, "glass": 956.32, "inserts": 1039.35 },
       "8": { "solid": 926.33, "glass": 1088.41, "inserts": 1165.71 },
       "9": { "solid": 1264.0, "glass": 1434.29, "inserts": 1515.49 },
     },
     "10": {
-      "7": { "solid": 864.0, "glass": 1065.97, "inserts": 1163.22 },
+      "7": { "solid": 887.98, "glass": 1105.61, "inserts": 1209.4 },
       "8": { "solid": 1059.74, "glass": 1261.71, "inserts": 1358.95 },
       "9": { "solid": 1464.4, "glass": 1677.24, "inserts": 1778.73 },
     },
     "12": {
-      "7": { "solid": 1051.01, "glass": 1294.12, "inserts": 1410.07 },
+      "7": { "solid": 1076.84, "glass": 1338.02, "inserts": 1462.58 },
       "8": { "solid": 1243.01, "glass": 1486.12, "inserts": 1602.07 },
       "9": { "solid": 1756.51, "glass": 2011.93, "inserts": 2133.73 },
     },
     "14": {
-      "7": { "solid": 1184.41, "glass": 1468.67, "inserts": 1604.56 },
+      "7": { "solid": 1220.14, "glass": 1524.82, "inserts": 1670.14 },
       "8": { "solid": 1420.04, "glass": 1704.3, "inserts": 1840.2 },
       "9": { "solid": 1967.4, "glass": 2265.38, "inserts": 2407.49 },
     },
     "15": {
-      "7": { "solid": 1240.51, "glass": 1524.77, "inserts": 1660.67 },
+      "7": { "solid": 1280.4, "glass": 1585.09, "inserts": 1730.4 },
       "8": { "solid": 1513.55, "glass": 1797.81, "inserts": 1933.7 },
       "9": { "solid": 2065.64, "glass": 2363.62, "inserts": 2505.73 },
     },
     "16": {
-      "7": { "solid": 1261.71, "glass": 1585.86, "inserts": 1740.46 },
+      "7": { "solid": 1303.18, "glass": 1651.4, "inserts": 1817.47 },
       "8": { "solid": 1572.15, "glass": 1896.3, "inserts": 2050.9 },
       "9": { "solid": 2179.58, "glass": 2520.13, "inserts": 2682.55 },
     },
     "18": {
-      "7": { "solid": 1514.8, "glass": 1838.95, "inserts": 1993.55 },
+      "7": { "solid": 1575.05, "glass": 1923.28, "inserts": 2089.35 },
       "8": { "solid": 1837.71, "glass": 2161.86, "inserts": 2316.46 },
       "9": { "solid": 2631.49, "glass": 2972.04, "inserts": 3134.45 },
     },

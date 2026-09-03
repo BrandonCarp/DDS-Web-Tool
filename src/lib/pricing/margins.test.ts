@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { SPECIAL } from "./data/special-orders";
 import { MARGINS } from "./data/catalog-meta";
+import { ADDONS } from "./data/addons";
 
 const OUTSIDE = ["Haas", "Amarr", "CHI", "Overhead", "Wayne Dalton"];
 
@@ -44,5 +45,13 @@ describe("Clopay margins (RES_CLOPAY_MARGINS, 31/8/2026)", () => {
     for (const [model, m] of Object.entries(MARGINS)) {
       expect(m.section, `MARGINS/${model}`).toBe(49);
     }
+  });
+});
+
+describe("torsion spring adder", () => {
+  it("is 35, not 30", () => {
+    // Raised across the board 2/9/2026. The 4050-7FT sheet still printed 30 in
+    // its footer, which is stale — Brandon's instruction supersedes it.
+    expect(ADDONS.torsion).toBe(35);
   });
 });
