@@ -252,7 +252,7 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
   // order in the badge and description.
   const inStock =
     stock !== null &&
-    colorInStock(model, opts.color, sizeCode(size.wf, size.wi), sizeCode(size.hf, size.hi));
+    colorInStock(model, opts.color, sizeCode(size.wf, size.wi), sizeCode(size.hf, size.hi), opts.style);
 
   // Residential only quotes a STOCK PRICE. A size that falls through to the
   // odd-size grid is a special order and is priced there, on the margins,
