@@ -301,10 +301,61 @@ export const SPECIAL: Record<string, SpecialSeries> = {
   }
 };
 
-/** Commercial special orders: Clopay 3200/524 — complete door at 45% margin, sections at 49%. */
+/**
+ * Commercial special orders — every Clopay commercial model, grouped.
+ *
+ * Margins are flat across the whole range: 45 on a complete door, 49 on
+ * sections, the same terms the 3200 and 524 have always carried.
+ *
+ * PINNED is the handful the counter reaches for daily. Those five sit at the
+ * top of the collection dropdown as models in their own right, above the series
+ * — someone who knows they want a 3200 should not have to remember it lives
+ * under Energy Series. Each still appears inside its real series as well, so
+ * browsing by series finds everything.
+ */
+export interface CommercialSeries {
+  name: string;
+  models: string[];
+}
+
+export const SPECIAL_COMMERCIAL_PINNED = ["3720", "3200", "3150", "524", "524V"];
+
+export const SPECIAL_COMMERCIAL_SERIES: CommercialSeries[] = [
+  {
+    name: "Architectural Series — Aluminum Full View Doors",
+    models: ["902", "903", "904"],
+  },
+  {
+    name: "Architectural Series",
+    models: ["3158", "3159", "3208", "3209", "3708", "3709"],
+  },
+  {
+    name: "Energy Series with Intellicore",
+    models: ["3715", "3717", "3718", "3720", "3721", "3722", "3723", "3724"],
+  },
+  {
+    name: "Energy Series",
+    models: ["3150", "3154", "3155", "3200", "3211", "3213", "3220"],
+  },
+  {
+    name: "Industrial Series",
+    models: ["520", "522", "524", "524V", "524S", "525", "525V", "525S", "664", "664V"],
+  },
+];
+
+/** Every commercial model DDS special orders, deduplicated. */
+export const SPECIAL_COMMERCIAL_MODELS: string[] = [
+  ...new Set(SPECIAL_COMMERCIAL_SERIES.flatMap((s) => s.models)),
+];
+
 export const SPECIAL_COMMERCIAL: Record<string, { models: string[]; door: number; section: number }> = {
-  Clopay: { models: ["3200", "524"], door: 45, section: 49 },
+  Clopay: { models: SPECIAL_COMMERCIAL_MODELS, door: 45, section: 49 },
 };
+
+/** The series a model belongs to, for the quote description. */
+export function commercialSeriesOf(model: string): string | null {
+  return SPECIAL_COMMERCIAL_SERIES.find((s) => s.models.includes(model))?.name ?? null;
+}
 
 /**
  * Residential special orders, grouped by who makes the door.

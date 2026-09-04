@@ -11,6 +11,7 @@ import { COLORS, COLLECTIONS } from "@/lib/pricing/data/catalog-meta";
 import { dataKey, modelSort } from "@/lib/pricing/model-groups";
 import { windowDesigns, designWidthCode } from "@/lib/pricing/data/inserts";
 import { RES_SECTION_WIDTHS, sectionWidthLabel } from "@/lib/pricing/data/res-section-meta";
+import { stockedWidths, stockedHeights, sizeParts, solidOnlyHeight } from "@/lib/pricing/data/stock-colors";
 
 const GLASS = [
   { value: "solid", label: "Solid (no windows)" },
@@ -62,6 +63,35 @@ export function ResidentialTool({ models }: { models: string[] }) {
   const [widthIn, setWidthIn] = useState("0");
   const [heightFt, setHeightFt] = useState("");
   const [heightIn, setHeightIn] = useState("0");
+
+  // Sizes come from a dropdown for any model DDS floors. The four free-entry
+  // boxes stay for models floored in nothing at all — the 4300 family — where
+  // an empty dropdown would just be a dead end.
+  const stockW = stockedWidths(model);
+  const stockH = stockedHeights(model);
+  const stockSizes = stockW.length > 0 && stockH.length > 0;
+  // Distinct footages: 7'0" and 7'6" are both "7 ft", so the feet dropdown
+  // lists 7 once and the inch dropdown carries the difference.
+  const feetOf = (codes: string[]) => [...new Set(codes.map((c) => String(sizeParts(c).ft)))];
+  const stockWFt = feetOf(stockW);
+  const stockHFt = feetOf(stockH);
+  // With feet chosen from a dropdown, the inch options are whatever DDS floors
+  // at that footage — 7' comes in 7'0" only, 7'6" adds the 6.
+  const inchesFor = (codes: string[], ft: string) =>
+    codes.filter((c) => String(sizeParts(c).ft) === ft).map((c) => String(sizeParts(c).in));
+  const widthInOptions = widthFt ? inchesFor(stockW, widthFt) : ["0"];
+  const heightInOptions = heightFt ? inchesFor(stockH, heightFt) : ["0"];
+
+  // Changing feet re-picks the inches, because the old value may not exist at
+  // the new footage — 7'6" is floored, 9'6" is not.
+  const pickWidth = (ft: string) => {
+    setWidthFt(ft);
+    setWidthIn(ft ? (inchesFor(stockW, ft)[0] ?? "0") : "0");
+  };
+  const pickHeight = (ft: string) => {
+    setHeightFt(ft);
+    setHeightIn(ft ? (inchesFor(stockH, ft)[0] ?? "0") : "0");
+  };
   const [assembly, setAssembly] = useState("complete");
   // "Sections only" mode — mirrors the Commercial replacement-section flow.
   // Widths are STOCK-SIZE DROPDOWNS from the 2026 V2 workbook, never typed.
@@ -96,9 +126,15 @@ export function ResidentialTool({ models }: { models: string[] }) {
   const activeSecWidth = secWidth && secWidths.includes(secWidth) ? secWidth : "";
   // Gallery Collection doors take double strength B grade ONLY (their sole
   // window option); every other model takes single strength only.
-  const glassOptions = isGallery
+  const heightCode = heightFt === "" ? "" : Number(heightIn) === 0 ? heightFt : `${heightFt}.${heightIn}`;
+  const baseGlass = isGallery
     ? GLASS.filter((g) => g.value !== "ssb")
     : GLASS.filter((g) => g.value !== "dsb");
+  // 6'0" is floored solid only — there is no glazed 6'0" door to sell — so the
+  // dropdown drops to Solid rather than offering something that would have to
+  // be ordered in. Windows start at 6'3".
+  const solidOnly = !sections && solidOnlyHeight(heightCode);
+  const glassOptions = solidOnly ? baseGlass.filter((g) => g.value === "solid") : baseGlass;
   const wf = parseInt(widthFt, 10);
   const hf = parseInt(heightFt, 10);
   const sizeComplete = sections ? !!activeSecWidth : Number.isFinite(wf) && Number.isFinite(hf);
@@ -166,6 +202,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
     }
     // Inserts require an actual design choice — no pricing a generic "insert"
     // when this model offers specific insert designs.
+    if (solidOnly && glass !== "solid") { setGlass("solid"); setFraming("plain"); }
     if (style === "inserts" && wDesigns.length > 0 && !activeDesign) {
       setError("Select a window insert design before getting a price.");
       setResult(null);
@@ -377,21 +414,60 @@ export function ResidentialTool({ models }: { models: string[] }) {
                 ) : (
                 <div className="grow">
                   <label>Measure size</label>
+                  {/* Same two-box ft/in shape as before — the feet box is a
+                      dropdown now, offering only the sizes DDS floors for this
+                      model. Inches follow from whatever that size is, so they
+                      are shown but not separately chosen. Models floored in
+                      nothing keep free entry. */}
                   <div className="ctl dimstack">
                     <div className="dimrow">
-                      <input data-testid="width-ft" type="number" min={0} placeholder="ft" value={widthFt} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setWidthFt(v); }} />
+                      {stockSizes ? (
+                        <div className="selectwrap dimsel">
+                          <select data-testid="width-ft" value={widthFt} onChange={(e) => pickWidth(e.target.value)}>
+                            <option value="">ft</option>
+                            {stockWFt.map((f) => <option key={f} value={f}>{f}</option>)}
+                          </select>
+                        </div>
+                      ) : (
+                        <input data-testid="width-ft" type="number" min={0} placeholder="ft" value={widthFt} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setWidthFt(v); }} />
+                      )}
                       <span className="u">ft</span>
-                      <select data-testid="width-in" className="insel" value={widthIn} onChange={(e) => setWidthIn(e.target.value)}>
-                        {["0", "2", "4", "6", "8", "10"].map((v) => <option key={v} value={v}>{v}</option>)}
-                      </select>
+                      {stockSizes ? (
+                        <div className="selectwrap dimsel">
+                          <select data-testid="width-in" value={widthIn} onChange={(e) => setWidthIn(e.target.value)}>
+                            {widthInOptions.map((v) => <option key={v} value={v}>{v}</option>)}
+                          </select>
+                        </div>
+                      ) : (
+                        <select data-testid="width-in" className="insel" value={widthIn} onChange={(e) => setWidthIn(e.target.value)}>
+                          {["0", "2", "4", "6", "8", "10"].map((v) => <option key={v} value={v}>{v}</option>)}
+                        </select>
+                      )}
                       <span className="u">in W</span>
                     </div>
                     {!sections && <div className="dimrow">
-                      <input data-testid="height-ft" type="number" min={0} placeholder="ft" value={heightFt} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setHeightFt(v); }} />
+                      {stockSizes ? (
+                        <div className="selectwrap dimsel">
+                          <select data-testid="height-ft" value={heightFt} onChange={(e) => pickHeight(e.target.value)}>
+                            <option value="">ft</option>
+                            {stockHFt.map((f) => <option key={f} value={f}>{f}</option>)}
+                          </select>
+                        </div>
+                      ) : (
+                        <input data-testid="height-ft" type="number" min={0} placeholder="ft" value={heightFt} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setHeightFt(v); }} />
+                      )}
                       <span className="u">ft</span>
-                      <select data-testid="height-in" className="insel" value={heightIn} onChange={(e) => setHeightIn(e.target.value)}>
-                        {["0", "3", "6", "9"].map((v) => <option key={v} value={v}>{v}</option>)}
-                      </select>
+                      {stockSizes ? (
+                        <div className="selectwrap dimsel">
+                          <select data-testid="height-in" value={heightIn} onChange={(e) => setHeightIn(e.target.value)}>
+                            {heightInOptions.map((v) => <option key={v} value={v}>{v}</option>)}
+                          </select>
+                        </div>
+                      ) : (
+                        <select data-testid="height-in" className="insel" value={heightIn} onChange={(e) => setHeightIn(e.target.value)}>
+                          {["0", "3", "6", "9"].map((v) => <option key={v} value={v}>{v}</option>)}
+                        </select>
+                      )}
                       <span className="u">in H</span>
                     </div>}
                   </div>

@@ -22,33 +22,32 @@ export interface StockRange {
   heights: string[];
 }
 
-/** Heights every floored colour carries. */
-const SHORT_HEIGHTS = ["6.3", "6.6", "6.9", "7", "7.6", "7.9", "8"];
+/**
+ * Heights every floored colour carries, on every model.
+ *
+ * The range floors at 6'0" and runs to 8'0". Nothing needs a pricing change to
+ * support it: the 7' tier already covers everything from 6'0" to 7'0".
+ */
+const SHORT_HEIGHTS = ["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8"];
 /** White also runs tall. */
 const WHITE_HEIGHTS = [...SHORT_HEIGHTS, "9", "10"];
-/**
- * The 4050 family also floors a 6'0" door, which nothing else does.
- *
- * 6'3" and 6'6" were already stocked; 6'0" is the addition. It prices without
- * any change — the 7' tier covers everything from 6'0" to 7'0" — so this is
- * purely about what the badge says.
- */
-const HEIGHTS_4050 = ["6", ...SHORT_HEIGHTS];
-const WHITE_HEIGHTS_4050 = ["6", ...WHITE_HEIGHTS];
 
 /**
- * Sizes floored ONLY as solid doors, per model.
+ * Heights floored ONLY as solid doors.
  *
- * A 6'0" 4050 is on the floor, but only without windows — glass or inserts at
- * that height is a special order. The rest of the matrix does not care about
- * style, so this is the one place that does, and it is kept as data rather than
- * a condition buried in the lookup.
+ * A 6'0" door is on the floor, but not with windows — there is no glazed 6'0"
+ * to sell, so the style dropdown drops to Solid at that height rather than
+ * offering something that has to be ordered in. Windows start at 6'3".
+ *
+ * This is the one place in the matrix where style bears on stock at all, which
+ * is why it is data rather than a condition buried in the lookup.
  */
-const SOLID_ONLY_HEIGHTS: Record<string, string[]> = {
-  "4050": ["6"],
-  "4051": ["6"],
-  "4053": ["6"],
-};
+export const SOLID_ONLY_HEIGHTS = ["6"];
+
+/** True when a height is floored in solid only, so windows must not be offered. */
+export function solidOnlyHeight(heightCode: string): boolean {
+  return SOLID_ONLY_HEIGHTS.includes(heightCode);
+}
 
 /**
  * model -> colour -> the sizes floored in it.
@@ -67,24 +66,22 @@ export const STOCK_MATRIX: Record<string, Record<string, StockRange>> = {
   "4050": {
     White: {
       widths: ["7", "7.6", "8", "9", "10", "12", "14", "15", "16", "18"],
-      heights: WHITE_HEIGHTS_4050,
+      heights: WHITE_HEIGHTS,
     },
-    Almond: { widths: ["7.6", "8", "9", "16"], heights: HEIGHTS_4050 },
-    "Chocolate Brown": { widths: ["7.6", "8", "9", "16"], heights: HEIGHTS_4050 },
-    Sandtone: { widths: ["7.6", "8", "9", "16"], heights: HEIGHTS_4050 },
-    Black: { widths: ["8", "9", "16"], heights: HEIGHTS_4050 },
+    Almond: { widths: ["7.6", "8", "9", "16"], heights: SHORT_HEIGHTS },
+    "Chocolate Brown": { widths: ["7.6", "8", "9", "16"], heights: SHORT_HEIGHTS },
+    Sandtone: { widths: ["7.6", "8", "9", "16"], heights: SHORT_HEIGHTS },
+    Black: { widths: ["8", "9", "16"], heights: SHORT_HEIGHTS },
   },
   "4051": {
-    White: { widths: ["8", "9", "16"], heights: HEIGHTS_4050 },
-    Black: { widths: ["8", "9", "16"], heights: HEIGHTS_4050 },
+    White: { widths: ["8", "9", "16"], heights: SHORT_HEIGHTS },
+    Black: { widths: ["8", "9", "16"], heights: SHORT_HEIGHTS },
   },
   "4053": {
-    White: { widths: ["8", "9", "16"], heights: HEIGHTS_4050 },
-    Black: { widths: ["8", "9", "16"], heights: HEIGHTS_4050 },
+    White: { widths: ["8", "9", "16"], heights: SHORT_HEIGHTS },
+    Black: { widths: ["8", "9", "16"], heights: SHORT_HEIGHTS },
   },
-  // 9130/9133 went on the floor 3/9/2026, White only. Heights are the standard
-  // band — Brandon specified widths and colour, not heights, and every other
-  // secondary model floors 6'3" to 8'0".
+  // 9130/9133 went on the floor 3/9/2026: White only, 8/9/16 wide.
   "9130": {
     White: { widths: ["8", "9", "16"], heights: SHORT_HEIGHTS },
   },
@@ -159,12 +156,56 @@ export function colorInStock(
   if (!entry) return false;
   if (widthCode != null && !entry.widths.includes(widthCode)) return false;
   if (heightCode != null && !entry.heights.includes(heightCode)) return false;
-  // A height floored in solid only: windows at that size are a special order,
-  // even though the size itself is on the floor.
-  if (heightCode != null && style != null && style !== "solid") {
-    const solidOnly =
-      SOLID_ONLY_HEIGHTS[model] ?? SOLID_ONLY_HEIGHTS[dataKey(model)] ?? [];
-    if (solidOnly.includes(heightCode)) return false;
+  // A height floored in solid only. The UI does not offer windows there, so
+  // this is a backstop for anything reaching the engine directly.
+  if (heightCode != null && style != null && style !== "solid" && solidOnlyHeight(heightCode)) {
+    return false;
   }
   return true;
+}
+
+/** Order two size codes: "7.6" is 7 feet 6 inches, not 7.6 feet. */
+export function compareSizeCodes(a: string, b: string): number {
+  const parse = (c: string) => {
+    const [ft, inch] = c.split(".");
+    return [Number(ft), Number(inch ?? 0)] as const;
+  };
+  const [af, ai] = parse(a);
+  const [bf, bi] = parse(b);
+  return af - bf || ai - bi;
+}
+
+/** A size code back into feet and inches. */
+export function sizeParts(code: string): { ft: number; in: number } {
+  const [ft, inch] = code.split(".");
+  return { ft: Number(ft), in: Number(inch ?? 0) };
+}
+
+/** `7.6` -> `7'6"`, for a dropdown label. */
+export function sizeLabel(code: string): string {
+  const { ft, in: inches } = sizeParts(code);
+  return `${ft}'${inches}"`;
+}
+
+/**
+ * Every width DDS floors for a model, across all of its colours.
+ *
+ * Deliberately the union rather than one colour's list. The dropdown offers a
+ * size if it is stocked at all; whether THIS colour is stocked at that size is
+ * a separate question, answered by colorInStock and shown as the special order
+ * badge. A 9133 is floored 8/9/16 and only in White, so a Black 8'0" still
+ * quotes — it just quotes as a special order, which is what the counter needs
+ * to see rather than an empty dropdown.
+ */
+export function stockedWidths(model: string): string[] {
+  const entry = STOCK_MATRIX[model] ?? STOCK_MATRIX[dataKey(model)];
+  if (!entry) return [];
+  return [...new Set(Object.values(entry).flatMap((v) => v.widths))].sort(compareSizeCodes);
+}
+
+/** Every height DDS floors for a model, across all of its colours. */
+export function stockedHeights(model: string): string[] {
+  const entry = STOCK_MATRIX[model] ?? STOCK_MATRIX[dataKey(model)];
+  if (!entry) return [];
+  return [...new Set(Object.values(entry).flatMap((v) => v.heights))].sort(compareSizeCodes);
 }

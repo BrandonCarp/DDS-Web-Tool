@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { useCustomerJob } from "@/components/CustomerJobFields";
 import { CopyButton, CopyPrice, priceText } from "@/components/CopyButton";
-import { SPECIAL, SPECIAL_COMMERCIAL, SO_MANUFACTURERS, seriesFor, isOutsideMfr } from "@/lib/pricing/data/special-orders";
+import {
+  SPECIAL, SPECIAL_COMMERCIAL, SPECIAL_COMMERCIAL_PINNED, SPECIAL_COMMERCIAL_SERIES,
+  commercialSeriesOf, SO_MANUFACTURERS, seriesFor, isOutsideMfr,
+} from "@/lib/pricing/data/special-orders";
 import { specialDoorQuote, hasGrid, griddedWidths } from "@/lib/pricing/data/special-door-pricing";
 import { COLORS } from "@/lib/pricing/data/catalog-meta";
 import { windowDesigns } from "@/lib/pricing/data/inserts";
@@ -88,6 +91,7 @@ export function SpecialTool() {
   const [model, setModel] = useState("");
   // commercial
   const [cMfr, setCMfr] = useState("Clopay");
+  const [cSeries, setCSeries] = useState("");
   const [cModel, setCModel] = useState("");
   // shared
   const [kind, setKind] = useState<"door" | "section">("door");
@@ -108,6 +112,21 @@ export function SpecialTool() {
   const md = ser && ser.type === "margin" && ser.models && model ? ser.models[model] : null;
   // A margin collection with no model table needs no model chosen to price.
   const flatMargin = ser?.type === "margin" && !ser.models;
+
+  // The collection dropdown carries the five daily models at the top, above the
+  // series themselves. Picking one jumps straight to that model; picking a
+  // series lists its models below. Model numbers and series names never look
+  // alike, so one dropdown can hold both without ambiguity.
+  const isPinnedModel = (v: string) => SPECIAL_COMMERCIAL_PINNED.includes(v);
+  const commSeriesName = isPinnedModel(cSeries) ? (commercialSeriesOf(cSeries) ?? "") : cSeries;
+  const commModels = SPECIAL_COMMERCIAL_SERIES.find((g) => g.name === commSeriesName)?.models ?? [];
+  const pickCommSeries = (v: string) => {
+    setCSeries(v);
+    // A pinned pick IS the model. A series pick clears it so one must be chosen.
+    setCModel(isPinnedModel(v) ? v : "");
+    setPrice("");
+    setSaved(false);
+  };
 
   // The configurator appears only for models Clopay has gridded. Everything
   // else keeps the manual total path exactly as it was.
@@ -151,10 +170,10 @@ export function SpecialTool() {
       ? ser?.type === "multiplier" || flatMargin
         ? `${series} special order`
         : `${model} ${kind === "section" ? "sections" : "door"}`
-      : `${cMfr} ${cModel} ${kind === "section" ? "sections" : "complete door"}`;
+      : `${cMfr} ${cModel}${commercialSeriesOf(cModel) ? ` (${commercialSeriesOf(cModel)})` : ""} ${kind === "section" ? "sections" : "complete door"}`;
 
   function pickScope(v: "residential" | "commercial") {
-    setScope(v); setSeries(""); setModel(""); setCModel(""); setKind("door"); setPrice(""); setSaved(false);
+    setScope(v); setSeries(""); setModel(""); setCSeries(""); setCModel(""); setKind("door"); setPrice(""); setSaved(false);
   }
   function pickSeries(v: string) {
     setSeries(v); setModel(""); setKind("door"); setPrice(""); setSaved(false);
@@ -226,19 +245,36 @@ export function SpecialTool() {
               <>
                 <div className="field"><label className="lbl">Manufacturer <span className="req">*</span></label>
                   <div className="selectwrap">
-                    <select value={cMfr} onChange={(e) => { setCMfr(e.target.value); setCModel(""); setSaved(false); }}>
+                    <select value={cMfr} onChange={(e) => { setCMfr(e.target.value); setCSeries(""); setCModel(""); setSaved(false); }}>
                       {Object.keys(SPECIAL_COMMERCIAL).map((m) => <option key={m} value={m}>{m}</option>)}
                     </select>
                   </div>
                 </div>
-                <div className="field"><label className="lbl">Model <span className="req">*</span></label>
+                <div className="field"><label className="lbl">Collection / Series <span className="req">*</span></label>
                   <div className="selectwrap">
-                    <select data-testid="so-comm-model" value={cModel} onChange={(e) => { setCModel(e.target.value); setSaved(false); }}>
+                    <select data-testid="so-comm-series" value={cSeries} onChange={(e) => pickCommSeries(e.target.value)}>
                       <option value="">Select…</option>
-                      {(SPECIAL_COMMERCIAL[cMfr]?.models ?? []).map((m) => <option key={m} value={m}>{m}</option>)}
+                      {/* The five daily models sit above the series. Each also
+                          appears inside its own series further down. */}
+                      {SPECIAL_COMMERCIAL_PINNED.map((m) => (
+                        <option key={`pin-${m}`} value={m}>{m}</option>
+                      ))}
+                      {SPECIAL_COMMERCIAL_SERIES.map((g) => (
+                        <option key={g.name} value={g.name}>{g.name}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
+                {cSeries && (
+                  <div className="field"><label className="lbl">Model <span className="req">*</span></label>
+                    <div className="selectwrap">
+                      <select data-testid="so-comm-model" value={cModel} onChange={(e) => { setCModel(e.target.value); setSaved(false); }}>
+                        <option value="">Select…</option>
+                        {commModels.map((m) => <option key={m} value={m}>{m}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>

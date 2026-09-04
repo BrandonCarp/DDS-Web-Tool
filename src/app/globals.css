@@ -325,6 +325,10 @@ html, body { margin: 0; padding: 0; }
 .tool-shell .dimrow input { width: 62px; text-align: center; padding-left: 6px; padding-right: 6px; }
 .tool-shell .dimrow .u { font-size: 12.5px; color: var(--muted); margin-right: 6px; }
 .tool-shell .dimrow select.insel { width: 68px; text-align: center; padding: 8px 6px; }
+/* Size dropdowns sit wider than the old typed boxes so the chevron has room
+   next to the number, closer to how Clopay's own size fields read. */
+.tool-shell .dimrow .dimsel { flex: none; width: 92px; }
+.tool-shell .dimrow .dimsel select { width: 100%; text-align: center; padding: 8px 22px 8px 10px; }
 /* No up/down spinner arrows on number inputs — users type the value directly. */
 .tool-shell input[type=number]::-webkit-outer-spin-button,
 .tool-shell input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
