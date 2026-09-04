@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { specialDoorQuote, hasGrid, griddedHeights, griddedWidths, compareWidths } from "./data/special-door-pricing";
 import { SPECIAL_DOORS } from "./data/special-doors";
 import { ADDONS } from "./data/addons";
+import { priceResidential } from "./engine";
 
 const M = "4050/4051/4053";
 const base = { model: M, height: "7", color: "White", track: "r12" as const, spring: "extension" as const, lock: "none" as const };
@@ -142,5 +143,37 @@ describe("gridded door verbiage", () => {
     // "8.10" is 8 feet 10 inches, not 8.1 feet.
     expect(d({ width: "8.10" })).toContain(`8'10" x 7'0"`);
     expect(d({ width: "8.2" })).toContain(`8'2" x 7'0"`);
+  });
+});
+
+describe("the 6'0\"-7'10\" flat band", () => {
+  const BAND = { solid: 837.75, glass: 968.32, inserts: 1030.6 };
+  const WIDTHS = ["6", "6.2", "6.4", "6.6", "6.8", "6.10", "7", "7.2", "7.4", "7.6", "7.8", "7.10"];
+
+  it("prices every width in the band identically, in all three styles", () => {
+    // The 4050 at 7'0" tall is flat from 6'0" to 7'10". The sheet's 6'0" and
+    // 6'2" rows carried the band below and are corrected in the generator.
+    for (const width of WIDTHS) {
+      for (const [style, expected] of Object.entries(BAND)) {
+        expect(
+          specialDoorQuote({ ...base, width, style: style as "solid" }).quote?.unitPrice,
+          `${width} ${style}`,
+        ).toBe(expected);
+      }
+    }
+  });
+
+  it("agrees with what the residential tab quotes for the same door", () => {
+    // Same door, two tabs, one number — whether it lands on the stock grid or
+    // the standard one.
+    for (const width of WIDTHS) {
+      const [ft, inch] = width.split(".");
+      const r = priceResidential("4050", { widthFt: +ft, widthIn: +(inch ?? 0), heightFt: 7, heightIn: 0 }, "solid");
+      expect(r.price, `${width} residential`).toBe(BAND.solid);
+    }
+  });
+
+  it("drops back down at 8'0\", where the stocked size takes over", () => {
+    expect(specialDoorQuote({ ...base, width: "8", style: "solid" }).quote?.unitPrice).toBe(723.25);
   });
 });

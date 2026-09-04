@@ -18,14 +18,14 @@ export const SPECIAL_DOORS: Record<string, Record<string, Record<string, Partial
   "4050/4051/4053": {
     "7": {
       "6": {
-        "solid": 723.25,
-        "glass": 856.81,
-        "inserts": 916.09
+        "solid": 837.75,
+        "glass": 968.32,
+        "inserts": 1030.6
       },
       "6.2": {
-        "solid": 723.25,
-        "glass": 856.81,
-        "inserts": 916.09
+        "solid": 837.75,
+        "glass": 968.32,
+        "inserts": 1030.6
       },
       "6.4": {
         "solid": 837.75,

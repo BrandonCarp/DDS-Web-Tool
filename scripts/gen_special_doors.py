@@ -40,6 +40,25 @@ SIZE = re.compile(r"^(\d+)'(\d+)\"?\s*X\s*(\d+)'(\d+)\"?$", re.I)
 STYLES = ("solid", "glass", "inserts")
 
 
+# Rows the sheet gets wrong, corrected on Brandon's word.
+#
+# The 4050 at 7'0" tall prices flat from 6'0" to 7'10". The sheet's 6'0" and
+# 6'2" rows carry the band BELOW that, and their GLASS cells were also $3.00
+# above what the stated 43M margin gives — the two symptoms of one bad block.
+# Applied here rather than edited into the generated file so that a regenerate
+# does not quietly restore them.
+#
+# Keyed model -> height -> width -> style.
+CORRECTIONS = {
+    "4050/4051/4053": {
+        "7": {
+            "6": {"solid": 837.75, "glass": 968.32, "inserts": 1030.60},
+            "6.2": {"solid": 837.75, "glass": 968.32, "inserts": 1030.60},
+        }
+    }
+}
+
+
 def width_order(key: str):
     """Sort by feet then inches.
 
@@ -119,6 +138,19 @@ def main():
         print("manual total entry rather than quoting a guess:")
         for w, missing in sorted(incomplete.items(), key=lambda x: width_order(x[0])):
             print(f"  {w}: no {', '.join(missing)}")
+        print()
+
+    fixes = CORRECTIONS.get(model, {}).get(height, {})
+    for width, styles in fixes.items():
+        if width not in grid:
+            print(f"NOTE: correction for {width} has no row on the sheet", file=sys.stderr)
+            continue
+        for style, value in styles.items():
+            was = grid[width].get(style)
+            if was is not None and abs(was - value) > 0.005:
+                print(f"  corrected {width} {style}: {was} -> {value}")
+            grid[width][style] = value
+    if fixes:
         print()
 
     payload = {model: {height: {w: grid[w] for w in sorted(grid, key=width_order)}}}

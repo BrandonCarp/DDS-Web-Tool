@@ -218,12 +218,13 @@ describe("4050-4051-4053 odd-size resolution (finer width groups)", () => {
   const price = (wf: number, wi: number, tier: number, style: "solid" | "glass" | "inserts" = "solid") =>
     priceResidential("4050-4051-4053", dim(wf, wi, tier, 0), style).price;
 
-  it("splits 6' at 6'0-6'2 vs 6'4-6'10 (7' tall)", () => {
-    expect(price(6, 0, 7)).toBeCloseTo(717.17, 2);
-    expect(price(6, 2, 7)).toBeCloseTo(717.17, 2);
-    expect(price(6, 4, 7)).toBeCloseTo(829.14, 2);
-    expect(price(6, 6, 7)).toBeCloseTo(829.14, 2);
-    expect(price(6, 10, 7)).toBeCloseTo(829.14, 2);
+  it("runs flat from 6'0 to 7'10 (7' tall)", () => {
+    // Superseded 4/9/2026. The grid used to split 6'0-6'2 from 6'4-6'10 at
+    // 717.17 / 829.14; Brandon confirmed the 4050 prices flat across the whole
+    // band at 7' tall, and the sheet's 6'0" and 6'2" rows were simply wrong.
+    for (const [ft, inch] of [[6, 0], [6, 2], [6, 4], [6, 6], [6, 10], [7, 0], [7, 2], [7, 10]] as const) {
+      expect(price(ft, inch, 7), `${ft}'${inch}"`).toBeCloseTo(837.75, 2);
+    }
   });
   it("splits 15' at 15'2/4/10 vs 15'6/8", () => {
     expect(price(15, 2, 7)).toBeCloseTo(1473.98, 2);

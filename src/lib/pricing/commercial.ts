@@ -51,6 +51,33 @@ function commWidthToken(label: string): string {
   const m = String(label).match(/(\d+)′(\d+)″/);
   return m ? `${m[1]}.${m[2]}` : "";
 }
+/**
+ * Ribbed-steel wording, by model.
+ *
+ * These six read differently from the rest of the commercial range: the
+ * material leads the description rather than a grade word, and the insulated
+ * variants call out the backer. Anything not listed here keeps the generic
+ * wording it always had.
+ *
+ * V and S differ only by the colour they are usually sold in, not by
+ * construction, so they share a phrase — colour stays a separate choice and is
+ * never assumed from the model.
+ */
+const RIBBED: Record<string, { material: string; backer: boolean }> = {
+  "524": { material: "hollow steel ribbed", backer: false },
+  "2415": { material: "hollow steel ribbed", backer: false },
+  "524V": { material: "steel ribbed", backer: true },
+  "2415V": { material: "steel ribbed", backer: true },
+  "524S": { material: "steel ribbed", backer: true },
+  "2415S": { material: "steel ribbed", backer: true },
+};
+
+/** Window counts read as words on these lines: "two 24x12 windows". */
+const COUNT_WORDS = ["", "one", "two", "three", "four", "five", "six", "seven", "eight"];
+function countWord(n: number): string {
+  return COUNT_WORDS[n] ?? String(n);
+}
+
 export function commStockCheck(model: string, sizeLabel: string): { inStock: boolean } {
   const wtok = commWidthToken(sizeLabel);
   const hit = STOCK_COMM.find((s) => s.model === String(model) && s.widths.includes(wtok));
@@ -99,11 +126,18 @@ export function quoteCommercial(input: CommInput): CommQuote {
     // Windows are called out by the section they sit in — "in the third
     // section" — because that is what the installer needs off the line. Plain
     // ASCII inch marks throughout: this string is pasted into QuickBooks.
+    const ribbed = RIBBED[model];
     const winTxt =
       input.glass === "glass"
         ? `${model === "3200" ? "insulated 24x12" : cgrade} windows in the ${ordinal(input.winSection)} section`
         : "solid, no windows";
     const colorTxt = `in the color ${(input.color || "White").toLowerCase()}`;
+    // Ribbed models lead with the material and drop the grade wording; the
+    // model prefix and the track/spring/lock tail are unchanged.
+    const bodyTxt = ribbed
+      ? [ribbed.material, ribbed.backer ? "insulated steel backer" : null,
+         input.glass === "glass" ? winTxt : null].filter(Boolean).join(", ")
+      : `${colorTxt}, ${winTxt}`;
     const mountTxt = input.mount === "reverse" ? '2" angle mount track to steel' : '2" angle mount track to wood';
     // FV is FULL VERTICAL LIFT. It read "full view" here, which is a different
     // product entirely — a full-view door is aluminium and glass. The dropdown
@@ -119,7 +153,9 @@ export function quoteCommercial(input: CommInput): CommQuote {
       unitPrice: val,
       sub: `${input.size} · ${glassNm} · ${trackNm}`,
       stock: commStockCheck(model, input.size),
-      description: `${input.mfr || "Clopay"} Model ${model}, ${dimTxt}, ${colorTxt}, ${winTxt}, ${mountTxt}, ${radiusTxt}, ${cspringTxt}, ${clockTxt}`,
+      description: RIBBED[model]
+        ? `${input.mfr || "Clopay"} Model ${model}, ${dimTxt}, ${bodyTxt}, ${colorTxt}, ${mountTxt}, ${radiusTxt}, ${cspringTxt}, ${clockTxt}`
+        : `${input.mfr || "Clopay"} Model ${model}, ${dimTxt}, ${colorTxt}, ${winTxt}, ${mountTxt}, ${radiusTxt}, ${cspringTxt}, ${clockTxt}`,
     };
   }
 
@@ -215,8 +251,16 @@ export function quoteCommercial(input: CommInput): CommQuote {
   // be pasted straight onto a QuickBooks estimate line.
   const nWin = input.secKind === "int" ? Math.min(Math.trunc(Number(input.windows)) || 0, maxWindows(rFeet)) : 0;
   const asciiWidth = `${ft}'${inch ? inch + '"' : '0"'}`;
-  const kindPhrase =
-    input.secKind === "bt"
+  const ribbed = RIBBED[model];
+  // Ribbed models: material, then the section, then the backer, then the
+  // windows, then the colour. Everything else keeps its old wording.
+  const kindPhrase = ribbed
+    ? [
+        `${ribbed.material} ${input.secKind === "bt" ? "bottom" : "intermediate"} section`,
+        ribbed.backer ? "insulated steel backer" : null,
+        nWin > 0 ? `${countWord(nWin)} 24x12 windows` : null,
+      ].filter(Boolean).join(", ")
+    : input.secKind === "bt"
       ? "bottom section"
       : nWin > 0
         ? `${nWin} 24x12 window section`
