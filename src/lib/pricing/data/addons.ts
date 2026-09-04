@@ -1,4 +1,9 @@
-// AUTO-GENERATED add-on amounts / upcharges from the catalog (matches index.html).
+// Add-on amounts and upcharges. NOT generated — there is no script for this
+// file and it must not be regenerated from the old catalog or from a price
+// sheet footer, both of which carry superseded figures. Change a number here
+// and nowhere else.
+//
+// Torsion is 35 as of 2/9/2026.
 
 export const ADDONS = {
   "torsion": 35,

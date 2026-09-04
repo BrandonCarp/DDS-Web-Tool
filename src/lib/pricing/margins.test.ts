@@ -49,9 +49,9 @@ describe("Clopay margins (RES_CLOPAY_MARGINS, 31/8/2026)", () => {
 });
 
 describe("torsion spring adder", () => {
-  it("is 35, not 30", () => {
-    // Raised across the board 2/9/2026. The 4050-7FT sheet still printed 30 in
-    // its footer, which is stale — Brandon's instruction supersedes it.
+  it("is 35", () => {
+    // Pinned because price-sheet footers and the old catalog both carry an
+    // earlier figure; this is the only place the number lives.
     expect(ADDONS.torsion).toBe(35);
   });
 });
