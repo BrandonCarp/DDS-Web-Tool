@@ -230,28 +230,28 @@ describe("section colour availability", () => {
 });
 
 describe("outside manufacturer special orders", () => {
-  const MFRS = ["Haas", "Amarr", "CHI", "Overhead", "Wayne Dalton"];
+  const MFRS = ["Haas Doors", "American Tradition", "Amarr", "CHI", "Overhead", "Wayne Dalton"];
   const sell = (cost: number, mult: number, margin: number) => (cost * mult) / (1 - margin / 100);
 
-  it("carries all five on 1.09 with 29 door / 37 section", () => {
+  it("carries every outside line on flat 45 door / 49 section", () => {
+    // No multiplier, no per-manufacturer exceptions, no doubling.
     for (const m of MFRS) {
       const ser = SPECIAL[m];
       expect(ser, m).toBeTruthy();
-      expect(ser.type).toBe("multiplier");
-      if (ser.type !== "multiplier") return;
-      expect(ser.multiplier, m).toBe(1.09);
-      expect(ser.cost_margin, m).toBe(29);
-      expect(ser.section_margin, m).toBe(37);
-      expect(ser.small_section_under, m).toBe(250);
+      expect(ser.type, m).toBe("margin");
+      expect(ser.door, m).toBe(m === "American Tradition" ? 35 : 45);
+      expect(ser.section, m).toBe(49);
+      expect(ser.models, m).toBeUndefined();
     }
   });
 
-  it("prices a complete door at 1.09 x 29", () => {
-    expect(sell(1000, 1.09, 29)).toBeCloseTo(1535.21, 2);
+
+  it("prices a complete door at a flat 45", () => {
+    expect(sell(1000, 1, 45)).toBeCloseTo(1818.18, 2);
   });
 
-  it("prices a normal section at 1.09 x 37", () => {
-    expect(sell(500, 1.09, 37)).toBeCloseTo(865.08, 2);
+  it("prices a section at a flat 49", () => {
+    expect(sell(500, 1, 49)).toBeCloseTo(980.39, 2);
   });
 
   it("prices a section under $250 at exactly double the entered price", () => {
@@ -285,12 +285,13 @@ describe("special order manufacturer grouping", () => {
     for (const m of SO_OUTSIDE_MFRS) expect(clopay, m).not.toContain(m);
   });
 
-  it("gives each outside maker exactly one series, named after itself", () => {
-    for (const m of SO_OUTSIDE_MFRS) {
+  it("gives each outside maker its own series list", () => {
+    // Haas sells two lines through one account and reads like Clopay:
+    // manufacturer, then series. The rest have one, named after themselves.
+    expect(seriesFor("Haas")).toEqual(["Haas Doors", "American Tradition"]);
+    for (const m of ["Amarr", "CHI", "Overhead", "Wayne Dalton"]) {
       expect(seriesFor(m), m).toEqual([m]);
-      expect(isOutsideMfr(m), m).toBe(true);
     }
-    expect(isOutsideMfr("Clopay")).toBe(false);
   });
 
   it("leaves no series unreachable from some manufacturer", () => {

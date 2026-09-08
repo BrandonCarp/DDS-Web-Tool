@@ -1,37 +1,33 @@
 // Ported 1:1 from the production single-file tool (CATALOG.special).
 // Special-order collections: margin-based (per model, door vs sections, optional
-// Ultra Grain margin) or multiplier-based (Clopay list × multiplier, cost margin).
+// Ultra Grain margin). Every series is margin-based; there is no multiplier.
 
 export type SpecialModel = { door: number; section: number; ug?: boolean; new?: boolean };
-export type SpecialSeries =
-  | {
-      type: "margin";
-      /**
-       * Per-model margins. Absent when the whole collection shares one, as
-       * Canyon Ridge and Avante do — those have no model breakdown to choose
-       * from, just a collection margin.
-       */
-      models?: Record<string, SpecialModel>;
-      /** Collection-wide margins, used when there is no per-model table. */
-      door?: number;
-      section?: number;
-      ug?: { single: number; double: number };
-      ug_margin?: number;
-    }
-  | {
-      type: "multiplier";
-      multiplier: number;
-      /** Margin on a complete door. */
-      cost_margin: number;
-      /** Margin on replacement sections, when it differs from the door. */
-      section_margin?: number;
-      /**
-       * Sections entered under this price are simply doubled — no multiplier,
-       * no margin. A small section costs the same to handle, freight and stage
-       * as a large one, so the margins do not cover the work.
-       */
-      small_section_under?: number;
-    };
+/**
+ * A special order series.
+ *
+ * One shape for everything as of 9/9/2026. Every series prices the same way —
+ * the counter enters the manufacturer's total and a margin is applied — so the
+ * old multiplier variant is gone along with the 1.09 and the small-section
+ * doubling that lived on it.
+ *
+ * Which margin applies, in order: a chosen brand, then the model's own, then
+ * the collection's. A series carries `models` or a flat `door`/`section`, not
+ * usually both.
+ */
+export interface SpecialSeries {
+  type: "margin";
+  /**
+   * Per-model margins. Absent when the whole collection shares one, as the
+   * outside manufacturers, Canyon Ridge and Avante do.
+   */
+  models?: Record<string, SpecialModel>;
+  /** Collection-wide margins, used when there is no per-model table. */
+  door?: number;
+  section?: number;
+  ug?: { single: number; double: number };
+  ug_margin?: number;
+}
 
 export const SPECIAL: Record<string, SpecialSeries> = {
   "Gallery Collection": {
@@ -204,42 +200,40 @@ export const SPECIAL: Record<string, SpecialSeries> = {
       "9200/9203": { "door": 43, "section": 49 }
     }
   },
-  // Outside manufacturers. DDS pays list x 1.09, then 29 on a complete door and
-  // 37 on sections. Same terms across all five, so they share one shape.
-  "Haas": {
-    "type": "multiplier",
-    "multiplier": 1.09,
-    "cost_margin": 29,
-    "section_margin": 37,
-    "small_section_under": 250
+  // Outside manufacturers. Flat 45 on a complete door, 49 on sections.
+  //
+  // The 1.09 and the sub-$250 section doubling were both removed on 9/9/2026 —
+  // these now price exactly the way every Clopay collection does, off the total
+  // the counter enters. There is no multiplier anywhere in this file.
+  "Haas Doors": {
+    "type": "margin",
+    "door": 45,
+    "section": 49
+  },
+  "American Tradition": {
+    "type": "margin",
+    "door": 35,
+    "section": 49
   },
   "Amarr": {
-    "type": "multiplier",
-    "multiplier": 1.09,
-    "cost_margin": 29,
-    "section_margin": 37,
-    "small_section_under": 250
+    "type": "margin",
+    "door": 45,
+    "section": 49
   },
   "CHI": {
-    "type": "multiplier",
-    "multiplier": 1.09,
-    "cost_margin": 29,
-    "section_margin": 37,
-    "small_section_under": 250
+    "type": "margin",
+    "door": 45,
+    "section": 49
   },
   "Overhead": {
-    "type": "multiplier",
-    "multiplier": 1.09,
-    "cost_margin": 29,
-    "section_margin": 37,
-    "small_section_under": 250
+    "type": "margin",
+    "door": 45,
+    "section": 49
   },
   "Wayne Dalton": {
-    "type": "multiplier",
-    "multiplier": 1.09,
-    "cost_margin": 29,
-    "section_margin": 37,
-    "small_section_under": 250
+    "type": "margin",
+    "door": 45,
+    "section": 49
   },
   "Modern Collection": {
     "type": "margin",
@@ -368,19 +362,38 @@ export function commercialSeriesOf(model: string): string | null {
  */
 export const SO_OUTSIDE_MFRS = ["Haas", "Amarr", "CHI", "Overhead", "Wayne Dalton"] as const;
 
+/**
+ * Series sold under each outside manufacturer.
+ *
+ * Haas sells two lines through one account, so it reads exactly like Clopay:
+ * pick the manufacturer, then pick the line. Everyone else has one series named
+ * after themselves and the second dropdown is skipped.
+ */
+export const SO_OUTSIDE_SERIES: Record<string, string[]> = {
+  Haas: ["Haas Doors", "American Tradition"],
+  Amarr: ["Amarr"],
+  CHI: ["CHI"],
+  Overhead: ["Overhead"],
+  "Wayne Dalton": ["Wayne Dalton"],
+};
+
 export const SO_MANUFACTURERS = ["Clopay", ...SO_OUTSIDE_MFRS] as const;
 
-/** Series selectable under a manufacturer. Outside makers have exactly one. */
+/** Series selectable under a manufacturer. */
 export function seriesFor(mfr: string): string[] {
   if (mfr === "Clopay") {
-    return Object.keys(SPECIAL).filter(
-      (s) => !(SO_OUTSIDE_MFRS as readonly string[]).includes(s),
-    );
+    const outside = new Set(Object.values(SO_OUTSIDE_SERIES).flat());
+    return Object.keys(SPECIAL).filter((s) => !outside.has(s));
   }
-  return Object.keys(SPECIAL).filter((s) => s === mfr);
+  return SO_OUTSIDE_SERIES[mfr] ?? [];
 }
 
-/** True when the manufacturer needs no second dropdown. */
+/** True when a manufacturer sells one line, so the series is implied. */
+export function hasSingleSeries(mfr: string): boolean {
+  return seriesFor(mfr).length === 1;
+}
+
+/** True when the manufacturer is not Clopay. */
 export function isOutsideMfr(mfr: string): boolean {
   return (SO_OUTSIDE_MFRS as readonly string[]).includes(mfr);
 }

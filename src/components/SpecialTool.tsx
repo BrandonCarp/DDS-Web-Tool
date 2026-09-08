@@ -5,7 +5,7 @@ import { useCustomerJob } from "@/components/CustomerJobFields";
 import { CopyButton, CopyPrice, priceText } from "@/components/CopyButton";
 import {
   SPECIAL, SPECIAL_COMMERCIAL, SPECIAL_COMMERCIAL_PINNED, SPECIAL_COMMERCIAL_SERIES,
-  commercialSeriesOf, SO_MANUFACTURERS, seriesFor, isOutsideMfr,
+  commercialSeriesOf, SO_MANUFACTURERS, seriesFor, hasSingleSeries,
 } from "@/lib/pricing/data/special-orders";
 import {
   specialDoorQuote, hasGrid, griddedWidths, griddedHeights,
@@ -19,7 +19,6 @@ import { windowDesigns } from "@/lib/pricing/data/inserts";
 const fmt = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 // Ported 1:1 from the production tool's soNumbers():
-//   multiplier series: cost = Clopay list × multiplier, sell = cost / (1 - cost_margin/100)
 //   margin series:     sell = list / (1 - margin/100); Ultra Grain swaps in the UG margin (no $ adder)
 /**
  * Parse a price the way a counter actually types it.
@@ -40,42 +39,24 @@ function soNumbers(series: string, model: string, kind: "door" | "section", pric
   const ser = SPECIAL[series];
   const list = parsePrice(priceStr);
   if (!ser || Number.isNaN(list)) return null;
-  let costBasis: number, margin: number;
-  if (ser.type === "multiplier") {
-    // A cheap section costs the same to handle, freight and stage as an
-    // expensive one, so under the threshold the margins are set aside entirely
-    // and the entered price is simply doubled. No multiplier, no margin — a
-    // $250 section sells for $500.
-    if (
-      kind === "section" &&
-      ser.small_section_under != null &&
-      list < ser.small_section_under
-    ) {
-      return { sell: list * 2, margin: null as number | null, doubled: true };
-    }
-    costBasis = list * ser.multiplier;
-    margin = kind === "section" ? (ser.section_margin ?? ser.cost_margin) : ser.cost_margin;
-  } else if (!ser.models) {
-    // Collection-wide margin: Canyon Ridge and Avante have no model to pick,
-    // so the collection's own door/section margins apply to whatever total the
-    // counter entered.
-    if (ser.door == null || ser.section == null) return null;
-    margin = kind === "section" ? ser.section : ser.door;
-    costBasis = list;
-    return { sell: costBasis / (1 - margin / 100), margin, doubled: false };
-  } else {
+
+  // One rule for every series now: the counter enters the manufacturer's total
+  // and a margin is applied to it. No multiplier, no small-section doubling —
+  // both were removed 9/9/2026 when the outside makers moved to flat 45/49.
+  //
+  // The model's own margins where a series has a model table, the collection's
+  // otherwise. Haas Doors and American Tradition are separate series, so they
+  // need nothing special here.
+  let margin: number;
+  if (ser.models) {
     const md = ser.models[model];
     if (!md) return null;
-    // FLAT MARGIN. The counter enters the Clopay portal TOTAL (subtotal +
-    // energy surcharge, no MPQ), which already carries any Ultra Grain premium
-    // Clopay charged. So the model's own margin applies and nothing is swapped
-    // in. SPECIAL.ug_margin and SPECIAL.ug (the $216.72 / $433.51 single and
-    // double adders) are left in the data, unused, against a future change of
-    // input basis — they are list-side figures, not sell-side.
     margin = kind === "section" ? md.section : md.door;
-    costBasis = list;
+  } else {
+    if (ser.door == null || ser.section == null) return null;
+    margin = kind === "section" ? ser.section : ser.door;
   }
-  return { sell: costBasis / (1 - margin / 100), margin: margin as number | null, doubled: false };
+  return { sell: list / (1 - margin / 100), margin: margin as number | null, doubled: false };
 }
 
 // Commercial special orders: Clopay 3200/524 — 45% margin complete door, 49% sections.
@@ -122,7 +103,7 @@ export function SpecialTool() {
   const ser = series ? SPECIAL[series] : null;
   const md = ser && ser.type === "margin" && ser.models && modelGroup ? ser.models[modelGroup] : null;
   // A margin collection with no model table needs no model chosen to price.
-  const flatMargin = ser?.type === "margin" && !ser.models;
+  const flatMargin = !!ser && !ser.models;
 
 
   // The collection dropdown carries the five daily models at the top, above the
@@ -201,7 +182,7 @@ export function SpecialTool() {
   const copyText = gResult?.quote?.description ?? null;
   const label =
     scope === "residential"
-      ? ser?.type === "multiplier" || flatMargin
+      ? flatMargin
         ? `${series} special order`
         : `${modelMember || modelGroup} ${kind === "section" ? "sections" : "door"}`
       : `${cMfr} ${cModel}${commercialSeriesOf(cModel) ? ` (${commercialSeriesOf(cModel)})` : ""} ${kind === "section" ? "sections" : "complete door"}`;
@@ -257,14 +238,14 @@ export function SpecialTool() {
                         setRMfr(m);
                         // An outside maker has one series, so pick it outright
                         // rather than making the counter choose from a list of one.
-                        pickSeries(isOutsideMfr(m) ? m : "");
+                        pickSeries(hasSingleSeries(m) ? seriesFor(m)[0] : "");
                       }}
                     >
                       {SO_MANUFACTURERS.map((m) => <option key={m} value={m}>{m}</option>)}
                     </select>
                   </div>
                 </div>
-                {!isOutsideMfr(rMfr) && (
+                {!hasSingleSeries(rMfr) && (
                   <div className="field"><label className="lbl">Collection / series <span className="req">*</span></label>
                     <div className="selectwrap">
                       <select data-testid="so-series" value={series} onChange={(e) => pickSeries(e.target.value)}>
@@ -313,29 +294,6 @@ export function SpecialTool() {
             )}
           </div>
 
-          {scope === "residential" && ser && ser.type === "multiplier" && (
-            <div className="step">
-              <div className="step-h"><span className="step-n">2</span><h3>{series}</h3></div>
-              {ser.section_margin != null && (
-                <div className="field">
-                  <label className="lbl">Ordering</label>
-                  <div className="chips">
-                    <button type="button" className={`chip ${kind === "door" ? "sel" : ""}`} onClick={() => { setKind("door"); setSaved(false); }}>Door</button>
-                    <button type="button" className={`chip ${kind === "section" ? "sel" : ""}`} onClick={() => { setKind("section"); setSaved(false); }}>Sections</button>
-                  </div>
-                </div>
-              )}
-              <div className="field" style={{ marginTop: 4 }}>
-                <label className="lbl">Enter total = sub total + energy surcharge — do not apply MPQ <span className="req">*</span></label>
-                <input type="text" inputMode="decimal" value={price} onChange={(e) => { setPrice(e.target.value); setSaved(false); }} placeholder="0.00" />
-                {kind === "section" && ser.small_section_under != null && (
-                  <div className="muted-note" style={{ marginTop: 6 }}>
-                    Sections under ${ser.small_section_under} are priced at double the entered price
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
 
           {scope === "residential" && ser && ser.type === "margin" && (
             <div className="step">
@@ -504,7 +462,7 @@ export function SpecialTool() {
             <div className="qmodel">{scope === "residential" ? series || "—" : `${cMfr} ${cModel || "—"}`}</div>
             <div className="qsub">
               {scope === "residential"
-                ? ser ? (ser.type === "multiplier" || flatMargin ? `Special order · ${kind === "section" ? "Sections" : "Door"}` : modelGroup ? `${modelMember || modelGroup} · ${kind === "section" ? "Sections" : "Door"}` : "Select a model") : "Select a series"
+                ? ser ? (flatMargin ? `Special order · ${kind === "section" ? "Sections" : "Door"}` : modelGroup ? `${modelMember || modelGroup} · ${kind === "section" ? "Sections" : "Door"}` : "Select a model") : "Select a series"
                 : cModel ? (kind === "section" ? "Sections" : "Complete door") : "Select a model"}
             </div>
           </div>

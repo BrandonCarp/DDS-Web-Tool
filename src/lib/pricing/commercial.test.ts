@@ -124,7 +124,7 @@ describe("torsion springs (cut to size)", () => {
   });
 });
 
-describe("special orders (margin + multiplier collections)", () => {
+describe("special orders (margin collections)", () => {
   const sell = (list: number, margin: number) => list / (1 - margin / 100);
   it("applies a margin series as list / (1 - margin)", () => {
     // The formula, checked against literals — NOT against the data, so that
@@ -147,14 +147,16 @@ describe("special orders (margin + multiplier collections)", () => {
       }
     }
   });
-  it("outside makers: list × 1.09 at the cost margin", () => {
-    // The 1.09 belongs to the genuinely outside manufacturers, where DDS pays
-    // list plus 9%. Canyon Ridge and Avante are Clopay and no longer use it.
-    const haas = SPECIAL["Haas"];
-    if (haas.type !== "multiplier") throw new Error("expected multiplier series");
-    expect(haas.multiplier).toBe(1.09);
-    expect((1000 * haas.multiplier) / (1 - haas.cost_margin / 100)).toBeCloseTo(1090 / 0.71, 2);
+  it("outside makers price flat, with no multiplier", () => {
+    // The 1.09 was removed 9/9/2026 along with the multiplier series type.
+    // These now price exactly like every Clopay collection: total x margin.
+    const haas = SPECIAL["Haas Doors"];
+    expect(haas.type).toBe("margin");
+    expect(haas.door).toBe(45);
+    expect(haas.section).toBe(49);
+    expect(1000 / (1 - haas.door! / 100)).toBeCloseTo(1818.18, 2);
   });
+
 
   it("Canyon Ridge and Avante price as flat Clopay margins", () => {
     for (const name of ["Canyon Ridge Collection", "Avante Collection"]) {
@@ -173,13 +175,13 @@ describe("special orders (margin + multiplier collections)", () => {
     }
   });
 
-  it("keeps 1.09 on the outside makers and nowhere else", () => {
-    const multipliers = Object.entries(SPECIAL)
-      .filter(([, v]) => v.type === "multiplier")
-      .map(([k]) => k);
-    expect(multipliers.sort()).toEqual(
-      ["Amarr", "CHI", "Haas", "Overhead", "Wayne Dalton"].sort(),
-    );
+  it("has no multiplier series left", () => {
+    // The 1.09 lived only on the outside makers and was removed 9/9/2026 when
+    // they moved to flat 45/49. Nothing should reintroduce the shape.
+    for (const [name, v] of Object.entries(SPECIAL)) {
+      expect(v.type, name).toBe("margin");
+      expect(v, name).not.toHaveProperty("multiplier");
+    }
   });
 });
 
