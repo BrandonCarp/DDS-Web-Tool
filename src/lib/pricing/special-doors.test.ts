@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { specialDoorQuote, hasGrid, griddedHeights, griddedWidths, compareWidths } from "./data/special-door-pricing";
+import {
+  specialDoorQuote, hasGrid, griddedHeights, griddedWidths, compareWidths, offeredHeights,
+} from "./data/special-door-pricing";
 import { SPECIAL_DOORS } from "./data/special-doors";
 import { ADDONS } from "./data/addons";
 import { priceResidential } from "./engine";
@@ -8,9 +10,9 @@ const M = "4050/4051/4053";
 const base = { model: M, height: "7", color: "White", track: "r12" as const, spring: "extension" as const, lock: "none" as const };
 
 describe("special order door grid", () => {
-  it("grids the 4050 at 7'0\" only, 73 widths from 6'0\" to 18'0\"", () => {
+  it("grids the 4050 at 7'0\" and 8'0\", 73 widths from 6'0\" to 18'0\"", () => {
     expect(hasGrid(M)).toBe(true);
-    expect(griddedHeights(M)).toEqual(["7"]);
+    expect(griddedHeights(M)).toEqual(["7", "8"]);
     const w = griddedWidths(M, "7");
     expect(w).toHaveLength(73);
     expect(w[0]).toBe("6");
@@ -53,7 +55,7 @@ describe("special order door grid", () => {
 
   it("refuses anything off the grid, and says to use the manual total", () => {
     for (const off of [
-      { ...base, height: "8", width: "8", style: "solid" as const },
+      { ...base, height: "9", width: "8", style: "solid" as const },
       { ...base, width: "19", style: "solid" as const },
       { model: "GD1LP/GD1SP", height: "7", width: "8", style: "solid" as const, color: "White",
         track: "r12" as const, spring: "extension" as const, lock: "none" as const },
@@ -146,9 +148,10 @@ describe("gridded door verbiage", () => {
   });
 });
 
-describe("the 6'0\"-7'10\" flat band", () => {
+describe("the 6'4\"-7'10\" band", () => {
   const BAND = { solid: 837.75, glass: 968.32, inserts: 1030.6 };
-  const WIDTHS = ["6", "6.2", "6.4", "6.6", "6.8", "6.10", "7", "7.2", "7.4", "7.6", "7.8", "7.10"];
+  // 6'0" and 6'2" sit in the band below, per UPDATED_PRICING_9-8.
+  const WIDTHS = ["6.4", "6.6", "6.8", "6.10", "7", "7.2", "7.4", "7.6", "7.8", "7.10"];
 
   it("prices every width in the band identically, in all three styles", () => {
     // The 4050 at 7'0" tall is flat from 6'0" to 7'10". The sheet's 6'0" and
@@ -175,5 +178,76 @@ describe("the 6'0\"-7'10\" flat band", () => {
 
   it("drops back down at 8'0\", where the stocked size takes over", () => {
     expect(specialDoorQuote({ ...base, width: "8", style: "solid" }).quote?.unitPrice).toBe(723.25);
+  });
+});
+
+describe("offered heights", () => {
+  it("offers the same eight heights the residential tab does", () => {
+    for (const model of ["4050/4051/4053", "T50S/T50L"]) {
+      expect(offeredHeights(model), model).toEqual(["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8"]);
+    }
+  });
+
+  it("bands an in-between height to its tier, like residential", () => {
+    // Clopay grids 7'0" and 8'0"; everything between prices off the nearer one
+    // at or above it. 6'6" is a 7' door as far as the book is concerned.
+    const at = (h: string) =>
+      specialDoorQuote({ model: M, width: "9", height: h, color: "White", style: "solid",
+        track: "r12", spring: "extension", lock: "none" }).quote!.unitPrice;
+    for (const h of ["6", "6.3", "6.6", "6.9", "7"]) expect(at(h), h).toBe(782.19);
+    for (const h of ["7.6", "7.9", "8"]) expect(at(h), h).toBe(954.95);
+  });
+
+  it("agrees with the residential tab at every offered height", () => {
+    // Same door, two tabs, one number — the whole point of banding rather than
+    // inventing prices for the heights Clopay does not grid.
+    for (const h of offeredHeights(M)) {
+      const [ft, inch] = h.split(".");
+      const so = specialDoorQuote({ model: M, width: "9", height: h, color: "White",
+        style: "solid", track: "r12", spring: "extension", lock: "none" }).quote!.unitPrice;
+      const res = priceResidential("4050", { widthFt: 9, widthIn: 0, heightFt: +ft, heightIn: +(inch ?? 0) }, "solid").price;
+      expect(so, h).toBe(res);
+    }
+  });
+
+  it("writes the height ordered, not the tier it priced from", () => {
+    const d = specialDoorQuote({ model: M, width: "9", height: "6.6", color: "White",
+      style: "solid", track: "r12", spring: "extension", lock: "none" }).quote!.description;
+    expect(d).toContain(`9'0" x 6'6"`);
+    expect(d).not.toContain(`x 7'0"`);
+  });
+
+  it("quotes 7'0\" and 8'0\" on both models", () => {
+    for (const model of ["4050/4051/4053", "T50S/T50L"]) {
+      expect(griddedHeights(model), model).toEqual(["7", "8"]);
+      for (const height of ["7", "8"]) {
+        expect(griddedWidths(model, height), `${model} ${height}`).toHaveLength(73);
+        const q = specialDoorQuote({
+          model, width: "9", height, color: "White", style: "solid",
+          track: "r12", spring: "extension", lock: "none",
+        });
+        expect(q.quote?.unitPrice, `${model} ${height}`).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("prices 8'0\" above 7'0\" on the same width", () => {
+    const at = (height: string) =>
+      specialDoorQuote({ model: M, width: "9", height, color: "White", style: "solid",
+        track: "r12", spring: "extension", lock: "none" }).quote!.unitPrice;
+    expect(at("8")).toBeGreaterThan(at("7"));
+    expect(at("7")).toBe(782.19);
+    expect(at("8")).toBe(954.95);
+  });
+
+  it("names every gridded height when refusing one that is not", () => {
+    // The message is what sends the counter to the manual box, so it has to
+    // list what IS available rather than a hardcoded 7'0".
+    const r = specialDoorQuote({ model: M, width: "9", height: "9", color: "White",
+      style: "solid", track: "r12", spring: "extension", lock: "none" });
+    expect(r.quote).toBeUndefined();
+    expect(r.reason).toContain(`6'0"`);
+    expect(r.reason).toContain(`8'0"`);
+    expect(r.reason).toMatch(/total below/);
   });
 });

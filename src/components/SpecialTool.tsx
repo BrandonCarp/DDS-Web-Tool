@@ -7,7 +7,10 @@ import {
   SPECIAL, SPECIAL_COMMERCIAL, SPECIAL_COMMERCIAL_PINNED, SPECIAL_COMMERCIAL_SERIES,
   commercialSeriesOf, SO_MANUFACTURERS, seriesFor, isOutsideMfr,
 } from "@/lib/pricing/data/special-orders";
-import { specialDoorQuote, hasGrid, griddedWidths } from "@/lib/pricing/data/special-door-pricing";
+import {
+  specialDoorQuote, hasGrid, griddedWidths, griddedHeights,
+  offeredHeights, tierForOfferedHeight, heightLabel,
+} from "@/lib/pricing/data/special-door-pricing";
 import { COLORS } from "@/lib/pricing/data/catalog-meta";
 import { windowDesigns } from "@/lib/pricing/data/inserts";
 
@@ -104,6 +107,7 @@ export function SpecialTool() {
   const [gSpring, setGSpring] = useState("extension");
   const [gLock, setGLock] = useState("none");
   const [gDesign, setGDesign] = useState("");
+  const [gHeight, setGHeight] = useState("");
   const [price, setPrice] = useState("");
   const [qty, setQty] = useState(1);
   const [saved, setSaved] = useState(false);
@@ -120,6 +124,7 @@ export function SpecialTool() {
   const isPinnedModel = (v: string) => SPECIAL_COMMERCIAL_PINNED.includes(v);
   const commSeriesName = isPinnedModel(cSeries) ? (commercialSeriesOf(cSeries) ?? "") : cSeries;
   const commModels = SPECIAL_COMMERCIAL_SERIES.find((g) => g.name === commSeriesName)?.models ?? [];
+  const resetGrid = () => { setGHeight(""); setGWidth(""); setGDesign(""); };
   const pickCommSeries = (v: string) => {
     setCSeries(v);
     // A pinned pick IS the model. A series pick clears it so one must be chosen.
@@ -131,9 +136,15 @@ export function SpecialTool() {
   // The configurator appears only for models Clopay has gridded. Everything
   // else keeps the manual total path exactly as it was.
   const gridded = scope === "residential" && !!model && hasGrid(model);
-  const gWidths = gridded ? griddedWidths(model, "7") : [];
-  const gResult = gridded && gWidth
-    ? specialDoorQuote({ model, width: gWidth, height: "7", style: gStyle, color: gColor,
+  // Heights come from the grid rather than a constant. Both models carry 7'0"
+  // and 8'0" as of UPDATED_PRICING_9-8; a third arrives by regenerating the
+  // data, with no change needed here.
+  const gHeights = gridded ? offeredHeights(model) : [];
+  // Widths come from the tier the chosen height bands to, not the height itself.
+  const gTier = gridded && gHeight ? tierForOfferedHeight(gHeight, griddedHeights(model)) : null;
+  const gWidths = gTier ? griddedWidths(model, gTier) : [];
+  const gResult = gridded && gWidth && gHeight
+    ? specialDoorQuote({ model, width: gWidth, height: gHeight, style: gStyle, color: gColor,
         windesign: gDesign || undefined,
         track: gTrack as never, spring: gSpring as never, lock: gLock as never })
     : null;
@@ -173,7 +184,7 @@ export function SpecialTool() {
       : `${cMfr} ${cModel}${commercialSeriesOf(cModel) ? ` (${commercialSeriesOf(cModel)})` : ""} ${kind === "section" ? "sections" : "complete door"}`;
 
   function pickScope(v: "residential" | "commercial") {
-    setScope(v); setSeries(""); setModel(""); setCSeries(""); setCModel(""); setKind("door"); setPrice(""); setSaved(false);
+    setScope(v); setSeries(""); setModel(""); setCSeries(""); setCModel(""); setKind("door"); setPrice(""); resetGrid(); setSaved(false);
   }
   function pickSeries(v: string) {
     setSeries(v); setModel(""); setKind("door"); setPrice(""); setSaved(false);
@@ -309,7 +320,7 @@ export function SpecialTool() {
               {ser.models && (
                 <div className="field"><label className="lbl">Model <span className="req">*</span></label>
                   <div className="selectwrap">
-                    <select data-testid="so-model" value={model} onChange={(e) => { setModel(e.target.value); setSaved(false); }}>
+                    <select data-testid="so-model" value={model} onChange={(e) => { setModel(e.target.value); resetGrid(); setSaved(false); }}>
                       <option value="">Select…</option>
                       {Object.keys(ser.models).map((m) => <option key={m} value={m}>{m}{ser.models![m].new ? " (new)" : ""}</option>)}
                     </select>
@@ -322,14 +333,19 @@ export function SpecialTool() {
                   <div className="row2">
                     <div className="field"><label className="lbl">Width <span className="req">*</span></label>
                       <div className="selectwrap">
-                        <select data-testid="so-width" value={gWidth} onChange={(e) => { setGWidth(e.target.value); setSaved(false); }}>
-                          <option value="">Select…</option>
+                        <select data-testid="so-width" value={gWidth} disabled={!gHeight} onChange={(e) => { setGWidth(e.target.value); setSaved(false); }}>
+                          <option value="">{gHeight ? "Select…" : "Pick a height first"}</option>
                           {gWidths.map((w) => <option key={w} value={w}>{widthLabel(w)}</option>)}
                         </select>
                       </div>
                     </div>
-                    <div className="field"><label className="lbl">Height</label>
-                      <div className="ctl"><span className="muted-note">7&#39;0&quot; — other heights are not gridded yet</span></div>
+                    <div className="field"><label className="lbl">Height <span className="req">*</span></label>
+                      <div className="selectwrap">
+                        <select data-testid="so-height" value={gHeight} onChange={(e) => { setGHeight(e.target.value); setGWidth(""); setSaved(false); }}>
+                          <option value="">Select…</option>
+                          {gHeights.map((h) => <option key={h} value={h}>{heightLabel(h)}</option>)}
+                        </select>
+                      </div>
                     </div>
                   </div>
                   <div className="row2">

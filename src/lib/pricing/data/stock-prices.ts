@@ -9,40 +9,40 @@ import type { PriceTriple } from "../types";
 export const STOCK_PRICES: Record<string, Record<string, Record<string, PriceTriple>>> = {
   "T50S": {
     "7.6": {
-      "7": { "solid": 625.37, "glass": 761.8, "inserts": 852.75 },
-      "8": { "solid": 730.99, "glass": 867.42, "inserts": 958.37 },
+      "7": { "solid": 658.18, "glass": 770.33, "inserts": 845.1 },
+      "8": { "solid": 791.33, "glass": 903.49, "inserts": 978.25 },
     },
     "8": {
-      "7": { "solid": 560.37, "glass": 696.8, "inserts": 787.75 },
-      "8": { "solid": 665.99, "glass": 802.42, "inserts": 893.37 },
+      "7": { "solid": 566.06, "glass": 715.61, "inserts": 815.31 },
+      "8": { "solid": 681.84, "glass": 831.39, "inserts": 931.1 },
       "9": { "solid": 978.84, "glass": 1121.53, "inserts": 1216.65 },
     },
     "9": {
-      "7": { "solid": 595.58, "glass": 732.0, "inserts": 822.95 },
-      "8": { "solid": 698.26, "glass": 834.69, "inserts": 925.64 },
+      "7": { "solid": 604.63, "glass": 754.18, "inserts": 853.88 },
+      "8": { "solid": 717.22, "glass": 866.76, "inserts": 966.47 },
       "9": { "solid": 1017.18, "glass": 1159.87, "inserts": 1255.0 },
     },
     "10": {
-      "7": { "solid": 695.33, "glass": 865.49, "inserts": 979.92 },
-      "8": { "solid": 748.14, "glass": 918.3, "inserts": 1032.73 },
+      "7": { "solid": 713.98, "glass": 900.92, "inserts": 1025.53 },
+      "8": { "solid": 771.88, "glass": 958.82, "inserts": 1083.43 },
       "9": { "solid": 1087.78, "glass": 1266.15, "inserts": 1385.05 },
     },
     "12": {
-      "7": { "solid": 792.15, "glass": 997.52, "inserts": 1133.94 },
-      "8": { "solid": 962.31, "glass": 1167.68, "inserts": 1304.11 },
+      "7": { "solid": 805.65, "glass": 1029.96, "inserts": 1179.51 },
+      "8": { "solid": 992.18, "glass": 1216.49, "inserts": 1366.04 },
       "9": { "solid": 1408.44, "glass": 1622.47, "inserts": 1765.16 },
     },
     "14": {
       "9": { "solid": 1515.84, "glass": 1765.53, "inserts": 1932.0 },
     },
     "15": {
-      "7": { "solid": 912.44, "glass": 1151.55, "inserts": 1311.44 },
-      "8": { "solid": 1106.07, "glass": 1345.18, "inserts": 1505.08 },
+      "7": { "solid": 937.53, "glass": 1199.25, "inserts": 1373.73 },
+      "8": { "solid": 1149.78, "glass": 1411.51, "inserts": 1585.98 },
       "9": { "solid": 1618.62, "glass": 1868.31, "inserts": 2034.78 },
     },
     "16": {
-      "7": { "solid": 982.85, "glass": 1255.7, "inserts": 1437.6 },
-      "8": { "solid": 1144.21, "glass": 1417.06, "inserts": 1598.96 },
+      "7": { "solid": 1014.71, "glass": 1313.8, "inserts": 1513.22 },
+      "8": { "solid": 1191.59, "glass": 1490.69, "inserts": 1690.1 },
       "9": { "solid": 1690.73, "glass": 1976.11, "inserts": 2166.35 },
     },
   },
@@ -80,50 +80,50 @@ export const STOCK_PRICES: Record<string, Record<string, Record<string, PriceTri
   "4050-4051-4053": {
     "7": {
       "7": { "solid": 837.75, "glass": 968.32, "inserts": 1030.6 },
-      "8": { "solid": 917.78, "glass": 1079.85, "inserts": 1157.15 },
+      "8": { "solid": 1013.37, "glass": 1143.93, "inserts": 1206.21 },
     },
     "7.6": {
       "7": { "solid": 837.75, "glass": 968.32, "inserts": 1030.6 },
-      "8": { "solid": 917.78, "glass": 1079.85, "inserts": 1157.15 },
+      "8": { "solid": 1013.37, "glass": 1143.93, "inserts": 1206.21 },
     },
     "8": {
       "7": { "solid": 723.25, "glass": 897.37, "inserts": 980.4 },
-      "8": { "solid": 852.78, "glass": 1014.85, "inserts": 1092.15 },
+      "8": { "solid": 875.95, "glass": 1050.07, "inserts": 1133.11 },
       "9": { "solid": 1167.07, "glass": 1337.36, "inserts": 1418.56 },
     },
     "9": {
       "7": { "solid": 782.19, "glass": 956.32, "inserts": 1039.35 },
-      "8": { "solid": 926.33, "glass": 1088.41, "inserts": 1165.71 },
+      "8": { "solid": 954.95, "glass": 1129.02, "inserts": 1212.11 },
       "9": { "solid": 1264.0, "glass": 1434.29, "inserts": 1515.49 },
     },
     "10": {
       "7": { "solid": 887.98, "glass": 1105.61, "inserts": 1209.4 },
-      "8": { "solid": 1059.74, "glass": 1261.71, "inserts": 1358.95 },
+      "8": { "solid": 1098.26, "glass": 1315.89, "inserts": 1419.68 },
       "9": { "solid": 1464.4, "glass": 1677.24, "inserts": 1778.73 },
     },
     "12": {
       "7": { "solid": 1076.84, "glass": 1338.02, "inserts": 1462.58 },
-      "8": { "solid": 1243.01, "glass": 1486.12, "inserts": 1602.07 },
+      "8": { "solid": 1283.09, "glass": 1544.26, "inserts": 1668.82 },
       "9": { "solid": 1756.51, "glass": 2011.93, "inserts": 2133.73 },
     },
     "14": {
       "7": { "solid": 1220.14, "glass": 1524.82, "inserts": 1670.14 },
-      "8": { "solid": 1420.04, "glass": 1704.3, "inserts": 1840.2 },
+      "8": { "solid": 1473.28, "glass": 1777.96, "inserts": 1923.28 },
       "9": { "solid": 1967.4, "glass": 2265.38, "inserts": 2407.49 },
     },
     "15": {
       "7": { "solid": 1280.4, "glass": 1585.09, "inserts": 1730.4 },
-      "8": { "solid": 1513.55, "glass": 1797.81, "inserts": 1933.7 },
+      "8": { "solid": 1573.72, "glass": 1878.4, "inserts": 2023.72 },
       "9": { "solid": 2065.64, "glass": 2363.62, "inserts": 2505.73 },
     },
     "16": {
       "7": { "solid": 1303.18, "glass": 1651.4, "inserts": 1817.47 },
-      "8": { "solid": 1572.15, "glass": 1896.3, "inserts": 2050.9 },
+      "8": { "solid": 1636.68, "glass": 1984.91, "inserts": 2150.98 },
       "9": { "solid": 2179.58, "glass": 2520.13, "inserts": 2682.55 },
     },
     "18": {
       "7": { "solid": 1575.05, "glass": 1923.28, "inserts": 2089.35 },
-      "8": { "solid": 1837.71, "glass": 2161.86, "inserts": 2316.46 },
+      "8": { "solid": 1921.95, "glass": 2270.18, "inserts": 2436.25 },
       "9": { "solid": 2631.49, "glass": 2972.04, "inserts": 3134.45 },
     },
   },

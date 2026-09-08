@@ -30,7 +30,7 @@ export interface SpecialDoorInput {
   model: string;
   /** Catalogue width key: whole feet as "8", part-foot as "7.6". */
   width: string;
-  /** Height tier in feet. Only "7" is gridded today. */
+  /** Door height as a size code — "6.6" is 6'6". Banded to a gridded tier. */
   height: string;
   /** Door colour, for the description only — the grid does not price by colour. */
   color: string;
@@ -66,6 +66,12 @@ const LOCK_TEXT: Record<string, string> = {
   lockbar_installed: "lockbar installed",
 };
 
+/** `6.6` -> `6'6"`, for a dropdown label. */
+export function heightLabel(code: string): string {
+  const [ft, inch] = code.split(".");
+  return `${ft}'${inch ?? 0}"`;
+}
+
 /** "8.10" -> `8'10"`, matching how the residential description writes a size. */
 function feetInches(key: string): string {
   const [ft, inch] = key.split(".");
@@ -95,6 +101,33 @@ export function compareWidths(a: string, b: string): number {
   return af - bf || ai - bi;
 }
 
+/**
+ * Door heights the configurator offers, matching the residential tab exactly.
+ *
+ * Clopay grids two heights — 7'0" and 8'0" — but prices every height in between
+ * off the nearer of the two, the same banding residential uses: 6'0" to 7'0"
+ * takes the 7' grid, 7'6" to 8'0" takes the 8' grid. So no extra price data is
+ * needed to offer the in-between heights, and a 6'6" door quotes the same as a
+ * 7'0" one, which is what the book says.
+ */
+export const OFFERED_HEIGHTS = ["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8"];
+
+/** Height code -> the grid tier that prices it, or null if past the grid. */
+export function tierForOfferedHeight(height: string, available: string[]): string | null {
+  const [ft, inch] = height.split(".");
+  const inches = Number(ft) * 12 + Number(inch ?? 0);
+  // Nearest gridded tier at or above the height, mirroring TIER_MAX_IN.
+  const tiers = available.map(Number).sort((a, b) => a - b);
+  for (const t of tiers) if (inches <= t * 12) return String(t);
+  return null;
+}
+
+/** Heights the configurator should offer for a model, given what is gridded. */
+export function offeredHeights(model: string): string[] {
+  const have = griddedHeights(model);
+  return OFFERED_HEIGHTS.filter((h) => tierForOfferedHeight(h, have) !== null);
+}
+
 /** Height tiers gridded for a model, ascending. */
 export function griddedHeights(model: string): string[] {
   return Object.keys(SPECIAL_DOORS[model] ?? {}).sort((a, b) => Number(a) - Number(b));
@@ -118,11 +151,14 @@ export function specialDoorQuote(
   const model = SPECIAL_DOORS[input.model];
   if (!model) return { reason: "No size grid for this model yet — enter the Clopay total below." };
 
-  const tier = model[input.height];
+  // The requested height bands to a gridded tier: a 6'6" door prices off the
+  // 7' grid, exactly as it does on the residential tab.
+  const tierKey = tierForOfferedHeight(input.height, griddedHeights(input.model));
+  const tier = tierKey ? model[tierKey] : undefined;
   if (!tier) {
-    const have = griddedHeights(input.model).map((h) => `${h}'0"`).join(", ");
+    const have = offeredHeights(input.model).map(heightLabel).join(", ");
     return {
-      reason: `Only ${have} doors are gridded so far — enter the Clopay total below for other heights.`,
+      reason: `Only ${have} are gridded so far — enter the Clopay total below for other heights.`,
     };
   }
 
@@ -164,7 +200,7 @@ export function specialDoorQuote(
             return name ? `windows in the top section, ${name} inserts` : "windows in the top section, no inserts";
           })();
   const description =
-    `Clopay Model ${input.model}, ${feetInches(input.width)} x ${input.height}'0", ` +
+    `Clopay Model ${input.model}, ${feetInches(input.width)} x ${heightLabel(input.height)}, ` +
     `in the color ${input.color}, ${winText}, ` +
     `${TRACK_TEXT[input.track] ?? TRACK_TEXT.r12}, ` +
     `${input.spring === "torsion" ? "torsion" : "extension"} springs, ` +
