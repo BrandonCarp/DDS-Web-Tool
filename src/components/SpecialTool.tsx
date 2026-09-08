@@ -10,7 +10,7 @@ import {
 import {
   specialDoorQuote, hasGrid, griddedWidths, griddedHeights,
   offeredHeights, tierForOfferedHeight, heightLabel,
-  groupMembers, groupHasWidthLimits, heightForcesTorsion,
+  groupMembers, groupHasWidthLimits, heightForcesTorsion, shouldSplitGroup,
 } from "@/lib/pricing/data/special-door-pricing";
 import { COLORS } from "@/lib/pricing/data/catalog-meta";
 import { windowDesigns } from "@/lib/pricing/data/inserts";
@@ -114,10 +114,17 @@ export function SpecialTool() {
   const [qty, setQty] = useState(1);
   const [saved, setSaved] = useState(false);
 
+  // The dropdown value is "group:member" for split groups and the bare group
+  // key otherwise. Pricing always keys on the group; the member rides along as
+  // the variant so size limits and the description use the specific model.
+  const [modelGroup, modelMember] = model.includes(":")
+    ? (model.split(":") as [string, string])
+    : [model, ""];
   const ser = series ? SPECIAL[series] : null;
-  const md = ser && ser.type === "margin" && ser.models && model ? ser.models[model] : null;
+  const md = ser && ser.type === "margin" && ser.models && modelGroup ? ser.models[modelGroup] : null;
   // A margin collection with no model table needs no model chosen to price.
   const flatMargin = ser?.type === "margin" && !ser.models;
+
 
   // The collection dropdown carries the five daily models at the top, above the
   // series themselves. Picking one jumps straight to that model; picking a
@@ -137,25 +144,27 @@ export function SpecialTool() {
 
   // The configurator appears only for models Clopay has gridded. Everything
   // else keeps the manual total path exactly as it was.
-  const gridded = scope === "residential" && !!model && hasGrid(model);
+  const gridded = scope === "residential" && !!modelGroup && hasGrid(modelGroup);
   // Heights come from the grid rather than a constant. Both models carry 7'0"
   // and 8'0" as of UPDATED_PRICING_9-8; a third arrives by regenerating the
   // data, with no change needed here.
-  const gHeights = gridded ? offeredHeights(model) : [];
+  const gHeights = gridded ? offeredHeights(modelGroup) : [];
   // Widths come from the tier the chosen height bands to, not the height itself.
-  const gTier = gridded && gHeight ? tierForOfferedHeight(gHeight, griddedHeights(model)) : null;
+  const gTier = gridded && gHeight ? tierForOfferedHeight(gHeight, griddedHeights(modelGroup)) : null;
   // The grid is keyed by margin group; the models inside it are not built in
   // the same range, so the width list narrows once a specific one is chosen.
-  const gMembers = gridded ? groupMembers(model) : [];
-  const gNeedsVariant = gridded && groupHasWidthLimits(model);
+  const gMembers = gridded ? groupMembers(modelGroup) : [];
+  // The top-level dropdown already names the model for a split group, so the
+  // old "which model" question is asked only where it is still unanswered.
+  const gNeedsVariant = gridded && groupHasWidthLimits(modelGroup) && !modelMember;
   const gWidths = gTier ? griddedWidths(model, gTier, gVariant || undefined) : [];
   // At 9'0" and above the book prints no extension column — torsion is included
   // in the price, so the dropdown locks to it rather than offering a choice
   // that would be ignored.
-  const gTorsionOnly = gridded && !!gHeight && heightForcesTorsion(gHeight, griddedHeights(model));
+  const gTorsionOnly = gridded && !!gHeight && heightForcesTorsion(gHeight, griddedHeights(modelGroup));
   const gResult = gridded && gWidth && gHeight
-    ? specialDoorQuote({ model, width: gWidth, height: gHeight, style: gStyle, color: gColor,
-        windesign: gDesign || undefined, variant: gVariant || undefined,
+    ? specialDoorQuote({ model: modelGroup, width: gWidth, height: gHeight, style: gStyle, color: gColor,
+        windesign: gDesign || undefined, variant: (modelMember || gVariant) || undefined,
         track: gTrack as never, spring: (gTorsionOnly ? "torsion" : gSpring) as never, lock: gLock as never })
     : null;
   const widthLabel = (w: string) => {
@@ -174,7 +183,7 @@ export function SpecialTool() {
   // the grid is wrong for the job.
   const manual =
     scope === "residential"
-      ? series ? soNumbers(series, model, kind, price) : null
+      ? series ? soNumbers(series, modelGroup, kind, price) : null
       : cModel ? soCommercial(cMfr, kind, price) : null;
   const n =
     !manual && gResult?.quote
@@ -190,7 +199,7 @@ export function SpecialTool() {
     scope === "residential"
       ? ser?.type === "multiplier" || flatMargin
         ? `${series} special order`
-        : `${model} ${kind === "section" ? "sections" : "door"}`
+        : `${modelMember || modelGroup} ${kind === "section" ? "sections" : "door"}`
       : `${cMfr} ${cModel}${commercialSeriesOf(cModel) ? ` (${commercialSeriesOf(cModel)})` : ""} ${kind === "section" ? "sections" : "complete door"}`;
 
   function pickScope(v: "residential" | "commercial") {
@@ -332,7 +341,13 @@ export function SpecialTool() {
                   <div className="selectwrap">
                     <select data-testid="so-model" value={model} onChange={(e) => { setModel(e.target.value); resetGrid(); setSaved(false); }}>
                       <option value="">Select…</option>
-                      {Object.keys(ser.models).map((m) => <option key={m} value={m}>{m}{ser.models![m].new ? " (new)" : ""}</option>)}
+                      {Object.keys(ser.models).flatMap((g) =>
+                        shouldSplitGroup(g)
+                          ? groupMembers(g).map((m) => (
+                              <option key={`${g}:${m}`} value={`${g}:${m}`}>{m}</option>
+                            ))
+                          : [<option key={g} value={g}>{g}{ser.models![g].new ? " (new)" : ""}</option>],
+                      )}
                     </select>
                   </div>
                 </div>
@@ -362,7 +377,7 @@ export function SpecialTool() {
                     </div>
                     <div className="field"><label className="lbl">Height <span className="req">*</span></label>
                       <div className="selectwrap">
-                        <select data-testid="so-height" value={gHeight} onChange={(e) => { setGHeight(e.target.value); setGWidth(""); setSaved(false); }}>
+                        <select data-testid="so-height" value={gHeight} onChange={(e) => { setGHeight(e.target.value); setSaved(false); }}>
                           <option value="">Select…</option>
                           {gHeights.map((h) => <option key={h} value={h}>{heightLabel(h)}</option>)}
                         </select>
@@ -485,7 +500,7 @@ export function SpecialTool() {
             <div className="qmodel">{scope === "residential" ? series || "—" : `${cMfr} ${cModel || "—"}`}</div>
             <div className="qsub">
               {scope === "residential"
-                ? ser ? (ser.type === "multiplier" || flatMargin ? `Special order · ${kind === "section" ? "Sections" : "Door"}` : model ? `${model} · ${kind === "section" ? "Sections" : "Door"}` : "Select a model") : "Select a series"
+                ? ser ? (ser.type === "multiplier" || flatMargin ? `Special order · ${kind === "section" ? "Sections" : "Door"}` : modelGroup ? `${modelMember || modelGroup} · ${kind === "section" ? "Sections" : "Door"}` : "Select a model") : "Select a series"
                 : cModel ? (kind === "section" ? "Sections" : "Complete door") : "Select a model"}
             </div>
           </div>

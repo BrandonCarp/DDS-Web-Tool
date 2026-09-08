@@ -92,6 +92,17 @@ function feetInches(key: string): string {
  *
  * Anything absent here has no minimum beyond what the grid carries.
  */
+/**
+ * Widths a model is not built in, beyond its minimum.
+ *
+ * Separate from MODEL_MIN_WIDTH because these are holes rather than a floor —
+ * the 4053 is built at 14'0" and 16'0" but not 15'0". Clopay's own
+ * unavailable-widths table on the net price book carries several of these.
+ */
+const MODEL_EXCLUDED_WIDTHS: Record<string, string[]> = {
+  "4053": ["15"],
+};
+
 const MODEL_MIN_WIDTH: Record<string, string> = {
   "4053": "8",
   "4310": "8",
@@ -104,14 +115,28 @@ export function groupMembers(groupKey: string): string[] {
   return groupKey.split("/").map((m) => m.trim()).filter(Boolean);
 }
 
-/** True when any member of the group is built in a narrower range than the rest. */
+/** True when any member of the group is built in a different range than the rest. */
 export function groupHasWidthLimits(groupKey: string): boolean {
-  return groupMembers(groupKey).some((m) => m in MODEL_MIN_WIDTH);
+  return groupMembers(groupKey).some(
+    (m) => m in MODEL_MIN_WIDTH || m in MODEL_EXCLUDED_WIDTHS,
+  );
 }
 
 /** Narrowest width a specific model is built in, or null for no limit. */
 export function minWidthFor(model: string): string | null {
   return MODEL_MIN_WIDTH[model] ?? null;
+}
+
+/** Widths a specific model skips inside its range. */
+export function excludedWidthsFor(model: string): string[] {
+  return MODEL_EXCLUDED_WIDTHS[model] ?? [];
+}
+
+/** True when a model is built in a width at all. */
+export function modelBuildsWidth(model: string, width: string): boolean {
+  const min = minWidthFor(model);
+  if (min && compareWidths(width, min) < 0) return false;
+  return !excludedWidthsFor(model).includes(width);
 }
 
 /** Models with a size grid, for the UI to decide whether to offer the picker. */
@@ -179,15 +204,24 @@ export function griddedHeights(model: string): string[] {
 }
 
 /**
- * Width keys gridded for a model at a height, ascending.
+ * Width keys gridded for a model, ascending.
  *
- * `variant` narrows the list to what that specific model is built in — a 4053
- * starts at 8'0" even though its group is gridded from 6'0".
+ * `height` narrows to one tier; omit it for every width the model is gridded
+ * in at any height. Clopay grids the same 73 widths at every height it
+ * publishes, so the two are the same list today — but the union is what lets
+ * the counter pick a width before a height rather than being made to work in
+ * an order the data does not actually require.
+ *
+ * `variant` narrows to what that specific model is built in — a 4053 starts at
+ * 8'0" even though its group is gridded from 6'0".
  */
-export function griddedWidths(model: string, height: string, variant?: string): string[] {
-  const all = Object.keys(SPECIAL_DOORS[model]?.[height] ?? {}).sort(compareWidths);
-  const min = variant ? minWidthFor(variant) : null;
-  return min ? all.filter((w) => compareWidths(w, min) >= 0) : all;
+export function griddedWidths(model: string, height?: string, variant?: string): string[] {
+  const tiers = SPECIAL_DOORS[model] ?? {};
+  const keys = height
+    ? Object.keys(tiers[height] ?? {})
+    : [...new Set(Object.values(tiers).flatMap((t) => Object.keys(t)))];
+  const all = keys.sort(compareWidths);
+  return variant ? all.filter((w) => modelBuildsWidth(variant, w)) : all;
 }
 
 /**
@@ -214,11 +248,13 @@ export function specialDoorQuote(
     };
   }
 
-  const min = input.variant ? minWidthFor(input.variant) : null;
-  if (min && compareWidths(input.width, min) < 0) {
-    return {
-      reason: `The ${input.variant} is not built narrower than ${heightLabel(min)} — pick a wider size or enter the Clopay total below.`,
-    };
+  if (input.variant && !modelBuildsWidth(input.variant, input.width)) {
+    const min = minWidthFor(input.variant);
+    const reason =
+      min && compareWidths(input.width, min) < 0
+        ? `The ${input.variant} is not built narrower than ${heightLabel(min)}`
+        : `The ${input.variant} is not built at ${heightLabel(input.width)}`;
+    return { reason: `${reason} — enter the Clopay total below for this one.` };
   }
 
   const triple = tier[input.width];
@@ -274,4 +310,22 @@ export function specialDoorQuote(
   return {
     quote: { base, unitPrice: Math.round((base + adders) * 100) / 100, description, torsionIncluded: torsionOnly },
   };
+}
+
+/**
+ * Should the model dropdown list a group's members separately?
+ *
+ * A margin group like "4050/4051/4053" is one set of prices, so it was one
+ * dropdown entry. That reads badly when the members are not interchangeable:
+ * the counter picks the group, then has to answer a second "which model"
+ * question, and an unanswered one puts all three model numbers on a customer's
+ * invoice.
+ *
+ * Split where the members genuinely differ — a size range that is not shared,
+ * or a size grid the configurator needs the specific model for. Groups whose
+ * members are interchangeable stay collapsed, because splitting them would add
+ * dropdown entries that make no difference to anything.
+ */
+export function shouldSplitGroup(groupKey: string): boolean {
+  return groupHasWidthLimits(groupKey) || hasGrid(groupKey);
 }

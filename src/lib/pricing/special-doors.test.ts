@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   specialDoorQuote, hasGrid, griddedHeights, griddedWidths, compareWidths, offeredHeights,
-  groupMembers, groupHasWidthLimits, minWidthFor,
+  groupMembers, groupHasWidthLimits, minWidthFor, excludedWidthsFor, shouldSplitGroup,
 } from "./data/special-door-pricing";
 import { SPECIAL_DOORS } from "./data/special-doors";
 import { ADDONS } from "./data/addons";
@@ -263,7 +263,7 @@ describe("per-model width limits", () => {
     // The grid is keyed by margin group, but Clopay does not build a 4053
     // narrower than 8'0". Offering 6'0" would quote a door nobody can order.
     expect(griddedWidths(M, "7", "4053")[0]).toBe("8");
-    expect(griddedWidths(M, "7", "4053")).toHaveLength(61);
+    expect(griddedWidths(M, "7", "4053")).toHaveLength(60); // 73 less 12 narrow, less 15'0"
     expect(q("6", "4053").quote).toBeUndefined();
     expect(q("7.6", "4053").quote).toBeUndefined();
     expect(q("8", "4053").quote?.unitPrice).toBe(723.25);
@@ -355,5 +355,100 @@ describe("the 8'0\" minimum applies to all four models", () => {
       expect(groupHasWidthLimits(g), g).toBe(true);
     }
     expect(groupHasWidthLimits("T50S/T50L")).toBe(false);
+  });
+});
+
+describe("width and height are independent", () => {
+  it("lists every gridded width with no height chosen", () => {
+    // The counter often knows the opening width before the height. Making the
+    // width dropdown wait on a height asked for information in an order the
+    // data does not require.
+    expect(griddedWidths(M)).toHaveLength(73);
+    expect(griddedWidths("T50S/T50L")).toHaveLength(73);
+  });
+
+  it("gives the same list with or without a height", () => {
+    // Clopay grids the same widths at every height it publishes, so the two
+    // must agree. If a future sheet grids a height differently, this fails and
+    // the dropdown needs to narrow again.
+    for (const model of [M, "T50S/T50L"]) {
+      const union = griddedWidths(model);
+      for (const h of griddedHeights(model)) {
+        expect(griddedWidths(model, h), `${model} ${h}`).toEqual(union);
+      }
+    }
+  });
+
+  it("still narrows by model where the members differ", () => {
+    expect(griddedWidths(M, undefined, "4053")).toHaveLength(60);
+    expect(griddedWidths(M, undefined, "4053")[0]).toBe("8");
+    expect(griddedWidths(M, undefined, "4050")).toHaveLength(73);
+  });
+
+  it("still refuses a width the chosen height does not carry", () => {
+    // Ungating the dropdown does not loosen the quote: the pair is checked.
+    const r = specialDoorQuote({ model: M, width: "19", height: "7", color: "White",
+      style: "solid", track: "r12", spring: "extension", lock: "none" });
+    expect(r.quote).toBeUndefined();
+    expect(r.reason).toMatch(/not on the grid/);
+  });
+});
+
+describe("4053 skips 15'0\"", () => {
+  const q = (width: string, variant: string) =>
+    specialDoorQuote({ model: M, width, height: "7", color: "White", style: "solid",
+      track: "r12", spring: "extension", lock: "none", variant });
+
+  it("drops 15'0\" from the 4053 while keeping 14'0\" and 16'0\"", () => {
+    // A hole in the range, not a floor — the 4053 is built either side of it.
+    const w = griddedWidths(M, undefined, "4053");
+    expect(w).not.toContain("15");
+    expect(w).toContain("14");
+    expect(w).toContain("16");
+    expect(excludedWidthsFor("4053")).toEqual(["15"]);
+  });
+
+  it("sends a 15'0\" 4053 to the manual total", () => {
+    expect(q("15", "4053").quote).toBeUndefined();
+    expect(q("15", "4053").reason).toContain(`not built at 15'0"`);
+    expect(q("15", "4053").reason).toMatch(/total below/);
+  });
+
+  it("words the floor and the hole differently", () => {
+    // "not built narrower than 8'0\"" and "not built at 15'0\"" are different
+    // facts and the counter should be able to tell them apart.
+    expect(q("6", "4053").reason).toContain("narrower than");
+    expect(q("15", "4053").reason).not.toContain("narrower than");
+  });
+
+  it("leaves the 4050 and 4051 at 15'0\"", () => {
+    for (const v of ["4050", "4051"]) {
+      expect(q("15", v).quote?.unitPrice, v).toBe(1280.4);
+    }
+  });
+});
+
+describe("split model dropdown", () => {
+  it("splits groups whose members are not interchangeable", () => {
+    for (const g of ["4050/4051/4053", "4300/4301/4310", "9130/9133", "9200/9203", "T50S/T50L"]) {
+      expect(shouldSplitGroup(g), g).toBe(true);
+    }
+  });
+
+  it("leaves interchangeable groups collapsed", () => {
+    // Splitting these would add dropdown entries that change nothing.
+    expect(shouldSplitGroup("T52S/T52L")).toBe(false);
+  });
+
+  it("prices a split selection off the group, not the member", () => {
+    // The member narrows sizes and names the line; the margin still comes from
+    // the group, because that is how Clopay prices them.
+    const asMember = specialDoorQuote({ model: M, width: "9", height: "7", color: "White",
+      style: "solid", track: "r12", spring: "extension", lock: "none", variant: "4051" });
+    const asGroup = specialDoorQuote({ model: M, width: "9", height: "7", color: "White",
+      style: "solid", track: "r12", spring: "extension", lock: "none" });
+    expect(asMember.quote?.unitPrice).toBe(asGroup.quote?.unitPrice);
+    expect(asMember.quote?.description).toContain("Model 4051,");
+    expect(asGroup.quote?.description).toContain("Model 4050/4051/4053,");
   });
 });
