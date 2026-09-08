@@ -264,7 +264,7 @@ describe("per-model width limits", () => {
     // The grid is keyed by margin group, but Clopay does not build a 4053
     // narrower than 8'0". Offering 6'0" would quote a door nobody can order.
     expect(griddedWidths(M, "7", "4053")[0]).toBe("8");
-    expect(griddedWidths(M, "7", "4053")).toHaveLength(60); // 73 less 12 narrow, less 15'0"
+    expect(griddedWidths(M, "7", "4053")).toHaveLength(59); // 73 less 12 narrow, less 15'0" and 15'2"
     expect(q("6", "4053").quote).toBeUndefined();
     expect(q("7.6", "4053").quote).toBeUndefined();
     expect(q("8", "4053").quote?.unitPrice).toBe(723.25);
@@ -381,7 +381,7 @@ describe("width and height are independent", () => {
   });
 
   it("still narrows by model where the members differ", () => {
-    expect(griddedWidths(M, undefined, "4053")).toHaveLength(60);
+    expect(griddedWidths(M, undefined, "4053")).toHaveLength(59);
     expect(griddedWidths(M, undefined, "4053")[0]).toBe("8");
     expect(griddedWidths(M, undefined, "4050")).toHaveLength(73);
   });
@@ -400,19 +400,23 @@ describe("4053 skips 15'0\"", () => {
     specialDoorQuote({ model: M, width, height: "7", color: "White", style: "solid",
       track: "r12", spring: "extension", lock: "none", variant });
 
-  it("drops 15'0\" from the 4053 while keeping 14'0\" and 16'0\"", () => {
+  it("drops 15'0\" and 15'2\" while keeping the widths either side", () => {
     // A hole in the range, not a floor — the 4053 is built either side of it.
     const w = griddedWidths(M, undefined, "4053");
     expect(w).not.toContain("15");
-    expect(w).toContain("14");
+    expect(w).not.toContain("15.2");
+    expect(w).toContain("14.10");
+    expect(w).toContain("15.4");
     expect(w).toContain("16");
-    expect(excludedWidthsFor("4053")).toEqual(["15"]);
+    expect(excludedWidthsFor("4053")).toEqual(["15", "15.2"]);
   });
 
-  it("sends a 15'0\" 4053 to the manual total", () => {
-    expect(q("15", "4053").quote).toBeUndefined();
-    expect(q("15", "4053").reason).toContain(`not built at 15'0"`);
-    expect(q("15", "4053").reason).toMatch(/total below/);
+  it("sends an excluded 4053 width to the manual total", () => {
+    for (const [w, label] of [["15", `15'0"`], ["15.2", `15'2"`]] as const) {
+      expect(q(w, "4053").quote, w).toBeUndefined();
+      expect(q(w, "4053").reason, w).toContain(`not built at ${label}`);
+      expect(q(w, "4053").reason, w).toMatch(/total below/);
+    }
   });
 
   it("words the floor and the hole differently", () => {
@@ -422,9 +426,10 @@ describe("4053 skips 15'0\"", () => {
     expect(q("15", "4053").reason).not.toContain("narrower than");
   });
 
-  it("leaves the 4050 and 4051 at 15'0\"", () => {
+  it("leaves the 4050 and 4051 at both widths", () => {
     for (const v of ["4050", "4051"]) {
       expect(q("15", v).quote?.unitPrice, v).toBe(1280.4);
+      expect(q("15.2", v).quote?.unitPrice, v).toBe(1497.26);
     }
   });
 });

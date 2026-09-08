@@ -373,8 +373,8 @@ export function SpecialTool() {
                   <div className="row2">
                     <div className="field"><label className="lbl">Width <span className="req">*</span></label>
                       <div className="selectwrap">
-                        <select data-testid="so-width" value={gWidth} disabled={!gHeight} onChange={(e) => { setGWidth(e.target.value); setSaved(false); }}>
-                          <option value="">{gHeight ? "Select…" : "Pick a height first"}</option>
+                        <select data-testid="so-width" value={gWidth} onChange={(e) => { setGWidth(e.target.value); setSaved(false); }}>
+                          <option value="">Select…</option>
                           {gWidths.map((w) => <option key={w} value={w}>{widthLabel(w)}</option>)}
                         </select>
                       </div>
