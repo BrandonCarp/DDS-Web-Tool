@@ -1,10 +1,11 @@
 import { describe, it, expect } from "vitest";
 import {
   specialDoorQuote, hasGrid, griddedHeights, griddedWidths, compareWidths, offeredHeights,
+  groupMembers, groupHasWidthLimits, minWidthFor,
 } from "./data/special-door-pricing";
 import { SPECIAL_DOORS } from "./data/special-doors";
 import { ADDONS } from "./data/addons";
-import { priceResidential } from "./engine";
+import { priceResidential, quoteResidential } from "./engine";
 
 const M = "4050/4051/4053";
 const base = { model: M, height: "7", color: "White", track: "r12" as const, spring: "extension" as const, lock: "none" as const };
@@ -250,5 +251,109 @@ describe("offered heights", () => {
     expect(r.reason).toContain(`6'0"`);
     expect(r.reason).toContain(`8'0"`);
     expect(r.reason).toMatch(/total below/);
+  });
+});
+
+describe("per-model width limits", () => {
+  const q = (width: string, variant?: string) =>
+    specialDoorQuote({ model: M, width, height: "7", color: "White", style: "solid",
+      track: "r12", spring: "extension", lock: "none", variant });
+
+  it("starts the 4053 at 8'0\", not 6'0\" like its group", () => {
+    // The grid is keyed by margin group, but Clopay does not build a 4053
+    // narrower than 8'0". Offering 6'0" would quote a door nobody can order.
+    expect(griddedWidths(M, "7", "4053")[0]).toBe("8");
+    expect(griddedWidths(M, "7", "4053")).toHaveLength(61);
+    expect(q("6", "4053").quote).toBeUndefined();
+    expect(q("7.6", "4053").quote).toBeUndefined();
+    expect(q("8", "4053").quote?.unitPrice).toBe(723.25);
+  });
+
+  it("leaves the 4050 and 4051 on the full range", () => {
+    for (const v of ["4050", "4051"]) {
+      expect(griddedWidths(M, "7", v), v).toHaveLength(73);
+      expect(q("6", v).quote?.unitPrice, v).toBe(723.25);
+    }
+  });
+
+  it("says why, and points at the manual box", () => {
+    const r = q("6", "4053");
+    expect(r.reason).toContain("4053");
+    expect(r.reason).toContain(`8'0"`);
+    expect(r.reason).toMatch(/total below/);
+  });
+
+  it("only asks which model where the group's members differ", () => {
+    // A picker on a group whose members share a range is a question with one
+    // right answer, which is a question not worth asking.
+    expect(groupHasWidthLimits(M)).toBe(true);
+    expect(groupHasWidthLimits("T50S/T50L")).toBe(false);
+    expect(groupMembers(M)).toEqual(["4050", "4051", "4053"]);
+    expect(groupMembers("T50S/T50L")).toEqual(["T50S", "T50L"]);
+  });
+
+  it("names the specific model on the line once one is chosen", () => {
+    expect(q("8", "4053").quote?.description).toContain("Model 4053,");
+    expect(q("8", "4053").quote?.description).not.toContain("4050/4051/4053");
+    // With none chosen the group name stands, as before.
+    expect(q("8").quote?.description).toContain("Model 4050/4051/4053,");
+  });
+
+  it("prices identically whichever member is chosen, where both are built", () => {
+    expect(q("9", "4053").quote?.unitPrice).toBe(q("9", "4050").quote?.unitPrice);
+  });
+});
+
+describe("9'0\" includes torsion", () => {
+  const q = (height: string, spring: string) =>
+    specialDoorQuote({ model: "T50S/T50L", width: "10", height, color: "White", style: "solid",
+      track: "r12", spring: spring as "torsion", lock: "none" }).quote!;
+
+  it("charges no adder at 9'0\", because the book already did", () => {
+    // Clopay prints no extension column above 8'. Charging the torsion adder on
+    // top of a price that includes torsion bills it twice.
+    expect(q("9", "extension").unitPrice).toBe(q("9", "torsion").unitPrice);
+    expect(q("9", "extension").unitPrice).toBe(1140.14);
+    expect(q("9", "extension").torsionIncluded).toBe(true);
+  });
+
+  it("still charges it at 7'0\" and 8'0\"", () => {
+    for (const h of ["7", "8"]) {
+      expect(q(h, "torsion").unitPrice - q(h, "extension").unitPrice, h).toBeCloseTo(ADDONS.torsion, 2);
+      expect(q(h, "extension").torsionIncluded, h).toBe(false);
+    }
+  });
+
+  it("says torsion springs at 9'0\" whatever was selected", () => {
+    // The customer is getting torsion either way, so the line has to say so.
+    expect(q("9", "extension").description).toContain("torsion springs");
+    expect(q("9", "extension").description).not.toContain("extension springs");
+  });
+
+  it("matches the residential tab at 9'0\"", () => {
+    const res = quoteResidential("T50S", { widthFt: 10, widthIn: 0, heightFt: 9, heightIn: 0 },
+      { style: "solid", color: "White", track: "r12", spring: "extension", lock: "none" });
+    expect(q("9", "extension").unitPrice).toBe(res.unitPrice);
+  });
+});
+
+describe("the 8'0\" minimum applies to all four models", () => {
+  it("floors 4053, 4310, 9133 and 9203 at 8'0\"", () => {
+    for (const m of ["4053", "4310", "9133", "9203"]) {
+      expect(minWidthFor(m), m).toBe("8");
+    }
+  });
+
+  it("leaves their group-mates alone", () => {
+    for (const m of ["4050", "4051", "4300", "4301", "9130", "9200", "T50S", "T50L"]) {
+      expect(minWidthFor(m), m).toBeNull();
+    }
+  });
+
+  it("puts a model picker on every group that now has a limit", () => {
+    for (const g of ["4050/4051/4053", "4300/4301/4310", "9130/9133", "9200/9203"]) {
+      expect(groupHasWidthLimits(g), g).toBe(true);
+    }
+    expect(groupHasWidthLimits("T50S/T50L")).toBe(false);
   });
 });

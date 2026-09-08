@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { quoteResidential } from "./engine";
 import {
   colorInStock, stockedWidths, stockedHeights, compareSizeCodes, sizeLabel, sizeParts,
-  solidOnlyHeight,
+  solidOnlyHeight, torsionOnlyHeight,
 } from "./data/stock-colors";
 
 const opts = (o: Record<string, unknown> = {}) =>
@@ -118,5 +118,34 @@ describe("size dropdown options", () => {
     expect(sizeLabel("7.6")).toBe(`7'6"`);
     expect(sizeLabel("9")).toBe(`9'0"`);
     expect(sizeParts("7.6")).toEqual({ ft: 7, in: 6 });
+  });
+});
+
+describe("torsion-only heights", () => {
+  it("locks exactly the heights where the spring choice changes nothing", () => {
+    // The dropdown offered Extension above 8' while the engine quoted torsion
+    // anyway. The lock must cover precisely the heights where picking either
+    // gives the same price — no more, no less.
+    for (const h of stockedHeights("T50S")) {
+      const { ft, in: inches } = sizeParts(h);
+      const d = { widthFt: 10, widthIn: 0, heightFt: ft, heightIn: inches };
+      const ext = quoteResidential("T50S", d, opts({ spring: "extension" })).unitPrice;
+      const tor = quoteResidential("T50S", d, opts({ spring: "torsion" })).unitPrice;
+      expect(torsionOnlyHeight(h), `${ft}'${inches}"`).toBe(ext === tor);
+    }
+  });
+
+  it("starts above 8'0\", matching the book's extension columns", () => {
+    for (const h of ["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8"]) {
+      expect(torsionOnlyHeight(h), h).toBe(false);
+    }
+    for (const h of ["9", "10"]) expect(torsionOnlyHeight(h), h).toBe(true);
+  });
+
+  it("says torsion springs on the line whatever was picked", () => {
+    const d = { widthFt: 10, widthIn: 0, heightFt: 9, heightIn: 0 };
+    const q = quoteResidential("T50S", d, opts({ spring: "extension" }));
+    expect(q.description).toContain("torsion springs");
+    expect(q.description).not.toContain("extension springs");
   });
 });

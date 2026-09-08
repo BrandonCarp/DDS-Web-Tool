@@ -44,6 +44,23 @@ const WHITE_HEIGHTS = [...SHORT_HEIGHTS, "9", "10"];
  */
 export const SOLID_ONLY_HEIGHTS = ["6"];
 
+/**
+ * True when a height's price already includes torsion springs.
+ *
+ * Clopay prints Extension columns for the 6'0"-7' and 7'6"-8' bands and nothing
+ * above; every taller band is torsion, included. quoteResidential has always
+ * known this — it charges no adder and writes "torsion springs" regardless of
+ * what was selected — but the dropdown still offered Extension, so the counter
+ * could pick a spring the engine then ignored.
+ *
+ * Mirrors torsionOnly in engine.ts, expressed as a height rather than a tier so
+ * the UI can ask before a size has been resolved.
+ */
+export function torsionOnlyHeight(heightCode: string): boolean {
+  const { ft, in: inches } = sizeParts(heightCode);
+  return ft * 12 + inches > 96;
+}
+
 /** True when a height is floored in solid only, so windows must not be offered. */
 export function solidOnlyHeight(heightCode: string): boolean {
   return SOLID_ONLY_HEIGHTS.includes(heightCode);

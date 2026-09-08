@@ -10,6 +10,7 @@ import {
 import {
   specialDoorQuote, hasGrid, griddedWidths, griddedHeights,
   offeredHeights, tierForOfferedHeight, heightLabel,
+  groupMembers, groupHasWidthLimits, heightForcesTorsion,
 } from "@/lib/pricing/data/special-door-pricing";
 import { COLORS } from "@/lib/pricing/data/catalog-meta";
 import { windowDesigns } from "@/lib/pricing/data/inserts";
@@ -108,6 +109,7 @@ export function SpecialTool() {
   const [gLock, setGLock] = useState("none");
   const [gDesign, setGDesign] = useState("");
   const [gHeight, setGHeight] = useState("");
+  const [gVariant, setGVariant] = useState("");
   const [price, setPrice] = useState("");
   const [qty, setQty] = useState(1);
   const [saved, setSaved] = useState(false);
@@ -124,7 +126,7 @@ export function SpecialTool() {
   const isPinnedModel = (v: string) => SPECIAL_COMMERCIAL_PINNED.includes(v);
   const commSeriesName = isPinnedModel(cSeries) ? (commercialSeriesOf(cSeries) ?? "") : cSeries;
   const commModels = SPECIAL_COMMERCIAL_SERIES.find((g) => g.name === commSeriesName)?.models ?? [];
-  const resetGrid = () => { setGHeight(""); setGWidth(""); setGDesign(""); };
+  const resetGrid = () => { setGHeight(""); setGWidth(""); setGDesign(""); setGVariant(""); };
   const pickCommSeries = (v: string) => {
     setCSeries(v);
     // A pinned pick IS the model. A series pick clears it so one must be chosen.
@@ -142,11 +144,19 @@ export function SpecialTool() {
   const gHeights = gridded ? offeredHeights(model) : [];
   // Widths come from the tier the chosen height bands to, not the height itself.
   const gTier = gridded && gHeight ? tierForOfferedHeight(gHeight, griddedHeights(model)) : null;
-  const gWidths = gTier ? griddedWidths(model, gTier) : [];
+  // The grid is keyed by margin group; the models inside it are not built in
+  // the same range, so the width list narrows once a specific one is chosen.
+  const gMembers = gridded ? groupMembers(model) : [];
+  const gNeedsVariant = gridded && groupHasWidthLimits(model);
+  const gWidths = gTier ? griddedWidths(model, gTier, gVariant || undefined) : [];
+  // At 9'0" and above the book prints no extension column — torsion is included
+  // in the price, so the dropdown locks to it rather than offering a choice
+  // that would be ignored.
+  const gTorsionOnly = gridded && !!gHeight && heightForcesTorsion(gHeight, griddedHeights(model));
   const gResult = gridded && gWidth && gHeight
     ? specialDoorQuote({ model, width: gWidth, height: gHeight, style: gStyle, color: gColor,
-        windesign: gDesign || undefined,
-        track: gTrack as never, spring: gSpring as never, lock: gLock as never })
+        windesign: gDesign || undefined, variant: gVariant || undefined,
+        track: gTrack as never, spring: (gTorsionOnly ? "torsion" : gSpring) as never, lock: gLock as never })
     : null;
   const widthLabel = (w: string) => {
     const [ft, inch] = w.split(".");
@@ -330,6 +340,17 @@ export function SpecialTool() {
               {gridded && kind === "door" && (
                 <>
                   <div className="ghdr" style={{ marginTop: 10 }}>Build a door</div>
+                  {gNeedsVariant && (
+                    <div className="field"><label className="lbl">Which model <span className="req">*</span></label>
+                      <div className="selectwrap">
+                        <select data-testid="so-variant" value={gVariant} onChange={(e) => { setGVariant(e.target.value); setGWidth(""); setSaved(false); }}>
+                          <option value="">Select…</option>
+                          {gMembers.map((m) => <option key={m} value={m}>{m}</option>)}
+                        </select>
+                      </div>
+                      <div className="muted-note">These share a price grid but not a size range.</div>
+                    </div>
+                  )}
                   <div className="row2">
                     <div className="field"><label className="lbl">Width <span className="req">*</span></label>
                       <div className="selectwrap">
@@ -380,8 +401,9 @@ export function SpecialTool() {
                   <div className="row2">
                     <div className="field"><label className="lbl">Spring</label>
                       <div className="selectwrap">
-                        <select value={gSpring} onChange={(e) => { setGSpring(e.target.value); setSaved(false); }}>
-                          <option value="extension">Extension</option>
+                        <select value={gTorsionOnly ? "torsion" : gSpring} disabled={gTorsionOnly}
+                          onChange={(e) => { setGSpring(e.target.value); setSaved(false); }}>
+                          {!gTorsionOnly && <option value="extension">Extension</option>}
                           <option value="torsion">Torsion</option>
                         </select>
                       </div>

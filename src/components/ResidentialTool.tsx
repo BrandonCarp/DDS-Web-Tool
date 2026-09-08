@@ -11,7 +11,7 @@ import { COLORS, COLLECTIONS } from "@/lib/pricing/data/catalog-meta";
 import { dataKey, modelSort } from "@/lib/pricing/model-groups";
 import { windowDesigns, designWidthCode } from "@/lib/pricing/data/inserts";
 import { RES_SECTION_WIDTHS, sectionWidthLabel } from "@/lib/pricing/data/res-section-meta";
-import { stockedWidths, stockedHeights, sizeParts, solidOnlyHeight } from "@/lib/pricing/data/stock-colors";
+import { stockedWidths, stockedHeights, sizeParts, solidOnlyHeight, torsionOnlyHeight } from "@/lib/pricing/data/stock-colors";
 
 const GLASS = [
   { value: "solid", label: "Solid (no windows)" },
@@ -134,6 +134,10 @@ export function ResidentialTool({ models }: { models: string[] }) {
   // dropdown drops to Solid rather than offering something that would have to
   // be ordered in. Windows start at 6'3".
   const solidOnly = !sections && solidOnlyHeight(heightCode);
+  // Above 8' the book prints no extension column — the price already includes
+  // torsion and quoteResidential charges no adder. The dropdown has to say so
+  // rather than offering a choice the engine overrides silently.
+  const springLocked = !sections && heightCode !== "" && torsionOnlyHeight(heightCode);
   const glassOptions = solidOnly ? baseGlass.filter((g) => g.value === "solid") : baseGlass;
   const wf = parseInt(widthFt, 10);
   const hf = parseInt(heightFt, 10);
@@ -203,6 +207,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
     // Inserts require an actual design choice — no pricing a generic "insert"
     // when this model offers specific insert designs.
     if (solidOnly && glass !== "solid") { setGlass("solid"); setFraming("plain"); }
+    if (springLocked && spring !== "torsion") setSpring("torsion");
     if (style === "inserts" && wDesigns.length > 0 && !activeDesign) {
       setError("Select a window insert design before getting a price.");
       setResult(null);
@@ -520,8 +525,9 @@ export function ResidentialTool({ models }: { models: string[] }) {
                 <div className="grow">
                   <label>Spring</label>
                   <div className="ctl selectwrap">
-                    <select data-testid="spring" value={spring} onChange={(e) => setSpring(e.target.value as SpringKey)}>
-                      <option value="extension">Extension</option>
+                    <select data-testid="spring" value={springLocked ? "torsion" : spring} disabled={springLocked}
+                      onChange={(e) => setSpring(e.target.value as SpringKey)}>
+                      {!springLocked && <option value="extension">Extension</option>}
                       <option value="torsion">Torsion</option>
                     </select>
                   </div>

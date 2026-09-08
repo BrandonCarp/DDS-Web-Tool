@@ -37,12 +37,16 @@ export interface SpecialDoorInput {
   style: WindowStyle;
   /** Insert design id, when the style is inserts. */
   windesign?: string;
+  /** The specific model within the group, when the group covers several. */
+  variant?: string;
   track: TrackKey;
   spring: SpringKey;
   lock: LockKey;
 }
 
 export interface SpecialDoorQuote {
+  /** True when the height forces torsion and the price already includes it. */
+  torsionIncluded: boolean;
   /** Grid price before options. */
   base: number;
   /** Grid price plus track, spring and lock adders. */
@@ -76,6 +80,38 @@ export function heightLabel(code: string): string {
 function feetInches(key: string): string {
   const [ft, inch] = key.split(".");
   return `${ft}'${inch ?? 0}"`;
+}
+
+/**
+ * Narrowest width each model is built in, where it differs from its group.
+ *
+ * The grid is keyed by margin group — "4050/4051/4053" is one set of prices for
+ * three models — but the models are not interchangeable at every size. Clopay
+ * does not build a 4053 under 8'0", so offering 6'0" would quote a door that
+ * cannot be ordered.
+ *
+ * Anything absent here has no minimum beyond what the grid carries.
+ */
+const MODEL_MIN_WIDTH: Record<string, string> = {
+  "4053": "8",
+  "4310": "8",
+  "9133": "8",
+  "9203": "8",
+};
+
+/** The individual models a grid key covers: "4050/4051/4053" -> the three. */
+export function groupMembers(groupKey: string): string[] {
+  return groupKey.split("/").map((m) => m.trim()).filter(Boolean);
+}
+
+/** True when any member of the group is built in a narrower range than the rest. */
+export function groupHasWidthLimits(groupKey: string): boolean {
+  return groupMembers(groupKey).some((m) => m in MODEL_MIN_WIDTH);
+}
+
+/** Narrowest width a specific model is built in, or null for no limit. */
+export function minWidthFor(model: string): string | null {
+  return MODEL_MIN_WIDTH[model] ?? null;
 }
 
 /** Models with a size grid, for the UI to decide whether to offer the picker. */
@@ -115,6 +151,12 @@ export function compareWidths(a: string, b: string): number {
  */
 export const OFFERED_HEIGHTS = ["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8", "9"];
 
+/** True when a height's price already includes torsion springs. */
+export function heightForcesTorsion(height: string, available: string[]): boolean {
+  const tier = tierForOfferedHeight(height, available);
+  return tier !== null && tier !== "7" && tier !== "8";
+}
+
 /** Height code -> the grid tier that prices it, or null if past the grid. */
 export function tierForOfferedHeight(height: string, available: string[]): string | null {
   const [ft, inch] = height.split(".");
@@ -136,9 +178,16 @@ export function griddedHeights(model: string): string[] {
   return Object.keys(SPECIAL_DOORS[model] ?? {}).sort((a, b) => Number(a) - Number(b));
 }
 
-/** Width keys gridded for a model at a height, ascending. */
-export function griddedWidths(model: string, height: string): string[] {
-  return Object.keys(SPECIAL_DOORS[model]?.[height] ?? {}).sort(compareWidths);
+/**
+ * Width keys gridded for a model at a height, ascending.
+ *
+ * `variant` narrows the list to what that specific model is built in — a 4053
+ * starts at 8'0" even though its group is gridded from 6'0".
+ */
+export function griddedWidths(model: string, height: string, variant?: string): string[] {
+  const all = Object.keys(SPECIAL_DOORS[model]?.[height] ?? {}).sort(compareWidths);
+  const min = variant ? minWidthFor(variant) : null;
+  return min ? all.filter((w) => compareWidths(w, min) >= 0) : all;
 }
 
 /**
@@ -165,6 +214,13 @@ export function specialDoorQuote(
     };
   }
 
+  const min = input.variant ? minWidthFor(input.variant) : null;
+  if (min && compareWidths(input.width, min) < 0) {
+    return {
+      reason: `The ${input.variant} is not built narrower than ${heightLabel(min)} — pick a wider size or enter the Clopay total below.`,
+    };
+  }
+
   const triple = tier[input.width];
   if (!triple) return { reason: "That width is not on the grid — enter the Clopay total below." };
 
@@ -181,9 +237,15 @@ export function specialDoorQuote(
     lockbar: ADDONS.lockbar_assembly,
     lockbar_installed: ADDONS.lockbar_installed,
   };
+  // Extension springs are only printed for the 7' and 8' bands. Every taller
+  // band is torsion, included in the door price — so no adder is charged and
+  // the description still says torsion springs. Same rule as the residential
+  // tab's torsionOnly, deliberately worded the same way.
+  const torsionOnly = tierKey !== "7" && tierKey !== "8";
+
   const adders =
     (ADDONS.track[input.track as keyof typeof ADDONS.track] ?? 0) +
-    (input.spring === "torsion" ? ADDONS.torsion : 0) +
+    (!torsionOnly && input.spring === "torsion" ? ADDONS.torsion : 0) +
     (LOCK[input.lock] ?? 0);
 
   // Worded the way a residential door is worded, because it lands in the same
@@ -203,13 +265,13 @@ export function specialDoorQuote(
             return name ? `windows in the top section, ${name} inserts` : "windows in the top section, no inserts";
           })();
   const description =
-    `Clopay Model ${input.model}, ${feetInches(input.width)} x ${heightLabel(input.height)}, ` +
+    `Clopay Model ${input.variant || input.model}, ${feetInches(input.width)} x ${heightLabel(input.height)}, ` +
     `in the color ${input.color}, ${winText}, ` +
     `${TRACK_TEXT[input.track] ?? TRACK_TEXT.r12}, ` +
-    `${input.spring === "torsion" ? "torsion" : "extension"} springs, ` +
+    `${torsionOnly || input.spring === "torsion" ? "torsion" : "extension"} springs, ` +
     `${LOCK_TEXT[input.lock] ?? "no lock"}`;
 
   return {
-    quote: { base, unitPrice: Math.round((base + adders) * 100) / 100, description },
+    quote: { base, unitPrice: Math.round((base + adders) * 100) / 100, description, torsionIncluded: torsionOnly },
   };
 }
