@@ -11,6 +11,7 @@ import {
   specialDoorQuote, hasGrid, griddedWidths, griddedHeights,
   offeredHeights, tierForOfferedHeight, heightLabel,
   groupMembers, groupHasWidthLimits, heightForcesTorsion, shouldSplitGroup,
+  parseModelSelection, modelSelectionValue,
 } from "@/lib/pricing/data/special-door-pricing";
 import { COLORS } from "@/lib/pricing/data/catalog-meta";
 import { windowDesigns } from "@/lib/pricing/data/inserts";
@@ -117,9 +118,7 @@ export function SpecialTool() {
   // The dropdown value is "group:member" for split groups and the bare group
   // key otherwise. Pricing always keys on the group; the member rides along as
   // the variant so size limits and the description use the specific model.
-  const [modelGroup, modelMember] = model.includes(":")
-    ? (model.split(":") as [string, string])
-    : [model, ""];
+  const { group: modelGroup, member: modelMember } = parseModelSelection(model);
   const ser = series ? SPECIAL[series] : null;
   const md = ser && ser.type === "margin" && ser.models && modelGroup ? ser.models[modelGroup] : null;
   // A margin collection with no model table needs no model chosen to price.
@@ -149,7 +148,6 @@ export function SpecialTool() {
   // and 8'0" as of UPDATED_PRICING_9-8; a third arrives by regenerating the
   // data, with no change needed here.
   const gHeights = gridded ? offeredHeights(modelGroup) : [];
-  // Widths come from the tier the chosen height bands to, not the height itself.
   const gTier = gridded && gHeight ? tierForOfferedHeight(gHeight, griddedHeights(modelGroup)) : null;
   // The grid is keyed by margin group; the models inside it are not built in
   // the same range, so the width list narrows once a specific one is chosen.
@@ -157,7 +155,13 @@ export function SpecialTool() {
   // The top-level dropdown already names the model for a split group, so the
   // old "which model" question is asked only where it is still unanswered.
   const gNeedsVariant = gridded && groupHasWidthLimits(modelGroup) && !modelMember;
-  const gWidths = gTier ? griddedWidths(model, gTier, gVariant || undefined) : [];
+  // Width does not wait on height, and it keys on the GROUP — the dropdown
+  // value for a split group is "4050/4051/4053:4051", which is not a grid key.
+  // The member is the variant, so a 4053 selected up top narrows the widths
+  // without needing the old sub-select.
+  const gWidths = gridded
+    ? griddedWidths(modelGroup, gTier ?? undefined, modelMember || gVariant || undefined)
+    : [];
   // At 9'0" and above the book prints no extension column — torsion is included
   // in the price, so the dropdown locks to it rather than offering a choice
   // that would be ignored.
@@ -344,7 +348,7 @@ export function SpecialTool() {
                       {Object.keys(ser.models).flatMap((g) =>
                         shouldSplitGroup(g)
                           ? groupMembers(g).map((m) => (
-                              <option key={`${g}:${m}`} value={`${g}:${m}`}>{m}</option>
+                              <option key={`${g}:${m}`} value={modelSelectionValue(g, m)}>{m}</option>
                             ))
                           : [<option key={g} value={g}>{g}{ser.models![g].new ? " (new)" : ""}</option>],
                       )}

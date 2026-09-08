@@ -329,3 +329,23 @@ export function specialDoorQuote(
 export function shouldSplitGroup(groupKey: string): boolean {
   return groupHasWidthLimits(groupKey) || hasGrid(groupKey);
 }
+
+/**
+ * The model dropdown's value, split into the parts everything else needs.
+ *
+ * A split group is selected as "4050/4051/4053:4051" — the group prices it, the
+ * member narrows sizes and names the line. Passing the raw value where a grid
+ * key was expected returns nothing and empties the width dropdown with no
+ * error, which is exactly what happened the first time this was inline in the
+ * component. It lives here so it can be tested.
+ */
+export function parseModelSelection(value: string): { group: string; member: string } {
+  const at = value.indexOf(":");
+  if (at < 0) return { group: value, member: "" };
+  return { group: value.slice(0, at), member: value.slice(at + 1) };
+}
+
+/** The dropdown value for a group, or for one member of a split group. */
+export function modelSelectionValue(group: string, member?: string): string {
+  return member ? `${group}:${member}` : group;
+}

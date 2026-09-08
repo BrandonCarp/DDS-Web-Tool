@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   specialDoorQuote, hasGrid, griddedHeights, griddedWidths, compareWidths, offeredHeights,
   groupMembers, groupHasWidthLimits, minWidthFor, excludedWidthsFor, shouldSplitGroup,
+  parseModelSelection, modelSelectionValue,
 } from "./data/special-door-pricing";
 import { SPECIAL_DOORS } from "./data/special-doors";
 import { ADDONS } from "./data/addons";
@@ -450,5 +451,44 @@ describe("split model dropdown", () => {
     expect(asMember.quote?.unitPrice).toBe(asGroup.quote?.unitPrice);
     expect(asMember.quote?.description).toContain("Model 4051,");
     expect(asGroup.quote?.description).toContain("Model 4050/4051/4053,");
+  });
+});
+
+describe("model selection parsing", () => {
+  it("splits a group:member value", () => {
+    expect(parseModelSelection("4050/4051/4053:4051")).toEqual({ group: "4050/4051/4053", member: "4051" });
+    expect(parseModelSelection("T50S/T50L:T50L")).toEqual({ group: "T50S/T50L", member: "T50L" });
+  });
+
+  it("leaves a plain group key alone", () => {
+    expect(parseModelSelection("9130/9133")).toEqual({ group: "9130/9133", member: "" });
+    expect(parseModelSelection("")).toEqual({ group: "", member: "" });
+  });
+
+  it("round-trips through the value builder", () => {
+    for (const [g, m] of [["4050/4051/4053", "4053"], ["T50S/T50L", ""]] as const) {
+      const v = modelSelectionValue(g, m || undefined);
+      expect(parseModelSelection(v)).toEqual({ group: g, member: m });
+    }
+  });
+
+  it("gives every dropdown option a non-empty width list", () => {
+    // The bug this exists to prevent: the raw "group:member" value was passed
+    // where a grid key was expected, so SPECIAL_DOORS had no entry and the
+    // width dropdown rendered empty with no error anywhere.
+    for (const model of ["4050/4051/4053", "T50S/T50L"]) {
+      const values = shouldSplitGroup(model)
+        ? groupMembers(model).map((m) => modelSelectionValue(model, m))
+        : [model];
+      for (const v of values) {
+        const { group, member } = parseModelSelection(v);
+        expect(griddedWidths(group, undefined, member || undefined).length, v).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("does not treat a raw selection value as a grid key", () => {
+    expect(griddedWidths("4050/4051/4053:4051")).toEqual([]);
+    expect(griddedWidths(parseModelSelection("4050/4051/4053:4051").group)).toHaveLength(73);
   });
 });
