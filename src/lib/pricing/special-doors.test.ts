@@ -12,9 +12,9 @@ const M = "4050/4051/4053";
 const base = { model: M, height: "7", color: "White", track: "r12" as const, spring: "extension" as const, lock: "none" as const };
 
 describe("special order door grid", () => {
-  it("grids the 4050 at 7'0\" and 8'0\", 73 widths from 6'0\" to 18'0\"", () => {
+  it("grids the 4050 at 7'0\", 8'0\" and 9'0\", 73 widths each", () => {
     expect(hasGrid(M)).toBe(true);
-    expect(griddedHeights(M)).toEqual(["7", "8"]);
+    expect(griddedHeights(M)).toEqual(["7", "8", "9"]);
     const w = griddedWidths(M, "7");
     expect(w).toHaveLength(73);
     expect(w[0]).toBe("6");
@@ -57,7 +57,7 @@ describe("special order door grid", () => {
 
   it("refuses anything off the grid, and says to use the manual total", () => {
     for (const off of [
-      { ...base, height: "9", width: "8", style: "solid" as const },
+      { ...base, height: "10", width: "8", style: "solid" as const },
       { ...base, width: "19", style: "solid" as const },
       { model: "GD1LP/GD1SP", height: "7", width: "8", style: "solid" as const, color: "White",
         track: "r12" as const, spring: "extension" as const, lock: "none" as const },
@@ -187,8 +187,10 @@ describe("offered heights", () => {
   it("offers the residential heights, filtered by what each model grids", () => {
     // The T50S has a 9ft grid as of UPDATED_PRICING_9-8; the 4050 does not, and
     // must not offer a height it cannot price.
-    expect(offeredHeights("4050/4051/4053")).toEqual(["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8"]);
-    expect(offeredHeights("T50S/T50L")).toEqual(["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8", "9"]);
+    // Both models grid 9'0" now, so both offer the full nine.
+    for (const m of ["4050/4051/4053", "T50S/T50L"]) {
+      expect(offeredHeights(m), m).toEqual(["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8", "9"]);
+    }
   });
 
   it("bands an in-between height to its tier, like residential", () => {
@@ -220,10 +222,10 @@ describe("offered heights", () => {
     expect(d).not.toContain(`x 7'0"`);
   });
 
-  it("quotes 7'0\" and 8'0\" on both models", () => {
+  it("quotes every gridded height on both models", () => {
     for (const model of ["4050/4051/4053", "T50S/T50L"]) {
-      expect(griddedHeights(model), model).toEqual(model === "T50S/T50L" ? ["7", "8", "9"] : ["7", "8"]);
-      for (const height of ["7", "8"]) {
+      expect(griddedHeights(model), model).toEqual(["7", "8", "9"]);
+      for (const height of ["7", "8", "9"]) {
         expect(griddedWidths(model, height), `${model} ${height}`).toHaveLength(73);
         const q = specialDoorQuote({
           model, width: "9", height, color: "White", style: "solid",
@@ -246,11 +248,12 @@ describe("offered heights", () => {
   it("names every gridded height when refusing one that is not", () => {
     // The message is what sends the counter to the manual box, so it has to
     // list what IS available rather than a hardcoded 7'0".
-    const r = specialDoorQuote({ model: M, width: "9", height: "9", color: "White",
+    // 10'0" is past every gridded tier; 9'0" is on the grid now.
+    const r = specialDoorQuote({ model: M, width: "9", height: "10", color: "White",
       style: "solid", track: "r12", spring: "extension", lock: "none" });
     expect(r.quote).toBeUndefined();
     expect(r.reason).toContain(`6'0"`);
-    expect(r.reason).toContain(`8'0"`);
+    expect(r.reason).toContain(`9'0"`);
     expect(r.reason).toMatch(/total below/);
   });
 });
@@ -264,7 +267,7 @@ describe("per-model width limits", () => {
     // The grid is keyed by margin group, but Clopay does not build a 4053
     // narrower than 8'0". Offering 6'0" would quote a door nobody can order.
     expect(griddedWidths(M, "7", "4053")[0]).toBe("8");
-    expect(griddedWidths(M, "7", "4053")).toHaveLength(59); // 73 less 12 narrow, less 15'0" and 15'2"
+    expect(griddedWidths(M, "7", "4053")).toHaveLength(55); // 73 less 12 narrow, less 15'0" and 15'2"
     expect(q("6", "4053").quote).toBeUndefined();
     expect(q("7.6", "4053").quote).toBeUndefined();
     expect(q("8", "4053").quote?.unitPrice).toBe(723.25);
@@ -381,7 +384,7 @@ describe("width and height are independent", () => {
   });
 
   it("still narrows by model where the members differ", () => {
-    expect(griddedWidths(M, undefined, "4053")).toHaveLength(59);
+    expect(griddedWidths(M, undefined, "4053")).toHaveLength(55);
     expect(griddedWidths(M, undefined, "4053")[0]).toBe("8");
     expect(griddedWidths(M, undefined, "4050")).toHaveLength(73);
   });
@@ -400,19 +403,17 @@ describe("4053 skips 15'0\"", () => {
     specialDoorQuote({ model: M, width, height: "7", color: "White", style: "solid",
       track: "r12", spring: "extension", lock: "none", variant });
 
-  it("drops 15'0\" and 15'2\" while keeping the widths either side", () => {
+  it("drops the whole 15' band while keeping the widths either side", () => {
     // A hole in the range, not a floor — the 4053 is built either side of it.
     const w = griddedWidths(M, undefined, "4053");
-    expect(w).not.toContain("15");
-    expect(w).not.toContain("15.2");
+    for (const x of ["15", "15.2", "15.4", "15.6", "15.8", "15.10"]) expect(w, x).not.toContain(x);
     expect(w).toContain("14.10");
-    expect(w).toContain("15.4");
     expect(w).toContain("16");
-    expect(excludedWidthsFor("4053")).toEqual(["15", "15.2"]);
+    expect(excludedWidthsFor("4053")).toEqual(["15", "15.2", "15.4", "15.6", "15.8", "15.10"]);
   });
 
   it("sends an excluded 4053 width to the manual total", () => {
-    for (const [w, label] of [["15", `15'0"`], ["15.2", `15'2"`]] as const) {
+    for (const [w, label] of [["15", `15'0"`], ["15.2", `15'2"`], ["15.6", `15'6"`], ["15.10", `15'10"`]] as const) {
       expect(q(w, "4053").quote, w).toBeUndefined();
       expect(q(w, "4053").reason, w).toContain(`not built at ${label}`);
       expect(q(w, "4053").reason, w).toMatch(/total below/);
@@ -426,10 +427,11 @@ describe("4053 skips 15'0\"", () => {
     expect(q("15", "4053").reason).not.toContain("narrower than");
   });
 
-  it("leaves the 4050 and 4051 at both widths", () => {
+  it("leaves the 4050 and 4051 across the whole 15' band", () => {
     for (const v of ["4050", "4051"]) {
-      expect(q("15", v).quote?.unitPrice, v).toBe(1280.4);
-      expect(q("15.2", v).quote?.unitPrice, v).toBe(1497.26);
+      for (const w of ["15", "15.2", "15.4", "15.6", "15.8", "15.10"]) {
+        expect(q(w, v).quote?.unitPrice, `${v} ${w}`).toBeGreaterThan(0);
+      }
     }
   });
 });
@@ -495,5 +497,60 @@ describe("model selection parsing", () => {
   it("does not treat a raw selection value as a grid key", () => {
     expect(griddedWidths("4050/4051/4053:4051")).toEqual([]);
     expect(griddedWidths(parseModelSelection("4050/4051/4053:4051").group)).toHaveLength(73);
+  });
+});
+
+describe("restricted models keep the manual total as a first-class path", () => {
+  const restricted = (m: string) => minWidthFor(m) !== null || excludedWidthsFor(m).length > 0;
+
+  it("marks only the models the configurator cannot fully cover", () => {
+    expect(restricted("4053")).toBe(true);
+    for (const m of ["4050", "4051", "T50S", "T50L"]) expect(restricted(m), m).toBe(false);
+  });
+
+  it("leaves the 4053 short of its group by 18 widths", () => {
+    // 73 in the grid, less 12 below 8'0", less the six-wide 15' band. Enough
+    // real orders land outside it that the total entry should not read as an
+    // afterthought below the configurator.
+    expect(griddedWidths(M, undefined, "4053")).toHaveLength(55);
+    expect(griddedWidths(M, undefined, "4050")).toHaveLength(73);
+  });
+
+  it("quotes every width the 4053 does cover", () => {
+    for (const w of griddedWidths(M, undefined, "4053")) {
+      const r = specialDoorQuote({ model: M, width: w, height: "7", color: "White",
+        style: "solid", track: "r12", spring: "extension", lock: "none", variant: "4053" });
+      expect(r.quote?.unitPrice, w).toBeGreaterThan(0);
+    }
+  });
+
+  it("routes every width it does not to the manual total", () => {
+    const covered = new Set(griddedWidths(M, undefined, "4053"));
+    const missed = griddedWidths(M, undefined, "4050").filter((w) => !covered.has(w));
+    expect(missed).toHaveLength(18);
+    for (const w of missed) {
+      const r = specialDoorQuote({ model: M, width: w, height: "7", color: "White",
+        style: "solid", track: "r12", spring: "extension", lock: "none", variant: "4053" });
+      expect(r.quote, w).toBeUndefined();
+      expect(r.reason, w).toMatch(/total below/);
+    }
+  });
+});
+
+describe("the corrected 9ft sheet", () => {
+  it("prices the 15' glass band at its own margin", () => {
+    // 15'6" and 15'8" glass arrived $56.30 under 43M on the first cut; the TOTAL
+    // was right and the SELL was wrong, so the re-cut moved only the sell.
+    for (const w of ["15.6", "15.8"]) {
+      const r = specialDoorQuote({ model: M, width: w, height: "9", color: "White",
+        style: "glass", track: "r12", spring: "torsion", lock: "none" });
+      expect(r.quote?.base, w).toBeCloseTo(2533.35, 2);
+    }
+  });
+
+  it("carries 10'6\" glass at 9'0\", the row that went missing twice", () => {
+    const r = specialDoorQuote({ model: M, width: "10.6", height: "9", color: "White",
+      style: "glass", track: "r12", spring: "torsion", lock: "none" });
+    expect(r.quote?.base).toBeCloseTo(2283.09, 2);
   });
 });

@@ -89,42 +89,42 @@ export const STOCK_PRICES: Record<string, Record<string, Record<string, PriceTri
     "8": {
       "7": { "solid": 723.25, "glass": 897.37, "inserts": 980.4 },
       "8": { "solid": 875.95, "glass": 1050.07, "inserts": 1133.11 },
-      "9": { "solid": 1167.07, "glass": 1337.36, "inserts": 1418.56 },
+      "9": { "solid": 1193.35, "glass": 1367.47, "inserts": 1450.51 },
     },
     "9": {
       "7": { "solid": 782.19, "glass": 956.32, "inserts": 1039.35 },
       "8": { "solid": 954.95, "glass": 1129.02, "inserts": 1212.11 },
-      "9": { "solid": 1264.0, "glass": 1434.29, "inserts": 1515.49 },
+      "9": { "solid": 1292.46, "glass": 1466.58, "inserts": 1549.61 },
     },
     "10": {
       "7": { "solid": 887.98, "glass": 1105.61, "inserts": 1209.4 },
       "8": { "solid": 1098.26, "glass": 1315.89, "inserts": 1419.68 },
-      "9": { "solid": 1464.4, "glass": 1677.24, "inserts": 1778.73 },
+      "9": { "solid": 1497.39, "glass": 1715.02, "inserts": 1818.81 },
     },
     "12": {
       "7": { "solid": 1076.84, "glass": 1338.02, "inserts": 1462.58 },
       "8": { "solid": 1283.09, "glass": 1544.26, "inserts": 1668.82 },
-      "9": { "solid": 1756.51, "glass": 2011.93, "inserts": 2133.73 },
+      "9": { "solid": 1796.05, "glass": 2057.23, "inserts": 2181.79 },
     },
     "14": {
       "7": { "solid": 1220.14, "glass": 1524.82, "inserts": 1670.14 },
       "8": { "solid": 1473.28, "glass": 1777.96, "inserts": 1923.28 },
-      "9": { "solid": 1967.4, "glass": 2265.38, "inserts": 2407.49 },
+      "9": { "solid": 2011.68, "glass": 2316.37, "inserts": 2461.68 },
     },
     "15": {
       "7": { "solid": 1280.4, "glass": 1585.09, "inserts": 1730.4 },
       "8": { "solid": 1573.72, "glass": 1878.4, "inserts": 2023.72 },
-      "9": { "solid": 2065.64, "glass": 2363.62, "inserts": 2505.73 },
+      "9": { "solid": 2112.14, "glass": 2416.82, "inserts": 2562.14 },
     },
     "16": {
       "7": { "solid": 1303.18, "glass": 1651.4, "inserts": 1817.47 },
       "8": { "solid": 1636.68, "glass": 1984.91, "inserts": 2150.98 },
-      "9": { "solid": 2179.58, "glass": 2520.13, "inserts": 2682.55 },
+      "9": { "solid": 2228.67, "glass": 2576.89, "inserts": 2742.96 },
     },
     "18": {
       "7": { "solid": 1575.05, "glass": 1923.28, "inserts": 2089.35 },
       "8": { "solid": 1921.95, "glass": 2270.18, "inserts": 2436.25 },
-      "9": { "solid": 2631.49, "glass": 2972.04, "inserts": 3134.45 },
+      "9": { "solid": 2690.74, "glass": 3038.96, "inserts": 3205.04 },
     },
   },
   "9130-9133": {

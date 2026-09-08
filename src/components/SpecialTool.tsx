@@ -11,6 +11,7 @@ import {
   specialDoorQuote, hasGrid, griddedWidths, griddedHeights,
   offeredHeights, tierForOfferedHeight, heightLabel,
   groupMembers, groupHasWidthLimits, heightForcesTorsion, shouldSplitGroup,
+  minWidthFor, excludedWidthsFor,
   parseModelSelection, modelSelectionValue,
 } from "@/lib/pricing/data/special-door-pricing";
 import { COLORS } from "@/lib/pricing/data/catalog-meta";
@@ -140,6 +141,13 @@ export function SpecialTool() {
   // value for a split group is "4050/4051/4053:4051", which is not a grid key.
   // The member is the variant, so a 4053 selected up top narrows the widths
   // without needing the old sub-select.
+  // A model with size restrictions routes a lot of real orders to the manual
+  // box — the 4053 is built in 55 of the group's 73 widths — so for those the
+  // total entry is presented as a normal required field rather than an
+  // afterthought below the configurator.
+  const restricted =
+    !!modelMember && (minWidthFor(modelMember) !== null || excludedWidthsFor(modelMember).length > 0);
+
   const gWidths = gridded
     ? griddedWidths(modelGroup, gTier ?? undefined, modelMember || gVariant || undefined)
     : [];
@@ -427,9 +435,14 @@ export function SpecialTool() {
                     <div />
                   </div>
                   <div className="field" style={{ marginTop: 6 }}>
-                    <label className="lbl">{gridded && kind === "door"
+                    <label className="lbl">{gridded && kind === "door" && !restricted
                       ? "Or enter a Clopay total for a configuration not listed above"
                       : "Enter total = sub total + energy surcharge — do not apply MPQ"} <span className="req">*</span></label>
+                    {restricted && kind === "door" && (
+                      <div className="muted-note" style={{ marginBottom: 6 }}>
+                        The {modelMember} is not built in every size above — enter the Clopay total for anything the size picker will not take.
+                      </div>
+                    )}
                     <input type="text" inputMode="decimal" value={price} onChange={(e) => { setPrice(e.target.value); setSaved(false); }} placeholder="0.00" />
                   </div>
                 </>

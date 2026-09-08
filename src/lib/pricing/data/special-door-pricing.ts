@@ -100,7 +100,7 @@ function feetInches(key: string): string {
  * unavailable-widths table on the net price book carries several of these.
  */
 const MODEL_EXCLUDED_WIDTHS: Record<string, string[]> = {
-  "4053": ["15", "15.2"],
+  "4053": ["15", "15.2", "15.4", "15.6", "15.8", "15.10"],
 };
 
 const MODEL_MIN_WIDTH: Record<string, string> = {

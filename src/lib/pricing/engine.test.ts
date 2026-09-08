@@ -242,9 +242,9 @@ describe("4050-4051-4053 odd-size resolution (finer width groups)", () => {
     expect(price(16, 10, 7)).toBeCloseTo(1739.07, 2);
   });
   it("prices glass and inserts too (odd 10' band x 9')", () => {
-    expect(price(10, 0, 9, "glass")).toBeCloseTo(1677.24, 2); // exact 10'0" x 9' -> 9FT-book stock price
-    expect(price(10, 2, 9, "glass")).toBeCloseTo(2242.35, 2); // odd widths keep the odd band
-    expect(price(10, 2, 9, "inserts")).toBeCloseTo(2343.84, 2);
+    expect(price(10, 0, 9, "glass")).toBeCloseTo(1715.02, 2); // exact 10'0" x 9' -> 9FT-book stock price
+    expect(price(10, 2, 9, "glass")).toBeCloseTo(2283.09, 2); // odd widths keep the odd band
+    expect(price(10, 2, 9, "inserts")).toBeCloseTo(2386.88, 2);
   });
 });
 
@@ -295,7 +295,7 @@ describe("2026 workbook authority (V2 stock + strict 9FT book)", () => {
     expect(priceResidential("9133", dim(9, 4, 7, 0), "solid").source).toBe("standard");
   });
   it("9-ft-high exact sizes use the strict 9FT-book prices", () => {
-    expect(priceResidential("4050", dim(12, 0, 9, 0), "solid")).toMatchObject({ price: 1756.51, source: "stock" });
+    expect(priceResidential("4050", dim(12, 0, 9, 0), "solid")).toMatchObject({ price: 1796.05, source: "stock" });
     expect(priceResidential("9130", dim(12, 0, 9, 0), "solid")).toMatchObject({ price: 2064.75, source: "stock" });
     // DDS stocks only the 4050 at 18'0" — T50S/T52S 18' price from the standard
     //  tier and read as special order (Brandon, 08/2026). Price is unchanged.
