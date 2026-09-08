@@ -74,9 +74,9 @@ describe("priceResidential — stock vs standard (the core rule)", () => {
     ["T50S", dim(11, 0, 7, 0), "solid", 935.92, "standard"],
     ["T50S", dim(16, 0, 8, 0), "inserts", 1690.1, "stock"],
     ["T50S", dim(16, 0, 7, 0), "glass", 1313.8, "stock"],
-    ["T50S", dim(12, 0, 9, 0), "solid", 1408.44, "stock"], // 9' tall exact width -> 9FT-book stock price
-    ["T50S", dim(10, 0, 9, 0), "solid", 1087.78, "stock"],
-    ["T50S", dim(12, 2, 9, 0), "solid", 1801.19, "standard"], // odd 9' width stays on the odd band
+    ["T50S", dim(12, 0, 9, 0), "solid", 1476.22, "stock"], // 9' tall exact width -> 9FT-book stock price
+    ["T50S", dim(10, 0, 9, 0), "solid", 1140.14, "stock"],
+    ["T50S", dim(12, 2, 9, 0), "solid", 1827.12, "standard"], // odd 9' width stays on the odd band
     ["T52S", dim(8, 0, 7, 0), "solid", 662.42, "stock"],
     ["T52S", dim(9, 0, 7, 0), "glass", 852.96, "stock"],
     ["T52S", dim(9, 4, 7, 0), "glass", 1084.98, "standard"],

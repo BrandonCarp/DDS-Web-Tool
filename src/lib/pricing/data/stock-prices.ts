@@ -15,35 +15,35 @@ export const STOCK_PRICES: Record<string, Record<string, Record<string, PriceTri
     "8": {
       "7": { "solid": 566.06, "glass": 715.61, "inserts": 815.31 },
       "8": { "solid": 681.84, "glass": 831.39, "inserts": 931.1 },
-      "9": { "solid": 978.84, "glass": 1121.53, "inserts": 1216.65 },
+      "9": { "solid": 1025.96, "glass": 1175.51, "inserts": 1275.22 },
     },
     "9": {
       "7": { "solid": 604.63, "glass": 754.18, "inserts": 853.88 },
       "8": { "solid": 717.22, "glass": 866.76, "inserts": 966.47 },
-      "9": { "solid": 1017.18, "glass": 1159.87, "inserts": 1255.0 },
+      "9": { "solid": 1066.16, "glass": 1215.71, "inserts": 1315.41 },
     },
     "10": {
       "7": { "solid": 713.98, "glass": 900.92, "inserts": 1025.53 },
       "8": { "solid": 771.88, "glass": 958.82, "inserts": 1083.43 },
-      "9": { "solid": 1087.78, "glass": 1266.15, "inserts": 1385.05 },
+      "9": { "solid": 1140.14, "glass": 1327.08, "inserts": 1451.69 },
     },
     "12": {
       "7": { "solid": 805.65, "glass": 1029.96, "inserts": 1179.51 },
       "8": { "solid": 992.18, "glass": 1216.49, "inserts": 1366.04 },
-      "9": { "solid": 1408.44, "glass": 1622.47, "inserts": 1765.16 },
+      "9": { "solid": 1476.22, "glass": 1700.53, "inserts": 1850.08 },
     },
     "14": {
-      "9": { "solid": 1515.84, "glass": 1765.53, "inserts": 1932.0 },
+      "9": { "solid": 1588.8, "glass": 1850.53, "inserts": 2025.0 },
     },
     "15": {
       "7": { "solid": 937.53, "glass": 1199.25, "inserts": 1373.73 },
       "8": { "solid": 1149.78, "glass": 1411.51, "inserts": 1585.98 },
-      "9": { "solid": 1618.62, "glass": 1868.31, "inserts": 2034.78 },
+      "9": { "solid": 1696.53, "glass": 1958.25, "inserts": 2132.73 },
     },
     "16": {
       "7": { "solid": 1014.71, "glass": 1313.8, "inserts": 1513.22 },
       "8": { "solid": 1191.59, "glass": 1490.69, "inserts": 1690.1 },
-      "9": { "solid": 1690.73, "glass": 1976.11, "inserts": 2166.35 },
+      "9": { "solid": 1772.1, "glass": 2071.2, "inserts": 2270.61 },
     },
   },
   "T52S": {

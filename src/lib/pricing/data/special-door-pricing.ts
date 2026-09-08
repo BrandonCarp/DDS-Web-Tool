@@ -109,8 +109,11 @@ export function compareWidths(a: string, b: string): number {
  * takes the 7' grid, 7'6" to 8'0" takes the 8' grid. So no extra price data is
  * needed to offer the in-between heights, and a 6'6" door quotes the same as a
  * 7'0" one, which is what the book says.
+ *
+ * offeredHeights() filters this per model against what is actually gridded, so
+ * the T50S offers 9'0" and the 4050 does not.
  */
-export const OFFERED_HEIGHTS = ["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8"];
+export const OFFERED_HEIGHTS = ["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8", "9"];
 
 /** Height code -> the grid tier that prices it, or null if past the grid. */
 export function tierForOfferedHeight(height: string, available: string[]): string | null {

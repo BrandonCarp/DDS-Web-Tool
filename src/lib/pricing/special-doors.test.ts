@@ -182,10 +182,11 @@ describe("the 6'4\"-7'10\" band", () => {
 });
 
 describe("offered heights", () => {
-  it("offers the same eight heights the residential tab does", () => {
-    for (const model of ["4050/4051/4053", "T50S/T50L"]) {
-      expect(offeredHeights(model), model).toEqual(["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8"]);
-    }
+  it("offers the residential heights, filtered by what each model grids", () => {
+    // The T50S has a 9ft grid as of UPDATED_PRICING_9-8; the 4050 does not, and
+    // must not offer a height it cannot price.
+    expect(offeredHeights("4050/4051/4053")).toEqual(["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8"]);
+    expect(offeredHeights("T50S/T50L")).toEqual(["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8", "9"]);
   });
 
   it("bands an in-between height to its tier, like residential", () => {
@@ -219,7 +220,7 @@ describe("offered heights", () => {
 
   it("quotes 7'0\" and 8'0\" on both models", () => {
     for (const model of ["4050/4051/4053", "T50S/T50L"]) {
-      expect(griddedHeights(model), model).toEqual(["7", "8"]);
+      expect(griddedHeights(model), model).toEqual(model === "T50S/T50L" ? ["7", "8", "9"] : ["7", "8"]);
       for (const height of ["7", "8"]) {
         expect(griddedWidths(model, height), `${model} ${height}`).toHaveLength(73);
         const q = specialDoorQuote({
