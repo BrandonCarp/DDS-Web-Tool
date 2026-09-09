@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { doorArt, styleOf, BASE_REF, windowBand, BAND_HEIGHT } from "./data/door-images";
+import { windowDesigns, excludedDesignsFor } from "./data/inserts";
 import { doorGeometry } from "./data/door-geometry";
 import { STOCK_MATRIX, stockedWidths, stockedHeights, sizeParts } from "./data/stock-colors";
 
@@ -114,7 +115,9 @@ describe("window bands", () => {
   it("returns null for a design with no capture yet", () => {
     // The renderer must decline, not draw the solid door — a picture with no
     // windows on a quote for a door with windows is a wrong picture.
-    for (const d of ["502", "504", "505", "506", "507"]) {
+    // 505 and 605 gained bands from the 16ft renders; 507 is no longer offered
+    // on the 4050 at all.
+    for (const d of ["502", "504", "506"]) {
       expect(windowBand("4050", d), d).toBeNull();
     }
     expect(windowBand("4053", "509")).toBeNull();
@@ -137,6 +140,31 @@ describe("window bands", () => {
       for (const d of ["SQ24", "REC14", "VERTARCH", "GRILLEARCH"]) {
         expect(windowBand(st, d), `${st} ${d}`).not.toBeNull();
       }
+    }
+  });
+});
+
+describe("stocked insert list", () => {
+  it("does not offer Sunset 507 on the 4050", () => {
+    // DDS floors 507 in white but not for this model — from the stocked-insert
+    // list, 10/9/2026. The width rules would otherwise allow it at every size.
+    for (const w of ["7", "9", "12", "16", "18"]) {
+      expect(windowDesigns("4050", "inserts", w).map((d) => d.id), w).not.toContain("507");
+    }
+    expect(excludedDesignsFor("4050")).toEqual(["507"]);
+  });
+
+  it("leaves 507 on the models that do take it", () => {
+    expect(windowDesigns("4053", "inserts", "9").map((d) => d.id)).toContain("507");
+    expect(excludedDesignsFor("4053")).toEqual([]);
+  });
+
+  it("finds bands for the designs added from the 16ft renders", () => {
+    // Extracted from Clopay's own 16'0" images — the left half's top section.
+    expect(windowBand("4050", "505")).toBe("/doors/bands/short--505.webp");
+    expect(windowBand("4050", "605")).toBe("/doors/bands/short--605.webp");
+    for (const d of ["ARCH3PLAIN", "ARCH3GRILLE", "ARCH3VERT"]) {
+      expect(windowBand("GD1LP", d), d).toBe(`/doors/bands/gallery-long--${d}.webp`);
     }
   });
 });

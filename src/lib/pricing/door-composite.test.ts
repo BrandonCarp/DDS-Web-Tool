@@ -21,15 +21,26 @@ describe("door composite", () => {
     expect(t.targetHeight).toBe(576);
   });
 
-  it("keeps the real edges and repeats only the interior", () => {
+  it("repeats the base whole when the panel count is a multiple", () => {
+    // 16'0" is exactly two 8'0" doors. Slicing it instead would copy one
+    // interior panel repeatedly, which breaks any design spanning more than one
+    // panel — the Gallery arch rises across panel 1 and falls across panel 2.
     const c = composite("short", 8, 4)!;
+    expect(c.blits).toHaveLength(2);
+    expect(c.blits.every((b) => b.sx === 0 && b.sw === SLICES.short.width)).toBe(true);
+    expect(c.width).toBe(880);
+    const g = composite("gallery-long", 4, 4)!;
+    expect(g.blits).toHaveLength(2);
+    expect(g.width).toBe(1920);
+  });
+
+  it("slices only when the count is not a multiple", () => {
+    const c = composite("short", 6, 4)!;
     const m = SLICES.short;
-    // Every strip: left margin, panels-1 interior cells, then the real tail.
-    const perRow = 1 + (8 - 1) + 1;
-    expect(c.blits).toHaveLength(perRow * 4);      // header + 2 interior + footer
+    const perRow = 1 + (6 - 1) + 1;
+    expect(c.blits).toHaveLength(perRow * 4);
     expect(c.blits[0]).toMatchObject({ sx: 0, sw: m.left, dx: 0 });
-    const interior = c.blits.filter((b) => b.sx === m.left + m.panelPitch);
-    expect(interior).toHaveLength(7 * 4);
+    expect(c.blits.filter((b) => b.sx === m.left + m.panelPitch)).toHaveLength(5 * 4);
   });
 
   it("never stretches a slice", () => {
@@ -44,7 +55,7 @@ describe("door composite", () => {
 
   it("tiles the interior sections, not the header or footer", () => {
     const m = SLICES.short;
-    const c = composite("short", 4, 6)!;
+    const c = composite("short", 4, 6)!;   // not a whole multiple: 6 sections
     const fromHeader = c.blits.filter((b) => b.sy === 0);
     const fromFooter = c.blits.filter((b) => b.sy === m.footerTop);
     const fromInterior = c.blits.filter((b) => b.sy === m.header);

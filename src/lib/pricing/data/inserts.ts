@@ -26,11 +26,29 @@ export const DECORATIVE: InsertDesign[] = [
   { id: "605", name: "Sunset 605", cat: "sunset", w: ["15", "15.6", "16", "17", "18"] },
 ];
 
+/**
+ * Gallery architectural inserts.
+ *
+ * Arch 1, Arch 2 and Arch 3 are separate inserts, not one design drawn three
+ * ways — Brandon, 10/9/2026. The width lists reflect what Clopay actually
+ * builds: Arch 2 is not offered at 16'0" and Arch 3 only is.
+ */
 export const ARCHITECTURAL: InsertDesign[] = [
-  { id: "SQ24", name: "SQ24" },
-  { id: "REC14", name: "REC14" },
-  { id: "VERTARCH", name: "Vertical Grille on Arch" },
-  { id: "GRILLEARCH", name: "Grille on Arch" },
+  { id: "SQ24", name: "SQ24", cat: "arch" },
+  { id: "SQ22", name: "SQ22", cat: "arch" },
+  { id: "REC14", name: "REC14", cat: "arch" },
+  { id: "REC12", name: "REC12", cat: "arch" },
+  { id: "PLAINLONG", name: "Plain Long", cat: "arch" },
+  { id: "PLAINSHORT", name: "Plain Short", cat: "arch" },
+  { id: "ARCH1PLAIN", name: "Arch 1 Plain", cat: "arch" },
+  { id: "ARCH1GRILLE", name: "Arch 1 Grille", cat: "arch" },
+  { id: "ARCH1VERT", name: "Arch 1 Vertical Grille", cat: "arch" },
+  { id: "ARCH2PLAIN", name: "Arch 2 Plain", cat: "arch", w: ["8", "9"] },
+  { id: "ARCH2GRILLE", name: "Arch 2 Grille", cat: "arch", w: ["8", "9"] },
+  { id: "ARCH2VERT", name: "Arch 2 Vertical Grille", cat: "arch", w: ["8", "9"] },
+  { id: "ARCH3PLAIN", name: "Arch 3 Plain", cat: "arch", w: ["16"] },
+  { id: "ARCH3GRILLE", name: "Arch 3 Grille", cat: "arch", w: ["16"] },
+  { id: "ARCH3VERT", name: "Arch 3 Vertical Grille", cat: "arch", w: ["16"] },
 ];
 
 // Which window designs each specific model can take.
@@ -52,6 +70,21 @@ export function designWidthCode(wf: number, wi: number): string {
   return String(wf);
 }
 
+/**
+ * Designs a model does not take, whatever the width rules would otherwise allow.
+ *
+ * DDS floors Sunset 507 in white, but not for the 4050 — Brandon's call from the
+ * stocked-insert list, 10/9/2026.
+ */
+const MODEL_EXCLUDED_DESIGNS: Record<string, string[]> = {
+  "4050": ["507"],
+};
+
+/** Designs a specific model will not take. */
+export function excludedDesignsFor(unit: string): string[] {
+  return MODEL_EXCLUDED_DESIGNS[unit] ?? [];
+}
+
 /** Window/insert designs available for the current door (specific model + style + width). */
 export function windowDesigns(unit: string, style: string, widthCode: string | null): InsertDesign[] {
   if (style === "solid") return [];
@@ -59,9 +92,17 @@ export function windowDesigns(unit: string, style: string, widthCode: string | n
   // "insert" (style === "inserts"). Plain glass gets no design on any model,
   // Gallery included — otherwise an insert could ride along at the glass price.
   if (style !== "inserts") return [];
-  if (String(unit).indexOf("GD") === 0) return ARCHITECTURAL; // Gallery -> architectural inserts
+  if (String(unit).indexOf("GD") === 0) {
+    // Gallery inserts carry width lists too: Arch 2 is not built at 16'0" and
+    // Arch 3 only is, so the same width filter applies here as below.
+    return ARCHITECTURAL.filter(
+      (d) => !d.w || (widthCode !== null && d.w.includes(widthCode)),
+    );
+  }
   const rule = INSERT_RULES[unit] ?? "all";
+  const excluded = excludedDesignsFor(unit);
   return DECORATIVE.filter((d) => {
+    if (excluded.includes(d.id)) return false;
     const is500 = String(d.id).charAt(0) === "5"; // 500-series = plain short windows + sunsets
     const catOk = rule === "all" ? true : rule === "shortlong" ? is500 || d.cat === "long" : is500;
     const widthOk = !d.w || (widthCode !== null && d.w.includes(widthCode));

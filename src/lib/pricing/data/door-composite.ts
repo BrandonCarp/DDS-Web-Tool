@@ -79,6 +79,30 @@ export function composite(style: DoorStyle, panels: number, sections: number): C
   if (panels === m.panels && sections === m.sections) return null;
 
   const blits: Blit[] = [];
+
+  // When the target is a whole number of base doors, repeat the base entire
+  // rather than slicing it. This matters for designs that span more than one
+  // panel: the Gallery arch rises across panel 1 and falls across panel 2, so
+  // copying a single interior panel gives every window the same slope. Tiling
+  // whole widths keeps the pair together, and it is exact — a 16'0" really is
+  // two 8'0" doors side by side.
+  if (panels % m.panels === 0 && sections === m.sections) {
+    const reps = panels / m.panels;
+    for (let i = 0; i < reps; i++) {
+      blits.push({
+        sx: 0, sy: 0, sw: m.width, sh: m.height,
+        dx: i * m.width, dy: 0, dw: m.width, dh: m.height,
+      });
+    }
+    return {
+      width: m.width * reps,
+      height: m.height,
+      targetWidth: m.width * reps,
+      targetHeight: m.height,
+      blits,
+    };
+  }
+
   const tailW = m.width - (m.left + (m.panels - 1) * m.panelPitch);
   const outW = m.left + (panels - 1) * m.panelPitch + tailW;
   const footerH = m.height - m.footerTop;

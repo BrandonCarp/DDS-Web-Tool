@@ -868,8 +868,11 @@ html, body { margin: 0; padding: 0; }
 .tool-shell .qtyrow { display: flex; align-items: center; gap: 10px; }
 .doorthumb { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
 .doorthumb-btn { padding: 0; border: 1px solid var(--line, #d8d6d0); border-radius: 3px; background: #fff; cursor: zoom-in; line-height: 0; }
-.doorthumb-btn img { width: 84px; height: auto; display: block; border-radius: 2px; }
-.doorthumb-dl { font-size: 11px; color: var(--muted, #6b6a66); text-decoration: underline; }
+.doorthumb-btn img { width: 116px; height: auto; display: block; border-radius: 2px; }
+/* Matches the Copy description button, just smaller. */
+.doorthumb-dl { font-size: 10.5px; letter-spacing: .02em; text-transform: uppercase; color: #fff;
+  background: var(--brand, #5a1220); border-radius: 3px; padding: 3px 8px; text-decoration: none; }
+.doorthumb-dl:hover { filter: brightness(1.12); }
 .doorlb { position: fixed; inset: 0; background: rgba(20,18,16,.72); display: flex; align-items: center; justify-content: center; z-index: 60; padding: 24px; }
 .doorlb-inner { background: #fff; border-radius: 6px; padding: 14px; max-width: min(92vw, 1000px); }
 .doorlb-inner img { width: 100%; height: auto; display: block; }

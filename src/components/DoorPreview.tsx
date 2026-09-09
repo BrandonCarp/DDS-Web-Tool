@@ -42,7 +42,8 @@ export default function DoorPreview({ model, color, widthFt, widthIn, heightFt, 
   // window-less picture on a quote for a door with windows.
   const wantsGlass = style === "glass" || style === "inserts";
   const designKey = style === "inserts" ? (design ?? "") : (glassRun ?? "PLAINSHORT");
-  const bandSrc = wantsGlass ? windowBand(model, designKey) : null;
+  const widthCode = widthIn === 0 ? String(widthFt) : `${widthFt}.${widthIn}`;
+  const bandSrc = wantsGlass ? windowBand(model, designKey, widthCode) : null;
   const blocked = wantsGlass && !bandSrc;
   const run = panelRunFor(model) ?? (art?.style.includes("long") ? "long" : "short");
   const geo = art ? doorGeometry(widthFt, widthIn, heightFt, heightIn, run, model) : null;

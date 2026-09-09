@@ -135,6 +135,7 @@ const BANDS = new Set<string>([
   "short--501", "short--503", "short--508", "short--509", "short--510",
   "short--601", "short--603", "short--608", "short--610", "short--611",
   "short--612", "short--613", "short--PLAINLONG", "short--PLAINSHORT",
+  "short--505", "short--605",
   "long--601", "long--603", "long--608", "long--610", "long--611",
   "long--612", "long--613", "long--PLAINLONG",
   "flush--PLAINLONG", "flush--PLAINSHORT",
@@ -144,15 +145,84 @@ const BANDS = new Set<string>([
   "gallery-long--ARCHPLAIN", "gallery-long--GRILLEARCH", "gallery-long--PLAINLONG",
   "gallery-long--PLAINSHORT", "gallery-long--REC12", "gallery-long--REC14",
   "gallery-long--SQ22", "gallery-long--SQ24", "gallery-long--VERTARCH",
+  "gallery-long--ARCH3PLAIN", "gallery-long--ARCH3GRILLE", "gallery-long--ARCH3VERT",
 ]);
 
 /**
- * The 4051 has no window captures of its own.
+ * Styles that share top sections.
  *
- * Brandon's call, not a measurement: it takes the same top sections as the
- * 4050 and 4053. If a glazed 4051 ever looks wrong, this is the line.
+ * Brandon's call, not a measurement: the top section is a separate part from
+ * the panels below it, so a 4050 and a 4053 take the same glass, and so do the
+ * two Gallery panels. The 4051 has no captures of its own and borrows from
+ * both. If a glazed door ever shows the wrong top, this table is the line.
+ *
+ * Order matters — the style's own capture is tried first, then these.
  */
-const BAND_FALLBACK: Partial<Record<DoorStyle, DoorStyle>> = { flush: "short" };
+/** Gallery bands, keyed style--design--width. */
+const GALLERY_BANDS = new Set<string>([
+  "gallery-long--ARCH1GRILLE--16",
+  "gallery-long--ARCH1GRILLE--8",
+  "gallery-long--ARCH1GRILLE--9",
+  "gallery-long--ARCH1PLAIN--16",
+  "gallery-long--ARCH1PLAIN--8",
+  "gallery-long--ARCH1PLAIN--9",
+  "gallery-long--ARCH1VERT--16",
+  "gallery-long--ARCH1VERT--8",
+  "gallery-long--ARCH1VERT--9",
+  "gallery-long--ARCH2GRILLE--8",
+  "gallery-long--ARCH2GRILLE--9",
+  "gallery-long--ARCH2PLAIN--8",
+  "gallery-long--ARCH2PLAIN--9",
+  "gallery-long--ARCH2VERT--8",
+  "gallery-long--ARCH2VERT--9",
+  "gallery-long--ARCH3GRILLE--16",
+  "gallery-long--ARCH3PLAIN--16",
+  "gallery-long--ARCH3VERT--16",
+  "gallery-long--PLAINLONG--8",
+  "gallery-long--PLAINLONG--9",
+  "gallery-long--PLAINSHORT--8",
+  "gallery-long--PLAINSHORT--9",
+  "gallery-long--REC12--8",
+  "gallery-long--REC12--9",
+  "gallery-long--REC14--8",
+  "gallery-long--REC14--9",
+  "gallery-long--SQ22--8",
+  "gallery-long--SQ22--9",
+  "gallery-long--SQ24--8",
+  "gallery-long--SQ24--9",
+  "gallery-short--ARCH1GRILLE--8",
+  "gallery-short--ARCH1GRILLE--9",
+  "gallery-short--ARCH1PLAIN--8",
+  "gallery-short--ARCH1PLAIN--9",
+  "gallery-short--ARCH1VERT--8",
+  "gallery-short--ARCH1VERT--9",
+  "gallery-short--ARCH2GRILLE--8",
+  "gallery-short--ARCH2GRILLE--9",
+  "gallery-short--ARCH2PLAIN--8",
+  "gallery-short--ARCH2PLAIN--9",
+  "gallery-short--ARCH2VERT--8",
+  "gallery-short--ARCH2VERT--9",
+  "gallery-short--PLAINLONG--8",
+  "gallery-short--PLAINLONG--9",
+  "gallery-short--PLAINSHORT--8",
+  "gallery-short--PLAINSHORT--9",
+  "gallery-short--REC12--8",
+  "gallery-short--REC12--9",
+  "gallery-short--REC14--8",
+  "gallery-short--REC14--9",
+  "gallery-short--SQ22--8",
+  "gallery-short--SQ22--9",
+  "gallery-short--SQ24--8",
+  "gallery-short--SQ24--9",
+]);
+
+const BAND_FALLBACK: Partial<Record<DoorStyle, DoorStyle[]>> = {
+  short: ["long"],
+  long: ["short"],
+  flush: ["short", "long"],
+  "gallery-short": ["gallery-long"],
+  "gallery-long": ["gallery-short"],
+};
 
 /** Height of the top section, per canvas. */
 export const BAND_HEIGHT: Record<DoorStyle, number> = {
@@ -167,10 +237,24 @@ export const BAND_HEIGHT: Record<DoorStyle, number> = {
  * decline rather than fall back to the solid door, which would show a customer
  * a door without the windows they asked for.
  */
-export function windowBand(model: string, design: string): string | null {
+export function windowBand(model: string, design: string, widthCode?: string): string | null {
   const style = styleOf(model);
   if (!style || !design) return null;
-  for (const st of [style, BAND_FALLBACK[style]].filter(Boolean) as DoorStyle[]) {
+
+  // Gallery renders each width separately — its 9'0" is 1080px wide, not a
+  // scaled 960 — so its bands are stored per width and there is no fallback to
+  // another width. The Classic canvas is identical at 8'0" and 9'0" (byte for
+  // byte), so one band covers the whole panel-count band there.
+  if (style.startsWith("gallery")) {
+    if (!widthCode) return null;
+    for (const st of [style, ...(BAND_FALLBACK[style] ?? [])]) {
+      const key = `${st}--${design}--${widthCode}`;
+      if (GALLERY_BANDS.has(key)) return `/doors/bands/${key}.webp`;
+    }
+    return null;
+  }
+
+  for (const st of [style, ...(BAND_FALLBACK[style] ?? [])]) {
     const key = `${st}--${design}`;
     if (BANDS.has(key)) return `/doors/bands/${key}.webp`;
   }
