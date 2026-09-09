@@ -294,7 +294,10 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
   // The stock/special status is NOT in the description — it is shown in the
   // stock badge on screen. The description is copied verbatim into QuickBooks,
   // where the status is a DDS-internal fact, not part of the product line.
-  const description = `Clopay ${coll ? coll + ", " : ""}Model ${model}, ${dims(size)}, in the color ${opts.color}, ${winTxt}, ${trackTxt}, ${springTxt}, ${lockTxt}`;
+  // Upgraded hardware goes last, after the lock, so the line ends
+  // "...NO LOCK, UPGRADED HARDWARE".
+  const hardwareTxt = opts.upgradedHardware ? ", upgraded hardware" : "";
+  const description = `Clopay ${coll ? coll + ", " : ""}Model ${model}, ${dims(size)}, in the color ${opts.color}, ${winTxt}, ${trackTxt}, ${springTxt}, ${lockTxt}${hardwareTxt}`;
 
   return {
     model, size, priced: true, isStock: inStock,

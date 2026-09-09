@@ -67,3 +67,26 @@ describe("Haas Aluminum Series", () => {
     expect(seriesFor("Clopay")).not.toContain("Aluminum Series");
   });
 });
+
+describe("upgraded hardware on the description", () => {
+  const desc = (o: Record<string, unknown> = {}) =>
+    quoteResidential("4050", dim(9), { ...base, ...o }).description;
+
+  it("goes last, after the lock", () => {
+    expect(desc({ upgradedHardware: true })).toMatch(/no lock, upgraded hardware$/);
+    expect(desc({ lock: "lockbar", upgradedHardware: true })).toMatch(/lockbar, upgraded hardware$/);
+  });
+
+  it("says nothing when it is not selected", () => {
+    expect(desc()).toMatch(/no lock$/);
+    expect(desc()).not.toContain("upgraded hardware");
+    expect(desc({ upgradedHardware: false })).not.toContain("upgraded hardware");
+  });
+
+  it("leaves the rest of the line alone", () => {
+    // Only the tail changes; everything before the lock is identical.
+    const off = desc();
+    const on = desc({ upgradedHardware: true });
+    expect(on).toBe(off + ", upgraded hardware");
+  });
+});
