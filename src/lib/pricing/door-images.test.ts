@@ -101,8 +101,8 @@ describe("window bands", () => {
   it("finds a band for the designs we captured", () => {
     expect(windowBand("4050", "509")).toBe("/doors/bands/short--509.webp");
     expect(windowBand("4053", "612")).toBe("/doors/bands/long--612.webp");
-    expect(windowBand("GD1LP", "SQ24")).toBe("/doors/bands/gallery-long--SQ24.webp");
-    expect(windowBand("GD1SP", "VERTARCH")).toBe("/doors/bands/gallery-short--VERTARCH.webp");
+    expect(windowBand("GD1LP", "SQ24", "8")).toBe("/doors/bands/gallery-long--SQ24--8.webp");
+    expect(windowBand("GD1SP", "ARCH1VERT", "9")).toBe("/doors/bands/gallery-short--ARCH1VERT--9.webp");
   });
 
   it("falls the 4051 back to the short panel's bands", () => {
@@ -120,7 +120,7 @@ describe("window bands", () => {
     for (const d of ["502", "504", "506"]) {
       expect(windowBand("4050", d), d).toBeNull();
     }
-    expect(windowBand("4053", "509")).toBeNull();
+    // 4053/509 is no longer null — it borrows the short panel's capture now.
   });
 
   it("has no band without a design", () => {
@@ -137,9 +137,13 @@ describe("window bands", () => {
 
   it("covers both Gallery styles completely", () => {
     for (const st of ["GD1SP", "GD1LP"]) {
-      for (const d of ["SQ24", "REC14", "VERTARCH", "GRILLEARCH"]) {
-        expect(windowBand(st, d), `${st} ${d}`).not.toBeNull();
+      for (const d of ["SQ24", "REC14", "ARCH1VERT", "ARCH1GRILLE"]) {
+        expect(windowBand(st, d, "8"), `${st} ${d}`).not.toBeNull();
+        expect(windowBand(st, d, "9"), `${st} ${d} 9ft`).not.toBeNull();
       }
+      // Gallery has no width fallback: 9'0" renders on a 1080px canvas, so an
+      // 8'0" band would be the wrong proportions.
+      expect(windowBand(st, "SQ24"), `${st} no width`).toBeNull();
     }
   });
 });
@@ -164,7 +168,143 @@ describe("stocked insert list", () => {
     expect(windowBand("4050", "505")).toBe("/doors/bands/short--505.webp");
     expect(windowBand("4050", "605")).toBe("/doors/bands/short--605.webp");
     for (const d of ["ARCH3PLAIN", "ARCH3GRILLE", "ARCH3VERT"]) {
-      expect(windowBand("GD1LP", d), d).toBe(`/doors/bands/gallery-long--${d}.webp`);
+      // Arch 3 is a separate insert, built only at 16'0".
+      expect(windowBand("GD1LP", d, "16"), d).toBe(`/doors/bands/gallery-long--${d}--16.webp`);
+      expect(windowBand("GD1LP", d, "8"), d).toBeNull();
     }
+  });
+});
+
+describe("styles that share top sections", () => {
+  it("lets the 4050 and 4053 use each other's glass", () => {
+    // The top section is a separate part from the panels below it, so the same
+    // glass goes on either body. Brandon's call, 10/9/2026.
+    // The 4053 has no 509 of its own and borrows the short panel's.
+    expect(windowBand("4053", "509")).toBe("/doors/bands/short--509.webp");
+    expect(windowBand("4053", "508")).toBe("/doors/bands/short--508.webp");
+    // Where both have a capture, each keeps its own.
+    expect(windowBand("4050", "612")).toBe("/doors/bands/short--612.webp");
+  });
+
+  it("lets the two Gallery panels share", () => {
+    expect(windowBand("GD1SP", "SQ24", "8")).not.toBeNull();
+    expect(windowBand("GD1LP", "SQ24", "8")).not.toBeNull();
+    // GD1SP borrows the long panel's Arch 3, which only exists at 16'0".
+    expect(windowBand("GD1SP", "ARCH3PLAIN", "16")).toBe("/doors/bands/gallery-long--ARCH3PLAIN--16.webp");
+  });
+
+  it("prefers a style's own capture over a borrowed one", () => {
+    // Both have a 610; each must use its own rather than the other's.
+    expect(windowBand("4050", "610")).toBe("/doors/bands/short--610.webp");
+    expect(windowBand("4053", "610")).toBe("/doors/bands/long--610.webp");
+  });
+
+  it("covers every design each model offers, bar 507", () => {
+    for (const m of ["4050", "4053", "4051", "GD1SP", "GD1LP"]) {
+      const missing = windowDesigns(m, "inserts", "9")
+        .map((d) => d.id)
+        .filter((id) => !windowBand(m, id, "9"));
+      expect(missing, m).toEqual(m === "4050" ? [] : missing.filter((x) => x === "507"));
+    }
+  });
+});
+
+describe("Gallery arches are separate inserts", () => {
+  it("offers Arch 1, 2 and 3 as distinct designs", () => {
+    // Brandon, 10/9/2026: these are different inserts, not one design drawn
+    // three ways. Collapsing them onto a single "Vertical Grille on Arch" is
+    // what put the wrong arch on a quote.
+    const ids = windowDesigns("GD1LP", "inserts", "9").map((d) => d.id);
+    expect(ids).toContain("ARCH1VERT");
+    expect(ids).toContain("ARCH2VERT");
+    expect(ids).not.toContain("ARCH3VERT");     // 16'0" only
+  });
+
+  it("honours each arch's width availability", () => {
+    const at = (w: string) => windowDesigns("GD1LP", "inserts", w).map((d) => d.id);
+    for (const w of ["8", "9"]) {
+      expect(at(w), w).toContain("ARCH2PLAIN");
+      expect(at(w), w).not.toContain("ARCH3PLAIN");
+    }
+    expect(at("16")).toContain("ARCH3PLAIN");
+    expect(at("16")).not.toContain("ARCH2PLAIN");
+    expect(at("16")).toContain("ARCH1PLAIN");   // built at every width
+  });
+
+  it("stores Gallery bands per width and never substitutes one", () => {
+    // A 9'0" Gallery renders 1080px wide, not a scaled 960, so an 8'0" band
+    // would be visibly the wrong proportions.
+    expect(windowBand("GD1LP", "SQ24", "8")).toBe("/doors/bands/gallery-long--SQ24--8.webp");
+    expect(windowBand("GD1LP", "SQ24", "9")).toBe("/doors/bands/gallery-long--SQ24--9.webp");
+    // 16'0" is exactly two 8'0" doors, so the 8'0" band tiles onto it.
+    expect(windowBand("GD1LP", "SQ24", "16")).toBe("/doors/bands/gallery-long--SQ24--8.webp");
+  });
+
+  it("keeps the Classic canvas width-independent", () => {
+    // The 4050 at 8'0" and 9'0" are byte-identical, so one band serves both.
+    expect(windowBand("4050", "509", "8")).toBe(windowBand("4050", "509", "9"));
+    expect(windowBand("4050", "509")).not.toBeNull();
+  });
+});
+
+describe("Gallery at 16'0\"", () => {
+  it("uses its own 16'0\" capture when there is one", () => {
+    // Arch 3 exists only at 16'0" and is a different insert from Arch 1 — it is
+    // one wide arch, not two repeated, so it can never come from an 8'0" band.
+    for (const d of ["ARCH3PLAIN", "ARCH3GRILLE", "ARCH3VERT"]) {
+      expect(windowBand("GD1LP", d, "16"), d).toBe(`/doors/bands/gallery-long--${d}--16.webp`);
+    }
+  });
+
+  it("tiles the 8'0\" band for designs with no 16'0\" capture", () => {
+    // 1920 = 2 x 960 exactly, so this is a clean repeat rather than a stretch.
+    // Verified against Clopay's own 16'0" Arch 1: halves repeat at 7.66 where
+    // their own left and right differ by 7.66 anyway.
+    for (const d of ["SQ24", "SQ22", "REC14", "REC12", "PLAINLONG", "PLAINSHORT"]) {
+      expect(windowBand("GD1LP", d, "16"), d).toBe(`/doors/bands/gallery-long--${d}--8.webp`);
+    }
+  });
+
+  it("gives 9'0\" no fallback at all", () => {
+    // 1080 is not a multiple of 960; an 8'0" band would be the wrong shape.
+    expect(windowBand("GD1LP", "ARCH3VERT", "9")).toBeNull();
+  });
+
+  it("covers every Gallery design at every stock width", () => {
+    for (const m of ["GD1LP", "GD1SP"]) {
+      for (const w of ["8", "9", "16"]) {
+        const missing = windowDesigns(m, "inserts", w)
+          .map((d) => d.id)
+          .filter((id) => !windowBand(m, id, w));
+        expect(missing, `${m} @ ${w}`).toEqual([]);
+      }
+    }
+  });
+});
+
+describe("Sunset width availability", () => {
+  it("restricts 501 and 503 to the widths Clopay builds", () => {
+    // Checked against Clopay's Decorative Insert Series page: 501 is 8', 9',
+    // 12', 16', 17', 18', 20' only; 503 is 8', 9', 16', 17', 18' only. The data
+    // already matched — this pins it against a future regenerate.
+    const at = (w: string) => windowDesigns("4053", "inserts", w).map((d) => d.id);
+    for (const w of ["8", "9", "16", "17", "18"]) {
+      expect(at(w), `503 @ ${w}`).toContain("503");
+      expect(at(w), `501 @ ${w}`).toContain("501");
+    }
+    expect(at("12")).toContain("501");
+    expect(at("12")).not.toContain("503");
+    for (const w of ["7", "10", "14", "15"]) {
+      expect(at(w), `501 @ ${w}`).not.toContain("501");
+      expect(at(w), `503 @ ${w}`).not.toContain("503");
+    }
+  });
+
+  it("leaves the other Sunsets as they were", () => {
+    const at = (w: string) => windowDesigns("4053", "inserts", w).map((d) => d.id);
+    expect(at("7")).toContain("502");        // 7', 7'6", 12' only
+    expect(at("14")).toContain("504");       // 14', 15', 15'6"
+    expect(at("16")).toContain("505");       // 16', 17', 18'
+    expect(at("10")).toContain("506");       // 10', 20'
   });
 });

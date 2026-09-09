@@ -247,9 +247,16 @@ export function windowBand(model: string, design: string, widthCode?: string): s
   // byte), so one band covers the whole panel-count band there.
   if (style.startsWith("gallery")) {
     if (!widthCode) return null;
-    for (const st of [style, ...(BAND_FALLBACK[style] ?? [])]) {
-      const key = `${st}--${design}--${widthCode}`;
-      if (GALLERY_BANDS.has(key)) return `/doors/bands/${key}.webp`;
+    // 16'0" is exactly two 8'0" doors — 1920px against 960 — so an 8'0" band
+    // tiles onto it without distortion, which is how Arch 1 already renders
+    // there. 9'0" is 1080px and NOT a multiple, so it has no fallback and must
+    // use its own capture.
+    const widths = widthCode === "16" ? ["16", "8"] : [widthCode];
+    for (const w of widths) {
+      for (const st of [style, ...(BAND_FALLBACK[style] ?? [])]) {
+        const key = `${st}--${design}--${w}`;
+        if (GALLERY_BANDS.has(key)) return `/doors/bands/${key}.webp`;
+      }
     }
     return null;
   }
