@@ -107,6 +107,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
   const [spring, setSpring] = useState<SpringKey>("extension");
   const [track, setTrack] = useState<TrackKey>("r12");
   const [lock, setLock] = useState<LockKey>("none");
+  const [upgradedHardware, setUpgradedHardware] = useState(false);
   const [qty, setQty] = useState(1);
   const { custName, custPo, custJob } = useCustomerJob();
 
@@ -153,7 +154,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
 
   // The quote is only shown while it matches the CURRENT configuration; any
   // config change makes it stale, so the user must click "Get price" again.
-  const cfgSig = JSON.stringify([model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, activeDesign, assembly, secKind, secHeight, activeSecWidth, secGlass, secLock]);
+  const cfgSig = JSON.stringify([model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, activeDesign, assembly, secKind, secHeight, activeSecWidth, secGlass, secLock, upgradedHardware]);
   const result = resultRaw && resultSig === cfgSig ? resultRaw : null;
   const liveError = errorRaw && resultSig === cfgSig ? errorRaw : null;
 
@@ -228,6 +229,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
           heightFt: Number(heightFt), heightIn: Number(heightIn || 0),
           style, color, track, spring, lock,
           windesign: activeDesign || undefined,
+            upgradedHardware,
         }),
       });
       const data = await res.json();
@@ -572,14 +574,26 @@ export function ResidentialTool({ models }: { models: string[] }) {
                     <div className="grow"><label>&nbsp;</label><div className="ctl"><span className="muted-note">Bottom section — solid only.</span></div></div>
                   )
                 ) : (
-                  <div className="grow">
-                    <label>Lock</label>
-                    <div className="ctl selectwrap">
-                      <select data-testid="lock" value={lock} onChange={(e) => setLock(e.target.value as LockKey)}>
-                        {LOCKS.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
-                      </select>
+                  <>
+                    <div className="grow">
+                      <label>Lock</label>
+                      <div className="ctl selectwrap">
+                        <select data-testid="lock" value={lock} onChange={(e) => setLock(e.target.value as LockKey)}>
+                          {LOCKS.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
+                        </select>
+                      </div>
                     </div>
-                  </div>
+                    <div className="grow">
+                      <label>Upgraded hardware</label>
+                      <div className="ctl selectwrap">
+                        <select data-testid="upgraded-hardware" value={upgradedHardware ? "yes" : "no"}
+                          onChange={(e) => setUpgradedHardware(e.target.value === "yes")}>
+                          <option value="no">No</option>
+                          <option value="yes">Yes</option>
+                        </select>
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
             </div>

@@ -170,6 +170,18 @@ const dims = (s: SizeCode) => `${s.wf}'${s.wi}" x ${s.hf}'${s.hi}"`;
  * sum of the lines; the quote total is unitPrice × quantity (done in the UI).
  * Ported 1:1 from buildResQuote's complete-door path.
  */
+/**
+ * Upgraded hardware price for a door width.
+ *
+ * $35 through 9'0", $45 above. The band boundary is width alone — height does
+ * not change it.
+ */
+export function upgradedHardwarePrice(dim: Dimensions): number {
+  const inches = dim.widthFt * 12 + (dim.widthIn || 0);
+  const u = ADDONS.upgraded_hardware;
+  return inches <= u.narrow_max_inches ? u.narrow : u.wide;
+}
+
 export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOptions): Quote {
   const empty: Quote = {
     model, size: null, priced: false, isStock: false, source: "none",
@@ -221,6 +233,15 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
   if (torsionOnly) { /* included at no charge, nothing to show */ }
   else if (opts.spring === "torsion")
     lines.push({ name: "Torsion springs", value: ADDONS.torsion, kind: "add" as const });
+
+  // Upgraded hardware: heavier hinges and rollers, priced by width.
+  if (opts.upgradedHardware) {
+    lines.push({
+      name: "Upgraded hardware",
+      value: upgradedHardwarePrice(dim),
+      kind: "add" as const,
+    });
+  }
 
   // Lock
   if (opts.lock && opts.lock !== "none")

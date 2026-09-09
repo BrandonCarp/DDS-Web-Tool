@@ -19,6 +19,18 @@ export const ADDONS = {
   "insert": {
     "short": 19.5,
     "long": 34.5
+  },
+  /**
+   * Upgraded hardware, priced by door width.
+   *
+   * $35 up to and including 9'0", $45 above it. Brandon gave the upper band as
+   * 9'6" and wider; anything between — a 9'2" or 9'4" — takes the wider price,
+   * since a door over 9'0" carries the heavier hardware either way.
+   */
+  "upgraded_hardware": {
+    "narrow": 35,
+    "wide": 45,
+    "narrow_max_inches": 108
   }
 } as const;
 

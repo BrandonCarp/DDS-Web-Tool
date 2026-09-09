@@ -230,7 +230,7 @@ describe("section colour availability", () => {
 });
 
 describe("outside manufacturer special orders", () => {
-  const MFRS = ["Haas Doors", "American Tradition", "Amarr", "CHI", "Overhead", "Wayne Dalton"];
+  const MFRS = ["Haas Doors", "American Tradition", "Aluminum Series", "Amarr", "CHI", "Overhead", "Wayne Dalton"];
   const sell = (cost: number, mult: number, margin: number) => (cost * mult) / (1 - margin / 100);
 
   it("carries every outside line on flat 45 door / 49 section", () => {
@@ -239,7 +239,7 @@ describe("outside manufacturer special orders", () => {
       const ser = SPECIAL[m];
       expect(ser, m).toBeTruthy();
       expect(ser.type, m).toBe("margin");
-      expect(ser.door, m).toBe(m === "American Tradition" ? 35 : 45);
+      expect(ser.door, m).toBe(["American Tradition", "Aluminum Series"].includes(m) ? 35 : 45);
       expect(ser.section, m).toBe(49);
       expect(ser.models, m).toBeUndefined();
     }
@@ -288,7 +288,7 @@ describe("special order manufacturer grouping", () => {
   it("gives each outside maker its own series list", () => {
     // Haas sells two lines through one account and reads like Clopay:
     // manufacturer, then series. The rest have one, named after themselves.
-    expect(seriesFor("Haas")).toEqual(["Haas Doors", "American Tradition"]);
+    expect(seriesFor("Haas")).toEqual(["Haas Doors", "American Tradition", "Aluminum Series"]);
     for (const m of ["Amarr", "CHI", "Overhead", "Wayne Dalton"]) {
       expect(seriesFor(m), m).toEqual([m]);
     }

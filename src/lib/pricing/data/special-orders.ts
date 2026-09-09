@@ -215,6 +215,11 @@ export const SPECIAL: Record<string, SpecialSeries> = {
     "door": 35,
     "section": 49
   },
+  "Aluminum Series": {
+    "type": "margin",
+    "door": 35,
+    "section": 49
+  },
   "Amarr": {
     "type": "margin",
     "door": 45,
@@ -370,7 +375,7 @@ export const SO_OUTSIDE_MFRS = ["Haas", "Amarr", "CHI", "Overhead", "Wayne Dalto
  * after themselves and the second dropdown is skipped.
  */
 export const SO_OUTSIDE_SERIES: Record<string, string[]> = {
-  Haas: ["Haas Doors", "American Tradition"],
+  Haas: ["Haas Doors", "American Tradition", "Aluminum Series"],
   Amarr: ["Amarr"],
   CHI: ["CHI"],
   Overhead: ["Overhead"],

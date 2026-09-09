@@ -4,12 +4,12 @@ import {
 } from "./data/special-orders";
 
 const sell = (total: number, margin: number) => total / (1 - margin / 100);
-const OUTSIDE_SERIES = ["Haas Doors", "American Tradition", "Amarr", "CHI", "Overhead", "Wayne Dalton"];
+const OUTSIDE_SERIES = ["Haas Doors", "American Tradition", "Aluminum Series", "Amarr", "CHI", "Overhead", "Wayne Dalton"];
 
 describe("outside manufacturer margins", () => {
   it("puts every outside line on 45 door / 49 sections, bar American Tradition", () => {
     for (const name of OUTSIDE_SERIES) {
-      expect(SPECIAL[name].door, name).toBe(name === "American Tradition" ? 35 : 45);
+      expect(SPECIAL[name].door, name).toBe(["American Tradition", "Aluminum Series"].includes(name) ? 35 : 45);
       expect(SPECIAL[name].section, name).toBe(49);
     }
   });
@@ -39,7 +39,7 @@ describe("Haas reads like Clopay", () => {
   it("offers two series under Haas and one under the rest", () => {
     // Not a bespoke "brand" field — the same manufacturer then series flow the
     // Clopay collections use, so there is one way to pick a line.
-    expect(seriesFor("Haas")).toEqual(["Haas Doors", "American Tradition"]);
+    expect(seriesFor("Haas")).toEqual(["Haas Doors", "American Tradition", "Aluminum Series"]);
     expect(hasSingleSeries("Haas")).toBe(false);
     for (const m of ["Amarr", "CHI", "Overhead", "Wayne Dalton"]) {
       expect(seriesFor(m), m).toEqual([m]);

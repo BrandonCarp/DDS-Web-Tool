@@ -60,6 +60,8 @@ export interface QuoteOptions {
   lock: LockKey;
   /** Optional window/insert design id (e.g. "509", "SQ24"); validated in the engine. */
   windesign?: string;
+  /** Heavier hinges and rollers. Priced by door width. */
+  upgradedHardware?: boolean;
 }
 
 /**
