@@ -15,8 +15,7 @@ import {
   parseModelSelection, modelSelectionValue,
 } from "@/lib/pricing/data/special-door-pricing";
 import { COLORS } from "@/lib/pricing/data/catalog-meta";
-import { homeownerMarkup } from "@/lib/pricing/engine";
-import { sizeParts } from "@/lib/pricing/data/stock-colors";
+import { homeownerMarkupForBand } from "@/lib/pricing/engine";
 import { windowDesigns } from "@/lib/pricing/data/inserts";
 
 const fmt = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -95,7 +94,7 @@ export function SpecialTool() {
   const [gDesign, setGDesign] = useState("");
   const [gHeight, setGHeight] = useState("");
   const [gVariant, setGVariant] = useState("");
-  const [homeowner, setHomeowner] = useState(false);
+  const [homeowner, setHomeowner] = useState<"no" | "single" | "double">("no");
   const [price, setPrice] = useState("");
   const [qty, setQty] = useState(1);
   const [saved, setSaved] = useState(false);
@@ -192,12 +191,13 @@ export function SpecialTool() {
   // Width for the markup band: the size picker on a gridded door, else the
   // width typed into the commercial size field. With neither, the narrow band
   // applies — a typed-in total carries no size to read.
-  // Width for the markup band comes from the size picker on a gridded door.
-  // A typed-in total carries no size, so the narrow band applies there.
-  const hoWidth = gWidth ? sizeParts(gWidth) : { ft: 0, in: 0 };
-  const hoMarkup = homeowner
-    ? homeownerMarkup(hoWidth.ft, hoWidth.in, kind === "section" ? "special_section" : "special_door")
-    : 0;
+  // The counter says which band it is rather than the tool guessing. Most
+  // special orders are a typed-in total with no size attached, so there is no
+  // width to read — and where there is one, stating it is still unambiguous.
+  const hoMarkup =
+    homeowner === "no"
+      ? 0
+      : homeownerMarkupForBand(homeowner, kind === "section" ? "special_section" : "special_door");
   const total = n ? (n.sell + hoMarkup) * Math.max(1, qty) : 0;
 
   // A gridded door carries a real QuickBooks description. Everything else keeps
@@ -453,10 +453,11 @@ export function SpecialTool() {
                   <div className="field">
                     <label className="lbl">Home owner surcharge</label>
                     <div className="selectwrap">
-                      <select data-testid="so-homeowner" value={homeowner ? "yes" : "no"}
-                        onChange={(e) => { setHomeowner(e.target.value === "yes"); setSaved(false); }}>
+                      <select data-testid="so-homeowner" value={homeowner}
+                        onChange={(e) => { setHomeowner(e.target.value as "no" | "single" | "double"); setSaved(false); }}>
                         <option value="no">No</option>
-                        <option value="yes">Yes</option>
+                        <option value="single">Single door</option>
+                        <option value="double">Double door</option>
                       </select>
                     </div>
                   </div>
@@ -488,10 +489,11 @@ export function SpecialTool() {
               <div className="field">
                 <label className="lbl">Home owner surcharge</label>
                 <div className="selectwrap">
-                  <select data-testid="so-comm-homeowner" value={homeowner ? "yes" : "no"}
-                    onChange={(e) => { setHomeowner(e.target.value === "yes"); setSaved(false); }}>
+                  <select data-testid="so-comm-homeowner" value={homeowner}
+                    onChange={(e) => { setHomeowner(e.target.value as "no" | "single" | "double"); setSaved(false); }}>
                     <option value="no">No</option>
-                    <option value="yes">Yes</option>
+                    <option value="single">Single door</option>
+                    <option value="double">Double door</option>
                   </select>
                 </div>
               </div>

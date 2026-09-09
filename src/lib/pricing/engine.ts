@@ -193,13 +193,25 @@ export function isWideBand(widthFt: number, widthIn = 0): boolean {
  * `kind` picks which of the four rates applies — a special order costs more to
  * handle than something off the floor, and a section less than a whole door.
  */
-export function homeownerMarkup(
-  widthFt: number,
-  widthIn: number,
-  kind: "stock_door" | "special_door" | "stock_section" | "special_section",
+export type HomeownerKind = "stock_door" | "special_door" | "stock_section" | "special_section";
+
+export function homeownerMarkup(widthFt: number, widthIn: number, kind: HomeownerKind): number {
+  return homeownerMarkupForBand(isWideBand(widthFt, widthIn) ? "double" : "single", kind);
+}
+
+/**
+ * Home owner surcharge when the band is stated rather than measured.
+ *
+ * A typed-in special order carries no size, so the counter says which it is:
+ * a single door takes the narrow rate, a double the wide one. Same numbers as
+ * the width-derived path, just reached differently.
+ */
+export function homeownerMarkupForBand(
+  band: "single" | "double",
+  kind: HomeownerKind,
 ): number {
-  const band = ADDONS.homeowner[kind];
-  return isWideBand(widthFt, widthIn) ? band.wide : band.narrow;
+  const rates = ADDONS.homeowner[kind];
+  return band === "double" ? rates.wide : rates.narrow;
 }
 
 export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOptions): Quote {
