@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { doorArt, windowBand, BAND_HEIGHT } from "@/lib/pricing/data/door-images";
 import { doorGeometry, panelRunFor } from "@/lib/pricing/data/door-geometry";
 import { composite, SLICES } from "@/lib/pricing/data/door-composite";
+import { designPanelSpan } from "@/lib/pricing/data/inserts";
 import { BASE_REF } from "@/lib/pricing/data/door-images";
 
 interface Props {
@@ -91,14 +92,43 @@ export default function DoorPreview({ model, color, widthFt, widthIn, heightFt, 
     // the base.
     if (band) {
       const bh = BAND_HEIGHT[art.style];
-      if (plan) {
-        for (const b of plan.blits) {
-          if (b.sy !== 0) continue;                    // the top row only
-          const sh = Math.min(b.sh, bh);
-          sx.drawImage(band, b.sx, 0, b.sw, sh, b.dx, 0, b.dw, sh);
+      const whole = plan?.blits.length === 2 && plan.blits[0].sx === 0;
+      if (!plan || whole) {
+        // The base is repeated entire, so the band is too — the design's own
+        // spacing comes along with it.
+        const reps = plan ? plan.blits.length : 1;
+        for (let i = 0; i < reps; i++) {
+          sx.drawImage(band, 0, 0, band.width, bh, i * band.width, 0, band.width, bh);
         }
       } else {
-        sx.drawImage(band, 0, 0, band.width, bh, 0, 0, band.width, bh);
+        // Sliced. A window unit spans one panel for a short design and two for
+        // a long one, so the band repeats at the design's pitch rather than the
+        // panel pitch — otherwise a 12'0" gets five long windows instead of
+        // three.
+        const m = SLICES[art.style];
+        const span = designPanelSpan(designKey);
+        const unitW = span * m.panelPitch;
+        const srcX = m.left + span * m.panelPitch;
+        sx.drawImage(band, 0, 0, m.left, bh, 0, 0, m.left, bh);
+
+        if (span === 1) {
+          // One window per panel: repeat an interior cell, then the real
+          // right-hand panel so the door ends the way the source does.
+          for (let i = 0; i < geo.panels - 1; i++) {
+            sx.drawImage(band, srcX, 0, unitW, bh, m.left + i * unitW, 0, unitW, bh);
+          }
+          const tailSx = m.left + (m.panels - 1) * m.panelPitch;
+          sx.drawImage(band, tailSx, 0, m.width - tailSx, bh,
+            m.left + (geo.panels - 1) * unitW, 0, m.width - tailSx, bh);
+        } else {
+          // A long window covers two panels, so a door with an odd panel count
+          // gets floor(panels/2) of them and the rest stays solid — drawing a
+          // tail here would leave half a window hanging off the end.
+          const units = Math.floor(geo.panels / span);
+          for (let i = 0; i < units; i++) {
+            sx.drawImage(band, srcX, 0, unitW, bh, m.left + i * unitW, 0, unitW, bh);
+          }
+        }
       }
     }
 

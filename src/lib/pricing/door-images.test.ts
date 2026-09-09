@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { doorArt, styleOf, BASE_REF, windowBand, BAND_HEIGHT } from "./data/door-images";
-import { windowDesigns, excludedDesignsFor } from "./data/inserts";
+import { windowDesigns, excludedDesignsFor, designPanelSpan } from "./data/inserts";
 import { doorGeometry } from "./data/door-geometry";
 import { STOCK_MATRIX, stockedWidths, stockedHeights, sizeParts } from "./data/stock-colors";
 
@@ -306,5 +306,34 @@ describe("Sunset width availability", () => {
     expect(at("14")).toContain("504");       // 14', 15', 15'6"
     expect(at("16")).toContain("505");       // 16', 17', 18'
     expect(at("10")).toContain("506");       // 10', 20'
+  });
+});
+
+describe("window count by width", () => {
+  it("spans two panels for a long design, one for a short", () => {
+    // A long window covers two panels — Prairie 610 on an 8'0" door is two
+    // windows across four panels. Repeating per panel put five on a 12'0"
+    // where the book says three.
+    for (const id of ["608", "610", "612", "611", "613", "PLAINLONG"]) {
+      expect(designPanelSpan(id), id).toBe(2);
+    }
+    for (const id of ["509", "508", "510", "501", "SQ24"]) {
+      expect(designPanelSpan(id), id).toBe(1);
+    }
+  });
+
+  it("matches the price book's window counts", () => {
+    // Clopay's WINDOWS table: 10' takes 5 short or 2 long, 12' takes 6 or 3,
+    // 14' takes 7 or 3, 16' takes 8 or 4.
+    const shortCount = (panels: number) => panels;
+    const longCount = (panels: number) => Math.floor(panels / 2);
+    for (const [panels, s, l] of [[5, 5, 2], [6, 6, 3], [7, 7, 3], [8, 8, 4]] as const) {
+      expect(shortCount(panels), `${panels} short`).toBe(s);
+      expect(longCount(panels), `${panels} long`).toBe(l);
+    }
+  });
+
+  it("gives an unknown design a span of one", () => {
+    expect(designPanelSpan("nope")).toBe(1);
   });
 });
