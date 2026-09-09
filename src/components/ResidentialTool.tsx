@@ -12,7 +12,6 @@ import { dataKey, modelSort } from "@/lib/pricing/model-groups";
 import { windowDesigns, designWidthCode } from "@/lib/pricing/data/inserts";
 import { RES_SECTION_WIDTHS, sectionWidthLabel } from "@/lib/pricing/data/res-section-meta";
 import { stockedWidths, stockedHeights, sizeParts, solidOnlyHeight, torsionOnlyHeight } from "@/lib/pricing/data/stock-colors";
-import DoorPreview from "./DoorPreview";
 
 const GLASS = [
   { value: "solid", label: "Solid (no windows)" },
@@ -627,19 +626,6 @@ export function ResidentialTool({ models }: { models: string[] }) {
               <div className="qtyrow">
                 <label htmlFor="qty">Quantity</label>
                 <input id="qty" type="number" min={1} value={qty} onChange={(e) => setQty(Number(e.target.value))} />
-                {/* Renders itself away when the model, colour or size is one we
-                    cannot draw, so the row is unchanged for everything else. */}
-                <DoorPreview
-                  model={model}
-                  color={color}
-                  widthFt={parseInt(widthFt, 10) || 0}
-                  widthIn={parseInt(widthIn, 10) || 0}
-                  heightFt={parseInt(heightFt, 10) || 0}
-                  heightIn={parseInt(heightIn, 10) || 0}
-                  style={style}
-                  design={activeDesign}
-                  glassRun={isGallery ? "PLAINLONG" : "PLAINSHORT"}
-                />
               </div>
               <div className="total">
                 <span className="tl">Quote total</span>

@@ -116,19 +116,3 @@ export function designName(id: string | undefined | null): string | null {
   return d ? d.name : null;
 }
 
-/**
- * How many panels one window of this design spans.
- *
- * A long window covers two panels — Prairie 610 on an 8'0" door is two windows
- * across four panels, not four. Repeating it per panel doubles the count, which
- * is what put five windows on a 12'0" door where the book says three.
- *
- * Sunset and arch designs are drawn as a set across the whole top section and
- * are handled by tiling the band whole, so they are not listed here.
- */
-export function designPanelSpan(id: string): number {
-  const d = [...DECORATIVE, ...ARCHITECTURAL].find((x) => x.id === id);
-  if (!d) return 1;
-  if (d.cat === "long" || id === "PLAINLONG") return 2;
-  return 1;
-}
