@@ -182,6 +182,26 @@ export function upgradedHardwarePrice(dim: Dimensions): number {
   return inches <= u.narrow_max_inches ? u.narrow : u.wide;
 }
 
+/** True when a width falls in the wider homeowner/hardware band. */
+export function isWideBand(widthFt: number, widthIn = 0): boolean {
+  return widthFt * 12 + widthIn > ADDONS.homeowner.narrow_max_inches;
+}
+
+/**
+ * Homeowner markup for a width.
+ *
+ * `kind` picks which of the four rates applies — a special order costs more to
+ * handle than something off the floor, and a section less than a whole door.
+ */
+export function homeownerMarkup(
+  widthFt: number,
+  widthIn: number,
+  kind: "stock_door" | "special_door" | "stock_section" | "special_section",
+): number {
+  const band = ADDONS.homeowner[kind];
+  return isWideBand(widthFt, widthIn) ? band.wide : band.narrow;
+}
+
 export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOptions): Quote {
   const empty: Quote = {
     model, size: null, priced: false, isStock: false, source: "none",
@@ -239,6 +259,15 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
     lines.push({
       name: "Upgraded hardware",
       value: upgradedHardwarePrice(dim),
+      kind: "add" as const,
+    });
+  }
+
+  // Homeowner markup. Added last so it reads after the hardware on the line.
+  if (opts.homeowner) {
+    lines.push({
+      name: "Homeowner",
+      value: homeownerMarkup(dim.widthFt, dim.widthIn || 0, "stock_door"),
       kind: "add" as const,
     });
   }
@@ -312,6 +341,8 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
 // a dropdown, never a typed width.
 
 export interface ResSectionInput {
+  /** Selling to a homeowner rather than a dealer. */
+  homeowner?: boolean;
   widthKey: string;          // e.g. "8", "16", "7.6" — a RES_SECTION_WIDTHS key
   height: "18" | "21";       // label only; both heights share one price
   kind: "bt" | "int";
@@ -342,6 +373,14 @@ export function quoteResidentialSection(model: string, input: ResSectionInput): 
   ];
   const lockbar = input.kind === "int" && !glazed && !!input.lockbar;
   if (lockbar) lines.push({ name: "Lockbar installed", value: ADDONS.lockbar_installed, kind: "add" });
+  if (input.homeowner) {
+    const [hf, hi] = input.widthKey.split(".");
+    lines.push({
+      name: "Homeowner",
+      value: homeownerMarkup(Number(hf), Number(hi ?? 0), "stock_section"),
+      kind: "add",
+    });
+  }
   const unitPrice = lines.reduce((a, l) => a + (l.kind === "minus" ? -l.value : l.value), 0);
   const shown = collapseUpcharges(lines);
   const secStock = sectionColorInStock(model, input.color || "White");

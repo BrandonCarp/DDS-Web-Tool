@@ -62,6 +62,8 @@ export interface QuoteOptions {
   windesign?: string;
   /** Heavier hinges and rollers. Priced by door width. */
   upgradedHardware?: boolean;
+  /** Selling to a homeowner rather than a dealer. Adds a markup by width. */
+  homeowner?: boolean;
 }
 
 /**

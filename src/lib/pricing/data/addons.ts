@@ -27,6 +27,22 @@ export const ADDONS = {
    * 9'6" and wider; anything between — a 9'2" or 9'4" — takes the wider price,
    * since a door over 9'0" carries the heavier hardware either way.
    */
+  /**
+   * Homeowner markup, added when the buyer is a homeowner rather than a dealer.
+   *
+   * Four rates: a stock door, a special order door, a stock section and a
+   * special order section — each with a narrow and a wide band. The band split
+   * is the same as upgraded hardware: through 9'0" is narrow, above it is wide.
+   * Brandon gave the upper band as 9'6" and wider; a 9'2" or 9'4" takes the
+   * wide rate, since anything over 9'0" is the larger door.
+   */
+  "homeowner": {
+    "stock_door": { "narrow": 250, "wide": 500 },
+    "special_door": { "narrow": 400, "wide": 800 },
+    "stock_section": { "narrow": 100, "wide": 200 },
+    "special_section": { "narrow": 150, "wide": 300 },
+    "narrow_max_inches": 108
+  },
   "upgraded_hardware": {
     "narrow": 35,
     "wide": 45,

@@ -15,6 +15,8 @@ import {
   parseModelSelection, modelSelectionValue,
 } from "@/lib/pricing/data/special-door-pricing";
 import { COLORS } from "@/lib/pricing/data/catalog-meta";
+import { homeownerMarkup } from "@/lib/pricing/engine";
+import { sizeParts } from "@/lib/pricing/data/stock-colors";
 import { windowDesigns } from "@/lib/pricing/data/inserts";
 
 const fmt = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -93,6 +95,7 @@ export function SpecialTool() {
   const [gDesign, setGDesign] = useState("");
   const [gHeight, setGHeight] = useState("");
   const [gVariant, setGVariant] = useState("");
+  const [homeowner, setHomeowner] = useState(false);
   const [price, setPrice] = useState("");
   const [qty, setQty] = useState(1);
   const [saved, setSaved] = useState(false);
@@ -182,7 +185,15 @@ export function SpecialTool() {
     !manual && gResult?.quote
       ? { sell: gResult.quote.unitPrice, margin: null as number | null, doubled: false }
       : manual;
-  const total = n ? n.sell * Math.max(1, qty) : 0;
+
+  // Homeowner markup, at the special-order rate. The width comes from the size
+  // picker on a gridded door; on a typed-in total there is no width to read, so
+  // the narrow band applies unless one was chosen.
+  const hoWidth = gWidth ? sizeParts(gWidth) : { ft: 0, in: 0 };
+  const hoMarkup = homeowner
+    ? homeownerMarkup(hoWidth.ft, hoWidth.in, kind === "section" ? "special_section" : "special_door")
+    : 0;
+  const total = n ? (n.sell + hoMarkup) * Math.max(1, qty) : 0;
 
   // A gridded door carries a real QuickBooks description. Everything else keeps
   // the short label it has always had — there is nothing more to say about a
