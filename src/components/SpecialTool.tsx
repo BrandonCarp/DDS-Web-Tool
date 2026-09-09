@@ -189,6 +189,11 @@ export function SpecialTool() {
   // Homeowner markup, at the special-order rate. The width comes from the size
   // picker on a gridded door; on a typed-in total there is no width to read, so
   // the narrow band applies unless one was chosen.
+  // Width for the markup band: the size picker on a gridded door, else the
+  // width typed into the commercial size field. With neither, the narrow band
+  // applies — a typed-in total carries no size to read.
+  // Width for the markup band comes from the size picker on a gridded door.
+  // A typed-in total carries no size, so the narrow band applies there.
   const hoWidth = gWidth ? sizeParts(gWidth) : { ft: 0, in: 0 };
   const hoMarkup = homeowner
     ? homeownerMarkup(hoWidth.ft, hoWidth.in, kind === "section" ? "special_section" : "special_door")
@@ -445,6 +450,16 @@ export function SpecialTool() {
                     </div>
                     <div />
                   </div>
+                  <div className="field">
+                    <label className="lbl">Home owner surcharge</label>
+                    <div className="selectwrap">
+                      <select data-testid="so-homeowner" value={homeowner ? "yes" : "no"}
+                        onChange={(e) => { setHomeowner(e.target.value === "yes"); setSaved(false); }}>
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                      </select>
+                    </div>
+                  </div>
                   <div className="field" style={{ marginTop: 6 }}>
                     <label className="lbl">{gridded && kind === "door" && !restricted
                       ? "Or enter a Clopay total for a configuration not listed above"
@@ -468,6 +483,16 @@ export function SpecialTool() {
                 <div className="chips">
                   <button type="button" className={`chip ${kind === "door" ? "sel" : ""}`} onClick={() => { setKind("door"); setSaved(false); }}>Complete door</button>
                   <button type="button" className={`chip ${kind === "section" ? "sel" : ""}`} onClick={() => { setKind("section"); setSaved(false); }}>Sections</button>
+                </div>
+              </div>
+              <div className="field">
+                <label className="lbl">Home owner surcharge</label>
+                <div className="selectwrap">
+                  <select data-testid="so-comm-homeowner" value={homeowner ? "yes" : "no"}
+                    onChange={(e) => { setHomeowner(e.target.value === "yes"); setSaved(false); }}>
+                    <option value="no">No</option>
+                    <option value="yes">Yes</option>
+                  </select>
                 </div>
               </div>
               <div className="field" style={{ marginTop: 6 }}>

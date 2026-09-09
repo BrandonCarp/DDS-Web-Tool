@@ -586,20 +586,20 @@ export function ResidentialTool({ models }: { models: string[] }) {
                       </div>
                     </div>
                     <div className="grow">
-                      <label>Home owner</label>
+                      <label>Upgraded hardware</label>
                       <div className="ctl selectwrap">
-                        <select data-testid="homeowner" value={homeowner ? "yes" : "no"}
-                          onChange={(e) => setHomeowner(e.target.value === "yes")}>
+                        <select data-testid="upgraded-hardware" value={upgradedHardware ? "yes" : "no"}
+                          onChange={(e) => setUpgradedHardware(e.target.value === "yes")}>
                           <option value="no">No</option>
                           <option value="yes">Yes</option>
                         </select>
                       </div>
                     </div>
                     <div className="grow">
-                      <label>Upgraded hardware</label>
+                      <label>Home owner surcharge</label>
                       <div className="ctl selectwrap">
-                        <select data-testid="upgraded-hardware" value={upgradedHardware ? "yes" : "no"}
-                          onChange={(e) => setUpgradedHardware(e.target.value === "yes")}>
+                        <select data-testid="homeowner" value={homeowner ? "yes" : "no"}
+                          onChange={(e) => setHomeowner(e.target.value === "yes")}>
                           <option value="no">No</option>
                           <option value="yes">Yes</option>
                         </select>

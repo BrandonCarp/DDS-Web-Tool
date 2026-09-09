@@ -12,6 +12,7 @@ import {
   SECTION_MAX_WIDTH_IN, maxWidthLabel, sectionColors,
   STOCK_SECTION_WIDTHS, sectionWidthLabel,
 } from "@/lib/pricing/data/commercial-meta";
+import { homeownerMarkup } from "@/lib/pricing/engine";
 
 interface CommQuote {
   priced: boolean; incomplete?: string; warn?: string;
@@ -40,6 +41,7 @@ export function CommercialTool() {
   const [manFt, setManFt] = useState("");
   const [manIn, setManIn] = useState("0");
   const [secKind, setSecKind] = useState<"bt" | "int">("bt");
+  const [homeowner, setHomeowner] = useState(false);
   const [secHeight, setSecHeight] = useState<"21" | "24">("21");
   const [windows, setWindows] = useState("0");
   const [stile, setStile] = useState<"single" | "double">("single");
@@ -82,12 +84,19 @@ export function CommercialTool() {
   const maxFt = maxIn != null ? Math.floor(maxIn / 12) : null;
   const overMax = maxIn != null && manFt !== "" && (Number(manFt) * 12 + (Number(manIn) || 0)) > maxIn;
 
-  const cfgSig = JSON.stringify([mfr, model, order, size, glass, track, mount, cspring, clock, cColor, winSection, manFt, manIn, secKind, secHeight, windows, stile, secColor]);
+  const cfgSig = JSON.stringify([mfr, model, order, size, glass, track, mount, cspring, clock, cColor, winSection, manFt, manIn, secKind, secHeight, windows, stile, secColor, homeowner]);
   const result = resultRaw && resultSig === cfgSig ? resultRaw : null;
   const liveError = errorRaw && resultSig === cfgSig ? errorRaw : null;
   const priced = result?.priced ?? false;
   const unit = result?.unitPrice ?? 0;
-  const total = unit * Math.max(1, qty);
+  // Commercial is always a special order, so it takes the special rates. The
+  // width comes from the size fields, which both the complete-door and section
+  // paths already carry.
+  const hoMarkup = homeowner
+    ? homeownerMarkup(Number(manFt) || 0, Number(manIn) || 0,
+        order === "section" ? "special_section" : "special_door")
+    : 0;
+  const total = (unit + hoMarkup) * Math.max(1, qty);
 
   function pickModel(m: string) {
     setModel(m);
@@ -451,6 +460,16 @@ export function CommercialTool() {
                   ))}
                 </div>
               )}
+              <div className="field">
+                <label className="lbl">Home owner surcharge</label>
+                <div className="selectwrap">
+                  <select data-testid="comm-homeowner" value={homeowner ? "yes" : "no"}
+                    onChange={(e) => setHomeowner(e.target.value === "yes")}>
+                    <option value="no">No</option>
+                    <option value="yes">Yes</option>
+                  </select>
+                </div>
+              </div>
               <div className="qtyrow">
                 <label htmlFor="cqty">Quantity</label>
                 <input id="cqty" type="number" min={1} value={qty} onChange={(e) => setQty(Number(e.target.value))} />

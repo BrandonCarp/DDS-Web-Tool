@@ -266,7 +266,7 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
   // Homeowner markup. Added last so it reads after the hardware on the line.
   if (opts.homeowner) {
     lines.push({
-      name: "Homeowner",
+      name: "Home owner surcharge",
       value: homeownerMarkup(dim.widthFt, dim.widthIn || 0, "stock_door"),
       kind: "add" as const,
     });
@@ -376,7 +376,7 @@ export function quoteResidentialSection(model: string, input: ResSectionInput): 
   if (input.homeowner) {
     const [hf, hi] = input.widthKey.split(".");
     lines.push({
-      name: "Homeowner",
+      name: "Home owner surcharge",
       value: homeownerMarkup(Number(hf), Number(hi ?? 0), "stock_section"),
       kind: "add",
     });

@@ -72,3 +72,35 @@ describe("homeowner markup", () => {
     expect(on - off).toBeCloseTo(250 + 35, 2);
   });
 });
+
+describe("which rate each tab uses", () => {
+  it("puts residential on the stock rates", () => {
+    // The residential tab quotes off the floor, so it takes the stock rates
+    // even when the badge reads SPECIAL ORDER for a colour DDS does not stock.
+    const off = quoteResidential("4050", dim(9), base).unitPrice;
+    const on = quoteResidential("4050", dim(9), { ...base, homeowner: true }).unitPrice;
+    expect(on - off).toBeCloseTo(homeownerMarkup(9, 0, "stock_door"), 2);
+  });
+
+  it("puts special order and commercial on the special rates", () => {
+    // Both tabs are ordering from the manufacturer, so both cost more to
+    // handle. Commercial is always a special order — it has no stock path.
+    expect(homeownerMarkup(9, 0, "special_door")).toBe(400);
+    expect(homeownerMarkup(16, 0, "special_door")).toBe(800);
+    expect(homeownerMarkup(9, 0, "special_section")).toBe(150);
+    expect(homeownerMarkup(16, 0, "special_section")).toBe(300);
+  });
+
+  it("keeps a door dearer than a section on the same tab", () => {
+    for (const w of [9, 16]) {
+      expect(homeownerMarkup(w, 0, "special_door")).toBeGreaterThan(homeownerMarkup(w, 0, "special_section"));
+    }
+  });
+
+  it("falls to the narrow band when no width is known", () => {
+    // A typed-in total on a special order carries no size, so 0 feet reads as
+    // narrow rather than throwing or defaulting high.
+    expect(homeownerMarkup(0, 0, "special_door")).toBe(400);
+    expect(homeownerMarkup(0, 0, "special_section")).toBe(150);
+  });
+});
