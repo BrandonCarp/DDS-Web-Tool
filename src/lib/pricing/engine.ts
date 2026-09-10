@@ -133,9 +133,18 @@ export function priceResidential(
   };
 }
 
-/** Models that have a residential price grid. */
+/**
+ * Models the residential tab offers.
+ *
+ * The 4300 family is special order only for now — Brandon, 10/9/2026. It keeps
+ * its price grid, so a quote for one still prices correctly if reached another
+ * way; it simply is not offered on this tab.
+ */
+const RESIDENTIAL_HIDDEN = new Set(["4300", "4301", "4302", "4305", "4310"]);
+
+/** Models that have a residential price grid and are offered on that tab. */
 export function listModels(): string[] {
-  return expandModels(Object.keys(RESIDENTIAL_PRICES));
+  return expandModels(Object.keys(RESIDENTIAL_PRICES)).filter((m) => !RESIDENTIAL_HIDDEN.has(m));
 }
 
 const STYLE_NAME: Record<WindowStyle, string> = {

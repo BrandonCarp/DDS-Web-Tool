@@ -342,9 +342,11 @@ describe("window designs (inserts catalog from index.html)", () => {
 
 describe("4300 family (4301/4310 share 4300 pricing; 7/5/2026 odd-size sheets)", () => {
   const o = { style: "solid" as const, color: "White", track: "r12" as const, spring: "extension" as const, lock: "none" as const };
-  it("4301 and 4310 appear as their own selections and price identically to 4300", () => {
+  it("prices 4301 and 4310 identically to 4300, though none is offered residentially", () => {
+    // The family moved to special order only on 10/9/2026. The grid stays, so
+    // a quote reaching one another way still prices correctly.
     const models = listModels();
-    for (const m of ["4300", "4301", "4310"]) expect(models).toContain(m);
+    for (const m of ["4300", "4301", "4310"]) expect(models, m).not.toContain(m);
     // At a STOCK size the three share one sheet and one price.
     const a = quoteResidential("4300", dim(9, 0, 7, 0), o);
     const b = quoteResidential("4301", dim(9, 0, 7, 0), o);
@@ -634,5 +636,25 @@ describe("replacement section verbiage", () => {
     expect(d).not.toMatch(/sections only/i);
     expect(d).not.toContain("—");
     expect(d).not.toMatch(/high|wide/i);
+  });
+});
+
+describe("residential model list", () => {
+  const opts = { style: "solid" as const, color: "White", track: "r12" as const,
+                 spring: "extension" as const, lock: "none" as const };
+
+  it("offers nine models, none of them the 4300 family", () => {
+    // Special order only for now — Brandon, 10/9/2026.
+    expect(listModels()).toEqual(["T50S", "T52S", "4050", "4051", "4053", "9130", "9133", "GD1LP", "GD1SP"]);
+  });
+
+  it("keeps the 4300 family priceable", () => {
+    // Hidden from the tab, not removed from the data: a stored quote or a
+    // direct call must still return the right number.
+    for (const m of ["4300", "4301", "4310"]) {
+      const q = quoteResidential(m, dim(9, 0, 7, 0), opts);
+      expect(q.priced, m).toBe(true);
+      expect(q.unitPrice, m).toBeGreaterThan(0);
+    }
   });
 });
