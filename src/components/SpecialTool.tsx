@@ -304,7 +304,11 @@ export function SpecialTool() {
                     </select>
                   </div>
                 </div>
-                {cSeries && (
+                {/* A pinned pick names the model outright, so there is nothing
+                    left to choose — showing its whole series with it selected
+                    reads as an unanswered question. Only a series pick opens
+                    the model list. */}
+                {cSeries && !isPinnedModel(cSeries) && (
                   <div className="field"><label className="lbl">Model <span className="req">*</span></label>
                     <div className="selectwrap">
                       <select data-testid="so-comm-model" value={cModel} onChange={(e) => { setCModel(e.target.value); setSaved(false); }}>

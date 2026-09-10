@@ -93,3 +93,31 @@ describe("commercial collection dropdown", () => {
     }
   });
 });
+
+describe("pinned models select themselves", () => {
+  it("resolves each pinned pick to that exact model", () => {
+    // Picking "3720" at the collection level names the model outright. It used
+    // to leave its whole Energy Series list open with 3720 selected, which
+    // reads as a question that has already been answered.
+    for (const m of SPECIAL_COMMERCIAL_PINNED) {
+      expect(SPECIAL_COMMERCIAL_MODELS, m).toContain(m);
+      expect(commercialSeriesOf(m), m).not.toBeNull();
+    }
+  });
+
+  it("keeps each pinned model inside its real series too", () => {
+    // Both routes must reach the same model: straight off the top of the list,
+    // or by browsing to the series it belongs to.
+    for (const m of SPECIAL_COMMERCIAL_PINNED) {
+      const series = SPECIAL_COMMERCIAL_SERIES.find((g) => g.name === commercialSeriesOf(m));
+      expect(series?.models, m).toContain(m);
+    }
+  });
+
+  it("still needs a model chosen when a series is picked", () => {
+    for (const g of SPECIAL_COMMERCIAL_SERIES) {
+      expect(SPECIAL_COMMERCIAL_PINNED, g.name).not.toContain(g.name);
+      expect(g.models.length, g.name).toBeGreaterThan(0);
+    }
+  });
+});
