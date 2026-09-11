@@ -224,6 +224,20 @@ export function maxWindows(ft: number): number { if (ft <= 9) return 2; if (ft <
 export function roundedFeet(ft: number, inch: number): number { return ft + (inch >= 5 ? 1 : 0); }
 
 /**
+ * Narrowest width a per-foot slab is billed at.
+ *
+ * Anything under 8′ is priced as 8′ — Brandon, 10/9/2026. The rate tables
+ * multiply out to any width, so a 6′ slab was quoting six feet of material
+ * when the shop charges a minimum of eight.
+ */
+export const SLAB_MIN_FEET = 8;
+
+/** Billable feet for a per-foot slab: rounded up, then floored at the minimum. */
+export function slabBilledFeet(ft: number, inch: number): number {
+  return Math.max(roundedFeet(ft, inch), SLAB_MIN_FEET);
+}
+
+/**
  * Widest section DDS will quote, per model, as total inches.
  *
  * These are ordering limits, not price-book gaps — the per-foot models would

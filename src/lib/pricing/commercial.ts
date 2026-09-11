@@ -3,7 +3,7 @@
 
 import { collapseUpcharges } from "./types";
 import { COMM_MATRIX, COMM_SECTIONS, COMM_SECTION_STOCK, COMM_SLAB, STOCK_COMM, GRADE_COMM } from "./data/commercial";
-import { COMM_COMPLETE, maxWindows, roundedFeet, SECTION_MAX_WIDTH_IN, maxWidthLabel, sectionColors } from "./data/commercial-meta";
+import { COMM_COMPLETE, maxWindows, roundedFeet, slabBilledFeet, SLAB_MIN_FEET, SECTION_MAX_WIDTH_IN, maxWidthLabel, sectionColors } from "./data/commercial-meta";
 
 export interface CommQuoteLine { name: string; value: number; kind: "base" | "add" | "minus" }
 export interface CommQuote {
@@ -214,11 +214,15 @@ export function quoteCommercial(input: CommInput): CommQuote {
       });
   } else if (hasRate) {
     const rate = COMM_SLAB.rate[model];
-    lines.push({ name: `${kindNm} section · ${rFeet}′ × $${rate}/ft`, value: rate * rFeet, kind: "base" });
+    // Under 8′ bills as 8′. The retainer follows the same billed width, so a
+    // short slab does not get a full-price slab with a short retainer.
+    const bFeet = slabBilledFeet(ft, inch);
+    const minNote = bFeet > rFeet ? ` (${SLAB_MIN_FEET}′ minimum)` : "";
+    lines.push({ name: `${kindNm} section · ${bFeet}′ × $${rate}/ft${minNote}`, value: rate * bFeet, kind: "base" });
     // Bottom retainer & rubber is ALWAYS included on a bottom section — it is
     // no longer a selectable option (the input.retainer flag is ignored).
     if (input.secKind === "bt")
-      lines.push({ name: `Bottom retainer & rubber · ${rFeet}′`, value: COMM_SLAB.adders.retainer * rFeet, kind: "add" });
+      lines.push({ name: `Bottom retainer & rubber · ${bFeet}′`, value: COMM_SLAB.adders.retainer * bFeet, kind: "add" });
     if (input.stile === "single") lines.push({ name: "Single end stiles", value: COMM_SLAB.adders.stile_single, kind: "add" });
     if (input.stile === "double") lines.push({ name: "Double end stiles", value: COMM_SLAB.adders.stile_double, kind: "add" });
   } else if (hasCost) {
