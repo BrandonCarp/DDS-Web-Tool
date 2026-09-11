@@ -15,12 +15,12 @@ describe("SECTIONS ONLY", () => {
   it("is 90% of the plain door", () => {
     const door = quoteResidential("9133", dim, plainOpts);
     const so = quoteResidentialSectionsOnly("9133", dim, plainOpts);
-    expect(door.unitPrice).toBeCloseTo(850.01, 2);
+    expect(door.unitPrice).toBeCloseTo(851.54, 2);
     expect(so.unitPrice).toBeCloseTo(
       Math.round(door.unitPrice * SECTIONS_ONLY_FACTOR * 100) / 100,
       2,
     );
-    expect(so.unitPrice).toBeCloseTo(765.01, 2);
+    expect(so.unitPrice).toBeCloseTo(766.39, 2);
   });
 
   it("ignores track and spring choices when setting the baseline", () => {
@@ -71,7 +71,7 @@ describe("upcharges never itemise", () => {
     });
     expect(q.lines).toHaveLength(1);
     expect(q.lines[0].value).toBeCloseTo(q.unitPrice, 2);
-    expect(q.unitPrice).toBeCloseTo(1000.01, 2);
+    expect(q.unitPrice).toBeCloseTo(1001.54, 2);
     for (const l of q.lines) expect(l.kind).not.toBe("add");
   });
 });

@@ -48,19 +48,19 @@ export const STOCK_PRICES: Record<string, Record<string, Record<string, PriceTri
   },
   "T52S": {
     "8": {
-      "7": { "solid": 662.42, "glass": 790.23, "inserts": 875.43 },
-      "8": { "solid": 786.1, "glass": 913.9, "inserts": 999.12 },
-      "9": { "solid": 1107.69, "glass": 1242.34, "inserts": 1332.1 },
+      "7": { "solid": 663.27, "glass": 799.75, "inserts": 890.73 },
+      "8": { "solid": 795.34, "glass": 931.82, "inserts": 1022.8 },
+      "9": { "solid": 1122.55, "glass": 1259.04, "inserts": 1350.02 },
     },
     "9": {
-      "7": { "solid": 698.15, "glass": 852.96, "inserts": 911.17 },
-      "8": { "solid": 835.58, "glass": 963.39, "inserts": 1048.6 },
-      "9": { "solid": 1164.16, "glass": 1298.81, "inserts": 1388.57 },
+      "7": { "solid": 701.43, "glass": 837.91, "inserts": 928.89 },
+      "8": { "solid": 848.16, "glass": 984.64, "inserts": 1075.63 },
+      "9": { "solid": 1179.8, "glass": 1316.29, "inserts": 1407.27 },
     },
     "10": {
-      "7": { "solid": 821.84, "glass": 981.26, "inserts": 1088.45 },
-      "8": { "solid": 970.26, "glass": 1129.68, "inserts": 1236.88 },
-      "9": { "solid": 1223.52, "glass": 1391.84, "inserts": 1504.07 },
+      "7": { "solid": 833.48, "glass": 1004.07, "inserts": 1117.79 },
+      "8": { "solid": 991.96, "glass": 1162.55, "inserts": 1276.27 },
+      "9": { "solid": 1239.96, "glass": 1410.55, "inserts": 1524.27 },
     },
     "12": {
       "9": { "solid": 1591.29, "glass": 1793.28, "inserts": 1927.93 },
@@ -72,9 +72,9 @@ export const STOCK_PRICES: Record<string, Record<string, Record<string, PriceTri
       "9": { "solid": 1822.97, "glass": 2058.62, "inserts": 2215.71 },
     },
     "16": {
-      "7": { "solid": 1131.05, "glass": 1386.68, "inserts": 1557.09 },
-      "8": { "solid": 1363.31, "glass": 1618.93, "inserts": 1789.35 },
-      "9": { "solid": 1980.81, "glass": 2250.12, "inserts": 2429.67 },
+      "7": { "solid": 1150.45, "glass": 1423.38, "inserts": 1605.34 },
+      "8": { "solid": 1398.43, "glass": 1671.36, "inserts": 1853.32 },
+      "9": { "solid": 2007.41, "glass": 2280.34, "inserts": 2462.3 },
     },
   },
   "4050-4051-4053": {
@@ -129,14 +129,14 @@ export const STOCK_PRICES: Record<string, Record<string, Record<string, PriceTri
   },
   "9130-9133": {
     "8": {
-      "7": { "solid": 850.01, "glass": 1043.87, "inserts": 1136.32 },
-      "8": { "solid": 1020.01, "glass": 1213.87, "inserts": 1306.32 },
-      "9": { "solid": 1371.87, "glass": 1516.88, "inserts": 1609.0 },
+      "7": { "solid": 851.54, "glass": 1056.54, "inserts": 1154.32 },
+      "8": { "solid": 1031.32, "glass": 1236.32, "inserts": 1334.09 },
+      "9": { "solid": 1405.05, "glass": 1610.05, "inserts": 1707.82 },
     },
     "9": {
-      "7": { "solid": 915.62, "glass": 1109.48, "inserts": 1201.94 },
-      "8": { "solid": 1107.99, "glass": 1301.85, "inserts": 1394.31 },
-      "9": { "solid": 1485.84, "glass": 1626.84, "inserts": 1718.96 },
+      "7": { "solid": 920.93, "glass": 1125.93, "inserts": 1223.7 },
+      "8": { "solid": 1124.35, "glass": 1329.35, "inserts": 1427.12 },
+      "9": { "solid": 1521.74, "glass": 1726.74, "inserts": 1824.51 },
     },
     "10": {
       "9": { "solid": 1721.38, "glass": 1902.4, "inserts": 2017.54 },
@@ -151,9 +151,9 @@ export const STOCK_PRICES: Record<string, Record<string, Record<string, PriceTri
       "9": { "solid": 2428.13, "glass": 2680.93, "inserts": 2842.11 },
     },
     "16": {
-      "7": { "solid": 1509.13, "glass": 1896.85, "inserts": 2081.71 },
-      "8": { "solid": 1880.45, "glass": 2268.17, "inserts": 2453.09 },
-      "9": { "solid": 2562.09, "glass": 2858.47, "inserts": 3042.7 },
+      "7": { "solid": 1534.35, "glass": 1944.35, "inserts": 2139.88 },
+      "8": { "solid": 1927.0, "glass": 2337.0, "inserts": 2532.53 },
+      "9": { "solid": 2624.0, "glass": 3034.0, "inserts": 3229.53 },
     },
     "18": {
       "9": { "solid": 3093.27, "glass": 3371.02, "inserts": 3555.25 },
@@ -193,16 +193,16 @@ export const STOCK_PRICES: Record<string, Record<string, Record<string, PriceTri
   },
   "GD1LP-GD1SP": {
     "8": {
-      "7": { "solid": 765.77, "glass": 1047.02, "inserts": 1093.04 },
-      "8": { "solid": 917.9, "glass": 1199.15, "inserts": 1245.18 },
+      "7": { "solid": 772.72, "glass": 1071.47, "inserts": 1152.95 },
+      "8": { "solid": 934.3, "glass": 1233.05, "inserts": 1314.53 },
     },
     "9": {
-      "7": { "solid": 824.58, "glass": 1105.83, "inserts": 1151.85 },
-      "8": { "solid": 997.16, "glass": 1278.41, "inserts": 1324.44 },
+      "7": { "solid": 835.18, "glass": 1133.93, "inserts": 1215.4 },
+      "8": { "solid": 1018.51, "glass": 1317.26, "inserts": 1398.74 },
     },
     "16": {
-      "7": { "solid": 1358.95, "glass": 1921.46, "inserts": 2013.5 },
-      "8": { "solid": 1692.62, "glass": 2255.12, "inserts": 2347.17 },
+      "7": { "solid": 1390.6, "glass": 1988.12, "inserts": 2151.09 },
+      "8": { "solid": 1745.04, "glass": 2342.56, "inserts": 2505.53 },
     },
   },
 };

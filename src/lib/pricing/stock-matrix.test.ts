@@ -4,6 +4,7 @@ import {
   colorInStock, stockedWidths, stockedHeights, compareSizeCodes, sizeLabel, sizeParts,
   solidOnlyHeight, torsionOnlyHeight,
 } from "./data/stock-colors";
+import { COLORS } from "./data/catalog-meta";
 
 const opts = (o: Record<string, unknown> = {}) =>
   ({ style: "solid", color: "White", track: "r12", spring: "extension", lock: "none", ...o }) as never;
@@ -147,5 +148,22 @@ describe("torsion-only heights", () => {
     const q = quoteResidential("T50S", d, opts({ spring: "extension" }));
     expect(q.description).toContain("torsion springs");
     expect(q.description).not.toContain("extension springs");
+  });
+});
+
+describe("residential colour lists", () => {
+  it("offers no Ultra-Grain on the 9130/9133 or the Gallery pair", () => {
+    // Special order only — Brandon, 10/9/2026. They stay available on the
+    // special order tab, which reads a different list.
+    for (const key of ["9130-9133", "GD1LP-GD1SP"]) {
+      for (const c of COLORS[key]) {
+        expect(c, `${key}: ${c}`).not.toContain("Ultra-Grain");
+      }
+    }
+  });
+
+  it("leaves every other list alone", () => {
+    expect(COLORS["4050-4051-4053"]).toContain("Bronze");
+    expect(COLORS["T50S"]).toContain("Almond");
   });
 });

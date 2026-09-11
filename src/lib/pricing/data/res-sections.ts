@@ -7,13 +7,13 @@ export type ResSectionRow = { bottom: number; inter: number; glazed: number };
 
 export const RES_SECTIONS: Record<string, Record<string, ResSectionRow>> = {
   "T50S": {
-    "7.6": { "bottom": 192.6, "inter": 161.84, "glazed": 317.95 },
-    "8": { "bottom": 167.5, "inter": 136.84, "glazed": 292.95 },
-    "9": { "bottom": 188.54, "inter": 153.94, "glazed": 310.05 },
-    "10": { "bottom": 209.49, "inter": 171.06, "glazed": 366.21 },
-    "12": { "bottom": 251.4, "inter": 205.27, "glazed": 439.43 },
-    "15": { "bottom": 314.25, "inter": 256.57, "glazed": 529.78 },
-    "16": { "bottom": 335.19, "inter": 273.68, "glazed": 585.9 },
+    "7.6": { "bottom": 150.82, "inter": 123.16, "glazed": 235.53 },
+    "8": { "bottom": 160.86, "inter": 131.35, "glazed": 281.22 },
+    "9": { "bottom": 180.98, "inter": 147.78, "glazed": 297.65 },
+    "10": { "bottom": 201.1, "inter": 164.18, "glazed": 351.49 },
+    "12": { "bottom": 241.31, "inter": 197.04, "glazed": 421.8 },
+    "15": { "bottom": 301.61, "inter": 246.27, "glazed": 508.51 },
+    "16": { "bottom": 321.73, "inter": 262.71, "glazed": 562.39 },
   },
   "T52S": {
     "8": { "bottom": 235.65, "inter": 205.46, "glazed": 351.71 },
@@ -44,8 +44,8 @@ export const RES_SECTIONS: Record<string, Record<string, ResSectionRow>> = {
     "16": { "bottom": 451.14, "inter": 401.75, "glazed": 751.97 },
   },
   "GD1LP-GD1SP": {
-    "8": { "bottom": 250.73, "inter": 220.53, "glazed": 565.28 },
-    "9": { "bottom": 282.05, "inter": 248.08, "glazed": 592.83 },
-    "16": { "bottom": 501.48, "inter": 441.03, "glazed": 1130.53 },
+    "8": { "bottom": 242.84, "inter": 213.59, "glazed": 547.49 },
+    "9": { "bottom": 273.2, "inter": 240.27, "glazed": 574.18 },
+    "16": { "bottom": 485.69, "inter": 427.16, "glazed": 1094.98 },
   },
 };

@@ -26,6 +26,8 @@ export const MARGINS: Record<string, { door: number; section: number }> = {
   }
 };
 
+// Ultra-Grain finishes are special order only and were removed from the
+// residential lists for the 9130/9133 and the Gallery pair on 10/9/2026.
 export const COLORS: Record<string, string[]> = {
   "T50S": [
     "White",
@@ -60,10 +62,7 @@ export const COLORS: Record<string, string[]> = {
     "Mocha Brown",
     "Charcoal",
     "Iron Ore",
-    "Black",
-    "Ultra-Grain Classic Medium Finish",
-    "Ultra-Grain Classic Cherry Finish",
-    "Ultra-Grain Classic Walnut Finish"
+    "Black"
   ],
   "4300": [
     "White",
@@ -91,11 +90,7 @@ export const COLORS: Record<string, string[]> = {
     "Mocha Brown",
     "Charcoal",
     "Iron Ore",
-    "Black",
-    "Ultra-Grain Oak Medium Finish",
-    "Ultra-Grain Oak Dark Finish",
-    "Ultra-Grain Oak Walnut Finish",
-    "Ultra-Grain Oak Slate Finish"
+    "Black"
   ]
 };
 

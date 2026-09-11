@@ -77,12 +77,12 @@ describe("priceResidential — stock vs standard (the core rule)", () => {
     ["T50S", dim(12, 0, 9, 0), "solid", 1476.22, "stock"], // 9' tall exact width -> 9FT-book stock price
     ["T50S", dim(10, 0, 9, 0), "solid", 1140.14, "stock"],
     ["T50S", dim(12, 2, 9, 0), "solid", 1827.12, "standard"], // odd 9' width stays on the odd band
-    ["T52S", dim(8, 0, 7, 0), "solid", 662.42, "stock"],
-    ["T52S", dim(9, 0, 7, 0), "glass", 852.96, "stock"],
+    ["T52S", dim(8, 0, 7, 0), "solid", 663.27, "stock"],
+    ["T52S", dim(9, 0, 7, 0), "glass", 837.91, "stock"],
     ["T52S", dim(9, 4, 7, 0), "glass", 1084.98, "standard"],
-    ["T52S", dim(16, 0, 8, 0), "inserts", 1789.35, "stock"],
+    ["T52S", dim(16, 0, 8, 0), "inserts", 1853.32, "stock"],
     ["T52S", dim(12, 0, 7, 0), "solid", 1271.55, "standard"],
-    ["T52S", dim(10, 0, 8, 0), "solid", 970.26, "stock"],
+    ["T52S", dim(10, 0, 8, 0), "solid", 991.96, "stock"],
   ];
   it.each(cases)("%s %o %s -> $%d (%s)", (model, d, style, expected, source) => {
     const r = priceResidential(model, d, style);
@@ -286,8 +286,8 @@ describe("2026 workbook authority (V2 stock + strict 9FT book)", () => {
   it("grouped models get stock prices at exact stock sizes (V2 book)", () => {
     expect(priceResidential("4050", dim(8, 0, 7, 0), "solid")).toMatchObject({ price: 723.25, source: "stock" });
     expect(priceResidential("4051", dim(8, 0, 8, 0), "solid")).toMatchObject({ price: 875.95, source: "stock" });
-    expect(priceResidential("9130", dim(9, 0, 7, 0), "glass")).toMatchObject({ price: 1109.48, source: "stock" });
-    expect(priceResidential("GD1SP", dim(16, 0, 8, 0), "inserts")).toMatchObject({ price: 2347.17, source: "stock" });
+    expect(priceResidential("9130", dim(9, 0, 7, 0), "glass")).toMatchObject({ price: 1125.93, source: "stock" });
+    expect(priceResidential("GD1SP", dim(16, 0, 8, 0), "inserts")).toMatchObject({ price: 2505.53, source: "stock" });
     expect(priceResidential("4300", dim(9, 0, 8, 0), "solid")).toMatchObject({ price: 1065.28, source: "stock" });
   });
   it("odd widths on grouped models stay on the standard band", () => {
@@ -449,34 +449,34 @@ describe("residential replacement sections (2026 V2 workbook SECTIONS blocks)", 
     ({ widthKey: "8", height: "18", kind: "bt", color: "White", ...over }) as Parameters<typeof quoteResidentialSection>[1];
 
   it("prices bottom / intermediate / glazed from the sheet columns", () => {
-    expect(quoteResidentialSection("T50S", sec()).unitPrice).toBe(167.5);
-    expect(quoteResidentialSection("T50S", sec({ kind: "int" })).unitPrice).toBe(136.84);
-    expect(quoteResidentialSection("T50S", sec({ kind: "int", glazed: true })).unitPrice).toBe(292.95);
+    expect(quoteResidentialSection("T50S", sec()).unitPrice).toBe(160.86);
+    expect(quoteResidentialSection("T50S", sec({ kind: "int" })).unitPrice).toBe(131.35);
+    expect(quoteResidentialSection("T50S", sec({ kind: "int", glazed: true })).unitPrice).toBe(281.22);
     expect(quoteResidentialSection("T52S", sec({ widthKey: "9", kind: "int" })).unitPrice).toBe(231.13);
     expect(quoteResidentialSection("9130", sec({ widthKey: "16", kind: "int", glazed: true })).unitPrice).toBe(900.57);
     expect(quoteResidentialSection("4300", sec({ widthKey: "9" })).unitPrice).toBe(253.78);
-    expect(quoteResidentialSection("GD1LP", sec({ widthKey: "16", kind: "int", glazed: true })).unitPrice).toBe(1130.53);
+    expect(quoteResidentialSection("GD1LP", sec({ widthKey: "16", kind: "int", glazed: true })).unitPrice).toBe(1094.98);
   });
   it("18\" and 21\" heights share one price", () => {
     expect(quoteResidentialSection("4300", sec({ height: "21" })).unitPrice)
       .toBe(quoteResidentialSection("4300", sec({ height: "18" })).unitPrice);
   });
   it("stocked 7'6\" doors take the 8'0\" section price (not the sheet's 7'6\" row)", () => {
-    expect(quoteResidentialSection("T50S", sec({ widthKey: "7.6" })).unitPrice).toBe(167.5); // sheet row says 192.60
+    expect(quoteResidentialSection("T50S", sec({ widthKey: "7.6" })).unitPrice).toBe(160.86); // sheet row says 192.60
     expect(quoteResidentialSection("4050", sec({ widthKey: "7.6", kind: "int" })).unitPrice).toBe(190.97); // sheet row says 215.97
     // 4050's 7'0" row is its own price and is NOT remapped
     expect(quoteResidentialSection("4050", sec({ widthKey: "7", kind: "int" })).unitPrice).toBe(215.97);
   });
   it("lockbar installed (+$70) only on SOLID intermediate sections", () => {
     const q = quoteResidentialSection("T50S", sec({ kind: "int", lockbar: true }));
-    expect(q.unitPrice).toBeCloseTo(136.84 + 70, 2);
+    expect(q.unitPrice).toBeCloseTo(131.35 + 70, 2);
     expect(q.description).toContain("lockbar installed");
     // glazed intermediates and bottoms ignore the flag
-    expect(quoteResidentialSection("T50S", sec({ kind: "int", glazed: true, lockbar: true })).unitPrice).toBe(292.95);
-    expect(quoteResidentialSection("T50S", sec({ kind: "bt", lockbar: true })).unitPrice).toBe(167.5);
+    expect(quoteResidentialSection("T50S", sec({ kind: "int", glazed: true, lockbar: true })).unitPrice).toBe(281.22);
+    expect(quoteResidentialSection("T50S", sec({ kind: "bt", lockbar: true })).unitPrice).toBe(160.86);
   });
   it("bottom sections ignore the glazed flag", () => {
-    expect(quoteResidentialSection("T50S", sec({ glazed: true })).unitPrice).toBe(167.5);
+    expect(quoteResidentialSection("T50S", sec({ glazed: true })).unitPrice).toBe(160.86);
   });
   it("split models resolve to their shared section table", () => {
     expect(quoteResidentialSection("4301", sec({ widthKey: "16" })).unitPrice)
@@ -538,7 +538,7 @@ describe("stock status requires a stocked COLOR, not just a stock size", () => {
     const brown = quoteResidentialSection("T50S", { widthKey: "8", height: "18", kind: "bt", color: "Chocolate Brown" });
     expect(brown.isStock).toBe(false);
     expect(brown.description).not.toContain("Special order");
-    expect(brown.unitPrice).toBe(167.5); // price unchanged
+    expect(brown.unitPrice).toBe(160.86); // price unchanged
     const white = quoteResidentialSection("T50S", { widthKey: "8", height: "18", kind: "bt", color: "White" });
     expect(white.isStock).toBe(true);
   });
