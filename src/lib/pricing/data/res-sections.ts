@@ -16,10 +16,10 @@ export const RES_SECTIONS: Record<string, Record<string, ResSectionRow>> = {
     "16": { "bottom": 321.73, "inter": 262.71, "glazed": 562.39 },
   },
   "T52S": {
-    "8": { "bottom": 235.65, "inter": 205.46, "glazed": 351.71 },
-    "9": { "bottom": 265.1, "inter": 231.13, "glazed": 377.38 },
-    "10": { "bottom": 294.54, "inter": 256.81, "glazed": 439.63 },
-    "16": { "bottom": 471.29, "inter": 410.89, "glazed": 703.41 },
+    "8": { "bottom": 241.43, "inter": 210.49, "glazed": 360.35 },
+    "9": { "bottom": 271.61, "inter": 236.82, "glazed": 386.69 },
+    "10": { "bottom": 301.78, "inter": 263.12, "glazed": 450.43 },
+    "16": { "bottom": 482.86, "inter": 421.0, "glazed": 720.69 },
   },
   "4050-4051-4053": {
     "7": { "bottom": 242.3, "inter": 215.97, "glazed": 401.62 },

@@ -81,10 +81,12 @@ export const STOCK_PRICES: Record<string, Record<string, Record<string, PriceTri
     "7": {
       "7": { "solid": 837.75, "glass": 968.32, "inserts": 1030.6 },
       "8": { "solid": 1013.37, "glass": 1143.93, "inserts": 1206.21 },
+      "9": { "solid": 1372.35, "glass": 1502.91, "inserts": 1565.19 },
     },
     "7.6": {
       "7": { "solid": 837.75, "glass": 968.32, "inserts": 1030.6 },
       "8": { "solid": 1013.37, "glass": 1143.93, "inserts": 1206.21 },
+      "9": { "solid": 1372.35, "glass": 1502.91, "inserts": 1565.19 },
     },
     "8": {
       "7": { "solid": 723.25, "glass": 897.37, "inserts": 980.4 },
@@ -195,14 +197,17 @@ export const STOCK_PRICES: Record<string, Record<string, Record<string, PriceTri
     "8": {
       "7": { "solid": 772.72, "glass": 1071.47, "inserts": 1152.95 },
       "8": { "solid": 934.3, "glass": 1233.05, "inserts": 1314.53 },
+      "9": { "solid": 1317.26, "glass": 1616.02, "inserts": 1697.49 },
     },
     "9": {
       "7": { "solid": 835.18, "glass": 1133.93, "inserts": 1215.4 },
       "8": { "solid": 1018.51, "glass": 1317.26, "inserts": 1398.74 },
+      "9": { "solid": 1420.47, "glass": 1719.23, "inserts": 1800.7 },
     },
     "16": {
       "7": { "solid": 1390.6, "glass": 1988.12, "inserts": 2151.09 },
       "8": { "solid": 1745.04, "glass": 2342.56, "inserts": 2505.53 },
+      "9": { "solid": 2445.77, "glass": 3043.3, "inserts": 3206.26 },
     },
   },
 };

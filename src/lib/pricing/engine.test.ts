@@ -302,8 +302,13 @@ describe("2026 workbook authority (V2 stock + strict 9FT book)", () => {
     expect(priceResidential("T52S", dim(18, 0, 9, 0), "inserts")).toMatchObject({ price: 2694.66, source: "standard" });
     expect(priceResidential("4300", dim(8, 0, 9, 0), "solid")).toMatchObject({ price: 1311.74, source: "stock" });
   });
-  it("Gallery has no 9-ft prices at all (not stocked or priced 9' tall)", () => {
-    expect(priceResidential("GD1LP", dim(8, 0, 9, 0), "solid").source).toBe("none");
+  it("prices the Gallery at 9'0\" tall, added 10/9/2026", () => {
+    // The Gallery had no 9-ft prices until the stock sheet carried them.
+    for (const m of ["GD1LP", "GD1SP"]) {
+      const r = priceResidential(m, dim(8, 0, 9, 0), "solid");
+      expect(r.source, m).toBe("stock");
+      expect(r.price, m).toBe(1317.26);
+    }
   });
   it("only the 4050 family is stocked at 18' — T50S/T52S are special order", () => {
     for (const h of [7, 8, 9]) {
@@ -452,7 +457,7 @@ describe("residential replacement sections (2026 V2 workbook SECTIONS blocks)", 
     expect(quoteResidentialSection("T50S", sec()).unitPrice).toBe(160.86);
     expect(quoteResidentialSection("T50S", sec({ kind: "int" })).unitPrice).toBe(131.35);
     expect(quoteResidentialSection("T50S", sec({ kind: "int", glazed: true })).unitPrice).toBe(281.22);
-    expect(quoteResidentialSection("T52S", sec({ widthKey: "9", kind: "int" })).unitPrice).toBe(231.13);
+    expect(quoteResidentialSection("T52S", sec({ widthKey: "9", kind: "int" })).unitPrice).toBe(236.82);
     expect(quoteResidentialSection("9130", sec({ widthKey: "16", kind: "int", glazed: true })).unitPrice).toBe(900.57);
     expect(quoteResidentialSection("4300", sec({ widthKey: "9" })).unitPrice).toBe(253.78);
     expect(quoteResidentialSection("GD1LP", sec({ widthKey: "16", kind: "int", glazed: true })).unitPrice).toBe(1094.98);

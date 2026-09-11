@@ -5,6 +5,8 @@ import {
   solidOnlyHeight, torsionOnlyHeight,
 } from "./data/stock-colors";
 import { COLORS } from "./data/catalog-meta";
+import { priceResidential } from "./engine";
+import { RES_SECTIONS } from "./data/res-sections";
 
 const opts = (o: Record<string, unknown> = {}) =>
   ({ style: "solid", color: "White", track: "r12", spring: "extension", lock: "none", ...o }) as never;
@@ -165,5 +167,31 @@ describe("residential colour lists", () => {
   it("leaves every other list alone", () => {
     expect(COLORS["4050-4051-4053"]).toContain("Bronze");
     expect(COLORS["T50S"]).toContain("Almond");
+  });
+});
+
+describe("9ft tiers added 10/9/2026", () => {
+  it("prices the 4050 at 7'0\" and 7'6\" wide, 9'0\" tall", () => {
+    // Those two widths carried no 9-ft tier before the stock sheet.
+    for (const w of [[7, 0], [7, 6]] as const) {
+      const r = priceResidential("4050", { widthFt: w[0], widthIn: w[1], heightFt: 9, heightIn: 0 }, "solid");
+      expect(r.source, `${w[0]}'${w[1]}"`).toBe("stock");
+      expect(r.price, `${w[0]}'${w[1]}"`).toBe(1372.35);
+    }
+  });
+
+  it("prices the Gallery at every stock width, 9'0\" tall", () => {
+    for (const [w, expected] of [[8, 1317.26], [9, 1420.47]] as const) {
+      const r = priceResidential("GD1LP", { widthFt: w, widthIn: 0, heightFt: 9, heightIn: 0 }, "solid");
+      expect(r.source, `${w}'`).toBe("stock");
+      expect(r.price, `${w}'`).toBe(expected);
+    }
+  });
+
+  it("carries T52S section prices", () => {
+    // These were missing entirely; the sheet supplies all twelve.
+    expect(RES_SECTIONS["T52S"]["8"].bottom).toBe(241.43);
+    expect(RES_SECTIONS["T52S"]["8"].inter).toBe(210.49);
+    expect(RES_SECTIONS["T52S"]["8"].glazed).toBe(360.35);
   });
 });
