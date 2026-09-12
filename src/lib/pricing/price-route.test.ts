@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-
+// price-route.test.ts is not next to "src/app/api/price/route.ts" due to Next's routing directory risking route.test.ts to be treated as a route
 // The route requires a signed-in user. Authentication is not what these tests
 // are about, so a session is stubbed and every case runs as a logged-in user.
 vi.mock("@/lib/auth", () => ({
