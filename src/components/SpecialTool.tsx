@@ -15,6 +15,7 @@ import {
   parseModelSelection, modelSelectionValue,
 } from "@/lib/pricing/data/special-door-pricing";
 import { COLORS } from "@/lib/pricing/data/catalog-meta";
+import { dataKey } from "@/lib/pricing/model-groups";
 import { homeownerMarkupForBand } from "@/lib/pricing/engine";
 import { windowDesigns } from "@/lib/pricing/data/inserts";
 
@@ -166,7 +167,15 @@ export function SpecialTool() {
     const [ft, inch] = w.split(".");
     return `${ft}'${inch ?? 0}"`;
   };
-  const gColors = COLORS["4050-4051-4053"] ?? COLORS[model] ?? ["White"];
+  // The model's own list, not the 4050's. Hardcoding the 4050 group gave the
+  // T50S Black and Bronze, which Clopay does not build it in — Brandon,
+  // 12/9/2026.
+  // Special order groups are slash-separated ("T50S/T50L"); the colour table is
+  // keyed by catalogue group. Resolve through the first member.
+  const gColors =
+    COLORS[dataKey((modelMember || modelGroup).split("/")[0])] ??
+    COLORS[dataKey(modelGroup)] ??
+    ["White"];
   // The same insert list a residential 4050 offers, filtered the same way — by
   // model, style and door width.
   const gDesigns = gridded && gStyle === "inserts" && gWidth

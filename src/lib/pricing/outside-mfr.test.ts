@@ -6,6 +6,9 @@ import {
 const sell = (total: number, margin: number) => total / (1 - margin / 100);
 const OUTSIDE_SERIES = ["Haas Doors", "American Tradition", "Aluminum Series", "Amarr", "CHI", "Overhead", "Wayne Dalton"];
 
+import { COLORS } from "./data/catalog-meta";
+import { dataKey } from "./model-groups";
+
 describe("outside manufacturer margins", () => {
   it("puts every outside line on 45 door / 49 sections, bar American Tradition", () => {
     for (const name of OUTSIDE_SERIES) {
@@ -63,5 +66,39 @@ describe("Haas reads like Clopay", () => {
     for (const s of OUTSIDE_SERIES) expect(clopay, s).not.toContain(s);
     expect(SPECIAL["Haas"]).toBeUndefined();
     expect(Object.values(SO_OUTSIDE_SERIES).flat().sort()).toEqual([...OUTSIDE_SERIES].sort());
+  });
+});
+
+describe("special order colours follow the model", () => {
+  /** Same resolution the special order tool uses. */
+  const coloursFor = (group: string, member = "") =>
+    COLORS[dataKey((member || group).split("/")[0])] ?? COLORS[dataKey(group)] ?? ["White"];
+
+  it("gives the T50S its five, not the 4050's six", () => {
+    // The tool hardcoded the 4050 group, so the T50S offered Black and Bronze.
+    // Clopay does not build it in either — Brandon, 12/9/2026.
+    expect(coloursFor("T50S/T50L", "T50S")).toEqual(
+      ["White", "Almond", "Desert Tan", "Sandtone", "Chocolate Brown"],
+    );
+    expect(coloursFor("T52S/T52L", "T52S")).toEqual(
+      ["White", "Almond", "Desert Tan", "Sandtone", "Chocolate Brown"],
+    );
+  });
+
+  it("keeps Black and Bronze on the models that do carry them", () => {
+    const c = coloursFor("4050/4051/4053", "4050");
+    expect(c).toContain("Black");
+    expect(c).toContain("Bronze");
+  });
+
+  it("resolves a group with no member chosen yet", () => {
+    expect(coloursFor("9130/9133")).toContain("Hunter Green");
+    expect(coloursFor("GD1LP/GD1SP")).toContain("Iron Ore");
+  });
+
+  it("never returns an empty list", () => {
+    for (const g of ["4050/4051/4053", "T50S/T50L", "T52S/T52L", "9130/9133", "GD1LP/GD1SP", "nonsense"]) {
+      expect(coloursFor(g).length, g).toBeGreaterThan(0);
+    }
   });
 });

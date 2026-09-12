@@ -156,9 +156,10 @@ export function CommercialTool() {
           <div className="panel">
             <div className="step">
               <div className="step-h"><span className="step-n">1</span><h3>Select your door</h3><span className="hint">Commercial</span></div>
-              <div className="field"><label className="lbl">Select category</label>
-                <div className="selectwrap"><select disabled><option>Commercial Doors</option></select></div></div>
-              <div className="field"><label className="lbl">Select series <span className="req">*</span></label>
+              {/* The manufacturer IS the first real choice here — commercial
+                  carries four. The disabled "category" box above it only
+                  repeated the tab. */}
+              <div className="field"><label className="lbl">Select manufacturer <span className="req">*</span></label>
                 <div className="selectwrap">
                   <select data-testid="comm-mfr" value={mfr} onChange={(e) => { setMfr(e.target.value); setModel(""); }}>
                     <option value="">Select…</option>
@@ -166,7 +167,7 @@ export function CommercialTool() {
                   </select>
                 </div></div>
               {mfr && (
-                <div className="field"><label className="lbl">Model type <span className="req">*</span></label>
+                <div className="field"><label className="lbl">Select model <span className="req">*</span></label>
                   <div className="selectwrap">
                     <select data-testid="comm-model" value={model} onChange={(e) => pickModel(e.target.value)}>
                       <option value="">Select…</option>

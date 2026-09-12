@@ -327,12 +327,18 @@ export function ResidentialTool({ models }: { models: string[] }) {
                 <h3>Select your door</h3>
                 <span className="hint">Residential</span>
               </div>
+              {/* The tab already says Stock Residential, so a disabled
+                  "category" box repeating it was a row of nothing. The
+                  manufacturer takes its place — one option today, and the
+                  place a second one goes when DDS floors another line. */}
               <div className="field">
-                <label className="lbl">Select category</label>
-                <div className="selectwrap"><select disabled><option>Residential Doors</option></select></div>
+                <label className="lbl">Select manufacturer</label>
+                <div className="selectwrap">
+                  <select data-testid="mfr" disabled><option>Clopay</option></select>
+                </div>
               </div>
               <div className="field">
-                <label className="lbl">Select series <span className="req">*</span></label>
+                <label className="lbl">Select collection <span className="req">*</span></label>
                 <div className="selectwrap">
                   <select data-testid="series" value={coll} onChange={(e) => onSeries(e.target.value)}>
                     <option value="">Select…</option>
@@ -342,7 +348,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
               </div>
               {coll && (
                 <div className="field">
-                  <label className="lbl">Model type <span className="req">*</span></label>
+                  <label className="lbl">Select model <span className="req">*</span></label>
                   <div className="selectwrap">
                     <select data-testid="model" value={model} onChange={(e) => onPickModel(e.target.value)}>
                       <option value="">Select…</option>
