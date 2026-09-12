@@ -32,6 +32,7 @@ export async function POST(req: Request) {
       glazed: body.glazed === true,
       lockbar: body.lockbar === true,
       color: typeof color === "string" ? color : "White",
+      homeowner: homeowner === true,
     });
     return NextResponse.json(quote);
   }

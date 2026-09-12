@@ -29,8 +29,18 @@ export interface StockRange {
  * support it: the 7' tier already covers everything from 6'0" to 7'0".
  */
 const SHORT_HEIGHTS = ["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8"];
-/** White also runs tall. */
-const WHITE_HEIGHTS = [...SHORT_HEIGHTS, "9", "10"];
+/**
+ * White runs tall, to 9'0".
+ *
+ * 10'0" came off on 12/9/2026 — the stock sheets carry 7', 8' and 9' and
+ * nothing above, so a 10'0" option had no stock price behind it.
+ *
+ * 9'0" now applies to every model rather than the three that had it: the sheets
+ * price 9'0" at every stocked width on the 4050 group, the 9130/9133 and the
+ * Gallery pair, and the only gap in the range is the T50S at 7'6" — handled by
+ * its own entry below.
+ */
+const WHITE_HEIGHTS = [...SHORT_HEIGHTS, "9"];
 
 /**
  * Heights floored ONLY as solid doors.
@@ -91,25 +101,25 @@ export const STOCK_MATRIX: Record<string, Record<string, StockRange>> = {
     Black: { widths: ["8", "9", "16"], heights: SHORT_HEIGHTS },
   },
   "4051": {
-    White: { widths: ["8", "9", "16"], heights: SHORT_HEIGHTS },
+    White: { widths: ["8", "9", "16"], heights: WHITE_HEIGHTS },
     Black: { widths: ["8", "9", "16"], heights: SHORT_HEIGHTS },
   },
   "4053": {
-    White: { widths: ["8", "9", "16"], heights: SHORT_HEIGHTS },
+    White: { widths: ["8", "9", "16"], heights: WHITE_HEIGHTS },
     Black: { widths: ["8", "9", "16"], heights: SHORT_HEIGHTS },
   },
   // 9130/9133 went on the floor 3/9/2026: White only, 8/9/16 wide.
   "9130": {
-    White: { widths: ["8", "9", "16"], heights: SHORT_HEIGHTS },
+    White: { widths: ["8", "9", "16"], heights: WHITE_HEIGHTS },
   },
   "9133": {
-    White: { widths: ["8", "9", "16"], heights: SHORT_HEIGHTS },
+    White: { widths: ["8", "9", "16"], heights: WHITE_HEIGHTS },
   },
   GD1LP: {
-    White: { widths: ["8", "9", "16"], heights: SHORT_HEIGHTS },
+    White: { widths: ["8", "9", "16"], heights: WHITE_HEIGHTS },
   },
   GD1SP: {
-    White: { widths: ["8", "9", "16"], heights: SHORT_HEIGHTS },
+    White: { widths: ["8", "9", "16"], heights: WHITE_HEIGHTS },
   },
   // The whole 4300 family is still not floored as a complete door.
 };

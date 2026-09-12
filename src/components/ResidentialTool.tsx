@@ -186,7 +186,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
             model, assembly: "sections", widthKey: activeSecWidth,
             secHeight, secKind, glazed: secKind === "int" && secGlass === "glazed",
             lockbar: secKind === "int" && secGlass === "solid" && secLock === "installed",
-            color,
+            color, homeowner,
           }),
         });
         const data = await res.json();
@@ -573,6 +573,16 @@ export function ResidentialTool({ models }: { models: string[] }) {
                           </select>
                         </div>
                       </div>
+                    <div className="grow">
+                      <label>Home owner surcharge</label>
+                      <div className="ctl selectwrap">
+                        <select data-testid="sec-homeowner" value={homeowner ? "yes" : "no"}
+                          onChange={(e) => setHomeowner(e.target.value === "yes")}>
+                          <option value="no">No</option>
+                          <option value="yes">Yes</option>
+                        </select>
+                      </div>
+                    </div>
                       {secGlass === "solid" && (
                         <div className="grow">
                           <label>Lockbar</label>
@@ -586,7 +596,19 @@ export function ResidentialTool({ models }: { models: string[] }) {
                       )}
                     </>
                   ) : (
-                    <div className="grow"><label>&nbsp;</label><div className="ctl"><span className="muted-note">Bottom section — solid only.</span></div></div>
+                    <>
+                      <div className="grow"><label>&nbsp;</label><div className="ctl"><span className="muted-note">Bottom section — solid only.</span></div></div>
+                    <div className="grow">
+                      <label>Home owner surcharge</label>
+                      <div className="ctl selectwrap">
+                        <select data-testid="sec-homeowner" value={homeowner ? "yes" : "no"}
+                          onChange={(e) => setHomeowner(e.target.value === "yes")}>
+                          <option value="no">No</option>
+                          <option value="yes">Yes</option>
+                        </select>
+                      </div>
+                    </div>
+                    </>
                   )
                 ) : (
                   <>

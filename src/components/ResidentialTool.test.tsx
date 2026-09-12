@@ -212,3 +212,38 @@ describe("residential tool — sections only", () => {
     }
   });
 });
+
+describe("residential tool — replacement sections", () => {
+  const assembly = (v: string) => {
+    const s = [...document.querySelectorAll("select")]
+      .find((x) => [...x.options].some((o) => o.value === "sections"))!;
+    fireEvent.change(s, { target: { value: v } });
+  };
+
+  it("offers the home owner surcharge on a bottom section", async () => {
+    await configure();
+    assembly("sections");
+    expect(screen.getByTestId("sec-homeowner")).toBeTruthy();
+  });
+
+  it("offers it on an intermediate too", async () => {
+    await configure();
+    assembly("sections");
+    const kind = [...document.querySelectorAll("select")]
+      .find((x) => [...x.options].some((o) => o.value === "int"));
+    if (kind) fireEvent.change(kind, { target: { value: "int" } });
+    expect(screen.getByTestId("sec-homeowner")).toBeTruthy();
+  });
+
+  it("sends it with the section request", async () => {
+    await configure();
+    assembly("sections");
+    fireEvent.change(screen.getByTestId("sec-width"), { target: { value: "9" } });
+    fireEvent.change(screen.getByTestId("sec-homeowner"), { target: { value: "yes" } });
+    fireEvent.click(screen.getByTestId("get-price"));
+    await waitFor(() => expect(bodies.length).toBeGreaterThan(0));
+    const last = bodies[bodies.length - 1];
+    expect(last.assembly).toBe("sections");
+    expect(last.homeowner).toBe(true);
+  });
+});

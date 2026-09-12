@@ -94,13 +94,33 @@ describe("size dropdown options", () => {
     expect(quoteResidential("9133", dim(8, 7), opts({ color: "Black" })).unitPrice).toBeGreaterThan(0);
   });
 
-  it("runs every model 6'0\" to 8'0\"", () => {
-    const band = ["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8"];
-    expect(stockedHeights("9130")).toEqual(band);
-    expect(stockedHeights("9133")).toEqual(band);
-    expect(stockedHeights("4051")).toEqual(band);
-    // White runs tall on top of that.
-    expect(stockedHeights("4050")).toEqual([...band, "9", "10"]);
+  it("runs every model 6'0\" to 9'0\"", () => {
+    // 9'0" went on for every model on 12/9/2026 — the sheets price it at every
+    // stocked width. 10'0" came off the same day: nothing is priced above 9'0".
+    const band = ["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8", "9"];
+    for (const m of ["4050", "4051", "4053", "9130", "9133", "GD1LP", "GD1SP", "T50S", "T52S"]) {
+      expect(stockedHeights(m), m).toEqual(band);
+    }
+  });
+
+  it("prices 9'0\" from stock at every stocked width", () => {
+    // The point of offering the height: it must not fall through to the
+    // standard grid and read as a special order.
+    for (const [m, wf, wi] of [
+      ["4050", 16, 0], ["4051", 9, 0], ["4053", 8, 0],
+      ["9130", 16, 0], ["9133", 8, 0], ["GD1LP", 9, 0], ["GD1SP", 8, 0], ["T52S", 10, 0],
+    ] as const) {
+      const r = priceResidential(m, { widthFt: wf, widthIn: wi, heightFt: 9, heightIn: 0 }, "solid");
+      expect(r.source, `${m} ${wf}'`).toBe("stock");
+      expect(r.price, `${m} ${wf}'`).toBeGreaterThan(0);
+    }
+  });
+
+  it("leaves the one width with no 9ft sheet price on the standard grid", () => {
+    // The T50S carries no 9'0" at 7'6". Offering the height is still right —
+    // it prices, it just reads as a special order.
+    const r = priceResidential("T50S", { widthFt: 7, widthIn: 6, heightFt: 9, heightIn: 0 }, "solid");
+    expect(r.source).toBe("standard");
   });
 
   it("gives the 4050 the widest size list, 6'0\" included", () => {
@@ -209,7 +229,10 @@ describe("stocked colours narrow with the size", () => {
   it("narrows on height too", () => {
     // Nothing but White goes above 8'0" tall on any model.
     expect(stockedColors("4050", "8", "9")).toEqual(["White"]);
-    expect(stockedColors("T50S", "9", "10")).toEqual(["White"]);
+    // 10'0" came off on 12/9/2026 — the stock sheets stop at 9'0".
+    expect(stockedColors("T50S", "9", "10")).toEqual([]);
+    expect(stockedColors("4050", "8", "10")).toEqual([]);
+    expect(stockedColors("T50S", "9", "9")).toEqual(["White"]);
   });
 
   it("drops Black where it is not floored", () => {
