@@ -379,10 +379,8 @@ export function quoteResidentialSection(model: string, input: ResSectionInput): 
   };
   const table = RES_SECTIONS[dataKey(model)];
   if (!table) return empty;
-  // Stocked 7'6" doors take their sections at the 8'0" price (Brandon, 7/9/2026) —
-  // this deliberately bypasses the sheet's own higher 7'6" rows.
-  const priceKey = input.widthKey === "7.6" ? "8" : input.widthKey;
-  const row = table[priceKey];
+
+  const row = table[input.widthKey];
   if (!row) return empty;
   const glazed = input.kind === "int" && !!input.glazed;
   const base = input.kind === "bt" ? row.bottom : glazed ? row.glazed : row.inter;

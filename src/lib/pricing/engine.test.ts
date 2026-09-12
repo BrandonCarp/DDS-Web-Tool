@@ -9,6 +9,9 @@ const dim = (wf: number, wi: number, hf: number, hi: number) => ({
   widthFt: wf, widthIn: wi, heightFt: hf, heightIn: hi,
 });
 
+import { RES_SECTIONS } from "./data/res-sections";
+import { RES_SECTION_WIDTHS } from "./data/res-section-meta";
+
 describe("tierForHeight", () => {
   it("maps heights to tiers at the 7' and 8' boundaries", () => {
     expect(tierForHeight(7 * 12)).toBe("7"); // 7'0"
@@ -458,7 +461,7 @@ describe("residential replacement sections (2026 V2 workbook SECTIONS blocks)", 
     expect(quoteResidentialSection("T50S", sec({ kind: "int" })).unitPrice).toBe(131.35);
     expect(quoteResidentialSection("T50S", sec({ kind: "int", glazed: true })).unitPrice).toBe(281.22);
     expect(quoteResidentialSection("T52S", sec({ widthKey: "9", kind: "int" })).unitPrice).toBe(236.82);
-    expect(quoteResidentialSection("9130", sec({ widthKey: "16", kind: "int", glazed: true })).unitPrice).toBe(900.57);
+    expect(quoteResidentialSection("9130", sec({ widthKey: "16", kind: "int", glazed: true })).unitPrice).toBe(930.59);
     expect(quoteResidentialSection("4300", sec({ widthKey: "9" })).unitPrice).toBe(253.78);
     expect(quoteResidentialSection("GD1LP", sec({ widthKey: "16", kind: "int", glazed: true })).unitPrice).toBe(1094.98);
   });
@@ -466,11 +469,34 @@ describe("residential replacement sections (2026 V2 workbook SECTIONS blocks)", 
     expect(quoteResidentialSection("4300", sec({ height: "21" })).unitPrice)
       .toBe(quoteResidentialSection("4300", sec({ height: "18" })).unitPrice);
   });
-  it("stocked 7'6\" doors take the 8'0\" section price (not the sheet's 7'6\" row)", () => {
-    expect(quoteResidentialSection("T50S", sec({ widthKey: "7.6" })).unitPrice).toBe(160.86); // sheet row says 192.60
-    expect(quoteResidentialSection("4050", sec({ widthKey: "7.6", kind: "int" })).unitPrice).toBe(190.97); // sheet row says 215.97
-    // 4050's 7'0" row is its own price and is NOT remapped
-    expect(quoteResidentialSection("4050", sec({ widthKey: "7", kind: "int" })).unitPrice).toBe(215.97);
+  it("prices a 7'6\" section at its own row", () => {
+    // Rounded up to the 8'0" price from 7/9/2026 until 12/9/2026, when Brandon
+    // reversed it. With the current sheet the 7'6" rows are CHEAPER than 8'0",
+    // so the old rule was over-charging every 7'6" section.
+    expect(quoteResidentialSection("T50S", sec({ widthKey: "7.6" })).unitPrice).toBe(150.82);
+    expect(quoteResidentialSection("T50S", sec({ widthKey: "8" })).unitPrice).toBe(160.86);
+    expect(quoteResidentialSection("4050", sec({ widthKey: "7.6", kind: "int" })).unitPrice).toBe(188.43);
+    expect(quoteResidentialSection("4050", sec({ widthKey: "8", kind: "int" })).unitPrice).toBe(201.0);
+  });
+
+  it("keeps the 4050's 7'0\" row separate from its 7'6\"", () => {
+    // Three adjacent widths, three different prices — none of them share.
+    const at = (w: string) => quoteResidentialSection("4050", sec({ widthKey: w, kind: "int" })).unitPrice;
+    expect(at("7")).toBe(175.88);
+    expect(at("7.6")).toBe(188.43);
+    expect(at("8")).toBe(201.0);
+  });
+
+  it("offers 7'6\" only on the models that carry the row", () => {
+    // There is no 8'0" fallback any more, so the width list is the guard that
+    // stops a model without a 7'6" row ever being asked for one.
+    for (const key of ["T50S", "4050-4051-4053"]) {
+      expect(RES_SECTION_WIDTHS[key], key).toContain("7.6");
+      expect(RES_SECTIONS[key]["7.6"], key).toBeTruthy();
+    }
+    for (const key of ["T52S", "9130-9133", "GD1LP-GD1SP", "4300"]) {
+      expect(RES_SECTION_WIDTHS[key], key).not.toContain("7.6");
+    }
   });
   it("lockbar installed (+$70) only on SOLID intermediate sections", () => {
     const q = quoteResidentialSection("T50S", sec({ kind: "int", lockbar: true }));

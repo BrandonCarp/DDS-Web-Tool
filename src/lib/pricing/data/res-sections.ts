@@ -1,7 +1,7 @@
 // GENERATED from new_pricing_2026_V2.xlsx (SECTIONS blocks, per model sheet).
 // SELL prices per replacement section. 18" and 21" heights share one price
 // (the sheet lists them as a single 18"/21" row). Values are verbatim from
-// the workbook — the 7'6" -> 8'0" pricing rule is applied in the engine, not here.
+// the workbook, including the 7'6" rows, which the engine now reads directly.
 
 export type ResSectionRow = { bottom: number; inter: number; glazed: number };
 
