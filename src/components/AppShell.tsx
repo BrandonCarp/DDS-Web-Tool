@@ -13,8 +13,11 @@ import { CustomerJobProvider, useCustomerJob } from "./CustomerJobFields";
 import { IDLE_MS } from "@/lib/session-timeout";
 
 const BASE_TABS = [
-  { id: "residential", label: "Residential" },
-  { id: "commercial", label: "Commercial" },
+  // `over` stacks a smaller word above the label. Residential and commercial
+  // quote from the stock sheets, and saying so on the tab keeps a counter from
+  // reaching for them on a special order — Brandon, 12/9/2026.
+  { id: "residential", label: "Residential", over: "Stock" },
+  { id: "commercial", label: "Commercial", over: "Stock" },
   { id: "special", label: "Special Order" },
   { id: "torsion", label: "Torsion Springs" },
   { id: "extension", label: "Extension Springs" },
@@ -25,6 +28,11 @@ const BASE_TABS = [
 // Inventory is visible ONLY to the master admin (role "admin") — it's a
 // placeholder until that build starts.
 const INVENTORY_TAB = { id: "inventory", label: "Inventory" } as const;
+
+/** Tab label for the mobile dropdown, where two lines will not fit. */
+function flatLabel(t: { label: string; over?: string }): string {
+  return t.over ? `${t.over} ${t.label}` : t.label;
+}
 
 export function AppShell(props: {
   models: string[];
@@ -82,7 +90,14 @@ function Shell({
               className={`tab ${mode === t.id ? "active" : ""}`}
               onClick={() => pickTab(t.id)}
             >
-              {t.label}
+              {"over" in t && t.over ? (
+                <span className="tab-stack">
+                  <span className="tab-over">{t.over}</span>
+                  <span className="tab-main">{t.label}</span>
+                </span>
+              ) : (
+                t.label
+              )}
             </button>
           ))}
         </nav>
@@ -101,7 +116,7 @@ function Shell({
           >
             {tabs.map((t) => (
               <option key={t.id} value={t.id}>
-                {t.label}
+                {flatLabel(t)}
               </option>
             ))}
           </select>

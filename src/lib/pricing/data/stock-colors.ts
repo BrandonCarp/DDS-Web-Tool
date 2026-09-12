@@ -181,6 +181,22 @@ export function colorInStock(
   return true;
 }
 
+/**
+ * Colours floored for a model, narrowed to a size when one is given.
+ *
+ * Availability is per colour AND per size, not per model: the 4050 is floored in
+ * five colours, but only White carries 7'0" or anything above 8'0" tall. So a
+ * 7'0" 4050 offers White alone, and the dropdown should say so rather than
+ * listing four colours that cannot be ordered at that size.
+ *
+ * Returns the colours in catalogue order, White first.
+ */
+export function stockedColors(model: string, widthCode?: string, heightCode?: string): string[] {
+  const byColor = STOCK_MATRIX[model] ?? STOCK_MATRIX[dataKey(model)];
+  if (!byColor) return [];
+  return Object.keys(byColor).filter((c) => colorInStock(model, c, widthCode, heightCode));
+}
+
 /** Order two size codes: "7.6" is 7 feet 6 inches, not 7.6 feet. */
 export function compareSizeCodes(a: string, b: string): number {
   const parse = (c: string) => {

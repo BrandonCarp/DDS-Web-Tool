@@ -11,7 +11,7 @@ import { COLORS, COLLECTIONS } from "@/lib/pricing/data/catalog-meta";
 import { dataKey, modelSort } from "@/lib/pricing/model-groups";
 import { windowDesigns, designWidthCode } from "@/lib/pricing/data/inserts";
 import { RES_SECTION_WIDTHS, sectionWidthLabel } from "@/lib/pricing/data/res-section-meta";
-import { stockedWidths, stockedHeights, sizeParts, solidOnlyHeight, torsionOnlyHeight } from "@/lib/pricing/data/stock-colors";
+import { stockedWidths, stockedHeights, sizeParts, sizeCode, stockedColors, solidOnlyHeight, torsionOnlyHeight } from "@/lib/pricing/data/stock-colors";
 
 const GLASS = [
   { value: "solid", label: "Solid (no windows)" },
@@ -119,13 +119,21 @@ export function ResidentialTool({ models }: { models: string[] }) {
   const [saved, setSaved] = useState(false);
 
   const style = styleFrom(glass, framing);
-  const colorList = COLORS[dataKey(model)] ?? ["White"];
   const collection = COLLECTIONS[dataKey(model)] ?? coll;
   const isGallery = collection === "Gallery Collection";
   const sections = assembly === "sections";
   const sectionsOnly = assembly === "sectionsonly";
   const secWidths = RES_SECTION_WIDTHS[dataKey(model)] ?? [];
   const activeSecWidth = secWidth && secWidths.includes(secWidth) ? secWidth : "";
+  // Only what is on the floor, narrowed to the size once one is chosen. A 7'0"
+  // 4050 is White alone; listing the other four would offer a door that cannot
+  // be ordered at that size.
+  const colorList = (() => {
+    const w = sections ? activeSecWidth : widthFt ? sizeCode(Number(widthFt), Number(widthIn || 0)) : undefined;
+    const h = heightFt ? sizeCode(Number(heightFt), Number(heightIn || 0)) : undefined;
+    const list = stockedColors(model, w || undefined, sections ? undefined : h);
+    return list.length ? list : stockedColors(model);
+  })();
   // Gallery Collection doors take double strength B grade ONLY (their sole
   // window option); every other model takes single strength only.
   const heightCode = heightFt === "" ? "" : Number(heightIn) === 0 ? heightFt : `${heightFt}.${heightIn}`;
@@ -269,8 +277,8 @@ export function ResidentialTool({ models }: { models: string[] }) {
   }
   function onPickModel(m: string) {
     setModel(m);
-    const list = COLORS[dataKey(m)] ?? ["White"];
-    if (!list.includes(color)) setColor(list[0]);
+    const list = stockedColors(m);
+    if (!list.includes(color)) setColor(list[0] ?? "White");
     // Glass grade follows the model: Gallery = double strength only, everything
     // else = single strength only. Keep "windows" selected across the switch.
     const gallery = (COLLECTIONS[dataKey(m)] ?? coll) === "Gallery Collection";

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { quoteResidential } from "./engine";
 import {
   colorInStock, stockedWidths, stockedHeights, compareSizeCodes, sizeLabel, sizeParts,
-  solidOnlyHeight, torsionOnlyHeight,
+  solidOnlyHeight, torsionOnlyHeight, stockedColors, STOCK_MATRIX,
 } from "./data/stock-colors";
 import { COLORS } from "./data/catalog-meta";
 import { priceResidential } from "./engine";
@@ -193,5 +193,53 @@ describe("9ft tiers added 10/9/2026", () => {
     expect(RES_SECTIONS["T52S"]["8"].bottom).toBe(241.43);
     expect(RES_SECTIONS["T52S"]["8"].inter).toBe(210.49);
     expect(RES_SECTIONS["T52S"]["8"].glazed).toBe(360.35);
+  });
+});
+
+describe("stocked colours narrow with the size", () => {
+  it("gives a 7'0\" 4050 White and nothing else", () => {
+    // Only White carries the 7'0" width. Offering the other four would put a
+    // door on a quote that cannot be ordered at that size.
+    expect(stockedColors("4050", "7", "7")).toEqual(["White"]);
+    expect(stockedColors("4050", "8", "7")).toEqual(
+      ["White", "Almond", "Chocolate Brown", "Sandtone", "Black"],
+    );
+  });
+
+  it("narrows on height too", () => {
+    // Nothing but White goes above 8'0" tall on any model.
+    expect(stockedColors("4050", "8", "9")).toEqual(["White"]);
+    expect(stockedColors("T50S", "9", "10")).toEqual(["White"]);
+  });
+
+  it("drops Black where it is not floored", () => {
+    // Black runs 8', 9' and 16' only.
+    for (const w of ["8", "9", "16"]) expect(stockedColors("4050", w, "7"), w).toContain("Black");
+    for (const w of ["7", "7.6", "10", "12", "14", "15", "18"]) {
+      expect(stockedColors("4050", w, "7"), w).not.toContain("Black");
+    }
+  });
+
+  it("returns the whole floored list when no size is given", () => {
+    expect(stockedColors("4050")).toHaveLength(5);
+    expect(stockedColors("4051")).toEqual(["White", "Black"]);
+  });
+
+  it("offers only White on the models floored in one colour", () => {
+    for (const m of ["9130", "9133", "T50S", "T52S", "GD1LP", "GD1SP"]) {
+      expect(stockedColors(m), m).toEqual(["White"]);
+    }
+  });
+
+  it("never offers a colour the engine would call special order", () => {
+    // The list and the in-stock check have to agree, or the badge contradicts
+    // the dropdown that produced it.
+    for (const m of Object.keys(STOCK_MATRIX)) {
+      for (const w of stockedWidths(m)) {
+        for (const c of stockedColors(m, w, "7")) {
+          expect(colorInStock(m, c, w, "7"), `${m} ${c} ${w}`).toBe(true);
+        }
+      }
+    }
   });
 });

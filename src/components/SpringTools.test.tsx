@@ -116,7 +116,12 @@ describe("header tab dropdown", () => {
       .filter((b) => b.className.includes("tab"))
       .map((b) => b.textContent);
 
-    expect(options).toEqual(buttons);
+    // Residential and Commercial stack "Stock" above the name, so the button's
+    // textContent runs the two words together where the dropdown has a space.
+    // The invariant is that both offer the same tabs, not that the strings are
+    // byte-identical.
+    const flat = (x: string | null) => (x ?? "").replace(/\s+/g, "").toLowerCase();
+    expect(options.map(flat)).toEqual(buttons.map(flat));
     expect(options).toContain("Extension Springs");
     // The admin link is an anchor in .right, not a tab — it stays on screen at
     // every width rather than hiding inside the dropdown.
@@ -128,5 +133,35 @@ describe("header tab dropdown", () => {
     render(<AppShell models={["4050"]} user={{ username: "bc", role: "counter" }} />);
     fireEvent.change(screen.getByTestId("tabsel"), { target: { value: "extension" } });
     expect(screen.getByTestId("ext-list")).toBeTruthy();
+  });
+});
+
+describe("stock tab labels", () => {
+  it('stacks "Stock" above Residential and Commercial', () => {
+    render(<AppShell models={["4050"]} user={{ username: "bc", role: "user" }} />);
+    const tabs = screen.getAllByRole("button").filter((b) => b.className.includes("tab"));
+    const res = tabs.find((b) => b.textContent?.includes("Residential"))!;
+    const com = tabs.find((b) => b.textContent?.includes("Commercial"))!;
+    for (const [el, name] of [[res, "Residential"], [com, "Commercial"]] as const) {
+      expect(el.querySelector(".tab-over")?.textContent, name).toBe("Stock");
+      expect(el.querySelector(".tab-main")?.textContent, name).toBe(name);
+    }
+  });
+
+  it("leaves the other tabs on one line", () => {
+    render(<AppShell models={["4050"]} user={{ username: "bc", role: "user" }} />);
+    const tabs = screen.getAllByRole("button").filter((b) => b.className.includes("tab"));
+    for (const label of ["Special Order", "Torsion Springs", "Parts", "Vinyl", "Operators"]) {
+      const el = tabs.find((b) => b.textContent === label);
+      expect(el, label).toBeTruthy();
+      expect(el!.querySelector(".tab-over"), label).toBeNull();
+    }
+  });
+
+  it("spells it out in the mobile dropdown, where two lines will not fit", () => {
+    render(<AppShell models={["4050"]} user={{ username: "bc", role: "user" }} />);
+    const opts = within(screen.getByTestId("tabsel")).getAllByRole("option").map((o) => o.textContent);
+    expect(opts).toContain("Stock Residential");
+    expect(opts).toContain("Stock Commercial");
   });
 });
