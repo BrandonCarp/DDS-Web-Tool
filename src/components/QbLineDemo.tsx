@@ -30,6 +30,15 @@ interface QbLineDemoProps {
   qty?: string;
 }
 
+/**
+ * Whether the "Getting this quote into QuickBooks" panel renders.
+ *
+ * It is a static illustration of how a quote maps onto a QuickBooks line — it
+ * reads nothing from the quote it sits under and changes no price. Flip to true
+ * to bring it back on every tool at once.
+ */
+const SHOW_QB_HELPER = false;
+
 export function QbLineDemo({
   model = "4300",
   size = "16\u20320\" X 7\u20320\"",
@@ -39,6 +48,11 @@ export function QbLineDemo({
   typed = "STO",
   qty = "1",
 }: QbLineDemoProps) {
+  // Hidden on every tool — Brandon, 12/9/2026: not needed at the counter right
+  // now. Gated here rather than removed from the seven call sites, so turning
+  // it back on is one line and no tool has to be edited again.
+  if (!SHOW_QB_HELPER) return null;
+
   return (
     <div className="qbdemo" aria-hidden="true">
       <div className="qbd-inner">
