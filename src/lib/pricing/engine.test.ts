@@ -479,10 +479,11 @@ describe("residential replacement sections (2026 V2 workbook SECTIONS blocks)", 
     expect(quoteResidentialSection("4050", sec({ widthKey: "8", kind: "int" })).unitPrice).toBe(201.0);
   });
 
-  it("keeps the 4050's 7'0\" row separate from its 7'6\"", () => {
-    // Three adjacent widths, three different prices — none of them share.
+  it("prices the 4050's 7'0\" and 7'6\" sections alike, and 8'0\" above them", () => {
+    // Brandon set 7'0" to match 7'6" on 12/9/2026. They share a price by
+    // decision, not by a lookup rule — both rows exist and both are read.
     const at = (w: string) => quoteResidentialSection("4050", sec({ widthKey: w, kind: "int" })).unitPrice;
-    expect(at("7")).toBe(175.88);
+    expect(at("7")).toBe(188.43);
     expect(at("7.6")).toBe(188.43);
     expect(at("8")).toBe(201.0);
   });

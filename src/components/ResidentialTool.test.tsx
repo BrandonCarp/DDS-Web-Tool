@@ -155,3 +155,60 @@ describe("residential tool — what gets sent", () => {
     expect(last.homeowner).toBe(false);
   });
 });
+
+describe("residential tool — sections only", () => {
+  /** Switch the assembly type once the configurator is open. */
+  const assembly = (v: string) => {
+    const s = [...document.querySelectorAll("select")]
+      .find((x) => [...x.options].some((o) => o.value === "sectionsonly"))!;
+    fireEvent.change(s, { target: { value: v } });
+  };
+
+  it("drops the track group", async () => {
+    // Neither track nor spring ships with sections, and the engine already
+    // forces r12/extension — the dropdowns were asking a question with no
+    // effect on the quote.
+    await configure();
+    expect(screen.getByTestId("track")).toBeTruthy();
+    assembly("sectionsonly");
+    expect(screen.queryByTestId("track")).toBeNull();
+    expect(screen.queryByTestId("spring")).toBeNull();
+  });
+
+  it("drops upgraded hardware", async () => {
+    // Hinges and rollers are door hardware; sections ship without them.
+    await configure();
+    expect(screen.getByTestId("upgraded-hardware")).toBeTruthy();
+    assembly("sectionsonly");
+    expect(screen.queryByTestId("upgraded-hardware")).toBeNull();
+  });
+
+  it("keeps lock and the home owner surcharge", async () => {
+    // Both still apply: a lock ships with sections, and the surcharge is about
+    // who is buying rather than what is in the box.
+    await configure();
+    assembly("sectionsonly");
+    expect(screen.getByTestId("lock")).toBeTruthy();
+    expect(screen.getByTestId("homeowner")).toBeTruthy();
+  });
+
+  it("never sends the hardware flag", async () => {
+    // Turn it on as a complete door, then switch — the flag must not survive.
+    await configure();
+    fireEvent.change(screen.getByTestId("width-ft"), { target: { value: "9" } });
+    fireEvent.change(screen.getByTestId("height-ft"), { target: { value: "7" } });
+    fireEvent.change(screen.getByTestId("upgraded-hardware"), { target: { value: "yes" } });
+    assembly("sectionsonly");
+    fireEvent.click(screen.getByTestId("get-price"));
+    await waitFor(() => expect(bodies.length).toBeGreaterThan(0));
+    expect(bodies[bodies.length - 1].upgradedHardware).toBe(false);
+    expect(bodies[bodies.length - 1].assembly).toBe("sectionsonly");
+  });
+
+  it("leaves the complete-door view alone", async () => {
+    await configure();
+    for (const t of ["track", "spring", "upgraded-hardware", "lock", "homeowner"]) {
+      expect(screen.getByTestId(t), t).toBeTruthy();
+    }
+  });
+});

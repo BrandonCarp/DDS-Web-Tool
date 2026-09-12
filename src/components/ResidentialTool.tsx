@@ -230,7 +230,9 @@ export function ResidentialTool({ models }: { models: string[] }) {
           heightFt: Number(heightFt), heightIn: Number(heightIn || 0),
           style, color, track, spring, lock,
           windesign: activeDesign || undefined,
-            upgradedHardware,
+            // Sections carry no hinges or rollers, so the flag never goes out
+            // for them even if it was left on from a complete-door quote.
+            upgradedHardware: sectionsOnly ? false : upgradedHardware,
             homeowner,
         }),
       });
@@ -524,7 +526,10 @@ export function ResidentialTool({ models }: { models: string[] }) {
                 )}
               </div>}
 
-              {!sections && <div className="ggroup">
+              {/* Neither track nor spring ships with sections. The engine already
+                  forces r12/extension and drops them from the wording, so the
+                  dropdowns were asking a question that had no effect. */}
+              {!sections && !sectionsOnly && <div className="ggroup">
                 <div className="ghdr">Track options</div>
                 <div className="grow">
                   <label>Spring</label>
@@ -585,16 +590,20 @@ export function ResidentialTool({ models }: { models: string[] }) {
                         </select>
                       </div>
                     </div>
-                    <div className="grow">
-                      <label>Upgraded hardware</label>
-                      <div className="ctl selectwrap">
-                        <select data-testid="upgraded-hardware" value={upgradedHardware ? "yes" : "no"}
-                          onChange={(e) => setUpgradedHardware(e.target.value === "yes")}>
-                          <option value="no">No</option>
-                          <option value="yes">Yes</option>
-                        </select>
+                    {/* Hinges and rollers are door hardware; sections ship
+                        without them. */}
+                    {!sectionsOnly && (
+                      <div className="grow">
+                        <label>Upgraded hardware</label>
+                        <div className="ctl selectwrap">
+                          <select data-testid="upgraded-hardware" value={upgradedHardware ? "yes" : "no"}
+                            onChange={(e) => setUpgradedHardware(e.target.value === "yes")}>
+                            <option value="no">No</option>
+                            <option value="yes">Yes</option>
+                          </select>
+                        </div>
                       </div>
-                    </div>
+                    )}
                     <div className="grow">
                       <label>Home owner surcharge</label>
                       <div className="ctl selectwrap">
