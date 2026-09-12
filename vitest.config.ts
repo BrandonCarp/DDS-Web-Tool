@@ -13,6 +13,11 @@ export default defineConfig({
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
   },
   resolve: {
-    alias: { "@": path.resolve(__dirname, "src") },
+    alias: {
+      "@": path.resolve(__dirname, "src"),
+      // API route handlers reach `server-only` through lib/auth. Stubbed so
+      // the routes can be imported and exercised directly.
+      "server-only": path.resolve(__dirname, "test/stubs/server-only.ts"),
+    },
   },
 });
