@@ -22,7 +22,7 @@ export const RES_SECTIONS: Record<string, Record<string, ResSectionRow>> = {
     "16": { "bottom": 482.86, "inter": 421.0, "glazed": 720.69 },
   },
   "4050-4051-4053": {
-    "7": { "bottom": 199.90, "inter": 175.88, "glazed": 322.10 },
+    "7":{ "bottom": 214.18, "inter": 188.43, "glazed": 334.65 }, //{ "bottom": 199.90, "inter": 175.88, "glazed": 322.10 },
     "7.6": { "bottom": 214.18, "inter": 188.43, "glazed": 334.65 },
     "8": { "bottom": 228.45, "inter": 201.0, "glazed": 395.98 },
     "9": { "bottom": 257.04, "inter": 226.10, "glazed": 421.08 },
