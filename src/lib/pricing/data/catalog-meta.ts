@@ -28,6 +28,9 @@ export const MARGINS: Record<string, { door: number; section: number }> = {
 
 // Ultra-Grain finishes are special order only and were removed from the
 // residential lists for the 9130/9133 and the Gallery pair on 10/9/2026.
+// The 4300 family carries ten colours for special order — Brandon, 12/9/2026.
+// Iron Ore and the three Ultra-Grains came off: they are catalogue finishes DDS
+// does not sell on this family.
 export const COLORS: Record<string, string[]> = {
   "T50S": [
     "White",
@@ -74,11 +77,7 @@ export const COLORS: Record<string, string[]> = {
     "Bronze",
     "Mocha Brown",
     "Charcoal",
-    "Iron Ore",
-    "Black",
-    "Ultra-Grain Classic Medium Finish",
-    "Ultra-Grain Classic Cherry Finish",
-    "Ultra-Grain Classic Walnut Finish"
+    "Black"
   ],
   "GD1LP-GD1SP": [
     "White",

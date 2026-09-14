@@ -54,8 +54,12 @@ export const ARCHITECTURAL: InsertDesign[] = [
 // Which window designs each specific model can take.
 // short = plain short windows (508/509/510 + Sunsets); shortlong adds long panels; all = everything.
 export const INSERT_RULES: Record<string, "short" | "shortlong" | "all"> = {
-  T50S: "short", T52S: "short", "4050": "short", "4300": "short", "9130": "short",
+  T50S: "short", T52S: "short", "4050": "short", "9130": "short",
   "4051": "shortlong", "4053": "all", "9133": "all",
+  // The 4300 family takes the same window and insert options as the 4050 —
+  // Brandon, 12/9/2026. 4301 and 4310 are listed so a member selected on the
+  // special order tab resolves without falling back to "all".
+  "4300": "short", "4301": "short", "4310": "short",
 };
 
 /** Resolve the width code used by the design width-restriction lists (e.g. 7'6" -> "7.6"). */
@@ -78,6 +82,8 @@ export function designWidthCode(wf: number, wi: number): string {
  */
 const MODEL_EXCLUDED_DESIGNS: Record<string, string[]> = {
   "4050": ["507"],
+  // Same list as the 4050, so the same exclusion.
+  "4300": ["507"], "4301": ["507"], "4310": ["507"],
 };
 
 /** Designs a specific model will not take. */
