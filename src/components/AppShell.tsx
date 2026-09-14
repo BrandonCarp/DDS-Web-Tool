@@ -2,6 +2,24 @@
 
 import { useEffect, useState } from "react";
 import { ResidentialTool } from "./ResidentialTool";
+import { QuickEntry } from "./QuickEntry";
+
+/**
+ * Whether the quick-entry box renders.
+ *
+ * Off since 12/9/2026. It reads counter shorthand and routes or fills a form,
+ * and it works — but it rewards someone who already knows the models and the
+ * abbreviations, and the problem it was meant to help with is that people are
+ * not using the tool as it stands. Building for the user we already have does
+ * not fix that.
+ *
+ * Nothing is deleted. The parser, the 596-product index and their tests all
+ * stay under test, so turning this back on is a one-line change. The index in
+ * particular is worth reusing inside the existing dropdowns — type-ahead on a
+ * window design or a part helps everyone, with no new concept to learn.
+ */
+const SHOW_QUICK_ENTRY = false;
+import type { ParsedDoor } from "@/lib/pricing/data/parse-request";
 import { CommercialTool } from "./CommercialTool";
 import { SpecialTool } from "./SpecialTool";
 import { TorsionTool } from "./TorsionTool";
@@ -37,6 +55,9 @@ function flatLabel(t: { label: string; over?: string }): string {
 export function AppShell(props: {
   models: string[];
   user: { username: string; role: string };
+  /** Render the quick-entry box. Defaults to the flag above; tests pass it
+      explicitly so the component stays under test while it is switched off. */
+  quickEntry?: boolean;
 }) {
   return (
     <CustomerJobProvider>
@@ -48,11 +69,17 @@ export function AppShell(props: {
 function Shell({
   models,
   user,
+  quickEntry = SHOW_QUICK_ENTRY,
 }: {
   models: string[];
+  quickEntry?: boolean;
   user: { username: string; role: string };
 }) {
   const [mode, setMode] = useState<string>("residential");
+  // A configuration handed over by the quick-entry box. Passed to the
+  // residential tool as a prop rather than lifted into shared state, so the
+  // tool stays the only thing that owns its fields.
+  const [prefill, setPrefill] = useState<ParsedDoor | null>(null);
   // Idle watcher: no interaction for IDLE_MINUTES -> log out and land on the
   // login screen. The SERVER enforces the same window on the session itself;
   // this just makes the logout visible instead of surprising the next click.
@@ -128,7 +155,15 @@ function Shell({
           {user.username} · <a href="/api/logout" style={{ color: "#fff" }}>Sign out</a>
         </div>
       </header>
-      {mode === "residential" && <ResidentialTool models={models} />}
+      {quickEntry && (
+        <QuickEntry
+          onGoTo={(t) => { setPrefill(null); pickTab(t); }}
+          onApplyDoor={(d) => { setPrefill(d); pickTab("residential"); }}
+        />
+      )}
+      {mode === "residential" && (
+        <ResidentialTool models={models} prefill={prefill} onPrefillUsed={() => setPrefill(null)} />
+      )}
       {mode === "commercial" && <CommercialTool />}
       {mode === "special" && <SpecialTool />}
       {mode === "torsion" && <TorsionTool />}

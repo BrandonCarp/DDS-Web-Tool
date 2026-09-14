@@ -8,6 +8,7 @@ import { QB_ITEMS } from "@/lib/qb/iif";
 import { useCustomerJob } from "@/components/CustomerJobFields";
 import type { LockKey, Quote, SpringKey, TrackKey, WindowStyle } from "@/lib/pricing/types";
 import { COLORS, COLLECTIONS } from "@/lib/pricing/data/catalog-meta";
+import type { ParsedDoor } from "@/lib/pricing/data/parse-request";
 import { dataKey, modelSort } from "@/lib/pricing/model-groups";
 import { windowDesigns, designWidthCode } from "@/lib/pricing/data/inserts";
 import { RES_SECTION_WIDTHS, sectionWidthLabel } from "@/lib/pricing/data/res-section-meta";
@@ -42,7 +43,17 @@ function styleFrom(glass: string, framing: string): WindowStyle {
   return framing === "insert" ? "inserts" : "glass";
 }
 
-export function ResidentialTool({ models }: { models: string[] }) {
+export function ResidentialTool({
+  models,
+  prefill = null,
+  onPrefillUsed,
+}: {
+  models: string[];
+  /** A configuration handed over by the quick-entry box. */
+  prefill?: ParsedDoor | null;
+  /** Called once it has been applied, so it is not applied twice. */
+  onPrefillUsed?: () => void;
+}) {
   const doorTree = useMemo(() => {
     const t: Record<string, string[]> = {};
     for (const m of models) {
@@ -163,6 +174,39 @@ export function ResidentialTool({ models }: { models: string[] }) {
 
   // The quote is only shown while it matches the CURRENT configuration; any
   // config change makes it stale, so the user must click "Get price" again.
+  // Fill the same fields the dropdowns set, then step to the configurator. The
+  // price is NOT fetched — Get price stays a deliberate act, so the counter sees
+  // what was understood before anything is quoted.
+  //
+  // Deferred by a tick: writing a dozen fields straight out of an effect
+  // cascades renders.
+  useEffect(() => {
+    if (!prefill?.model) return;
+    let live = true;
+    const id = setTimeout(() => {
+      if (!live) return;
+      const m = prefill.model!;
+      setModel(m);
+      setColl(COLLECTIONS[dataKey(m)] ?? "");
+      if (prefill.widthFt !== undefined) { setWidthFt(String(prefill.widthFt)); setWidthIn(String(prefill.widthIn ?? 0)); }
+      if (prefill.heightFt !== undefined) { setHeightFt(String(prefill.heightFt)); setHeightIn(String(prefill.heightIn ?? 0)); }
+      if (prefill.color) setColor(prefill.color);
+      if (prefill.track) setTrack(prefill.track as TrackKey);
+      if (prefill.spring) setSpring(prefill.spring as SpringKey);
+      if (prefill.lock) setLock(prefill.lock as LockKey);
+      if (prefill.upgradedHardware) setUpgradedHardware(true);
+      if (prefill.homeowner) setHomeowner(true);
+      if (prefill.style === "inserts") { setGlass(prefill.glass ?? "dsb"); setFraming("insert"); }
+      else if (prefill.style === "glass") { setGlass(prefill.glass ?? "dsb"); setFraming("plain"); }
+      else if (prefill.style === "solid") setGlass("solid");
+      if (prefill.windesign) setWindesign(prefill.windesign);
+      setStep(2);
+      onPrefillUsed?.();
+    }, 0);
+    return () => { live = false; clearTimeout(id); };
+  }, [prefill, onPrefillUsed]);
+
+
   const cfgSig = JSON.stringify([model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, activeDesign, assembly, secKind, secHeight, activeSecWidth, secGlass, secLock, upgradedHardware, homeowner]);
   const result = resultRaw && resultSig === cfgSig ? resultRaw : null;
   const liveError = errorRaw && resultSig === cfgSig ? errorRaw : null;
@@ -501,7 +545,7 @@ export function ResidentialTool({ models }: { models: string[] }) {
                 <div className="grow">
                   <label>Color</label>
                   <div className="ctl selectwrap">
-                    <select value={color} onChange={(e) => setColor(e.target.value)}>
+                    <select data-testid="color" value={color} onChange={(e) => setColor(e.target.value)}>
                       {colorList.map((c) => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>

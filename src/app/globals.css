@@ -870,3 +870,44 @@ html, body { margin: 0; padding: 0; }
 /* Inches picker inside a ft/in row — narrow enough to read as one field. */
 .tool-shell .dimrow .inpick{flex:none;width:84px}
 .tool-shell .dimrow .inpick select{width:100%}
+
+/* Quick entry — a button that opens one box reading counter shorthand. */
+.qe-open { display: inline-flex; align-items: center; gap: 8px; padding: 8px 15px; font-size: 13px;
+  font-family: inherit; font-weight: 600; color: var(--brand, #5a1220); background: #fff;
+  border: 1px solid var(--line, #d8d6d0); border-radius: 999px; cursor: pointer; }
+.qe-open:hover { border-color: var(--brand, #5a1220); }
+.qe-open-icon { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px;
+  border-radius: 50%; background: var(--brand, #5a1220); color: #fff; font-size: 12px; font-weight: 700; }
+.quickentry.open { background: #fff; border: 1px solid var(--line, #d8d6d0); border-radius: 10px;
+  padding: 12px 14px; max-width: 1180px; margin: 10px auto 0; }
+.qe-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.qe-title { font-size: 13px; font-weight: 700; color: var(--brand, #5a1220); }
+.qe-close { border: 0; background: none; font-family: inherit; font-size: 12px; color: var(--muted, #6b6a66);
+  text-decoration: underline; cursor: pointer; padding: 0; }
+.qe-hints { list-style: none; margin: 8px 0 0; padding: 0; border: 1px solid var(--line, #d8d6d0);
+  border-radius: 7px; overflow: hidden; max-height: 232px; overflow-y: auto; }
+.qe-hints li + li { border-top: 1px solid #eeece8; }
+.qe-hint { display: flex; align-items: baseline; gap: 10px; width: 100%; padding: 7px 12px; border: 0;
+  background: #fff; font-family: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.qe-hint:hover { background: #f7f5f2; }
+.qe-hint-label { font-weight: 600; color: #2f2d2a; }
+.qe-hint-note { font-size: 11.5px; color: var(--muted, #6b6a66); }
+
+/* Quick entry — one box that reads counter shorthand and routes or fills. */
+.quickentry { max-width: 1180px; margin: 10px auto 0; padding: 0 14px; }
+.quickentry.open { padding: 12px 14px; }
+.qe-input { width: 100%; padding: 11px 14px; font-size: 15px; font-family: inherit;
+  border: 1px solid var(--line, #d8d6d0); border-radius: 8px; background: #fff; }
+.qe-input:focus { outline: 2px solid var(--brand, #5a1220); outline-offset: -1px; }
+.qe-read { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 7px; font-size: 12.5px; }
+.qe-dest { background: var(--brand, #5a1220); color: #fff; border-radius: 4px; padding: 2px 8px;
+  font-weight: 700; letter-spacing: .03em; text-transform: uppercase; font-size: 11px; }
+.qe-bit { background: #f0efec; border-radius: 4px; padding: 2px 8px; color: #3c3a36; }
+.qe-ask { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 7px; font-size: 12.5px; }
+.qe-chip { border: 1px solid var(--line, #d8d6d0); background: #fff; border-radius: 999px;
+  padding: 3px 12px; font-size: 12.5px; font-family: inherit; cursor: pointer; }
+.qe-chip.sel { background: var(--brand, #5a1220); color: #fff; border-color: var(--brand, #5a1220); }
+.qe-note { margin-top: 6px; font-size: 12px; color: var(--muted, #6b6a66); }
+.qe-use { margin-top: 8px; padding: 7px 16px; font-size: 13px; font-family: inherit; font-weight: 600;
+  color: #fff; background: var(--brand, #5a1220); border: 0; border-radius: 6px; cursor: pointer; }
+.qe-use:disabled { opacity: .45; cursor: default; }
