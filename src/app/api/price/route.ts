@@ -17,7 +17,7 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
-  const { model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, windesign , upgradedHardware, homeowner} = body;
+  const { model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, windesign, upgradedHardware, homeowner, trackMount, incline, highLiftInches } = body;
   if (typeof model !== "string") return NextResponse.json({ error: "model is required" }, { status: 400 });
 
   // Sections-only quotes: stock-size dropdown widths, priced from the workbook
@@ -50,6 +50,9 @@ export async function POST(req: Request) {
     // for this model/style/width before it appears in the description.
     windesign: typeof windesign === "string" && DESIGN_IDS.has(windesign) ? windesign : undefined,
     upgradedHardware: upgradedHardware === true,
+    trackMount: typeof trackMount === "string" ? (trackMount as never) : undefined,
+    incline: typeof incline === "string" ? (incline as never) : undefined,
+    highLiftInches: typeof highLiftInches === "number" ? highLiftInches : 0,
     homeowner: homeowner === true,
   };
   const dims = {

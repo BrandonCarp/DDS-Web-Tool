@@ -42,7 +42,7 @@ export interface PriceResult {
   triple: PriceTriple | null; // all three styles for the resolved size
 }
 
-export type TrackKey = "r10" | "r12" | "r15" | "low_headroom" | "r20" | "r32" | "no_tracks";
+export type TrackKey = "r10" | "r12" | "r15" | "low_headroom" | "r20" | "r32" | "no_tracks" | "high_lift";
 export type SpringKey = "extension" | "torsion";
 export type LockKey = "none" | "slide" | "lockbar" | "lockbar_installed";
 
@@ -51,6 +51,8 @@ export interface QuoteLine {
   value: number;
   kind?: "add" | "minus";
 }
+
+import type { TrackMount, InclineStyle } from "./data/track-lift";
 
 export interface QuoteOptions {
   style: WindowStyle;
@@ -64,6 +66,12 @@ export interface QuoteOptions {
   upgradedHardware?: boolean;
   /** Selling to a homeowner rather than a dealer. Adds a markup by width. */
   homeowner?: boolean;
+  /** How the horizontal track is mounted. Bracket by default. */
+  trackMount?: TrackMount;
+  /** Incline style, only meaningful when high lift is being added. */
+  incline?: InclineStyle;
+  /** Inches of high lift, in 3" increments. 0 or absent means none. */
+  highLiftInches?: number;
 }
 
 /**

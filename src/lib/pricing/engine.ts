@@ -5,6 +5,7 @@
 
 import { RESIDENTIAL_PRICES } from "./data/residential-prices";
 import { STOCK_PRICES } from "./data/stock-prices";
+import { highLiftPrice, mountPhrase } from "./data/track-lift";
 import { ADDONS, ULTRAGRAIN, GRADE_RES, COLLECTIONS_RES } from "./data/addons";
 import { dataKey, expandModels } from "./model-groups";
 import { windowDesigns, designName } from "./data/inserts";
@@ -160,6 +161,7 @@ const TRACK_NAME: Record<string, string> = {
   r20: "20″ radius track",
   r32: "32″ radius track",
   no_tracks: "No tracks",
+  high_lift: "High lift track",
 };
 const LOCK_NAME: Record<string, string> = {
   slide: "Inside slide lock",
@@ -293,6 +295,20 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
     });
   }
 
+  // High lift track. Priced as an adder on the standard door: a base figure
+  // covering up to 54", then a per-inch rate above that. Two separate tables,
+  // split at 8'0" — the taller one is cheaper on every row.
+  if (opts.highLiftInches && opts.highLiftInches > 0) {
+    const hl = highLiftPrice({
+      mount: opts.trackMount ?? "bracket",
+      incline: opts.incline ?? "straight_incline",
+      heightFt: dim.heightFt,
+      heightIn: dim.heightIn || 0,
+      inches: opts.highLiftInches,
+    });
+    if (hl.price > 0) lines.push({ name: hl.label, value: hl.price, kind: "add" as const });
+  }
+
   // Lock
   if (opts.lock && opts.lock !== "none")
     lines.push({ name: LOCK_NAME[opts.lock], value: LOCK_VALUE[opts.lock], kind: "add" as const });
@@ -314,7 +330,13 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
   const lockTxt =
     ({ none: "no lock", slide: "inside slide lock", lockbar: "lockbar", lockbar_installed: "lockbar installed" } as Record<string, string>)[opts.lock] ||
     "no lock";
-  const trackTxt = (TRACK_NAME[opts.track] || "12″ radius track").toLowerCase();
+  // Track wording. An angle mount names what it fastens to, exactly as the
+  // commercial tool has always phrased it, so the two read alike on a quote.
+  const mountTxt = mountPhrase(opts.trackMount ?? "bracket");
+  const baseTrack = opts.track === "high_lift"
+    ? `${opts.highLiftInches ?? 0}″ high lift track`
+    : (TRACK_NAME[opts.track] || "12″ radius track").toLowerCase();
+  const trackTxt = mountTxt ? `${mountTxt}, ${baseTrack}` : baseTrack;
   const coll = COLLECTIONS_RES[dataKey(model)] === "Gallery Collection" ? COLLECTIONS_RES[dataKey(model)] : "";
   // A door is only IN STOCK if the size resolves from the stock tables AND the
   // chosen color is one DDS actually stocks (COLORS IN STOCK, per model — most
