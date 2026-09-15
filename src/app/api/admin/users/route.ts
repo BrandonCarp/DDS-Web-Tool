@@ -4,7 +4,7 @@ import { query } from "@/lib/db";
 
 async function ensureAdmin() {
   const u = await getSessionUser();
-  return u && u.role === "admin" ? u : null; // user management is master-admin only
+  return u && u.role === "admin" ? u : null; 
 }
 
 export async function POST(req: Request) {
