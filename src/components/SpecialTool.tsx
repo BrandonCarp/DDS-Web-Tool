@@ -15,6 +15,11 @@ import {
   parseModelSelection, modelSelectionValue,
 } from "@/lib/pricing/data/special-door-pricing";
 import { COLORS } from "@/lib/pricing/data/catalog-meta";
+import { glassOptionsFor } from "@/lib/pricing/data/so-glass";
+import {
+  TRACK_MOUNTS, INCLINE_STYLES, highLiftChoices, highLiftPrice, canTakeHighLift,
+  type TrackMount, type InclineStyle,
+} from "@/lib/pricing/data/track-lift";
 import { dataKey } from "@/lib/pricing/model-groups";
 import { homeownerMarkupForBand } from "@/lib/pricing/engine";
 import { windowDesigns } from "@/lib/pricing/data/inserts";
@@ -95,6 +100,15 @@ export function SpecialTool() {
   const [gDesign, setGDesign] = useState("");
   const [gHeight, setGHeight] = useState("");
   const [gVariant, setGVariant] = useState("");
+  // Two steps, the same shape as the stock tabs: choose the door, then build it.
+  const [step, setStep] = useState(1);
+  const [gGlass, setGGlass] = useState("");
+  // Track mount, high lift and incline. These live on special order rather than
+  // residential: a stock door ships on standard track, and anything else is an
+  // order Clopay builds to spec.
+  const [gMount, setGMount] = useState<TrackMount>("bracket");
+  const [gIncline, setGIncline] = useState<InclineStyle>("straight_incline");
+  const [gLift, setGLift] = useState(0);
   const [homeowner, setHomeowner] = useState<"no" | "single" | "double">("no");
   const [price, setPrice] = useState("");
   const [qty, setQty] = useState(1);
@@ -158,10 +172,27 @@ export function SpecialTool() {
   // in the price, so the dropdown locks to it rather than offering a choice
   // that would be ignored.
   const gTorsionOnly = gridded && !!gHeight && heightForcesTorsion(gHeight, griddedHeights(modelGroup));
+  // The specific glass types DDS has priced for this model and width.
+  const soGlass = gridded && gWidth ? glassOptionsFor(modelGroup, gWidth) : [];
+
+  // High lift is torsion only, and caps at the door height less 3 inches —
+  // above that the door is full vertical lift, a different track entirely.
+  const gLiftAllowed = canTakeHighLift(gTorsionOnly ? "torsion" : gSpring);
+  const gIsLift = gTrack === "high_lift";
+  const gHeightFt = Number((gHeight || "0").split(".")[0]);
+  const gHeightIn = Number((gHeight || "0").split(".")[1] ?? 0);
+  const gLiftSteps = highLiftChoices(gHeightFt, gHeightIn);
+  const gEffLift = gLiftSteps.length && gLift > gLiftSteps[gLiftSteps.length - 1] ? 0 : gLift;
+  const gLiftNote = gIsLift && gEffLift
+    ? highLiftPrice({ mount: gMount, incline: gIncline, heightFt: gHeightFt, heightIn: gHeightIn, inches: gEffLift }).reason ?? ""
+    : "";
+
   const gResult = gridded && gWidth && gHeight
     ? specialDoorQuote({ model: modelGroup, width: gWidth, height: gHeight, style: gStyle, color: gColor,
         windesign: gDesign || undefined, variant: (modelMember || gVariant) || undefined,
-        track: gTrack as never, spring: (gTorsionOnly ? "torsion" : gSpring) as never, lock: gLock as never })
+        track: gTrack as never, spring: (gTorsionOnly ? "torsion" : gSpring) as never, lock: gLock as never,
+        glassType: gStyle === "glass" ? gGlass || undefined : undefined,
+        trackMount: gMount, incline: gIncline, highLiftInches: gIsLift ? gEffLift : 0 })
     : null;
   const widthLabel = (w: string) => {
     const [ft, inch] = w.split(".");
@@ -178,6 +209,7 @@ export function SpecialTool() {
     ["White"];
   // The same insert list a residential 4050 offers, filtered the same way — by
   // model, style and door width.
+
   const gDesigns = gridded && gStyle === "inserts" && gWidth
     ? windowDesigns(model, "inserts", gWidth.split(".")[0])
     : [];
@@ -221,9 +253,11 @@ export function SpecialTool() {
       : `${cMfr} ${cModel}${commercialSeriesOf(cModel) ? ` (${commercialSeriesOf(cModel)})` : ""} ${kind === "section" ? "sections" : "complete door"}`;
 
   function pickScope(v: "residential" | "commercial") {
+    setStep(1);
     setScope(v); setSeries(""); setModel(""); setCSeries(""); setCModel(""); setKind("door"); setPrice(""); resetGrid(); setSaved(false);
   }
   function pickSeries(v: string) {
+    setStep(1);
     setSeries(v); setModel(""); setKind("door"); setPrice(""); setSaved(false);
   }
 
@@ -251,7 +285,7 @@ export function SpecialTool() {
       <section className="config-col">
         <div className="panel">
           <div className="step">
-            <div className="step-h"><span className="step-n">1</span><h3>Select series</h3><span className="hint">Special order</span></div>
+            <div className="step-h"><span className="step-n">1</span><h3>{step === 1 ? "Select your door" : "Configure"}</h3><span className="hint">Special order</span></div>
             <div className="field"><label className="lbl">Order type</label>
               <div className="chips">
                 <button type="button" className={`chip ${scope === "residential" ? "sel" : ""}`} onClick={() => pickScope("residential")}>Residential</button>
@@ -351,9 +385,17 @@ export function SpecialTool() {
                   </div>
                 </div>
               )}
-              {gridded && kind === "door" && (
+              {gridded && kind === "door" && step === 1 && (
+                <button data-testid="so-configure" className="btn primary configbtn"
+                  onClick={() => setStep(2)}>
+                  Configure
+                </button>
+              )}
+              {gridded && kind === "door" && step === 2 && (
                 <>
-                  <div className="ghdr" style={{ marginTop: 10 }}>Build a door</div>
+                  <button type="button" className="btn ghost backbtn" data-testid="so-back"
+                    onClick={() => setStep(1)}>&larr; Change door</button>
+                  <div className="ghdr" style={{ marginTop: 10 }}>Layout options</div>
                   {gNeedsVariant && (
                     <div className="field"><label className="lbl">Which model <span className="req">*</span></label>
                       <div className="selectwrap">
@@ -401,6 +443,18 @@ export function SpecialTool() {
                       </div>
                     </div>
                   </div>
+                  <div className="ghdr" style={{ marginTop: 14 }}>Window options</div>
+                  {gStyle === "glass" && soGlass.length > 0 && (
+                    <div className="field"><label className="lbl">Glass type</label>
+                      <div className="selectwrap">
+                        <select data-testid="so-glass" value={gGlass}
+                          onChange={(e) => { setGGlass(e.target.value); setSaved(false); }}>
+                          <option value="">Standard glass</option>
+                          {soGlass.map((g) => <option key={g.id} value={g.id}>{g.label}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  )}
                   {gDesigns.length > 0 && (
                     <div className="field">
                       <label className="lbl">Window design</label>
@@ -412,11 +466,16 @@ export function SpecialTool() {
                       </div>
                     </div>
                   )}
+                  <div className="ghdr" style={{ marginTop: 14 }}>Track options</div>
                   <div className="row2">
                     <div className="field"><label className="lbl">Spring</label>
                       <div className="selectwrap">
                         <select value={gTorsionOnly ? "torsion" : gSpring} disabled={gTorsionOnly}
-                          onChange={(e) => { setGSpring(e.target.value); setSaved(false); }}>
+                          onChange={(e) => {
+                            setGSpring(e.target.value);
+                            if (e.target.value !== "torsion" && gTrack === "high_lift") { setGTrack("r12"); setGLift(0); }
+                            setSaved(false);
+                          }}>
                           {!gTorsionOnly && <option value="extension">Extension</option>}
                           <option value="torsion">Torsion</option>
                         </select>
@@ -424,17 +483,52 @@ export function SpecialTool() {
                     </div>
                     <div className="field"><label className="lbl">Track lift / radius</label>
                       <div className="selectwrap">
-                        <select value={gTrack} onChange={(e) => { setGTrack(e.target.value); setSaved(false); }}>
+                        <select data-testid="so-track" value={gTrack}
+                          onChange={(e) => { setGTrack(e.target.value); if (e.target.value !== "high_lift") setGLift(0); setSaved(false); }}>
                           <option value="r10">10&quot; radius</option>
                           <option value="r12">12&quot; radius</option>
                           <option value="r15">15&quot; radius</option>
                           <option value="low_headroom">Low headroom</option>
                           <option value="r20">20&quot; radius</option>
                           <option value="r32">32&quot; radius</option>
+                          {gLiftAllowed && <option value="high_lift">High lift</option>}
                         </select>
                       </div>
                     </div>
                   </div>
+                  <div className="row2">
+                    <div className="field"><label className="lbl">Track mount</label>
+                      <div className="selectwrap">
+                        <select data-testid="so-track-mount" value={gMount}
+                          onChange={(e) => { setGMount(e.target.value as TrackMount); setSaved(false); }}>
+                          {TRACK_MOUNTS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    {gIsLift && (
+                      <div className="field"><label className="lbl">High lift amount</label>
+                        <div className="selectwrap">
+                          <select data-testid="so-high-lift" value={gEffLift}
+                            onChange={(e) => { setGLift(Number(e.target.value)); setSaved(false); }}>
+                            <option value={0}>Select…</option>
+                            {gLiftSteps.map((n) => <option key={n} value={n}>{n}&quot;</option>)}
+                          </select>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {gIsLift && (
+                    <div className="field"><label className="lbl">Incline style</label>
+                      <div className="selectwrap">
+                        <select data-testid="so-incline" value={gIncline}
+                          onChange={(e) => { setGIncline(e.target.value as InclineStyle); setSaved(false); }}>
+                          {INCLINE_STYLES.map((i) => <option key={i.value} value={i.value}>{i.label}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                  {gLiftNote && <div className="hl-note" data-testid="so-high-lift-note">{gLiftNote}</div>}
+                  <div className="ghdr" style={{ marginTop: 14 }}>Additional options</div>
                   <div className="field">
                     <label className="lbl">Lock</label>
                     <div className="selectwrap">
@@ -474,9 +568,12 @@ export function SpecialTool() {
                       </select>
                     </div>
                   </div>
+                  {/* The margin route. Kept at the bottom as a fallback for
+                      anything the configurator above cannot build. */}
+                  <div className="ghdr" style={{ marginTop: 16 }}>Price from a Clopay total</div>
                   <div className="field" style={{ marginTop: 6 }}>
                     <label className="lbl">{gridded && kind === "door" && !restricted
-                      ? "Or enter a Clopay total for a configuration not listed above"
+                      ? "For a configuration the picker above will not take"
                       : "Enter total = sub total + energy surcharge — do not apply MPQ"} <span className="req">*</span></label>
                     {restricted && kind === "door" && (
                       <div className="muted-note" style={{ marginBottom: 6 }}>

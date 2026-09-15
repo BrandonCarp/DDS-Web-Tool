@@ -8,10 +8,6 @@ import { QB_ITEMS } from "@/lib/qb/iif";
 import { useCustomerJob } from "@/components/CustomerJobFields";
 import type { LockKey, Quote, SpringKey, TrackKey, WindowStyle } from "@/lib/pricing/types";
 import { COLORS, COLLECTIONS } from "@/lib/pricing/data/catalog-meta";
-import {
-  TRACK_MOUNTS, INCLINE_STYLES, highLiftChoices, highLiftPrice, canTakeHighLift,
-  type TrackMount, type InclineStyle,
-} from "@/lib/pricing/data/track-lift";
 import type { ParsedDoor } from "@/lib/pricing/data/parse-request";
 import { dataKey, modelSort } from "@/lib/pricing/model-groups";
 import { windowDesigns, designWidthCode } from "@/lib/pricing/data/inserts";
@@ -108,11 +104,6 @@ export function ResidentialTool({
     setHeightIn(ft ? (inchesFor(stockH, ft)[0] ?? "0") : "0");
   };
   const [assembly, setAssembly] = useState("complete");
-  // Track mount, incline style and high lift. Clopay splits these into their own
-  // dropdowns; the flow here stays the same, they just sit under Track options.
-  const [trackMount, setTrackMount] = useState<TrackMount>("bracket");
-  const [incline, setIncline] = useState<InclineStyle>("straight_incline");
-  const [highLift, setHighLift] = useState(0);
   // "Sections only" mode — mirrors the Commercial replacement-section flow.
   // Widths are STOCK-SIZE DROPDOWNS from the 2026 V2 workbook, never typed.
   const [secKind, setSecKind] = useState<"bt" | "int">("bt");
@@ -216,26 +207,8 @@ export function ResidentialTool({
   }, [prefill, onPrefillUsed]);
 
 
-  // High lift is a torsion option, so it only appears in the radius list when
-  // torsion is selected. Picking extension with high lift already chosen drops
-  // back to the standard radius rather than leaving an impossible selection.
-  const hlAllowed = canTakeHighLift(spring);
-  const isHighLift = track === "high_lift";
-  const liftSteps = highLiftChoices(Number(heightFt || 0), Number(heightIn || 0));
-  // A lift that no longer fits after a height change is dropped at read time
-  // rather than in an effect — writing state out of an effect cascades renders.
-  const effLift = liftSteps.length && highLift > liftSteps[liftSteps.length - 1] ? 0 : highLift;
 
-  const highLiftNote = (() => {
-    if (!isHighLift || !effLift) return "";
-    const r = highLiftPrice({
-      mount: trackMount, incline,
-      heightFt: Number(heightFt || 0), heightIn: Number(heightIn || 0), inches: effLift,
-    });
-    return r.reason ?? "";
-  })();
-
-  const cfgSig = JSON.stringify([model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, activeDesign, assembly, secKind, secHeight, activeSecWidth, secGlass, secLock, upgradedHardware, homeowner, trackMount, incline, effLift]);
+  const cfgSig = JSON.stringify([model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, activeDesign, assembly, secKind, secHeight, activeSecWidth, secGlass, secLock, upgradedHardware, homeowner]);
   const result = resultRaw && resultSig === cfgSig ? resultRaw : null;
   const liveError = errorRaw && resultSig === cfgSig ? errorRaw : null;
 
@@ -314,11 +287,6 @@ export function ResidentialTool({
             // for them even if it was left on from a complete-door quote.
             upgradedHardware: sectionsOnly ? false : upgradedHardware,
             homeowner,
-            // Track mount and high lift. Sections ship without track, so they
-            // never go out for a sections-only order.
-            trackMount: sectionsOnly ? undefined : trackMount,
-            incline: sectionsOnly ? undefined : incline,
-            highLiftInches: sectionsOnly || !isHighLift ? 0 : effLift,
         }),
       });
       const data = await res.json();
@@ -626,62 +594,21 @@ export function ResidentialTool({
                   <label>Spring</label>
                   <div className="ctl selectwrap">
                     <select data-testid="spring" value={springLocked ? "torsion" : spring} disabled={springLocked}
-                      onChange={(e) => {
-                        const v = e.target.value as SpringKey;
-                        setSpring(v);
-                        // High lift is torsion only, so switching to extension
-                        // cannot leave it selected.
-                        if (v !== "torsion" && track === "high_lift") { setTrack("r12"); setHighLift(0); }
-                      }}>
+                      onChange={(e) => setSpring(e.target.value as SpringKey)}>
                       {!springLocked && <option value="extension">Extension</option>}
                       <option value="torsion">Torsion</option>
                     </select>
                   </div>
                 </div>
                 <div className="grow">
-                  <label>Track mount</label>
-                  <div className="ctl selectwrap">
-                    <select data-testid="track-mount" value={trackMount}
-                      onChange={(e) => setTrackMount(e.target.value as TrackMount)}>
-                      {TRACK_MOUNTS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-                    </select>
-                  </div>
-                </div>
-                <div className="grow">
                   <label>Track lift / radius</label>
                   <div className="ctl selectwrap">
-                    <select data-testid="track" value={track}
-                      onChange={(e) => { setTrack(e.target.value as TrackKey); if (e.target.value !== "high_lift") setHighLift(0); }}>
+                    <select data-testid="track" value={track} onChange={(e) => setTrack(e.target.value as TrackKey)}>
                       {TRACKS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-                      {hlAllowed && <option value="high_lift">High lift</option>}
                     </select>
                   </div>
                 </div>
-                {isHighLift && (
-                  <>
-                    <div className="grow">
-                      <label>High lift amount</label>
-                      <div className="ctl selectwrap">
-                        <select data-testid="high-lift" value={effLift}
-                          onChange={(e) => setHighLift(Number(e.target.value))}>
-                          <option value={0}>Select…</option>
-                          {liftSteps.map((n) => <option key={n} value={n}>{n}&quot;</option>)}
-                        </select>
-                      </div>
-                    </div>
-                    <div className="grow">
-                      <label>Incline style</label>
-                      <div className="ctl selectwrap">
-                        <select data-testid="incline" value={incline}
-                          onChange={(e) => setIncline(e.target.value as InclineStyle)}>
-                          {INCLINE_STYLES.map((i) => <option key={i.value} value={i.value}>{i.label}</option>)}
-                        </select>
-                      </div>
-                    </div>
-                  </>
-                )}
               </div>}
-              {highLiftNote && <div className="hl-note" data-testid="high-lift-note">{highLiftNote}</div>}
 
               <div className="ggroup">
                 <div className="ghdr">{sections ? "Section options" : "Additional options"}</div>

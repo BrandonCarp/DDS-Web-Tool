@@ -21,6 +21,8 @@
 // that reason and points at the manual box; it must never fall through to a
 // guessed price.
 
+import { glassAdderSell, glassLabel, doorMargin } from "./so-glass";
+import { highLiftPrice, mountPhrase, type TrackMount, type InclineStyle } from "./track-lift";
 import { ADDONS } from "./addons";
 import { designName, windowDesigns } from "./inserts";
 import { SPECIAL_DOORS } from "./special-doors";
@@ -42,6 +44,12 @@ export interface SpecialDoorInput {
   track: TrackKey;
   spring: SpringKey;
   lock: LockKey;
+  /** A named glass type. Only meaningful when style is "glass". */
+  glassType?: string;
+  /** Track mount, incline and high lift — priced from the track-lift tables. */
+  trackMount?: string;
+  incline?: string;
+  highLiftInches?: number;
 }
 
 export interface SpecialDoorQuote {
@@ -56,6 +64,7 @@ export interface SpecialDoorQuote {
 }
 
 const TRACK_TEXT: Record<string, string> = {
+  high_lift: 'high lift track',
   r10: '10\u2033 radius track',
   r12: '12\u2033 radius track',
   r15: '15\u2033 radius track',
@@ -260,9 +269,22 @@ export function specialDoorQuote(
   const triple = tier[input.width];
   if (!triple) return { reason: "That width is not on the grid — enter the Clopay total below." };
 
-  const base = triple[input.style];
+  let base = triple[input.style];
   if (typeof base !== "number") {
     return { reason: "Clopay does not grid that style at this size — enter the total below." };
+  }
+
+  // A named glass type replaces the grid's plain GLASS column. The grid prices
+  // one generic glass door; Clopay sells a dozen types and the spread is over
+  // $400 on the same door, so where DDS has priced them the specific figure is
+  // used. Widths without a priced table fall back to the grid.
+  let glassName: string | null = null;
+  if (input.style === "glass" && input.glassType) {
+    const add = glassAdderSell(input.model, input.width, input.glassType);
+    if (add != null && typeof triple.solid === "number") {
+      base = triple.solid + add;
+      glassName = glassLabel(input.glassType);
+    }
   }
 
   // The same adders a stock door gets, read from the same place. ADDONS keys
@@ -279,10 +301,28 @@ export function specialDoorQuote(
   // tab's torsionOnly, deliberately worded the same way.
   const torsionOnly = tierKey !== "7" && tierKey !== "8";
 
+  // High lift is priced from the Clopay track tables, then divided by the
+  // group's margin — the grid holds SELL figures, so an adder has to be lifted
+  // into the same space before it can be added.
+  const lift = (() => {
+    if (!input.highLiftInches || input.highLiftInches <= 0) return { value: 0, label: "" };
+    const [hf, hi] = [Number(input.height.split(".")[0]), Number(input.height.split(".")[1] ?? 0)];
+    const r = highLiftPrice({
+      mount: (input.trackMount ?? "bracket") as TrackMount,
+      incline: (input.incline ?? "straight_incline") as InclineStyle,
+      heightFt: hf, heightIn: hi, inches: input.highLiftInches,
+    });
+    if (r.price <= 0) return { value: 0, label: "" };
+    const margin = doorMargin(input.model);
+    const value = margin == null ? r.price : Math.round((r.price / (1 - margin / 100)) * 100) / 100;
+    return { value, label: r.label };
+  })();
+
   const adders =
-    (ADDONS.track[input.track as keyof typeof ADDONS.track] ?? 0) +
+    (input.track === "high_lift" ? 0 : ADDONS.track[input.track as keyof typeof ADDONS.track] ?? 0) +
     (!torsionOnly && input.spring === "torsion" ? ADDONS.torsion : 0) +
-    (LOCK[input.lock] ?? 0);
+    (LOCK[input.lock] ?? 0) +
+    lift.value;
 
   // Worded the way a residential door is worded, because it lands in the same
   // QuickBooks description column and the counter reads both. The one thing
@@ -292,7 +332,9 @@ export function specialDoorQuote(
     input.style === "solid"
       ? "solid, no windows"
       : input.style === "glass"
-        ? "glass in the top section, no inserts"
+        ? glassName
+          ? `${glassName.toLowerCase()} glass in the top section, no inserts`
+          : "glass in the top section, no inserts"
         : (() => {
             const valid = windowDesigns(input.model, "inserts", input.width.split(".")[0]).map((d) => d.id);
             const name = input.windesign && valid.includes(input.windesign)
@@ -303,7 +345,13 @@ export function specialDoorQuote(
   const description =
     `Clopay Model ${input.variant || input.model}, ${feetInches(input.width)} x ${heightLabel(input.height)}, ` +
     `in the color ${input.color}, ${winText}, ` +
-    `${TRACK_TEXT[input.track] ?? TRACK_TEXT.r12}, ` +
+    // An angle mount names what it fastens to, exactly as the commercial tool
+    // phrases it, so the two read alike on a quote.
+    (mountPhrase((input.trackMount ?? "bracket") as TrackMount)
+      ? `${mountPhrase((input.trackMount ?? "bracket") as TrackMount)}, ` : "") +
+    `${input.track === "high_lift" && input.highLiftInches
+        ? `${input.highLiftInches}\u2033 high lift track`
+        : TRACK_TEXT[input.track] ?? TRACK_TEXT.r12}, ` +
     `${torsionOnly || input.spring === "torsion" ? "torsion" : "extension"} springs, ` +
     `${LOCK_TEXT[input.lock] ?? "no lock"}`;
 
