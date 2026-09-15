@@ -395,10 +395,10 @@ export function SpecialTool() {
                 <>
                   <button type="button" className="btn ghost backbtn" data-testid="so-back"
                     onClick={() => setStep(1)}>&larr; Change door</button>
-                  <div className="ghdr" style={{ marginTop: 10 }}>Layout options</div>
+                  <div className="ghdr" style={{ marginTop: 12 }}>Layout options</div>
                   {gNeedsVariant && (
-                    <div className="field"><label className="lbl">Which model <span className="req">*</span></label>
-                      <div className="selectwrap">
+                    <div className="grow"><label>Which model</label>
+                      <div className="ctl selectwrap">
                         <select data-testid="so-variant" value={gVariant} onChange={(e) => { setGVariant(e.target.value); setGWidth(""); setSaved(false); }}>
                           <option value="">Select…</option>
                           {gMembers.map((m) => <option key={m} value={m}>{m}</option>)}
@@ -407,58 +407,54 @@ export function SpecialTool() {
                       <div className="muted-note">These share a price grid but not a size range.</div>
                     </div>
                   )}
-                  <div className="row2">
-                    <div className="field"><label className="lbl">Width <span className="req">*</span></label>
-                      <div className="selectwrap">
-                        <select data-testid="so-width" value={gWidth} onChange={(e) => { setGWidth(e.target.value); setSaved(false); }}>
-                          <option value="">Select…</option>
-                          {gWidths.map((w) => <option key={w} value={w}>{widthLabel(w)}</option>)}
-                        </select>
-                      </div>
-                    </div>
-                    <div className="field"><label className="lbl">Height <span className="req">*</span></label>
-                      <div className="selectwrap">
-                        <select data-testid="so-height" value={gHeight} onChange={(e) => { setGHeight(e.target.value); setSaved(false); }}>
-                          <option value="">Select…</option>
-                          {gHeights.map((h) => <option key={h} value={h}>{heightLabel(h)}</option>)}
-                        </select>
-                      </div>
+                  <div className="grow"><label>Width</label>
+                    <div className="ctl selectwrap">
+                      <select data-testid="so-width" value={gWidth} onChange={(e) => { setGWidth(e.target.value); setSaved(false); }}>
+                        <option value="">Select…</option>
+                        {gWidths.map((w) => <option key={w} value={w}>{widthLabel(w)}</option>)}
+                      </select>
                     </div>
                   </div>
-                  <div className="row2">
-                    <div className="field"><label className="lbl">Color</label>
-                      <div className="selectwrap">
-                        <select value={gColor} onChange={(e) => { setGColor(e.target.value); setSaved(false); }}>
-                          {gColors.map((c) => <option key={c} value={c}>{c}</option>)}
-                        </select>
-                      </div>
+                  <div className="grow"><label>Height</label>
+                    <div className="ctl selectwrap">
+                      <select data-testid="so-height" value={gHeight} onChange={(e) => { setGHeight(e.target.value); setSaved(false); }}>
+                        <option value="">Select…</option>
+                        {gHeights.map((h) => <option key={h} value={h}>{heightLabel(h)}</option>)}
+                      </select>
                     </div>
-                    <div className="field"><label className="lbl">Windows</label>
-                      <div className="selectwrap">
-                        <select data-testid="so-style" value={gStyle} onChange={(e) => { setGStyle(e.target.value as "solid" | "glass" | "inserts"); setSaved(false); }}>
-                          <option value="solid">Solid — no windows</option>
-                          <option value="glass">Glass</option>
-                          <option value="inserts">Inserts</option>
-                        </select>
-                      </div>
+                  </div>
+                  <div className="grow"><label>Color</label>
+                    <div className="ctl selectwrap">
+                      <select value={gColor} onChange={(e) => { setGColor(e.target.value); setSaved(false); }}>
+                        {gColors.map((c) => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grow"><label>Windows</label>
+                    <div className="ctl selectwrap">
+                      <select data-testid="so-style" value={gStyle} onChange={(e) => { setGStyle(e.target.value as "solid" | "glass" | "inserts"); setSaved(false); }}>
+                        <option value="solid">Solid — no windows</option>
+                        <option value="glass">Glass</option>
+                        <option value="inserts">Inserts</option>
+                      </select>
                     </div>
                   </div>
                   <div className="ghdr" style={{ marginTop: 14 }}>Window options</div>
                   {gStyle === "glass" && soGlass.length > 0 && (
-                    <div className="field"><label className="lbl">Glass type</label>
-                      <div className="selectwrap">
+                    <div className="grow"><label>Glass type</label>
+                      <div className="ctl selectwrap">
                         <select data-testid="so-glass" value={gGlass}
                           onChange={(e) => { setGGlass(e.target.value); setSaved(false); }}>
-                          <option value="">Standard glass</option>
+                          <option value="">Single strength</option>
                           {soGlass.map((g) => <option key={g.id} value={g.id}>{g.label}</option>)}
                         </select>
                       </div>
                     </div>
                   )}
                   {gDesigns.length > 0 && (
-                    <div className="field">
-                      <label className="lbl">Window design</label>
-                      <div className="selectwrap">
+                    <div className="grow">
+                      <label>Window design</label>
+                      <div className="ctl selectwrap">
                         <select data-testid="so-windesign" value={gDesign} onChange={(e) => { setGDesign(e.target.value); setSaved(false); }}>
                           <option value="">Select a design…</option>
                           {gDesigns.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
@@ -467,59 +463,55 @@ export function SpecialTool() {
                     </div>
                   )}
                   <div className="ghdr" style={{ marginTop: 14 }}>Track options</div>
-                  <div className="row2">
-                    <div className="field"><label className="lbl">Spring</label>
-                      <div className="selectwrap">
-                        <select value={gTorsionOnly ? "torsion" : gSpring} disabled={gTorsionOnly}
-                          onChange={(e) => {
-                            setGSpring(e.target.value);
-                            if (e.target.value !== "torsion" && gTrack === "high_lift") { setGTrack("r12"); setGLift(0); }
-                            setSaved(false);
-                          }}>
-                          {!gTorsionOnly && <option value="extension">Extension</option>}
-                          <option value="torsion">Torsion</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className="field"><label className="lbl">Track lift / radius</label>
-                      <div className="selectwrap">
-                        <select data-testid="so-track" value={gTrack}
-                          onChange={(e) => { setGTrack(e.target.value); if (e.target.value !== "high_lift") setGLift(0); setSaved(false); }}>
-                          <option value="r10">10&quot; radius</option>
-                          <option value="r12">12&quot; radius</option>
-                          <option value="r15">15&quot; radius</option>
-                          <option value="low_headroom">Low headroom</option>
-                          <option value="r20">20&quot; radius</option>
-                          <option value="r32">32&quot; radius</option>
-                          {gLiftAllowed && <option value="high_lift">High lift</option>}
-                        </select>
-                      </div>
+                  <div className="grow"><label>Spring</label>
+                    <div className="ctl selectwrap">
+                      <select value={gTorsionOnly ? "torsion" : gSpring} disabled={gTorsionOnly}
+                        onChange={(e) => {
+                          setGSpring(e.target.value);
+                          if (e.target.value !== "torsion" && gTrack === "high_lift") { setGTrack("r12"); setGLift(0); }
+                          setSaved(false);
+                        }}>
+                        {!gTorsionOnly && <option value="extension">Extension</option>}
+                        <option value="torsion">Torsion</option>
+                      </select>
                     </div>
                   </div>
-                  <div className="row2">
-                    <div className="field"><label className="lbl">Track mount</label>
-                      <div className="selectwrap">
-                        <select data-testid="so-track-mount" value={gMount}
-                          onChange={(e) => { setGMount(e.target.value as TrackMount); setSaved(false); }}>
-                          {TRACK_MOUNTS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
-                        </select>
-                      </div>
+                  <div className="grow"><label>Track lift / radius</label>
+                    <div className="ctl selectwrap">
+                      <select data-testid="so-track" value={gTrack}
+                        onChange={(e) => { setGTrack(e.target.value); if (e.target.value !== "high_lift") setGLift(0); setSaved(false); }}>
+                        <option value="r10">10&quot; radius</option>
+                        <option value="r12">12&quot; radius</option>
+                        <option value="r15">15&quot; radius</option>
+                        <option value="low_headroom">Low headroom</option>
+                        <option value="r20">20&quot; radius</option>
+                        <option value="r32">32&quot; radius</option>
+                        {gLiftAllowed && <option value="high_lift">High lift</option>}
+                      </select>
                     </div>
-                    {gIsLift && (
-                      <div className="field"><label className="lbl">High lift amount</label>
-                        <div className="selectwrap">
-                          <select data-testid="so-high-lift" value={gEffLift}
-                            onChange={(e) => { setGLift(Number(e.target.value)); setSaved(false); }}>
-                            <option value={0}>Select…</option>
-                            {gLiftSteps.map((n) => <option key={n} value={n}>{n}&quot;</option>)}
-                          </select>
-                        </div>
-                      </div>
-                    )}
+                  </div>
+                  <div className="grow"><label>Track mount</label>
+                    <div className="ctl selectwrap">
+                      <select data-testid="so-track-mount" value={gMount}
+                        onChange={(e) => { setGMount(e.target.value as TrackMount); setSaved(false); }}>
+                        {TRACK_MOUNTS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+                      </select>
+                    </div>
                   </div>
                   {gIsLift && (
-                    <div className="field"><label className="lbl">Incline style</label>
-                      <div className="selectwrap">
+                    <div className="grow"><label>High lift amount</label>
+                      <div className="ctl selectwrap">
+                        <select data-testid="so-high-lift" value={gEffLift}
+                          onChange={(e) => { setGLift(Number(e.target.value)); setSaved(false); }}>
+                          <option value={0}>Select…</option>
+                          {gLiftSteps.map((n) => <option key={n} value={n}>{n}&quot;</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                  {gIsLift && (
+                    <div className="grow"><label>Incline style</label>
+                      <div className="ctl selectwrap">
                         <select data-testid="so-incline" value={gIncline}
                           onChange={(e) => { setGIncline(e.target.value as InclineStyle); setSaved(false); }}>
                           {INCLINE_STYLES.map((i) => <option key={i.value} value={i.value}>{i.label}</option>)}
@@ -529,9 +521,9 @@ export function SpecialTool() {
                   )}
                   {gLiftNote && <div className="hl-note" data-testid="so-high-lift-note">{gLiftNote}</div>}
                   <div className="ghdr" style={{ marginTop: 14 }}>Additional options</div>
-                  <div className="field">
-                    <label className="lbl">Lock</label>
-                    <div className="selectwrap">
+                  <div className="grow">
+                    <label>Lock</label>
+                    <div className="ctl selectwrap">
                       <select value={gLock} onChange={(e) => { setGLock(e.target.value); setSaved(false); }}>
                         <option value="none">No lock</option>
                         <option value="slide">Inside slide lock</option>
@@ -548,18 +540,15 @@ export function SpecialTool() {
 
               {(md || flatMargin) && (
                 <>
-                  <div className="row2">
-                    <div className="field"><label className="lbl">Ordering</label>
-                      <div className="chips">
-                        <button type="button" className={`chip ${kind === "door" ? "sel" : ""}`} onClick={() => { setKind("door"); setSaved(false); }}>Door</button>
-                        <button type="button" className={`chip ${kind === "section" ? "sel" : ""}`} onClick={() => { setKind("section"); setSaved(false); }}>Sections</button>
-                      </div>
+                  <div className="grow"><label>Ordering</label>
+                    <div className="chips">
+                      <button type="button" className={`chip ${kind === "door" ? "sel" : ""}`} onClick={() => { setKind("door"); setSaved(false); }}>Door</button>
+                      <button type="button" className={`chip ${kind === "section" ? "sel" : ""}`} onClick={() => { setKind("section"); setSaved(false); }}>Sections</button>
                     </div>
-                    <div />
                   </div>
-                  <div className="field">
-                    <label className="lbl">Home owner surcharge</label>
-                    <div className="selectwrap">
+                  <div className="grow">
+                    <label>Home owner surcharge</label>
+                    <div className="ctl selectwrap">
                       <select data-testid="so-homeowner" value={homeowner}
                         onChange={(e) => { setHomeowner(e.target.value as "no" | "single" | "double"); setSaved(false); }}>
                         <option value="no">No</option>

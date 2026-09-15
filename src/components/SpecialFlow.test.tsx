@@ -139,3 +139,64 @@ describe("special order — glass types reach the price", () => {
     expect(maybe("so-glass")).toBeNull();
   });
 });
+
+describe("special order — condensed layout", () => {
+  const settle2 = () => new Promise((r) => setTimeout(r, 40));
+
+  it("uses the stock tabs' row layout in the configurator", async () => {
+    // .grow is the compact label-plus-control row the residential tab uses;
+    // .field and .row2 are the taller special-order blocks it replaced.
+    render(<SpecialTool />);
+    fireEvent.change(sel("so-mfr"), { target: { value: "Clopay" } });
+    fireEvent.change(sel("so-series"), { target: { value: "Premium Steel Collection" } });
+    const m = maybe("so-model") as HTMLSelectElement | null;
+    const v = [...(m?.options ?? [])].map((o) => o.value).find((x) => x.includes("4050"));
+    if (m && v) fireEvent.change(m, { target: { value: v } });
+    await settle2();
+    fireEvent.click(maybe("so-configure")!);
+    await settle2();
+    expect(document.querySelectorAll(".grow").length).toBeGreaterThan(8);
+    expect(document.querySelectorAll(".row2")).toHaveLength(0);
+  });
+
+  it("keeps the Clopay total block visually separate", async () => {
+    // It is the fallback, not part of the configuration, so it stays a .field.
+    render(<SpecialTool />);
+    fireEvent.change(sel("so-mfr"), { target: { value: "Clopay" } });
+    fireEvent.change(sel("so-series"), { target: { value: "Premium Steel Collection" } });
+    const m = maybe("so-model") as HTMLSelectElement | null;
+    const v = [...(m?.options ?? [])].map((o) => o.value).find((x) => x.includes("4050"));
+    if (m && v) fireEvent.change(m, { target: { value: v } });
+    await settle2();
+    fireEvent.click(maybe("so-configure")!);
+    await settle2();
+    expect(document.querySelectorAll(".field").length).toBeGreaterThan(0);
+  });
+});
+
+describe("special order — condensed layout", () => {
+  it("uses the same row shape as the stock configurator", async () => {
+    // .grow is the compact label-plus-control row the residential tab uses;
+    // .field and .row2 are the taller blocks this tab had before.
+    await pickDoor();
+    fireEvent.click(maybe("so-configure")!);
+    await settle();
+    expect(document.querySelectorAll(".grow").length).toBeGreaterThan(8);
+    expect(document.querySelectorAll(".row2").length).toBe(0);
+  });
+
+  it("calls the default glass single strength", async () => {
+    // It is not "standard" — it is the SSB column in Clopay's own book.
+    await pickDoor();
+    fireEvent.click(maybe("so-configure")!);
+    await settle();
+    fireEvent.change(sel("so-width"), { target: { value: "8" } });
+    fireEvent.change(sel("so-height"), { target: { value: "7" } });
+    await settle();
+    fireEvent.change(sel("so-style"), { target: { value: "glass" } });
+    await settle();
+    const first = [...sel("so-glass").options][0];
+    expect(first.text).toBe("Single strength");
+    expect(first.value).toBe("");
+  });
+});
