@@ -44,8 +44,10 @@ export interface SpecialDoorInput {
   track: TrackKey;
   spring: SpringKey;
   lock: LockKey;
-  /** A named glass type. Only meaningful when style is "glass". */
+  /** A named glass type. Meaningful when style is "glass" or "inserts". */
   glassType?: string;
+  /** Short or long panel. Changes the window count, and so the glass price. */
+  panelStyle?: "short" | "long";
   /** Track mount, incline and high lift — priced from the track-lift tables. */
   trackMount?: string;
   incline?: string;
@@ -279,8 +281,10 @@ export function specialDoorQuote(
   // $400 on the same door, so where DDS has priced them the specific figure is
   // used. Widths without a priced table fall back to the grid.
   let glassName: string | null = null;
-  if (input.style === "glass" && input.glassType) {
-    const add = glassAdderSell(input.model, input.width, input.glassType);
+  if (input.style !== "solid" && input.glassType) {
+    const panel = input.panelStyle ?? "short";
+    const withInserts = input.style === "inserts";
+    const add = glassAdderSell(input.model, panel, input.width, input.glassType, withInserts);
     if (add != null && typeof triple.solid === "number") {
       base = triple.solid + add;
       glassName = glassLabel(input.glassType);
@@ -340,7 +344,10 @@ export function specialDoorQuote(
             const name = input.windesign && valid.includes(input.windesign)
               ? designName(input.windesign)
               : null;
-            return name ? `windows in the top section, ${name} inserts` : "windows in the top section, no inserts";
+            // Inserts sit ON a glass, so the glass is named too when one was
+            // chosen — "double strength glass, Colonial 509 inserts".
+            const g = glassName ? `${glassName.toLowerCase()} glass` : "windows";
+            return name ? `${g} in the top section, ${name} inserts` : `${g} in the top section, no inserts`;
           })();
   const description =
     `Clopay Model ${input.variant || input.model}, ${feetInches(input.width)} x ${heightLabel(input.height)}, ` +

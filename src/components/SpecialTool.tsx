@@ -15,7 +15,7 @@ import {
   parseModelSelection, modelSelectionValue,
 } from "@/lib/pricing/data/special-door-pricing";
 import { COLORS } from "@/lib/pricing/data/catalog-meta";
-import { glassOptionsFor } from "@/lib/pricing/data/so-glass";
+import { glassOptionsFor, panelStylesFor, type PanelStyle } from "@/lib/pricing/data/so-glass";
 import {
   TRACK_MOUNTS, INCLINE_STYLES, highLiftChoices, highLiftPrice, canTakeHighLift,
   type TrackMount, type InclineStyle,
@@ -103,6 +103,7 @@ export function SpecialTool() {
   // Two steps, the same shape as the stock tabs: choose the door, then build it.
   const [step, setStep] = useState(1);
   const [gGlass, setGGlass] = useState("");
+  const [gPanel, setGPanel] = useState<PanelStyle>("short");
   // Track mount, high lift and incline. These live on special order rather than
   // residential: a stock door ships on standard track, and anything else is an
   // order Clopay builds to spec.
@@ -173,7 +174,11 @@ export function SpecialTool() {
   // that would be ignored.
   const gTorsionOnly = gridded && !!gHeight && heightForcesTorsion(gHeight, griddedHeights(modelGroup));
   // The specific glass types DDS has priced for this model and width.
-  const soGlass = gridded && gWidth ? glassOptionsFor(modelGroup, gWidth) : [];
+  // Panel style changes the window count, and so the glass price. Long panels
+  // start at 8'0", so a narrow door offers short only and the row is hidden.
+  const soPanels = gridded && gWidth ? panelStylesFor(modelGroup, gWidth) : [];
+  const gPanelEff: PanelStyle = soPanels.includes(gPanel) ? gPanel : (soPanels[0] ?? "short");
+  const soGlass = gridded && gWidth ? glassOptionsFor(modelGroup, gPanelEff, gWidth) : [];
 
   // High lift is torsion only, and caps at the door height less 3 inches —
   // above that the door is full vertical lift, a different track entirely.
@@ -191,7 +196,7 @@ export function SpecialTool() {
     ? specialDoorQuote({ model: modelGroup, width: gWidth, height: gHeight, style: gStyle, color: gColor,
         windesign: gDesign || undefined, variant: (modelMember || gVariant) || undefined,
         track: gTrack as never, spring: (gTorsionOnly ? "torsion" : gSpring) as never, lock: gLock as never,
-        glassType: gStyle === "glass" ? gGlass || undefined : undefined,
+        glassType: gStyle !== "solid" ? gGlass || undefined : undefined, panelStyle: gPanelEff,
         trackMount: gMount, incline: gIncline, highLiftInches: gIsLift ? gEffLift : 0 })
     : null;
   const widthLabel = (w: string) => {
@@ -285,15 +290,24 @@ export function SpecialTool() {
       <section className="config-col">
         <div className="panel">
           <div className="step">
-            <div className="step-h"><span className="step-n">1</span><h3>{step === 1 ? "Select your door" : "Configure"}</h3><span className="hint">Special order</span></div>
-            <div className="field"><label className="lbl">Order type</label>
-              <div className="chips">
-                <button type="button" className={`chip ${scope === "residential" ? "sel" : ""}`} onClick={() => pickScope("residential")}>Residential</button>
-                <button type="button" className={`chip ${scope === "commercial" ? "sel" : ""}`} onClick={() => pickScope("commercial")}>Commercial</button>
-              </div>
+            <div className="step-h">
+              <span className="step-n">{step}</span>
+              <h3>{step === 1 ? "Select your door" : "Configure"}</h3>
+              <span className="hint">Special order</span>
             </div>
+            {/* Order type, manufacturer, collection and model are the step 1
+                choices. Once the counter is configuring, they come off screen —
+                Change door goes back — so the panel reads like the stock tabs. */}
+            {step === 1 && (
+              <div className="field"><label className="lbl">Order type</label>
+                <div className="chips">
+                  <button type="button" className={`chip ${scope === "residential" ? "sel" : ""}`} onClick={() => pickScope("residential")}>Residential</button>
+                  <button type="button" className={`chip ${scope === "commercial" ? "sel" : ""}`} onClick={() => pickScope("commercial")}>Commercial</button>
+                </div>
+              </div>
+            )}
 
-            {scope === "residential" ? (
+            {step === 1 && (scope === "residential" ? (
               <>
                 <div className="field"><label className="lbl">Manufacturer <span className="req">*</span></label>
                   <div className="selectwrap">
@@ -362,14 +376,16 @@ export function SpecialTool() {
                   </div>
                 )}
               </>
-            )}
+            ))}
           </div>
 
 
           {scope === "residential" && ser && ser.type === "margin" && (
             <div className="step">
-              <div className="step-h"><span className="step-n">2</span><h3>{series}{ser.models ? " model" : ""}</h3></div>
-              {ser.models && (
+              {step === 1 && (
+                <div className="step-h"><span className="step-n">2</span><h3>{series}{ser.models ? " model" : ""}</h3></div>
+              )}
+              {step === 1 && ser.models && (
                 <div className="field"><label className="lbl">Model <span className="req">*</span></label>
                   <div className="selectwrap">
                     <select data-testid="so-model" value={model} onChange={(e) => { setModel(e.target.value); resetGrid(); setSaved(false); }}>
@@ -393,9 +409,16 @@ export function SpecialTool() {
               )}
               {gridded && kind === "door" && step === 2 && (
                 <>
-                  <button type="button" className="btn ghost backbtn" data-testid="so-back"
-                    onClick={() => setStep(1)}>&larr; Change door</button>
-                  <div className="ghdr" style={{ marginTop: 12 }}>Layout options</div>
+                  <div className="modelbar">
+                    <button type="button" className="btn backbtn" data-testid="so-back"
+                      onClick={() => setStep(1)}>&lsaquo; Back</button>
+                    <span className="mlbl">Model</span>
+                    <span className="mval">{modelMember || modelGroup}</span>
+                    <span className="muted-note" style={{ marginLeft: "auto" }}>{series}</span>
+                  </div>
+                  <div className="cfg2">
+                  <div className="ggroup">
+                  <div className="ghdr">Layout options</div>
                   {gNeedsVariant && (
                     <div className="grow"><label>Which model</label>
                       <div className="ctl selectwrap">
@@ -439,8 +462,22 @@ export function SpecialTool() {
                       </select>
                     </div>
                   </div>
-                  <div className="ghdr" style={{ marginTop: 14 }}>Window options</div>
-                  {gStyle === "glass" && soGlass.length > 0 && (
+                  </div>
+                  <div className="ggroup">
+                  <div className="ghdr">Window options</div>
+                  {gStyle !== "solid" && soPanels.length > 1 && (
+                    <div className="grow"><label>Panel style</label>
+                      <div className="ctl selectwrap">
+                        <select data-testid="so-panel" value={gPanelEff}
+                          onChange={(e) => { setGPanel(e.target.value as PanelStyle); setGGlass(""); setSaved(false); }}>
+                          {soPanels.map((p) => (
+                            <option key={p} value={p}>{p === "short" ? "Short panel glass" : "Long panel glass"}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                  {gStyle !== "solid" && soGlass.length > 0 && (
                     <div className="grow"><label>Glass type</label>
                       <div className="ctl selectwrap">
                         <select data-testid="so-glass" value={gGlass}
@@ -462,7 +499,9 @@ export function SpecialTool() {
                       </div>
                     </div>
                   )}
-                  <div className="ghdr" style={{ marginTop: 14 }}>Track options</div>
+                  </div>
+                  <div className="ggroup">
+                  <div className="ghdr">Track options</div>
                   <div className="grow"><label>Spring</label>
                     <div className="ctl selectwrap">
                       <select value={gTorsionOnly ? "torsion" : gSpring} disabled={gTorsionOnly}
@@ -520,7 +559,9 @@ export function SpecialTool() {
                     </div>
                   )}
                   {gLiftNote && <div className="hl-note" data-testid="so-high-lift-note">{gLiftNote}</div>}
-                  <div className="ghdr" style={{ marginTop: 14 }}>Additional options</div>
+                  </div>
+                  <div className="ggroup">
+                  <div className="ghdr">Additional options</div>
                   <div className="grow">
                     <label>Lock</label>
                     <div className="ctl selectwrap">
@@ -532,6 +573,8 @@ export function SpecialTool() {
                       </select>
                     </div>
                   </div>
+                  </div>
+                  </div>
                   {gResult?.reason && (
                     <div className="muted-note" style={{ marginTop: 6 }}>{gResult.reason}</div>
                   )}
@@ -540,10 +583,15 @@ export function SpecialTool() {
 
               {(md || flatMargin) && (
                 <>
-                  <div className="grow"><label>Ordering</label>
-                    <div className="chips">
-                      <button type="button" className={`chip ${kind === "door" ? "sel" : ""}`} onClick={() => { setKind("door"); setSaved(false); }}>Door</button>
-                      <button type="button" className={`chip ${kind === "section" ? "sel" : ""}`} onClick={() => { setKind("section"); setSaved(false); }}>Sections</button>
+                  {/* A dropdown, not chips — the stock tabs ask this the same
+                      way under Assembly type, and the two should read alike. */}
+                  <div className="grow"><label>Assembly type</label>
+                    <div className="ctl selectwrap">
+                      <select data-testid="so-assembly" value={kind}
+                        onChange={(e) => { setKind(e.target.value as "door" | "section"); setSaved(false); }}>
+                        <option value="door">Complete door</option>
+                        <option value="section">Replacement section</option>
+                      </select>
                     </div>
                   </div>
                   <div className="grow">

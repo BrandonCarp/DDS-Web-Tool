@@ -64,13 +64,34 @@ describe("special order — two steps", () => {
     expect(maybe("so-configure")).toBeTruthy();
   });
 
-  it("returns to step 1 when the collection changes", async () => {
+  it("takes the door selectors off screen while configuring", async () => {
+    // Order type, manufacturer, collection and model are step 1 choices. Once
+    // the counter is building the door they come off, exactly as on the stock
+    // tabs — Change door goes back.
     await pickDoor();
     fireEvent.click(maybe("so-configure")!);
     await settle();
-    fireEvent.change(sel("so-series"), { target: { value: "Gallery Collection" } });
+    for (const t of ["so-mfr", "so-series", "so-model"]) expect(maybe(t), t).toBeNull();
+    expect(screen.queryByText("Residential")).toBeNull();
+    expect(maybe("so-back")).toBeTruthy();
+  });
+
+  it("brings them back on Change door", async () => {
+    await pickDoor();
+    fireEvent.click(maybe("so-configure")!);
     await settle();
-    expect(maybe("so-width")).toBeNull();
+    fireEvent.click(maybe("so-back")!);
+    await settle();
+    for (const t of ["so-mfr", "so-series", "so-model"]) expect(maybe(t), t).toBeTruthy();
+    expect(screen.queryByText("Residential")).toBeTruthy();
+  });
+
+  it("numbers the step it is on", async () => {
+    await pickDoor();
+    expect(document.querySelector(".step-n")?.textContent).toBe("1");
+    fireEvent.click(maybe("so-configure")!);
+    await settle();
+    expect(document.querySelector(".step-n")?.textContent).toBe("2");
   });
 
   it("groups the configurator the way the stock tabs do", async () => {
@@ -110,9 +131,10 @@ describe("special order — glass types reach the price", () => {
     fireEvent.change(sel("so-style"), { target: { value: "glass" } });
     await settle();
     expect(total()).toBeCloseTo(897.37, 1);
-    fireEvent.change(sel("so-glass"), { target: { value: "insulated_seeded" } });
+    fireEvent.change(sel("so-glass"), { target: { value: "insulated_rain" } });
     await settle();
-    expect(total()).toBeCloseTo(1613.84, 0);
+    // Book: 8' short band, 4 windows, insulated rain 392.08, at 43 margin.
+    expect(total()).toBeCloseTo(723.25 + 392.08 / 0.57, 0);
   });
 
   it("offers thirteen types at a priced width", async () => {
@@ -124,19 +146,23 @@ describe("special order — glass types reach the price", () => {
     await settle();
     fireEvent.change(sel("so-style"), { target: { value: "glass" } });
     await settle();
-    expect([...sel("so-glass").options].filter((o) => o.value)).toHaveLength(13);
+    expect([...sel("so-glass").options].filter((o) => o.value)).toHaveLength(10);
   });
 
-  it("offers none at a width DDS has not priced", async () => {
+  it("offers long panel glass only from 8 feet", async () => {
     await pickDoor();
     fireEvent.click(maybe("so-configure")!);
     await settle();
-    fireEvent.change(sel("so-width"), { target: { value: "16" } });
+    fireEvent.change(sel("so-width"), { target: { value: "7" } });
     fireEvent.change(sel("so-height"), { target: { value: "7" } });
     await settle();
     fireEvent.change(sel("so-style"), { target: { value: "glass" } });
     await settle();
-    expect(maybe("so-glass")).toBeNull();
+    // Only short is available, so the panel row is hidden entirely.
+    expect(maybe("so-panel")).toBeNull();
+    fireEvent.change(sel("so-width"), { target: { value: "12" } });
+    await settle();
+    expect(maybe("so-panel")).toBeTruthy();
   });
 });
 
@@ -198,5 +224,49 @@ describe("special order — condensed layout", () => {
     const first = [...sel("so-glass").options][0];
     expect(first.text).toBe("Single strength");
     expect(first.value).toBe("");
+  });
+});
+
+describe("special order — reads like the stock tabs", () => {
+  it("has no chips left while configuring", async () => {
+    // Order type is a step 1 choice, and Assembly type is a dropdown here just
+    // as it is on residential.
+    await pickDoor();
+    fireEvent.click(maybe("so-configure")!);
+    await settle();
+    expect(document.querySelectorAll(".chip").length).toBe(0);
+    expect(maybe("so-assembly")).toBeTruthy();
+  });
+
+  it("asks for the assembly the same way residential does", async () => {
+    await pickDoor();
+    fireEvent.click(maybe("so-configure")!);
+    await settle();
+    const opts = [...sel("so-assembly").options].map((o) => o.text);
+    expect(opts).toEqual(["Complete door", "Replacement section"]);
+  });
+});
+
+describe("special order — looks like the stock configurator", () => {
+  it("has a model bar with Back, the model and the collection", async () => {
+    await pickDoor();
+    fireEvent.click(maybe("so-configure")!);
+    await settle();
+    const bar = document.querySelector(".modelbar");
+    expect(bar).toBeTruthy();
+    expect(bar?.textContent).toContain("Back");
+    expect(bar?.textContent).toContain("4050");
+    expect(bar?.textContent).toContain("Premium Steel Collection");
+  });
+
+  it("lays the options out in four panels, two columns", async () => {
+    // The same .cfg2 grid of .ggroup panels the residential tab uses.
+    await pickDoor();
+    fireEvent.click(maybe("so-configure")!);
+    await settle();
+    expect(document.querySelectorAll(".cfg2")).toHaveLength(1);
+    expect(document.querySelectorAll(".ggroup")).toHaveLength(4);
+    expect([...document.querySelectorAll(".ggroup .ghdr")].map((e) => e.textContent))
+      .toEqual(["Layout options", "Window options", "Track options", "Additional options"]);
   });
 });
