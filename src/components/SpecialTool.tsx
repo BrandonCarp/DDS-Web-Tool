@@ -78,7 +78,9 @@ function soCommercial(mfr: string, kind: "door" | "section", priceStr: string) {
 
 export function SpecialTool() {
   const { custName, custPo, custJob } = useCustomerJob();
-  const [scope, setScope] = useState<"residential" | "commercial">("residential");
+  // Empty until the counter picks one — a special order is residential or
+  // commercial before anything else can be asked.
+  const [scope, setScope] = useState<"" | "residential" | "commercial">("");
   // residential
   const [rMfr, setRMfr] = useState("Clopay");
   const [series, setSeries] = useState("");
@@ -192,6 +194,10 @@ export function SpecialTool() {
     ? highLiftPrice({ mount: gMount, incline: gIncline, heightFt: gHeightFt, heightIn: gHeightIn, inches: gEffLift }).reason ?? ""
     : "";
 
+  // Track depends on the door size — high lift caps at the height, and the
+  // spring choice is height-driven — so the whole group waits for a size.
+  const gSizeSet = !!gWidth && !!gHeight;
+
   const gResult = gridded && gWidth && gHeight
     ? specialDoorQuote({ model: modelGroup, width: gWidth, height: gHeight, style: gStyle, color: gColor,
         windesign: gDesign || undefined, variant: (modelMember || gVariant) || undefined,
@@ -257,7 +263,7 @@ export function SpecialTool() {
         : `${modelMember || modelGroup} ${kind === "section" ? "sections" : "door"}`
       : `${cMfr} ${cModel}${commercialSeriesOf(cModel) ? ` (${commercialSeriesOf(cModel)})` : ""} ${kind === "section" ? "sections" : "complete door"}`;
 
-  function pickScope(v: "residential" | "commercial") {
+  function pickScope(v: "" | "residential" | "commercial") {
     setStep(1);
     setScope(v); setSeries(""); setModel(""); setCSeries(""); setCModel(""); setKind("door"); setPrice(""); resetGrid(); setSaved(false);
   }
@@ -298,16 +304,29 @@ export function SpecialTool() {
             {/* Order type, manufacturer, collection and model are the step 1
                 choices. Once the counter is configuring, they come off screen —
                 Change door goes back — so the panel reads like the stock tabs. */}
+            {/* Residential or commercial first, then it greys out — the same
+                shape as the manufacturer on the stock tabs, where Clopay is
+                shown but not changeable once you are past it. */}
             {step === 1 && (
-              <div className="field"><label className="lbl">Order type</label>
-                <div className="chips">
-                  <button type="button" className={`chip ${scope === "residential" ? "sel" : ""}`} onClick={() => pickScope("residential")}>Residential</button>
-                  <button type="button" className={`chip ${scope === "commercial" ? "sel" : ""}`} onClick={() => pickScope("commercial")}>Commercial</button>
+              <div className="field"><label className="lbl">Select order type <span className="req">*</span></label>
+                <div className="selectwrap">
+                  <select data-testid="so-scope" value={scope || ""} disabled={!!scope}
+                    onChange={(e) => pickScope(e.target.value as "residential" | "commercial")}>
+                    {!scope && <option value="">Select…</option>}
+                    <option value="residential">Residential</option>
+                    <option value="commercial">Commercial</option>
+                  </select>
                 </div>
+                {scope && (
+                  <button type="button" className="linkbtn" data-testid="so-change-scope"
+                    onClick={() => { setScope(""); setSeries(""); setModel(""); setStep(1); }}>
+                    Change
+                  </button>
+                )}
               </div>
             )}
 
-            {step === 1 && (scope === "residential" ? (
+            {step === 1 && scope && (scope === "residential" ? (
               <>
                 <div className="field"><label className="lbl">Manufacturer <span className="req">*</span></label>
                   <div className="selectwrap">
@@ -416,7 +435,7 @@ export function SpecialTool() {
                     <span className="mval">{modelMember || modelGroup}</span>
                     <span className="muted-note" style={{ marginLeft: "auto" }}>{series}</span>
                   </div>
-                  <div className="cfg2">
+                  <div className="socfg"><div className="cfg2">
                   <div className="ggroup">
                   <div className="ghdr">Layout options</div>
                   {gNeedsVariant && (
@@ -502,7 +521,12 @@ export function SpecialTool() {
                   </div>
                   <div className="ggroup">
                   <div className="ghdr">Track options</div>
-                  <div className="grow"><label>Spring</label>
+                  {!gSizeSet && (
+                    <div className="grow"><span className="muted-note" style={{ gridColumn: "1 / -1" }}>
+                      Choose a width and height first — high lift and spring depend on the door size.
+                    </span></div>
+                  )}
+                  {gSizeSet && <><div className="grow"><label>Spring</label>
                     <div className="ctl selectwrap">
                       <select value={gTorsionOnly ? "torsion" : gSpring} disabled={gTorsionOnly}
                         onChange={(e) => {
@@ -559,6 +583,7 @@ export function SpecialTool() {
                     </div>
                   )}
                   {gLiftNote && <div className="hl-note" data-testid="so-high-lift-note">{gLiftNote}</div>}
+                  </>}
                   </div>
                   <div className="ggroup">
                   <div className="ghdr">Additional options</div>
@@ -572,6 +597,7 @@ export function SpecialTool() {
                         <option value="lockbar_installed">Lockbar installed</option>
                       </select>
                     </div>
+                  </div>
                   </div>
                   </div>
                   </div>
@@ -594,7 +620,9 @@ export function SpecialTool() {
                       </select>
                     </div>
                   </div>
-                  <div className="grow">
+                  {/* Only once the configurator is open — before that the copy
+                      beside the quote is the one in play. */}
+                  {step === 2 && <div className="grow">
                     <label>Home owner surcharge</label>
                     <div className="ctl selectwrap">
                       <select data-testid="so-homeowner" value={homeowner}
@@ -604,21 +632,7 @@ export function SpecialTool() {
                         <option value="double">Double door</option>
                       </select>
                     </div>
-                  </div>
-                  {/* The margin route. Kept at the bottom as a fallback for
-                      anything the configurator above cannot build. */}
-                  <div className="ghdr" style={{ marginTop: 16 }}>Price from a Clopay total</div>
-                  <div className="field" style={{ marginTop: 6 }}>
-                    <label className="lbl">{gridded && kind === "door" && !restricted
-                      ? "For a configuration the picker above will not take"
-                      : "Enter total = sub total + energy surcharge — do not apply MPQ"} <span className="req">*</span></label>
-                    {restricted && kind === "door" && (
-                      <div className="muted-note" style={{ marginBottom: 6 }}>
-                        The {modelMember} is not built in every size above — enter the Clopay total for anything the size picker will not take.
-                      </div>
-                    )}
-                    <input type="text" inputMode="decimal" value={price} onChange={(e) => { setPrice(e.target.value); setSaved(false); }} placeholder="0.00" />
-                  </div>
+                  </div>}
                 </>
               )}
             </div>
@@ -663,6 +677,38 @@ export function SpecialTool() {
                 ? ser ? (flatMargin ? `Special order · ${kind === "section" ? "Sections" : "Door"}` : modelGroup ? `${modelMember || modelGroup} · ${kind === "section" ? "Sections" : "Door"}` : "Select a model") : "Select a series"
                 : cModel ? (kind === "section" ? "Sections" : "Complete door") : "Select a model"}
             </div>
+          </div>
+          {/* The margin route sits with the quote, not the configurator: it is
+              how a price gets in when the grid cannot build the door, so it
+              belongs beside the number it produces. */}
+          <div className="qtotalbox">
+            <div className="ghdr">Price from a Clopay total</div>
+            <div className="field" style={{ marginTop: 6 }}>
+            <label className="lbl">{gridded && kind === "door" && !restricted
+              ? "For a configuration the picker above will not take"
+              : "Enter total = sub total + energy surcharge — do not apply MPQ"} <span className="req">*</span></label>
+            {restricted && kind === "door" && (
+              <div className="muted-note" style={{ marginBottom: 6 }}>
+                The {modelMember} is not built in every size above — enter the Clopay total for anything the size picker will not take.
+              </div>
+            )}
+            <input type="text" inputMode="decimal" value={price} onChange={(e) => { setPrice(e.target.value); setSaved(false); }} placeholder="0.00" />
+          </div>
+            {/* The surcharge belongs with whichever route is producing the
+                price. Before Configure that is the typed Clopay total, so it
+                shows here; once the configurator is open it lives there
+                instead, and the two share one piece of state. */}
+            {step === 1 && <div className="grow">
+              <label>Home owner surcharge</label>
+              <div className="ctl selectwrap">
+                <select data-testid="so-homeowner-quote" value={homeowner}
+                  onChange={(e) => { setHomeowner(e.target.value as "no" | "single" | "double"); setSaved(false); }}>
+                  <option value="no">No</option>
+                  <option value="single">Single door</option>
+                  <option value="double">Double door</option>
+                </select>
+              </div>
+            </div>}
           </div>
           {!n ? (
             <div className="lines" />

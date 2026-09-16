@@ -19,8 +19,21 @@ const sel = (id: string) => screen.getByTestId(id) as HTMLSelectElement;
 const maybe = (id: string) => screen.queryByTestId(id);
 const settle = () => new Promise((r) => setTimeout(r, 40));
 
+/** Open the configurator and give it a size, so the track group unlocks. */
+async function configured(width = "9", height = "7") {
+  await pickDoor();
+  fireEvent.click(maybe("so-configure")!);
+  await settle();
+  fireEvent.change(sel("so-width"), { target: { value: width } });
+  fireEvent.change(sel("so-height"), { target: { value: height } });
+  await settle();
+}
+
 async function pickDoor(model = "4050") {
   render(<SpecialTool />);
+  // Residential or commercial comes first now; nothing else shows until it is
+  // chosen, and it greys out once it is.
+  fireEvent.change(sel("so-scope"), { target: { value: "residential" } });
   fireEvent.change(sel("so-mfr"), { target: { value: "Clopay" } });
   fireEvent.change(sel("so-series"), { target: { value: "Premium Steel Collection" } });
   const m = maybe("so-model") as HTMLSelectElement | null;
@@ -30,9 +43,10 @@ async function pickDoor(model = "4050") {
 }
 
 describe("special order — two steps", () => {
-  it("opens on the manufacturer, nothing else", () => {
+  it("opens on the order type, nothing else", () => {
     render(<SpecialTool />);
-    expect(maybe("so-mfr")).toBeTruthy();
+    expect(maybe("so-scope")).toBeTruthy();
+    expect(maybe("so-mfr")).toBeNull();
     expect(maybe("so-width")).toBeNull();
     expect(maybe("so-configure")).toBeNull();
   });
@@ -48,9 +62,13 @@ describe("special order — two steps", () => {
     await pickDoor();
     fireEvent.click(maybe("so-configure")!);
     await settle();
-    for (const t of ["so-width", "so-height", "so-style", "so-track", "so-track-mount"]) {
-      expect(maybe(t), t).toBeTruthy();
-    }
+    for (const t of ["so-width", "so-height", "so-style"]) expect(maybe(t), t).toBeTruthy();
+    // Track waits for a size.
+    expect(maybe("so-track")).toBeNull();
+    fireEvent.change(sel("so-width"), { target: { value: "9" } });
+    fireEvent.change(sel("so-height"), { target: { value: "7" } });
+    await settle();
+    for (const t of ["so-track", "so-track-mount"]) expect(maybe(t), t).toBeTruthy();
     expect(maybe("so-configure")).toBeNull();
   });
 
@@ -172,31 +190,23 @@ describe("special order — condensed layout", () => {
   it("uses the stock tabs' row layout in the configurator", async () => {
     // .grow is the compact label-plus-control row the residential tab uses;
     // .field and .row2 are the taller special-order blocks it replaced.
-    render(<SpecialTool />);
-    fireEvent.change(sel("so-mfr"), { target: { value: "Clopay" } });
-    fireEvent.change(sel("so-series"), { target: { value: "Premium Steel Collection" } });
-    const m = maybe("so-model") as HTMLSelectElement | null;
-    const v = [...(m?.options ?? [])].map((o) => o.value).find((x) => x.includes("4050"));
-    if (m && v) fireEvent.change(m, { target: { value: v } });
-    await settle2();
+    await pickDoor();
     fireEvent.click(maybe("so-configure")!);
-    await settle2();
-    expect(document.querySelectorAll(".grow").length).toBeGreaterThan(8);
+    await settle();
+    expect(document.querySelectorAll(".grow").length).toBeGreaterThan(6);
     expect(document.querySelectorAll(".row2")).toHaveLength(0);
   });
 
-  it("keeps the Clopay total block visually separate", async () => {
-    // It is the fallback, not part of the configuration, so it stays a .field.
-    render(<SpecialTool />);
-    fireEvent.change(sel("so-mfr"), { target: { value: "Clopay" } });
-    fireEvent.change(sel("so-series"), { target: { value: "Premium Steel Collection" } });
-    const m = maybe("so-model") as HTMLSelectElement | null;
-    const v = [...(m?.options ?? [])].map((o) => o.value).find((x) => x.includes("4050"));
-    if (m && v) fireEvent.change(m, { target: { value: v } });
-    await settle2();
+  it("puts the Clopay total beside the quote, not in the configurator", async () => {
+    await pickDoor();
     fireEvent.click(maybe("so-configure")!);
-    await settle2();
-    expect(document.querySelectorAll(".field").length).toBeGreaterThan(0);
+    await settle();
+    // It is how a price gets in when the grid cannot build the door, so it
+    // belongs with the number it produces rather than with the options.
+    const box = document.querySelector(".qtotalbox");
+    expect(box).toBeTruthy();
+    expect(box?.closest(".quote")).toBeTruthy();
+    expect(box?.textContent).toContain("Clopay total");
   });
 });
 
@@ -207,7 +217,7 @@ describe("special order — condensed layout", () => {
     await pickDoor();
     fireEvent.click(maybe("so-configure")!);
     await settle();
-    expect(document.querySelectorAll(".grow").length).toBeGreaterThan(8);
+    expect(document.querySelectorAll(".grow").length).toBeGreaterThan(6);
     expect(document.querySelectorAll(".row2").length).toBe(0);
   });
 
@@ -268,5 +278,140 @@ describe("special order — looks like the stock configurator", () => {
     expect(document.querySelectorAll(".ggroup")).toHaveLength(4);
     expect([...document.querySelectorAll(".ggroup .ghdr")].map((e) => e.textContent))
       .toEqual(["Layout options", "Window options", "Track options", "Additional options"]);
+  });
+});
+
+describe("special order — order type comes first", () => {
+  it("shows nothing until residential or commercial is chosen", () => {
+    render(<SpecialTool />);
+    expect(maybe("so-scope")).toBeTruthy();
+    for (const t of ["so-mfr", "so-series", "so-model", "so-configure"]) {
+      expect(maybe(t), t).toBeNull();
+    }
+  });
+
+  it("greys out once chosen, like Clopay on the stock tabs", () => {
+    render(<SpecialTool />);
+    const s = sel("so-scope");
+    expect(s.disabled).toBe(false);
+    fireEvent.change(s, { target: { value: "residential" } });
+    expect(sel("so-scope").disabled).toBe(true);
+    expect(sel("so-scope").value).toBe("residential");
+    expect(maybe("so-mfr")).toBeTruthy();
+  });
+
+  it("can be changed back", () => {
+    render(<SpecialTool />);
+    fireEvent.change(sel("so-scope"), { target: { value: "commercial" } });
+    expect(sel("so-scope").disabled).toBe(true);
+    fireEvent.click(maybe("so-change-scope")!);
+    expect(sel("so-scope").disabled).toBe(false);
+    expect(maybe("so-mfr")).toBeNull();
+  });
+
+  it("offers commercial as well", () => {
+    render(<SpecialTool />);
+    expect([...sel("so-scope").options].map((o) => o.value))
+      .toEqual(expect.arrayContaining(["residential", "commercial"]));
+  });
+});
+
+describe("special order — home owner surcharge", () => {
+  it("is reachable from the quote panel before configuring", async () => {
+    // A price typed in as a Clopay total still needs the surcharge, so it sits
+    // beside the quote as well as in the configurator.
+    await pickDoor();
+    const q = maybe("so-homeowner-quote");
+    expect(q).toBeTruthy();
+    expect(q?.closest(".quote")).toBeTruthy();
+  });
+
+  it("is in the configurator too, on the same state", async () => {
+    await pickDoor();
+    fireEvent.click(maybe("so-configure")!);
+    await settle();
+    expect(maybe("so-homeowner")).toBeTruthy();
+    // The quote-panel copy comes off once the configurator has its own.
+    expect(maybe("so-homeowner-quote")).toBeNull();
+    fireEvent.change(sel("so-homeowner"), { target: { value: "double" } });
+    await settle();
+    expect(sel("so-homeowner").value).toBe("double");
+  });
+
+  it("offers no, single door and double door in both places", async () => {
+    await pickDoor();
+    fireEvent.click(maybe("so-configure")!);
+    await settle();
+    expect([...sel("so-homeowner").options].map((o) => o.value)).toEqual(["no", "single", "double"]);
+  });
+
+  it("wraps the configurator so it can be tightened for a laptop screen", async () => {
+    await pickDoor();
+    fireEvent.click(maybe("so-configure")!);
+    await settle();
+    const box = document.querySelector(".socfg");
+    expect(box).toBeTruthy();
+    expect(box?.querySelector(".cfg2")).toBeTruthy();
+  });
+});
+
+describe("special order — track waits for a size", () => {
+  it("hides the track group until a width and height are set", async () => {
+    // High lift caps at the door height and the spring choice is height-driven,
+    // so none of it can be answered before the size is.
+    await pickDoor();
+    fireEvent.click(maybe("so-configure")!);
+    await settle();
+    for (const t of ["so-track", "so-track-mount", "so-high-lift"]) {
+      expect(maybe(t), t).toBeNull();
+    }
+  });
+
+  it("says why, rather than showing an empty panel", async () => {
+    await pickDoor();
+    fireEvent.click(maybe("so-configure")!);
+    await settle();
+    expect(document.body.textContent).toMatch(/width and height first/i);
+  });
+
+  it("unlocks once both are set", async () => {
+    await configured();
+    expect(maybe("so-track")).toBeTruthy();
+    expect(maybe("so-track-mount")).toBeTruthy();
+    expect(document.body.textContent).not.toMatch(/width and height first/i);
+  });
+
+  it("needs both, not just one", async () => {
+    await pickDoor();
+    fireEvent.click(maybe("so-configure")!);
+    await settle();
+    fireEvent.change(sel("so-width"), { target: { value: "9" } });
+    await settle();
+    expect(maybe("so-track")).toBeNull();
+    fireEvent.change(sel("so-height"), { target: { value: "7" } });
+    await settle();
+    expect(maybe("so-track")).toBeTruthy();
+  });
+});
+
+describe("special order — surcharge follows the pricing route", () => {
+  it("sits with the quote before Configure", async () => {
+    await pickDoor();
+    expect(maybe("so-homeowner-quote")).toBeTruthy();
+    expect(maybe("so-homeowner")).toBeNull();
+  });
+
+  it("moves into the configurator once it is open", async () => {
+    await configured();
+    expect(maybe("so-homeowner")).toBeTruthy();
+    expect(maybe("so-homeowner-quote")).toBeNull();
+  });
+
+  it("comes back to the quote on Change door", async () => {
+    await configured();
+    fireEvent.click(maybe("so-back")!);
+    await settle();
+    expect(maybe("so-homeowner-quote")).toBeTruthy();
+    expect(maybe("so-homeowner")).toBeNull();
   });
 });
