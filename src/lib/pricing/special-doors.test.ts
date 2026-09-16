@@ -443,9 +443,11 @@ describe("split model dropdown", () => {
     }
   });
 
-  it("leaves interchangeable groups collapsed", () => {
-    // Splitting these would add dropdown entries that change nothing.
-    expect(shouldSplitGroup("T52S/T52L")).toBe(false);
+  it("splits a group once it has a grid", () => {
+    // T52S/T52L was collapsed while it had no grid — the member changed nothing
+    // so a dropdown for it was noise. With the 7ft sheet in, the member names
+    // the line on the quote and picks the panel style, so it splits.
+    expect(shouldSplitGroup("T52S/T52L")).toBe(true);
   });
 
   it("prices a split selection off the group, not the member", () => {

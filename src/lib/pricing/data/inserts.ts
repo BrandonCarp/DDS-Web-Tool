@@ -84,6 +84,8 @@ const MODEL_EXCLUDED_DESIGNS: Record<string, string[]> = {
   "4050": ["507"],
   // Same list as the 4050, so the same exclusion.
   "4300": ["507"], "4301": ["507"], "4310": ["507"],
+  // Same list as the 4050, so the same exclusion — Brandon, 16/9/2026.
+  T52S: ["507"], T52L: ["507"],
 };
 
 /** Designs a specific model will not take. */
