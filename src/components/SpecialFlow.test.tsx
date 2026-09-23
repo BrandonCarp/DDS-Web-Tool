@@ -459,3 +459,58 @@ describe("special order — nothing prices before Configure", () => {
     expect(maybe("so-not-ready")).toBeTruthy();
   });
 });
+
+describe("special order — the Clopay total is always reachable", () => {
+  /** Pick a manufacturer and collection, then whatever model it offers. */
+  async function pick(mfr: string, collection: string) {
+    render(<SpecialTool />);
+    fireEvent.change(sel("so-scope"), { target: { value: "residential" } });
+    fireEvent.change(sel("so-mfr"), { target: { value: mfr } });
+    const ser = maybe("so-series") as HTMLSelectElement | null;
+    if (ser && [...ser.options].some((o) => o.value === collection)) {
+      fireEvent.change(ser, { target: { value: collection } });
+    }
+    await settle();
+    const m = maybe("so-model") as HTMLSelectElement | null;
+    const v = [...(m?.options ?? [])].map((o) => o.value).filter(Boolean)[0];
+    if (m && v) fireEvent.change(m, { target: { value: v } });
+    await settle();
+  }
+  const totalField = () => document.querySelector('input[inputmode="decimal"]');
+
+  it("shows it straight away for a model with no grid", async () => {
+    // Gallery, Canyon Ridge, Coachman and every outside manufacturer price off
+    // a typed Clopay total. They have no configurator, so no Configure button,
+    // so gating the field behind Configure made it unreachable — which is most
+    // of the special order catalogue.
+    for (const c of ["Gallery Collection", "Canyon Ridge Collection"]) {
+      cleanup();
+      await pick("Clopay", c);
+      expect(maybe("so-configure"), c).toBeNull();
+      expect(totalField(), c).toBeTruthy();
+    }
+  });
+
+  it("shows it for an outside manufacturer too", async () => {
+    await pick("Haas", "Haas Doors");
+    expect(totalField()).toBeTruthy();
+  });
+
+  it("still waits for Configure on a gridded model", async () => {
+    // There the size picker is the primary route, and the total is the fallback
+    // for anything the grid cannot build — so both appear together.
+    await pick("Clopay", "Premium Steel Collection");
+    expect(maybe("so-configure")).toBeTruthy();
+    expect(totalField()).toBeNull();
+    fireEvent.click(maybe("so-configure")!);
+    await settle();
+    expect(totalField()).toBeTruthy();
+  });
+
+  it("shows nothing before a model is chosen", async () => {
+    render(<SpecialTool />);
+    expect(totalField()).toBeNull();
+    fireEvent.change(sel("so-scope"), { target: { value: "residential" } });
+    expect(totalField()).toBeNull();
+  });
+});

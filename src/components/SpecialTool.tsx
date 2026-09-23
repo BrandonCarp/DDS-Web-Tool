@@ -198,6 +198,13 @@ export function SpecialTool() {
   // spring choice is height-driven — so the whole group waits for a size.
   const gSizeSet = !!gWidth && !!gHeight;
 
+  // A model with no price grid has no configurator to open, so there is no
+  // Configure button and step never reaches 2. Its only route is the typed
+  // Clopay total, which has to appear as soon as a model is chosen — gating it
+  // behind Configure made it unreachable for Gallery, Canyon Ridge, Coachman
+  // and every outside manufacturer.
+  const readyForTotal = !!(md || flatMargin) && !(gridded && kind === "door");
+
   const gResult = gridded && gWidth && gHeight
     ? specialDoorQuote({ model: modelGroup, width: gWidth, height: gHeight, style: gStyle, color: gColor,
         windesign: gDesign || undefined, variant: (modelMember || gVariant) || undefined,
@@ -682,7 +689,7 @@ export function SpecialTool() {
               either route makes sense — the grid needs a model to look up, and
               a typed Clopay total needs one to be a quote for. Before that the
               panel shows what is still missing. */}
-          {step === 1 && (
+          {step === 1 && !readyForTotal && (
             <div className="qtotalbox">
               <div className="ghdr">Pricing</div>
               <div className="field" style={{ marginTop: 6 }}>
@@ -698,7 +705,7 @@ export function SpecialTool() {
               </div>
             </div>
           )}
-          {step === 2 && (
+          {(step === 2 || readyForTotal) && (
           <div className="qtotalbox">
             <div className="ghdr">Price from a Clopay total</div>
             <div className="field" style={{ marginTop: 6 }}>
