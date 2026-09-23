@@ -27,7 +27,12 @@ export interface GlassOption {
 
 /** Ordered as the counter reads them. */
 export const SO_GLASS_TYPES: GlassOption[] = [
-  { id: "ssb", label: "Single strength" },
+  // Single strength is NOT listed. It is what the grid's own GLASS and INSERTS
+  // columns were built from, so the placeholder option already selects it —
+  // offering it here as well gave the same door two prices, a dollar apart at
+  // 6'0" and six at 18'0", depending on which control the counter had touched.
+  // Whether the grid column or the book table is the more accurate of the two
+  // is still open; this removes the contradiction without moving any price.
   { id: "dsb", label: "Double strength" },
   { id: "acrylic", label: "Acrylic" },
   { id: "obscure", label: "Obscure" },

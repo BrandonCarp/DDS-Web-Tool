@@ -281,7 +281,13 @@ export function specialDoorQuote(
   // $400 on the same door, so where DDS has priced them the specific figure is
   // used. Widths without a priced table fall back to the grid.
   let glassName: string | null = null;
-  if (input.style !== "solid" && input.glassType) {
+  // Single strength IS the grid's own GLASS and INSERTS column — that is what
+  // those columns were built from. Routing it through the component tables
+  // instead produced a slightly different number at every width (about a dollar
+  // at 6'0", six at 18'0"), so the same door priced two ways depending on
+  // whether the counter had touched the glass dropdown. The grid wins for
+  // single strength; the other types add over the solid door.
+  if (input.style !== "solid" && input.glassType && input.glassType !== "ssb") {
     const panel = input.panelStyle ?? "short";
     const withInserts = input.style === "inserts";
     const add = glassAdderSell(input.model, panel, input.width, input.glassType, withInserts);

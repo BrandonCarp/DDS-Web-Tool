@@ -678,9 +678,27 @@ export function SpecialTool() {
                 : cModel ? (kind === "section" ? "Sections" : "Complete door") : "Select a model"}
             </div>
           </div>
-          {/* The margin route sits with the quote, not the configurator: it is
-              how a price gets in when the grid cannot build the door, so it
-              belongs beside the number it produces. */}
+          {/* Nothing is priced until Configure. A door has to be chosen before
+              either route makes sense — the grid needs a model to look up, and
+              a typed Clopay total needs one to be a quote for. Before that the
+              panel shows what is still missing. */}
+          {step === 1 && (
+            <div className="qtotalbox">
+              <div className="ghdr">Pricing</div>
+              <div className="field" style={{ marginTop: 6 }}>
+                <span className="muted-note" data-testid="so-not-ready">
+                  {!scope
+                    ? "Choose residential or commercial to start."
+                    : !series
+                      ? "Choose a collection."
+                      : ser?.models && !model
+                        ? "Choose a model."
+                        : "Press Configure to build the door or enter a Clopay total."}
+                </span>
+              </div>
+            </div>
+          )}
+          {step === 2 && (
           <div className="qtotalbox">
             <div className="ghdr">Price from a Clopay total</div>
             <div className="field" style={{ marginTop: 6 }}>
@@ -694,11 +712,11 @@ export function SpecialTool() {
             )}
             <input type="text" inputMode="decimal" value={price} onChange={(e) => { setPrice(e.target.value); setSaved(false); }} placeholder="0.00" />
           </div>
-            {/* The surcharge belongs with whichever route is producing the
-                price. Before Configure that is the typed Clopay total, so it
-                shows here; once the configurator is open it lives there
-                instead, and the two share one piece of state. */}
-            {step === 1 && <div className="grow">
+            {/* The configurator carries its own surcharge for a gridded door.
+                Anything else — a section, or a model with no grid — is priced
+                from the typed total, so the control belongs here instead. The
+                two share one piece of state either way. */}
+            {!(gridded && kind === "door") && <div className="grow">
               <label>Home owner surcharge</label>
               <div className="ctl selectwrap">
                 <select data-testid="so-homeowner-quote" value={homeowner}
@@ -710,6 +728,7 @@ export function SpecialTool() {
               </div>
             </div>}
           </div>
+          )}
           {!n ? (
             <div className="lines" />
           ) : (

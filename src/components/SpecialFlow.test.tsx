@@ -164,7 +164,7 @@ describe("special order — glass types reach the price", () => {
     await settle();
     fireEvent.change(sel("so-style"), { target: { value: "glass" } });
     await settle();
-    expect([...sel("so-glass").options].filter((o) => o.value)).toHaveLength(10);
+    expect([...sel("so-glass").options].filter((o) => o.value)).toHaveLength(9);
   });
 
   it("offers long panel glass only from 8 feet", async () => {
@@ -317,13 +317,12 @@ describe("special order — order type comes first", () => {
 });
 
 describe("special order — home owner surcharge", () => {
-  it("is reachable from the quote panel before configuring", async () => {
-    // A price typed in as a Clopay total still needs the surcharge, so it sits
-    // beside the quote as well as in the configurator.
-    await pickDoor();
-    const q = maybe("so-homeowner-quote");
-    expect(q).toBeTruthy();
-    expect(q?.closest(".quote")).toBeTruthy();
+  it("is not offered before Configure", () => {
+    // Nothing is priced until a door is chosen and Configure pressed, so there
+    // is nothing for a surcharge to apply to yet.
+    render(<SpecialTool />);
+    expect(maybe("so-homeowner-quote")).toBeNull();
+    expect(maybe("so-homeowner")).toBeNull();
   });
 
   it("is in the configurator too, on the same state", async () => {
@@ -395,10 +394,10 @@ describe("special order — track waits for a size", () => {
 });
 
 describe("special order — surcharge follows the pricing route", () => {
-  it("sits with the quote before Configure", async () => {
+  it("is absent until Configure", async () => {
     await pickDoor();
-    expect(maybe("so-homeowner-quote")).toBeTruthy();
     expect(maybe("so-homeowner")).toBeNull();
+    expect(maybe("so-homeowner-quote")).toBeNull();
   });
 
   it("moves into the configurator once it is open", async () => {
@@ -407,11 +406,56 @@ describe("special order — surcharge follows the pricing route", () => {
     expect(maybe("so-homeowner-quote")).toBeNull();
   });
 
-  it("comes back to the quote on Change door", async () => {
+  it("goes away again on Change door", async () => {
     await configured();
+    expect(maybe("so-homeowner")).toBeTruthy();
     fireEvent.click(maybe("so-back")!);
     await settle();
-    expect(maybe("so-homeowner-quote")).toBeTruthy();
     expect(maybe("so-homeowner")).toBeNull();
+    expect(maybe("so-homeowner-quote")).toBeNull();
+  });
+});
+
+describe("special order — nothing prices before Configure", () => {
+  it("offers no way to enter a price at step 1", () => {
+    // Both routes need a door first: the grid needs a model to look up, and a
+    // typed Clopay total needs one to be a quote for.
+    render(<SpecialTool />);
+    expect(document.querySelector('input[inputmode="decimal"]')).toBeNull();
+    expect(maybe("so-width")).toBeNull();
+  });
+
+  it("says what is still missing, step by step", () => {
+    render(<SpecialTool />);
+    const note = () => maybe("so-not-ready")?.textContent ?? "";
+    expect(note()).toMatch(/residential or commercial/i);
+    fireEvent.change(sel("so-scope"), { target: { value: "residential" } });
+    expect(note()).toMatch(/collection/i);
+  });
+
+  it("tells the counter to press Configure once a model is chosen", async () => {
+    await pickDoor();
+    expect(maybe("so-not-ready")?.textContent).toMatch(/Configure/i);
+  });
+
+  it("opens both routes on Configure", async () => {
+    await pickDoor();
+    fireEvent.click(maybe("so-configure")!);
+    await settle();
+    // The size picker for the grid, and the Clopay total for anything it
+    // cannot build.
+    expect(maybe("so-width")).toBeTruthy();
+    expect(document.querySelector('input[inputmode="decimal"]')).toBeTruthy();
+    expect(maybe("so-not-ready")).toBeNull();
+  });
+
+  it("closes them again on Change door", async () => {
+    await pickDoor();
+    fireEvent.click(maybe("so-configure")!);
+    await settle();
+    fireEvent.click(maybe("so-back")!);
+    await settle();
+    expect(document.querySelector('input[inputmode="decimal"]')).toBeNull();
+    expect(maybe("so-not-ready")).toBeTruthy();
   });
 });

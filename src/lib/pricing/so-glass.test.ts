@@ -16,14 +16,17 @@ const sell = (width: string, glassType?: string, panel: "short" | "long" = "shor
 
 describe("glass types", () => {
   it("offers ten types wherever glass is priced", () => {
-    expect(glassOptionsFor(G, "short", "9")).toHaveLength(10);
-    expect(glassOptionsFor(G, "long", "12")).toHaveLength(10);
-    expect(SO_GLASS_TYPES[0].id).toBe("ssb");
+    expect(glassOptionsFor(G, "short", "9")).toHaveLength(9);
+    expect(glassOptionsFor(G, "long", "12")).toHaveLength(9);
+    // Single strength is not offered separately — the placeholder already is
+    // single strength, and listing it twice gave the same door two prices.
+    expect(SO_GLASS_TYPES.some((g) => g.id === "ssb")).toBe(false);
+    expect(SO_GLASS_TYPES[0].id).toBe("dsb");
   });
 
   it("prices every type above the one before it", () => {
     let last = 0;
-    for (const id of ["ssb", "dsb", "acrylic", "obscure", "insulated"]) {
+    for (const id of ["dsb", "acrylic", "obscure", "insulated"]) {
       const v = glassAdder(G, "short", "9", id)!;
       expect(v, id).toBeGreaterThan(last);
       last = v;
@@ -58,7 +61,9 @@ describe("panel style", () => {
   });
 
   it("prices a long-panel door off its own band", () => {
-    expect(sell("15", "ssb", "long")).toBeGreaterThan(sell("15", "ssb", "short"));
+    // Uses a named type: single strength is not offered separately, so it goes
+    // through the grid column, which has no panel distinction.
+    expect(sell("15", "dsb", "long")).toBeGreaterThan(sell("15", "dsb", "short"));
   });
 });
 
@@ -114,5 +119,40 @@ describe("what is not priced", () => {
 
   it("gives every type a label", () => {
     for (const g of SO_GLASS_TYPES) expect(glassLabel(g.id), g.id).toBe(g.label);
+  });
+});
+
+describe("single strength matches the grid", () => {
+  const G = "4050/4051/4053";
+  const b = {
+    model: G, height: "7", color: "White",
+    track: "r12" as const, spring: "extension" as const, lock: "none" as const,
+  };
+  const price = (width: string, style: "glass" | "inserts", glassType?: string) =>
+    specialDoorQuote({ ...b, width, style, glassType, panelStyle: "short" }).quote?.unitPrice ?? 0;
+
+  it("gives the same number whether or not the glass dropdown was touched", () => {
+    // The grid's GLASS and INSERTS columns were built from single strength, so
+    // routing it through the component tables instead produced a different
+    // number at every width — about a dollar at 6'0", six at 18'0". The same
+    // door must not price two ways depending on which control was used.
+    for (const w of ["6", "8", "9", "12", "16", "18"]) {
+      for (const st of ["glass", "inserts"] as const) {
+        expect(price(w, st, "ssb"), `${w} ${st}`).toBeCloseTo(price(w, st), 2);
+      }
+    }
+  });
+
+  it("still charges more for a dearer glass", () => {
+    for (const w of ["9", "18"]) {
+      expect(price(w, "inserts", "dsb")).toBeGreaterThan(price(w, "inserts", "ssb"));
+      expect(price(w, "inserts", "insulated")).toBeGreaterThan(price(w, "inserts", "dsb"));
+    }
+  });
+
+  it("still adds inserts on top of glass", () => {
+    for (const g of [undefined, "ssb", "dsb"]) {
+      expect(price("9", "inserts", g), String(g)).toBeGreaterThan(price("9", "glass", g));
+    }
   });
 });
