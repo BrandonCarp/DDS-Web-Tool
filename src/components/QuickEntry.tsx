@@ -21,11 +21,11 @@ const TOOL_LABEL: Record<ToolId, string> = {
   residential: "Stock Residential",
   commercial: "Stock Commercial",
   special: "Special Order",
-  torsion: "Torsion Springs",
-  extension: "Extension Springs",
+  torsion: "Spring",
+  extension: "Spring",
   parts: "Parts",
   vinyl: "Vinyl",
-  operators: "Operators",
+  operators: "Operator",
 };
 
 export interface QuickEntryProps {
