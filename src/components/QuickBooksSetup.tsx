@@ -65,7 +65,6 @@ export function QuickBooksSetup() {
               Downloading the file is not enough. If it has never been
               double-clicked, F9 will do nothing.
             </p>
-
             <h4 className="qbstep-h">Step 4 — Make it start every morning</h4>
             <p>Otherwise it stops when the computer restarts.</p>
             <ol className="qbsteps">
