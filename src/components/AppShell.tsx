@@ -20,6 +20,14 @@ import { QuickBooksSetup } from "./QuickBooksSetup";
  * window design or a part helps everyone, with no new concept to learn.
  */
 const SHOW_QUICK_ENTRY = false;
+
+/**
+ * Whether the BROCHURE button shows in the header.
+ *
+ * Hidden since 24/9/2026 — Brandon. Nothing else is removed: the link, its
+ * styling and Brochure.test all stay, so bringing it back is this one line.
+ */
+const SHOW_BROCHURE = false;
 import type { ParsedDoor } from "@/lib/pricing/data/parse-request";
 import { CommercialTool } from "./CommercialTool";
 import { SpecialTool } from "./SpecialTool";
@@ -63,6 +71,9 @@ export function AppShell(props: {
   /** Render the quick-entry box. Defaults to the flag above; tests pass it
       explicitly so the component stays under test while it is switched off. */
   quickEntry?: boolean;
+  /** Render the BROCHURE button. Defaults to the flag above; tests pass it
+      explicitly so the button stays under test while it is hidden. */
+  brochure?: boolean;
 }) {
   return (
     <CustomerJobProvider>
@@ -75,9 +86,11 @@ function Shell({
   models,
   user,
   quickEntry = SHOW_QUICK_ENTRY,
+  brochure = SHOW_BROCHURE,
 }: {
   models: string[];
   quickEntry?: boolean;
+  brochure?: boolean;
   user: { username: string; role: string };
 }) {
   const [mode, setMode] = useState<string>("residential");
@@ -156,9 +169,11 @@ function Shell({
         <div className="right">
           {/* Always on screen, on every tab — a counter is often asked for it
               mid-quote and should not have to leave what they are building. */}
-          <a href="/DoorsDirect_Catalog.pdf" className="dash-btn brochure-btn"
-             download="DoorsDirect_Catalog.pdf" data-testid="brochure"
-             title="Download the product catalog">BROCHURE</a>
+          {brochure && (
+            <a href="/DoorsDirect_Catalog.pdf" className="dash-btn brochure-btn"
+               download="DoorsDirect_Catalog.pdf" data-testid="brochure"
+               title="Download the product catalog">BROCHURE</a>
+          )}
           {(user.role === "admin" || user.role === "semiadmin") && (
             <a href="/admin" className="dash-btn" title="Admin dashboard">DASH</a>
           )}

@@ -48,10 +48,22 @@ export function OperatorsTool() {
     ).slice(0, 60);
   }, [searching, query, sectionName]);
 
-  const hit = results.find((r) => r.item.name === picked) ?? null;
+  // A row is its description, not its model number. The 2240L and 4690L come
+  // in several rail lengths, the TDC12X1BMC in five, and some sprockets twice,
+  // all under one name — picking by name quoted the first of them whichever
+  // row was clicked. Descriptions are unique (OperatorsTool.test holds them to it).
+  const hit = results.find((r) => r.item.desc === picked) ?? null;
   const chosen: Operator | null = hit?.item ?? null;
   // null means DDS has not priced this one yet — a real state, not an error.
   const price = chosen ? operatorPrice(chosen) : null;
+  // Names that repeat in the list show their description underneath, or three
+  // identical "2240L" rows would give no way to tell them apart.
+  const repeated = useMemo(() => {
+    const seen = new Set<string>();
+    const twice = new Set<string>();
+    for (const { item } of results) (seen.has(item.name) ? twice : seen).add(item.name);
+    return twice;
+  }, [results]);
 
   function pickGroup(g: string) {
     setGroup(g);
@@ -138,14 +150,15 @@ export function OperatorsTool() {
                     <li className="partempty">Nothing matches that — try fewer letters.</li>
                   )}
                   {results.map(({ item, section }) => (
-                    <li key={`${section}-${item.name}`}>
+                    <li key={`${section}-${item.desc}`}>
                       <button
                         type="button"
-                        className={`partrow ${picked === item.name ? "on" : ""}`}
-                        onClick={() => setPicked(item.name)}
+                        className={`partrow ${picked === item.desc ? "on" : ""}`}
+                        onClick={() => setPicked(item.desc)}
                       >
                         <span className="partname">
                           {item.name}
+                          {repeated.has(item.name) && <span className="partsub">{item.desc}</span>}
                           {searching && <span className="partcat">{section}</span>}
                         </span>
                       </button>

@@ -5,8 +5,9 @@ import { AppShell } from "./AppShell";
 
 afterEach(cleanup);
 
+/** Renders with the button switched on — SHOW_BROCHURE hides it in the app. */
 const shell = (role = "user") =>
-  render(<AppShell models={["4050"]} user={{ username: "bc", role }} />);
+  render(<AppShell models={["4050"]} user={{ username: "bc", role }} brochure />);
 
 describe("brochure button", () => {
   it("is in the header for every user", () => {
@@ -38,5 +39,15 @@ describe("brochure button", () => {
     shell();
     const before = screen.getByTestId("brochure");
     expect(before.closest("header")).toBeTruthy();
+  });
+});
+
+describe("brochure button is hidden", () => {
+  it("does not render in the app for anyone", () => {
+    for (const role of ["user", "semiadmin", "admin"]) {
+      cleanup();
+      render(<AppShell models={["4050"]} user={{ username: "bc", role }} />);
+      expect(screen.queryByTestId("brochure"), role).toBeNull();
+    }
   });
 });

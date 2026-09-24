@@ -113,13 +113,13 @@ describe("operator item names", () => {
     expect(categoryItem("LIFTMASTER ACCESSORIES")).toBe("ACCESSORY");
     expect(categoryItem("MAXUM OPERATORS")).toBe("MAXUM");
     expect(categoryItem("RESIDENTIAL BELT DRIVES")).toBe("BELT DRIVE");
-    expect(categoryItem("RESIDENTIAL CHAIN DRIVES")).toBe("CHAIN DRIVE");
+    expect(categoryItem("RESIDENTIAL CHAIN DRIVES")).toBe("CHAIN OPERATOR");
     expect(categoryItem("I BEAM RAILS")).toBe("I BEAM RAIL");
   });
 
   it("collapses both sidemounts onto one item", () => {
-    expect(categoryItem("RESIDENTIAL SIDEMOUNT")).toBe("SIDEMOUNT");
-    expect(categoryItem("LIGHT COMMERCIAL SIDEMOUNT")).toBe("SIDEMOUNT");
+    expect(categoryItem("RESIDENTIAL SIDEMOUNT")).toBe("JACKSHAFT");
+    expect(categoryItem("LIGHT COMMERCIAL SIDEMOUNT")).toBe("JACKSHAFT");
   });
 
   it("leaves the groups that need no rename", () => {
@@ -139,12 +139,12 @@ describe("operator item names", () => {
     expect(categoryItem("LIFTMASTER ACCESSORIES")).toBe("ACCESSORY");
     expect(categoryItem("MAXUM OPERATORS")).toBe("MAXUM");
     expect(categoryItem("RESIDENTIAL BELT DRIVES")).toBe("BELT DRIVE");
-    expect(categoryItem("RESIDENTIAL CHAIN DRIVES")).toBe("CHAIN DRIVE");
+    expect(categoryItem("RESIDENTIAL CHAIN DRIVES")).toBe("CHAIN OPERATOR");
   });
 
   it("collapses both sidemounts onto one item", () => {
-    expect(categoryItem("RESIDENTIAL SIDEMOUNT")).toBe("SIDEMOUNT");
-    expect(categoryItem("LIGHT COMMERCIAL SIDEMOUNT")).toBe("SIDEMOUNT");
+    expect(categoryItem("RESIDENTIAL SIDEMOUNT")).toBe("JACKSHAFT");
+    expect(categoryItem("LIGHT COMMERCIAL SIDEMOUNT")).toBe("JACKSHAFT");
   });
 
   it("leaves the groups that need no override to the singular rule", () => {
