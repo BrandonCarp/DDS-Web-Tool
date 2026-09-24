@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { CopyButton, CopyPrice, priceText } from "@/components/CopyButton";
+import { CopyQuickBooks } from "./CopyQuickBooks";
+import { QB_EXTENSION } from "@/lib/pricing/data/quickbooks";
 import { QbLineDemo } from "@/components/QbLineDemo";
 import { SpringPicker } from "@/components/SpringPicker";
 import { QB_ITEMS } from "@/lib/qb/iif";
@@ -74,7 +76,8 @@ export function ExtensionTool() {
                   <b data-testid="ext-price">{fmt(price)}</b>
                 </div>
                 <div className="qfoot">
-                  <CopyButton text={description} label="Copy description" primary testId="ext-copy-desc" />
+                  <CopyQuickBooks item={QB_EXTENSION} description={description} rate={price} testId="ext-copy-qb" />
+                  <CopyButton text={description} label="Copy description" testId="ext-copy-desc" />
                   <CopyPrice amount={price} testId="ext-copy-price" />
                   <button className="btn" type="button" onClick={() => setPickedName(null)}>
                     Clear

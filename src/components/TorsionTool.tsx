@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { CopyButton, CopyPrice, priceText } from "@/components/CopyButton";
+import { CopyQuickBooks } from "./CopyQuickBooks";
+import { QB_TORSION } from "@/lib/pricing/data/quickbooks";
 import { QbLineDemo } from "@/components/QbLineDemo";
 import { QB_ITEMS } from "@/lib/qb/iif";
 import { useCustomerJob } from "@/components/CustomerJobFields";
@@ -190,7 +192,8 @@ export function TorsionTool() {
 
               {stockReady ? (
                 <div className="qfoot">
-                  <CopyButton text={stockDesc} label="Copy description" primary testId="stock-copy-desc" />
+                  <CopyQuickBooks item={QB_TORSION} description={stockDesc} rate={stockUnit} testId="stock-copy-qb" />
+                  <CopyButton text={stockDesc} label="Copy description" testId="stock-copy-desc" />
                   <CopyPrice amount={stockUnit} testId="stock-copy-price" />
                   <button className="btn" type="button" onClick={clear}>Clear</button>
                 </div>
@@ -233,7 +236,8 @@ export function TorsionTool() {
               </div>
 
               <div className="qfoot">
-                <CopyButton text={description} label="Copy description" primary onCopy={record} testId="tor-copy-desc" />
+                <CopyQuickBooks item={QB_TORSION} description={description} rate={price} onCopy={record} testId="tor-copy-qb" />
+                <CopyButton text={description} label="Copy description" onCopy={record} testId="tor-copy-desc" />
                 <CopyPrice amount={price} onCopy={record} testId="tor-copy-price" />
                 <button className="btn" type="button" onClick={clear}>Clear</button>
               </div>

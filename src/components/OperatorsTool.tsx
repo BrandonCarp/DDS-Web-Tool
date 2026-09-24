@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { CopyButton, CopyPrice, priceText } from "@/components/CopyButton";
+import { CopyQuickBooks } from "./CopyQuickBooks";
+import { categoryItem } from "@/lib/pricing/data/quickbooks";
 import { QbLineDemo } from "@/components/QbLineDemo";
 import { operatorPrice } from "@/lib/pricing/data/operator-pricing";
 import { QB_ITEMS } from "@/lib/qb/iif";
@@ -191,7 +193,11 @@ export function OperatorsTool() {
                   </div>
                 )}
                 <div className="qfoot">
-                  <CopyButton text={chosen.desc} label="Copy description" primary testId="op-copy-desc" />
+                  {price != null && (
+                    <CopyQuickBooks item={categoryItem(hit?.section)} description={chosen.desc}
+                      rate={price} testId="op-copy-qb" />
+                  )}
+                  <CopyButton text={chosen.desc} label="Copy description" testId="op-copy-desc" />
                   {price != null && (
                     <CopyPrice amount={price} testId="op-copy-price" />
                   )}

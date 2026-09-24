@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useCustomerJob } from "@/components/CustomerJobFields";
 import { CopyButton, CopyPrice, priceText } from "@/components/CopyButton";
+import { CopyQuickBooks } from "./CopyQuickBooks";
+import { QB_SPECIAL_ORDERS } from "@/lib/pricing/data/quickbooks";
 import {
   SPECIAL, SPECIAL_COMMERCIAL, SPECIAL_COMMERCIAL_PINNED, SPECIAL_COMMERCIAL_SERIES,
   commercialSeriesOf, SO_MANUFACTURERS, seriesFor, hasSingleSeries,
@@ -755,9 +757,10 @@ export function SpecialTool() {
                 <span className="tv">{fmt(total)}</span>
               </div>
               <div className="qfoot">
+                <CopyQuickBooks item={QB_SPECIAL_ORDERS} description={copyText ?? label}
+                  rate={(n?.sell ?? 0) + hoMarkup} qty={qty} testId="copy-qb" />
                 <CopyButton text={(copyText ?? label).toUpperCase()} label="Copy description" primary onCopy={saveQuote} testId="so-copy-desc" />
-                <CopyPrice amount={total} onCopy={saveQuote} testId="so-copy-price" />
-                <button className="btn" type="button" onClick={() => pickScope(scope)}>Clear</button>
+                <CopyPrice amount={(n?.sell ?? 0) + hoMarkup} onCopy={saveQuote} testId="so-copy-price" />
               </div>
             </>
           )}

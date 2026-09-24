@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { EstimateSheet } from "@/components/EstimateSheet";
 import { CopyButton, CopyPrice, priceText } from "@/components/CopyButton";
+import { CopyQuickBooks } from "./CopyQuickBooks";
+import { QB_STOCK_DOORS } from "@/lib/pricing/data/quickbooks";
 import { QbLineDemo } from "@/components/QbLineDemo";
 import { QB_ITEMS } from "@/lib/qb/iif";
 import { useCustomerJob } from "@/components/CustomerJobFields";
@@ -752,9 +754,10 @@ export function ResidentialTool({
                 <div className="desctext">{description.toUpperCase()}</div>
               </div>
               <div className="qfoot">
-                <CopyButton text={description.toUpperCase()} label="Copy description" primary testId="copy-desc" />
-                <CopyPrice amount={total} testId="copy-price" />
-                <button className="btn" type="button" onClick={clearAll}>Clear</button>
+                <CopyQuickBooks item={QB_STOCK_DOORS} description={description}
+                  rate={unit} qty={qty} testId="copy-qb" />
+                <CopyButton text={description.toUpperCase()} label="Copy description" testId="copy-desc" />
+                <CopyPrice amount={unit} testId="copy-price" />
               </div>
             </>
           ) : (

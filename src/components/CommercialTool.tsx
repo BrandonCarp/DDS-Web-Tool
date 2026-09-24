@@ -3,6 +3,8 @@
 import { useCallback, useMemo, useState } from "react";
 import { EstimateSheet } from "@/components/EstimateSheet";
 import { CopyButton, CopyPrice, priceText } from "@/components/CopyButton";
+import { CopyQuickBooks } from "./CopyQuickBooks";
+import { QB_STOCK_DOORS } from "@/lib/pricing/data/quickbooks";
 import { QbLineDemo } from "@/components/QbLineDemo";
 import { QB_ITEMS } from "@/lib/qb/iif";
 import { useCustomerJob } from "@/components/CustomerJobFields";
@@ -486,9 +488,10 @@ export function CommercialTool() {
                 </div>
               )}
               <div className="qfoot">
-                <CopyButton text={(result.description ?? "").toUpperCase()} label="Copy description" primary testId="comm-copy-desc" />
-                <CopyPrice amount={total} testId="comm-copy-price" />
-                <button className="btn" type="button" onClick={resetConfig}>Clear</button>
+                <CopyQuickBooks item={QB_STOCK_DOORS} description={result.description ?? ""}
+                  rate={unit + hoMarkup} qty={qty} testId="copy-qb" />
+                <CopyButton text={(result.description ?? "").toUpperCase()} label="Copy description"  testId="comm-copy-desc" />
+                <CopyPrice amount={unit + hoMarkup} testId="comm-copy-price" />
               </div>
             </>
           )}

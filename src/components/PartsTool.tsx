@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { CopyButton, CopyPrice, priceText } from "@/components/CopyButton";
+import { CopyQuickBooks } from "./CopyQuickBooks";
+import { categoryItem } from "@/lib/pricing/data/quickbooks";
 import { QbLineDemo } from "@/components/QbLineDemo";
 import { QB_ITEMS } from "@/lib/qb/iif";
 import {
@@ -333,7 +335,11 @@ export function PartsTool() {
                       <b data-testid="parts-price">{fmt(price)}</b>
                     </div>
                     <div className="qfoot">
-                      <CopyButton text={description} label="Copy description" primary testId="parts-copy-desc" />
+                      {price != null && (
+                        <CopyQuickBooks item={categoryItem(hit?.category ?? catName)} description={description}
+                          rate={price} testId="parts-copy-qb" />
+                      )}
+                      <CopyButton text={description} label="Copy description" testId="parts-copy-desc" />
                       <CopyPrice amount={price} testId="parts-copy-price" />
                       <button className="btn" type="button" onClick={clear}>
                         Clear

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ResidentialTool } from "./ResidentialTool";
 import { QuickEntry } from "./QuickEntry";
+import { QuickBooksSetup } from "./QuickBooksSetup";
 
 /**
  * Whether the quick-entry box renders.
@@ -42,6 +43,10 @@ const BASE_TABS = [
   { id: "parts", label: "Parts" },
   { id: "vinyl", label: "Vinyl" },
   { id: "operators", label: "Operators" },
+  // The paste helper install. Its own tab rather than a panel hanging under
+  // whichever tab happened to be open — a counter reads it once, follows it,
+  // and never comes back.
+  { id: "qbsetup", label: "QB Setup" },
 ] as const;
 // Inventory is visible ONLY to the master admin (role "admin") — it's a
 // placeholder until that build starts.
@@ -149,6 +154,11 @@ function Shell({
           </select>
         </div>
         <div className="right">
+          {/* Always on screen, on every tab — a counter is often asked for it
+              mid-quote and should not have to leave what they are building. */}
+          <a href="/DoorsDirect_Catalog.pdf" className="dash-btn brochure-btn"
+             download="DoorsDirect_Catalog.pdf" data-testid="brochure"
+             title="Download the product catalog">BROCHURE</a>
           {(user.role === "admin" || user.role === "semiadmin") && (
             <a href="/admin" className="dash-btn" title="Admin dashboard">DASH</a>
           )}
@@ -168,6 +178,7 @@ function Shell({
       {mode === "special" && <SpecialTool />}
       {mode === "torsion" && <TorsionTool />}
       {mode === "extension" && <ExtensionTool />}
+      {mode === "qbsetup" && <QuickBooksSetup />}
       {mode === "parts" && <PartsTool />}
       {mode === "vinyl" && <VinylTool />}
       {mode === "operators" && <OperatorsTool />}
