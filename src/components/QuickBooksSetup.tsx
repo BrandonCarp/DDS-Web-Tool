@@ -65,6 +65,7 @@ export function QuickBooksSetup() {
               Downloading the file is not enough. If it has never been
               double-clicked, F9 will do nothing.
             </p>
+
             <h4 className="qbstep-h">Step 4 — Make it start every morning</h4>
             <p>Otherwise it stops when the computer restarts.</p>
             <ol className="qbsteps">
@@ -88,9 +89,35 @@ export function QuickBooksSetup() {
               </li>
               <li>Press <kbd>F9</kbd></li>
             </ol>
-          
+            <p>
+              The whole row fills in. F9 only does anything while QuickBooks is the
+              active window, so it behaves normally everywhere else.
+            </p>
 
-           
+            <h4 className="qbstep-h">If something goes wrong</h4>
+            <ul className="qbsteps">
+              <li>
+                <strong>F9 does nothing</strong> — look for the green H in the tray.
+                No icon means the script is not running; double-click it again.
+              </li>
+              <li>
+                <strong>Values land in the wrong columns</strong> — the computer is
+                typing faster than QuickBooks can keep up. Right-click the H icon,
+                choose Edit Script, change <code>Sleep 120</code> to{" "}
+                <code>Sleep 200</code>, save, then right-click the icon and choose
+                Reload This Script.
+              </li>
+              <li>
+                <strong>Only the first box fills</strong> — the clipboard lost the
+                tabs between fields. Press Copy for QuickBooks again and retry.
+              </li>
+              <li>
+                <strong>The description appears twice</strong> — an older copy of
+                the script. QuickBooks fills Description from the item by itself,
+                and the current script clears that first. Download it again from
+                this page and reload it.
+              </li>
+            </ul>
           </div>
         </div>
       </section>

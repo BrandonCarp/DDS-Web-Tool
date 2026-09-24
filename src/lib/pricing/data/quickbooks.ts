@@ -54,6 +54,26 @@ export function quickBooksRow(
 }
 
 /**
+ * Operator groups whose QuickBooks item differs from the catalogue name.
+ *
+ * The catalogue names are written for browsing — "LIFTMASTER LOGIC 5" tells a
+ * counter what shelf to look on. The QuickBooks item is what goes on an
+ * invoice, so the brand comes off and the rest shortens.
+ */
+const OPERATOR_ITEM: Record<string, string> = {
+  "LIFTMASTER LOGIC 5": "LOGIC 5",
+  "LIFTMASTER ACCESSORIES": "ACCESSORY",
+  "MAXUM OPERATORS": "MAXUM",
+  "RESIDENTIAL BELT DRIVES": "BELT DRIVE",
+  "RESIDENTIAL CHAIN DRIVES": "CHAIN DRIVE",
+  "RESIDENTIAL SIDEMOUNT": "SIDEMOUNT",
+  "LIGHT COMMERCIAL SIDEMOUNT": "SIDEMOUNT",
+  "BELT RAILS": "BELT RAIL",
+  "CHAIN RAILS": "CHAIN RAIL",
+  "I BEAM RAILS": "I BEAM RAIL",
+};
+
+/**
  * The item for a part or an operator: its own category name, singularised.
  *
  * The data carries these as plurals — "DRUMS", "CABLES", "KEYPADS" — and the
@@ -64,6 +84,14 @@ export function quickBooksRow(
 export function categoryItem(categoryName: string | null | undefined): string {
   const raw = (categoryName ?? "").trim().toUpperCase();
   if (!raw) return "";
+  // Names the QuickBooks item list holds differently from the catalogue. The
+  // catalogue names are written for browsing — "LIFTMASTER LOGIC 5" tells a
+  // counter what shelf to look at — where the item list wants the short trade
+  // name. Anything not listed here falls through to the singular rule below.
+  const override = OPERATOR_ITEM[raw];
+  if (override) return override;
+  const named = OPERATOR_ITEM[raw];
+  if (named) return named;
   return raw
     .split("/")
     .map((part) => {

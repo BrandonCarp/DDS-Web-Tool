@@ -156,7 +156,9 @@ function Shell({
         <div className="right">
           {/* Always on screen, on every tab — a counter is often asked for it
               mid-quote and should not have to leave what they are building. */}
-         
+          <a href="/DoorsDirect_Catalog.pdf" className="dash-btn brochure-btn"
+             download="DoorsDirect_Catalog.pdf" data-testid="brochure"
+             title="Download the product catalog">BROCHURE</a>
           {(user.role === "admin" || user.role === "semiadmin") && (
             <a href="/admin" className="dash-btn" title="Admin dashboard">DASH</a>
           )}

@@ -75,7 +75,7 @@ describe("item names", () => {
 
   it("handles the endings that a bare trailing S gets wrong", () => {
     expect(categoryItem("BATTERIES")).toBe("BATTERY");
-    expect(categoryItem("LIFTMASTER ACCESSORIES")).toBe("LIFTMASTER ACCESSORY");
+    expect(categoryItem("ACCESSORIES")).toBe("ACCESSORY");
     expect(categoryItem("PULLEYS")).toBe("PULLEY");
   });
 
@@ -104,3 +104,62 @@ describe("the rate is per unit, whatever the quantity", () => {
     expect(two[2]).toBe("2");
   });
 })
+
+describe("operator item names", () => {
+  it("drops the brand and shortens the rest", () => {
+    // The catalogue names are written for browsing — "LIFTMASTER LOGIC 5" tells
+    // a counter what shelf to look on. The invoice wants the short form.
+    expect(categoryItem("LIFTMASTER LOGIC 5")).toBe("LOGIC 5");
+    expect(categoryItem("LIFTMASTER ACCESSORIES")).toBe("ACCESSORY");
+    expect(categoryItem("MAXUM OPERATORS")).toBe("MAXUM");
+    expect(categoryItem("RESIDENTIAL BELT DRIVES")).toBe("BELT DRIVE");
+    expect(categoryItem("RESIDENTIAL CHAIN DRIVES")).toBe("CHAIN DRIVE");
+    expect(categoryItem("I BEAM RAILS")).toBe("I BEAM RAIL");
+  });
+
+  it("collapses both sidemounts onto one item", () => {
+    expect(categoryItem("RESIDENTIAL SIDEMOUNT")).toBe("SIDEMOUNT");
+    expect(categoryItem("LIGHT COMMERCIAL SIDEMOUNT")).toBe("SIDEMOUNT");
+  });
+
+  it("leaves the groups that need no rename", () => {
+    expect(categoryItem("KEYPADS")).toBe("KEYPAD");
+    expect(categoryItem("REMOTES")).toBe("REMOTE");
+    expect(categoryItem("PHOTOEYES")).toBe("PHOTOEYE");
+    expect(categoryItem("CONTROL PANELS")).toBe("CONTROL PANEL");
+    expect(categoryItem("SPROCKET")).toBe("SPROCKET");
+  });
+});
+
+describe("operator item names", () => {
+  it("drops the brand and shortens to the trade name", () => {
+    // The catalogue names are written for browsing; the QuickBooks item list
+    // holds the short name that goes on an invoice.
+    expect(categoryItem("LIFTMASTER LOGIC 5")).toBe("LOGIC 5");
+    expect(categoryItem("LIFTMASTER ACCESSORIES")).toBe("ACCESSORY");
+    expect(categoryItem("MAXUM OPERATORS")).toBe("MAXUM");
+    expect(categoryItem("RESIDENTIAL BELT DRIVES")).toBe("BELT DRIVE");
+    expect(categoryItem("RESIDENTIAL CHAIN DRIVES")).toBe("CHAIN DRIVE");
+  });
+
+  it("collapses both sidemounts onto one item", () => {
+    expect(categoryItem("RESIDENTIAL SIDEMOUNT")).toBe("SIDEMOUNT");
+    expect(categoryItem("LIGHT COMMERCIAL SIDEMOUNT")).toBe("SIDEMOUNT");
+  });
+
+  it("leaves the groups that need no override to the singular rule", () => {
+    expect(categoryItem("KEYPADS")).toBe("KEYPAD");
+    expect(categoryItem("REMOTES")).toBe("REMOTE");
+    expect(categoryItem("PHOTOEYES")).toBe("PHOTOEYE");
+    expect(categoryItem("CONTROL PANELS")).toBe("CONTROL PANEL");
+    expect(categoryItem("SPROCKET")).toBe("SPROCKET");
+  });
+
+  it("never returns a name with a trailing plural", () => {
+    for (const n of ["LIFTMASTER LOGIC 5", "MAXUM OPERATORS", "BELT RAILS",
+                     "CHAIN RAILS", "I BEAM RAILS", "KEYPADS", "REMOTES"]) {
+      const item = categoryItem(n);
+      expect(item.endsWith("S") && !item.endsWith("SS"), `${n} -> ${item}`).toBe(false);
+    }
+  });
+});
