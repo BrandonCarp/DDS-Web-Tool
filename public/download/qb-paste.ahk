@@ -18,7 +18,7 @@ F9:: {
         SendText f
         if (i < fields.Length)
             Send "{Tab}"
-        Sleep 60
+        Sleep 120
     }
 }
 
