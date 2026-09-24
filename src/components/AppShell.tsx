@@ -28,6 +28,14 @@ const SHOW_QUICK_ENTRY = false;
  * styling and Brochure.test all stay, so bringing it back is this one line.
  */
 const SHOW_BROCHURE = false;
+
+/**
+ * Whether the QB Setup tab shows.
+ *
+ * Hidden since 24/9/2026 — Brandon. The tab, its page and its tests all stay,
+ * so bringing it back is this one line.
+ */
+const SHOW_QB_SETUP = false;
 import type { ParsedDoor } from "@/lib/pricing/data/parse-request";
 import { CommercialTool } from "./CommercialTool";
 import { SpecialTool } from "./SpecialTool";
@@ -74,6 +82,9 @@ export function AppShell(props: {
   /** Render the BROCHURE button. Defaults to the flag above; tests pass it
       explicitly so the button stays under test while it is hidden. */
   brochure?: boolean;
+  /** Offer the QB Setup tab. Defaults to the flag above; tests pass it
+      explicitly so the tab stays under test while it is hidden. */
+  qbSetup?: boolean;
 }) {
   return (
     <CustomerJobProvider>
@@ -87,10 +98,12 @@ function Shell({
   user,
   quickEntry = SHOW_QUICK_ENTRY,
   brochure = SHOW_BROCHURE,
+  qbSetup = SHOW_QB_SETUP,
 }: {
   models: string[];
   quickEntry?: boolean;
   brochure?: boolean;
+  qbSetup?: boolean;
   user: { username: string; role: string };
 }) {
   const [mode, setMode] = useState<string>("residential");
@@ -112,7 +125,8 @@ function Shell({
     return () => { clearTimeout(t); evs.forEach((e) => window.removeEventListener(e, reset)); };
   }, []);
   const isMaster = user.role === "admin";
-  const tabs = isMaster ? [...BASE_TABS, INVENTORY_TAB] : BASE_TABS;
+  const offered = BASE_TABS.filter((t) => t.id !== "qbsetup" || qbSetup);
+  const tabs = isMaster ? [...offered, INVENTORY_TAB] : offered;
   // Customer / P.O. / Job name is SHELVED for now — the bar and the
   // selection gate are removed, so quoting is immediate again. The provider
   // stays mounted so the tools keep compiling and simply save blank
@@ -193,7 +207,7 @@ function Shell({
       {mode === "special" && <SpecialTool />}
       {mode === "torsion" && <TorsionTool />}
       {mode === "extension" && <ExtensionTool />}
-      {mode === "qbsetup" && <QuickBooksSetup />}
+      {mode === "qbsetup" && qbSetup && <QuickBooksSetup />}
       {mode === "parts" && <PartsTool />}
       {mode === "vinyl" && <VinylTool />}
       {mode === "operators" && <OperatorsTool />}

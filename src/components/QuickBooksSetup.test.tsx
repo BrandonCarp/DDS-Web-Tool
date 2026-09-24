@@ -5,7 +5,7 @@ import { AppShell } from "./AppShell";
 
 afterEach(cleanup);
 const shell = (role = "user") =>
-  render(<AppShell models={["4050"]} user={{ username: "bc", role }} />);
+  render(<AppShell models={["4050"]} user={{ username: "bc", role }} qbSetup />);
 const openTab = () => {
   const sel = screen.getByTestId("tabsel") as HTMLSelectElement;
   fireEvent.change(sel, { target: { value: "qbsetup" } });
@@ -63,5 +63,18 @@ describe("QuickBooks setup tab", () => {
     shell();
     openTab();
     expect(screen.queryByTestId("series")).toBeNull();
+  });
+});
+
+describe("QuickBooks setup tab is hidden", () => {
+  it("is not offered in the app, to anyone", () => {
+    // SHOW_QB_SETUP is off; everything above renders it switched on.
+    for (const role of ["user", "semiadmin", "admin"]) {
+      cleanup();
+      render(<AppShell models={["4050"]} user={{ username: "bc", role }} />);
+      const opts = within(screen.getByTestId("tabsel")).getAllByRole("option").map((o) => o.getAttribute("value"));
+      expect(opts, role).not.toContain("qbsetup");
+      expect(screen.queryByText("QB Setup"), role).toBeNull();
+    }
   });
 });
