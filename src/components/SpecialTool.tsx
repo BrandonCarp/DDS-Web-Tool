@@ -757,8 +757,8 @@ export function SpecialTool() {
                 <span className="tv">{fmt(total)}</span>
               </div>
               <div className="qfoot">
-                <CopyQuickBooks item={QB_SPECIAL_ORDERS} description={copyText ?? label}
-                  rate={(n?.sell ?? 0) + hoMarkup} qty={qty} testId="copy-qb" />
+                {/* <CopyQuickBooks item={QB_SPECIAL_ORDERS} description={copyText ?? label}
+                  rate={(n?.sell ?? 0) + hoMarkup} qty={qty} testId="copy-qb" /> */}
                 <CopyButton text={(copyText ?? label).toUpperCase()} label="Copy description" primary onCopy={saveQuote} testId="so-copy-desc" />
                 <CopyPrice amount={(n?.sell ?? 0) + hoMarkup} onCopy={saveQuote} testId="so-copy-price" />
               </div>
