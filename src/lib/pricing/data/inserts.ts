@@ -136,14 +136,16 @@ export function designName(id: string | undefined | null): string | null {
  */
 const PLAIN_SHORT = 'PLAIN SHORT 19-1/2" X 12"';
 const PLAIN_LONG = 'PLAIN LONG 40-1/2" X 12"';
+const GALLERY_LONG = 'PLAIN LONG 42" X 16"';
 export const PLAIN_WINDOWS: Record<string, readonly string[]> = {
   T50S: [PLAIN_SHORT],
   "4050": [PLAIN_SHORT, PLAIN_LONG],
   "9130": [PLAIN_SHORT, PLAIN_LONG],
   "4053": [PLAIN_LONG],
   "9133": [PLAIN_LONG],
-  GD1SP: ['PLAIN LONG 42" X 16"'],
-  GD1LP: ['PLAIN ARCH 1 42" X 16"'],
+  GD1SP: [GALLERY_LONG],
+  // The GD1LP takes the long window or the arch — Brandon, 25/9/2026.
+  GD1LP: [GALLERY_LONG, "PLAIN ARCH 1"],
 };
 
 /** Models offered no inserts at all. */
