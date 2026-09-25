@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Icon } from "./Icon";
 
 export interface AdminUser {
   id: number;
@@ -372,15 +373,18 @@ export function AdminPanel({
   return (
     <div className="admin-shell">
       <aside className="adm-side no-print">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="logo" src="/logo.png" alt="Doors Direct" />
+        <span className="brand">
+          <img className="logo-light" src="/logo.png" alt="Doors Direct" />
+          <img className="logo-dark" src="/logo-light.png" alt="" />
+        </span>
         <nav className="adm-nav">
           <button
             type="button"
             className={view === "dashboard" ? "active" : ""}
             onClick={() => setView("dashboard")}
           >
-            ⌂ Admin Dashboard
+            <Icon name="dashboard" />
+            Admin Dashboard
           </button>
           {master && (
             <button
@@ -388,7 +392,8 @@ export function AdminPanel({
               className={view === "users" ? "active" : ""}
               onClick={() => setView("users")}
             >
-              👤 Users
+              <Icon name="users" />
+              Users
             </button>
           )}
         </nav>

@@ -106,8 +106,8 @@ describe("Torsion Springs tab", () => {
   });
 });
 
-describe("header tab dropdown", () => {
-  it("offers every tab the button bar does, and leaves DASH out of it", () => {
+describe("phone tab dropdown", () => {
+  it("offers every tab the sidebar does, and leaves the admin link out of it", () => {
     render(<AppShell models={["4050"]} user={{ username: "bc", role: "admin" }} />);
     const select = screen.getByTestId("tabsel");
     const options = within(select).getAllByRole("option").map((o) => o.textContent);
@@ -123,10 +123,10 @@ describe("header tab dropdown", () => {
     const flat = (x: string | null) => (x ?? "").replace(/\s+/g, "").toLowerCase();
     expect(options.map(flat)).toEqual(buttons.map(flat));
     expect(options).toContain("Extension Springs");
-    // The admin link is an anchor in .right, not a tab — it stays on screen at
-    // every width rather than hiding inside the dropdown.
-    expect(options).not.toContain("DASH");
-    expect(screen.getByText("DASH")).toBeTruthy();
+    // The admin panel is its own page, so it is a link in the sidebar's
+    // Others group rather than a tab — and never an option in the dropdown.
+    expect(options).not.toContain("Admin panel");
+    expect(screen.getByTestId("admin-link").getAttribute("href")).toBe("/admin");
   });
 
   it("switches tools from the dropdown", () => {

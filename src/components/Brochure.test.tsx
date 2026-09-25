@@ -10,9 +10,10 @@ const shell = (role = "user") =>
   render(<AppShell models={["4050"]} user={{ username: "bc", role }} brochure />);
 
 describe("brochure button", () => {
-  it("is in the header for every user", () => {
-    // A counter is often asked for the catalog mid-quote, so it sits in the bar
-    // rather than behind a tab, and it is not admin-gated the way DASH is.
+  it("is in the sidebar for every user", () => {
+    // A counter is often asked for the catalog mid-quote, so it sits in the
+    // sidebar rather than behind a tab, and it is not admin-gated the way the
+    // admin panel link is.
     for (const role of ["user", "semiadmin", "admin"]) {
       cleanup();
       shell(role);
@@ -27,18 +28,17 @@ describe("brochure button", () => {
     expect(a.getAttribute("download")).toBe("DoorsDirect_Catalog.pdf");
   });
 
-  it("sits beside DASH, not instead of it", () => {
+  it("sits beside the admin panel link, not instead of it", () => {
     shell("admin");
-    const bar = screen.getByTestId("brochure").parentElement;
-    expect(bar?.textContent).toContain("BROCHURE");
-    expect(bar?.textContent).toContain("DASH");
+    const nav = screen.getByTestId("brochure").closest("nav");
+    expect(nav?.contains(screen.getByTestId("admin-link"))).toBe(true);
   });
 
   it("stays put when the tab changes", () => {
-    // It is in the header, outside the tab panels, so nothing can unmount it.
+    // It is in the sidebar, outside the tab panels, so nothing can unmount it.
     shell();
     const before = screen.getByTestId("brochure");
-    expect(before.closest("header")).toBeTruthy();
+    expect(before.closest("aside")).toBeTruthy();
   });
 });
 
