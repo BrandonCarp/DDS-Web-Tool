@@ -26,6 +26,7 @@ async function configured(width = "9", height = "7") {
   await settle();
   fireEvent.change(sel("so-width"), { target: { value: width } });
   fireEvent.change(sel("so-height"), { target: { value: height } });
+  fireEvent.change(sel("so-color"), { target: { value: "White" } });
   await settle();
 }
 
@@ -67,6 +68,7 @@ describe("special order — two steps", () => {
     expect(maybe("so-track")).toBeNull();
     fireEvent.change(sel("so-width"), { target: { value: "9" } });
     fireEvent.change(sel("so-height"), { target: { value: "7" } });
+    fireEvent.change(sel("so-color"), { target: { value: "White" } });
     await settle();
     for (const t of ["so-track", "so-track-mount"]) expect(maybe(t), t).toBeTruthy();
     expect(maybe("so-configure")).toBeNull();
@@ -145,6 +147,7 @@ describe("special order — glass types reach the price", () => {
     await settle();
     fireEvent.change(sel("so-width"), { target: { value: "8" } });
     fireEvent.change(sel("so-height"), { target: { value: "7" } });
+    fireEvent.change(sel("so-color"), { target: { value: "White" } });
     await settle();
     fireEvent.change(sel("so-style"), { target: { value: "glass" } });
     await settle();
@@ -161,6 +164,7 @@ describe("special order — glass types reach the price", () => {
     await settle();
     fireEvent.change(sel("so-width"), { target: { value: "9" } });
     fireEvent.change(sel("so-height"), { target: { value: "7" } });
+    fireEvent.change(sel("so-color"), { target: { value: "White" } });
     await settle();
     fireEvent.change(sel("so-style"), { target: { value: "glass" } });
     await settle();
@@ -173,6 +177,7 @@ describe("special order — glass types reach the price", () => {
     await settle();
     fireEvent.change(sel("so-width"), { target: { value: "7" } });
     fireEvent.change(sel("so-height"), { target: { value: "7" } });
+    fireEvent.change(sel("so-color"), { target: { value: "White" } });
     await settle();
     fireEvent.change(sel("so-style"), { target: { value: "glass" } });
     await settle();
@@ -228,6 +233,7 @@ describe("special order — condensed layout", () => {
     await settle();
     fireEvent.change(sel("so-width"), { target: { value: "8" } });
     fireEvent.change(sel("so-height"), { target: { value: "7" } });
+    fireEvent.change(sel("so-color"), { target: { value: "White" } });
     await settle();
     fireEvent.change(sel("so-style"), { target: { value: "glass" } });
     await settle();
@@ -238,22 +244,49 @@ describe("special order — condensed layout", () => {
 });
 
 describe("special order — reads like the stock tabs", () => {
-  it("has no chips left while configuring", async () => {
-    // Order type is a step 1 choice, and Assembly type is a dropdown here just
-    // as it is on residential.
+  it("asks for the assembly in step 1, as buttons, before Configure", async () => {
     await pickDoor();
-    fireEvent.click(maybe("so-configure")!);
-    await settle();
-    expect(document.querySelectorAll(".chip").length).toBe(0);
-    expect(maybe("so-assembly")).toBeTruthy();
+    const opts = ["door", "section"].map((v) => screen.getByTestId(`so-assembly-${v}`));
+    expect(opts.map((b) => b.textContent)).toEqual(["Complete door", "Replacement section"]);
+    expect(opts[0].getAttribute("aria-checked")).toBe("true");
+    // Buttons first, then Configure — the order the stock tabs use.
+    const configure = maybe("so-configure")!;
+    expect(opts[1].compareDocumentPosition(configure) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it("asks for the assembly the same way residential does", async () => {
+  it("leaves no assembly question or chips while configuring", async () => {
     await pickDoor();
     fireEvent.click(maybe("so-configure")!);
     await settle();
-    const opts = [...sel("so-assembly").options].map((o) => o.text);
-    expect(opts).toEqual(["Complete door", "Replacement section"]);
+    expect(maybe("so-assembly-door")).toBeNull();
+    expect(document.querySelectorAll(".chip").length).toBe(0);
+    expect(screen.getByTestId("so-assembly-tag").textContent).toBe("Complete door");
+  });
+
+  it("opens the size first, then the color, then the rest", async () => {
+    await pickDoor();
+    fireEvent.click(maybe("so-configure")!);
+    await settle();
+    const off = (id: string) => sel(id).disabled;
+    expect(off("so-width")).toBe(false);
+    expect(off("so-color")).toBe(true);
+    expect(off("so-style")).toBe(true);
+    fireEvent.change(sel("so-width"), { target: { value: "9" } });
+    fireEvent.change(sel("so-height"), { target: { value: "7" } });
+    expect(off("so-color")).toBe(false);
+    expect(sel("so-color").value).toBe("");
+    expect(off("so-style")).toBe(true);
+    fireEvent.change(sel("so-color"), { target: { value: "White" } });
+    expect(off("so-style")).toBe(false);
+    expect(maybe("so-cfg-hint")).toBeNull();
+  });
+
+  it("shows the door description it copies", async () => {
+    await configured();
+    await settle();
+    const desc = screen.getByTestId("so-desc").textContent ?? "";
+    expect(desc).toMatch(/white/i);
+    expect(desc).toMatch(/4050/);
   });
 });
 
@@ -388,6 +421,7 @@ describe("special order — track waits for a size", () => {
     await settle();
     expect(maybe("so-track")).toBeNull();
     fireEvent.change(sel("so-height"), { target: { value: "7" } });
+    fireEvent.change(sel("so-color"), { target: { value: "White" } });
     await settle();
     expect(maybe("so-track")).toBeTruthy();
   });

@@ -25,6 +25,7 @@ import {
 import { dataKey } from "@/lib/pricing/model-groups";
 import { homeownerMarkupForBand } from "@/lib/pricing/engine";
 import { windowDesigns } from "@/lib/pricing/data/inserts";
+import { OptionButtons, type ButtonOption } from "./OptionButtons";
 
 const fmt = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -44,6 +45,18 @@ export function parsePrice(raw: string): number {
   if (!/^\d*\.?\d+$/.test(cleaned)) return NaN;
   return parseFloat(cleaned);
 }
+
+// Complete door or one replacement section. On a model with a price grid this
+// also picks the route: a door opens the configurator, a section goes to the
+// typed Clopay total. Asked in step 1, as buttons, like the stock tabs.
+const SO_ASSEMBLIES: ButtonOption<"door" | "section">[] = [
+  { value: "door", label: "Complete door", icon: "door" },
+  { value: "section", label: "Replacement section", icon: "section" },
+];
+const SO_C_ASSEMBLIES: ButtonOption<"door" | "section">[] = [
+  { value: "door", label: "Complete door", icon: "door" },
+  { value: "section", label: "Sections", icon: "sections" },
+];
 
 function soNumbers(series: string, model: string, kind: "door" | "section", priceStr: string) {
   const ser = SPECIAL[series];
@@ -97,7 +110,8 @@ export function SpecialTool() {
   // total below, which stays available for anything the grid does not cover.
   const [gWidth, setGWidth] = useState("");
   const [gStyle, setGStyle] = useState<"solid" | "glass" | "inserts">("solid");
-  const [gColor, setGColor] = useState("White");
+  // No default: the counter has to choose the color — Brandon, 25/9/2026.
+  const [gColor, setGColor] = useState("");
   const [gTrack, setGTrack] = useState("r12");
   const [gSpring, setGSpring] = useState("extension");
   const [gLock, setGLock] = useState("none");
@@ -136,7 +150,7 @@ export function SpecialTool() {
   const isPinnedModel = (v: string) => SPECIAL_COMMERCIAL_PINNED.includes(v);
   const commSeriesName = isPinnedModel(cSeries) ? (commercialSeriesOf(cSeries) ?? "") : cSeries;
   const commModels = SPECIAL_COMMERCIAL_SERIES.find((g) => g.name === commSeriesName)?.models ?? [];
-  const resetGrid = () => { setGHeight(""); setGWidth(""); setGDesign(""); setGVariant(""); };
+  const resetGrid = () => { setGHeight(""); setGWidth(""); setGColor(""); setGDesign(""); setGVariant(""); };
   const pickCommSeries = (v: string) => {
     setCSeries(v);
     // A pinned pick IS the model. A series pick clears it so one must be chosen.
@@ -207,7 +221,20 @@ export function SpecialTool() {
   // and every outside manufacturer.
   const readyForTotal = !!(md || flatMargin) && !(gridded && kind === "door");
 
-  const gResult = gridded && gWidth && gHeight
+  // The model's own list, not the 4050's. Hardcoding the 4050 group gave the
+  // T50S Black and Bronze, which Clopay does not build it in — Brandon,
+  // 12/9/2026.
+  // Special order groups are slash-separated ("T50S/T50L"); the colour table is
+  // keyed by catalogue group. Resolve through the first member.
+  const gColors =
+    COLORS[dataKey((modelMember || modelGroup).split("/")[0])] ??
+    COLORS[dataKey(modelGroup)] ??
+    ["White"];
+  // The configurator opens in order: size, then color, then everything else.
+  const gColorChosen = gColors.includes(gColor);
+  const gOpen = gSizeSet && gColorChosen;
+
+  const gResult = gridded && gWidth && gHeight && gColorChosen
     ? specialDoorQuote({ model: modelGroup, width: gWidth, height: gHeight, style: gStyle, color: gColor,
         windesign: gDesign || undefined, variant: (modelMember || gVariant) || undefined,
         track: gTrack as never, spring: (gTorsionOnly ? "torsion" : gSpring) as never, lock: gLock as never,
@@ -218,15 +245,6 @@ export function SpecialTool() {
     const [ft, inch] = w.split(".");
     return `${ft}'${inch ?? 0}"`;
   };
-  // The model's own list, not the 4050's. Hardcoding the 4050 group gave the
-  // T50S Black and Bronze, which Clopay does not build it in — Brandon,
-  // 12/9/2026.
-  // Special order groups are slash-separated ("T50S/T50L"); the colour table is
-  // keyed by catalogue group. Resolve through the first member.
-  const gColors =
-    COLORS[dataKey((modelMember || modelGroup).split("/")[0])] ??
-    COLORS[dataKey(modelGroup)] ??
-    ["White"];
   // The same insert list a residential 4050 offers, filtered the same way — by
   // model, style and door width.
 
@@ -429,6 +447,13 @@ export function SpecialTool() {
                   </div>
                 </div>
               )}
+              {(md || flatMargin) && step === 1 && (
+                <div className="field">
+                  <label className="lbl">Assembly type</label>
+                  <OptionButtons label="Assembly type" testid="so-assembly" options={SO_ASSEMBLIES} value={kind}
+                    onChange={(v) => { setKind(v); setSaved(false); }} />
+                </div>
+              )}
               {gridded && kind === "door" && step === 1 && (
                 <button data-testid="so-configure" className="btn primary configbtn"
                   onClick={() => setStep(2)}>
@@ -442,8 +467,14 @@ export function SpecialTool() {
                       onClick={() => setStep(1)}>&lsaquo; Back</button>
                     <span className="mlbl">Model</span>
                     <span className="mval">{modelMember || modelGroup}</span>
+                    <span className="mtag" data-testid="so-assembly-tag">Complete door</span>
                     <span className="muted-note" style={{ marginLeft: "auto" }}>{series}</span>
                   </div>
+                  {!gOpen && (
+                    <div className="cfg-hint" data-testid="so-cfg-hint">
+                      {!gSizeSet ? "Start with the size. The other options open once it is set." : "Now choose the color, then the rest of the options open."}
+                    </div>
+                  )}
                   <div className="socfg"><div className="cfg2">
                   <div className="ggroup">
                   <div className="ghdr">Layout options</div>
@@ -476,14 +507,15 @@ export function SpecialTool() {
                   </div>
                   <div className="grow"><label>Color</label>
                     <div className="ctl selectwrap">
-                      <select value={gColor} onChange={(e) => { setGColor(e.target.value); setSaved(false); }}>
+                      <select data-testid="so-color" value={gColorChosen ? gColor : ""} disabled={!gSizeSet} onChange={(e) => { setGColor(e.target.value); setSaved(false); }}>
+                        {!gColorChosen && <option value="">Select color…</option>}
                         {gColors.map((c) => <option key={c} value={c}>{c}</option>)}
                       </select>
                     </div>
                   </div>
                   <div className="grow"><label>Windows</label>
                     <div className="ctl selectwrap">
-                      <select data-testid="so-style" value={gStyle} onChange={(e) => { setGStyle(e.target.value as "solid" | "glass" | "inserts"); setSaved(false); }}>
+                      <select disabled={!gOpen} data-testid="so-style" value={gStyle} onChange={(e) => { setGStyle(e.target.value as "solid" | "glass" | "inserts"); setSaved(false); }}>
                         <option value="solid">Solid — no windows</option>
                         <option value="glass">Glass</option>
                         <option value="inserts">Inserts</option>
@@ -496,7 +528,7 @@ export function SpecialTool() {
                   {gStyle !== "solid" && soPanels.length > 1 && (
                     <div className="grow"><label>Panel style</label>
                       <div className="ctl selectwrap">
-                        <select data-testid="so-panel" value={gPanelEff}
+                        <select disabled={!gOpen} data-testid="so-panel" value={gPanelEff}
                           onChange={(e) => { setGPanel(e.target.value as PanelStyle); setGGlass(""); setSaved(false); }}>
                           {soPanels.map((p) => (
                             <option key={p} value={p}>{p === "short" ? "Short panel glass" : "Long panel glass"}</option>
@@ -508,7 +540,7 @@ export function SpecialTool() {
                   {gStyle !== "solid" && soGlass.length > 0 && (
                     <div className="grow"><label>Glass type</label>
                       <div className="ctl selectwrap">
-                        <select data-testid="so-glass" value={gGlass}
+                        <select disabled={!gOpen} data-testid="so-glass" value={gGlass}
                           onChange={(e) => { setGGlass(e.target.value); setSaved(false); }}>
                           <option value="">Single strength</option>
                           {soGlass.map((g) => <option key={g.id} value={g.id}>{g.label}</option>)}
@@ -520,7 +552,7 @@ export function SpecialTool() {
                     <div className="grow">
                       <label>Window design</label>
                       <div className="ctl selectwrap">
-                        <select data-testid="so-windesign" value={gDesign} onChange={(e) => { setGDesign(e.target.value); setSaved(false); }}>
+                        <select disabled={!gOpen} data-testid="so-windesign" value={gDesign} onChange={(e) => { setGDesign(e.target.value); setSaved(false); }}>
                           <option value="">Select a design…</option>
                           {gDesigns.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
                         </select>
@@ -537,7 +569,7 @@ export function SpecialTool() {
                   )}
                   {gSizeSet && <><div className="grow"><label>Spring</label>
                     <div className="ctl selectwrap">
-                      <select value={gTorsionOnly ? "torsion" : gSpring} disabled={gTorsionOnly}
+                      <select value={gTorsionOnly ? "torsion" : gSpring} disabled={gTorsionOnly || !gOpen}
                         onChange={(e) => {
                           setGSpring(e.target.value);
                           if (e.target.value !== "torsion" && gTrack === "high_lift") { setGTrack("r12"); setGLift(0); }
@@ -550,7 +582,7 @@ export function SpecialTool() {
                   </div>
                   <div className="grow"><label>Track lift / radius</label>
                     <div className="ctl selectwrap">
-                      <select data-testid="so-track" value={gTrack}
+                      <select disabled={!gOpen} data-testid="so-track" value={gTrack}
                         onChange={(e) => { setGTrack(e.target.value); if (e.target.value !== "high_lift") setGLift(0); setSaved(false); }}>
                         <option value="r10">10&quot; radius</option>
                         <option value="r12">12&quot; radius</option>
@@ -564,7 +596,7 @@ export function SpecialTool() {
                   </div>
                   <div className="grow"><label>Track mount</label>
                     <div className="ctl selectwrap">
-                      <select data-testid="so-track-mount" value={gMount}
+                      <select disabled={!gOpen} data-testid="so-track-mount" value={gMount}
                         onChange={(e) => { setGMount(e.target.value as TrackMount); setSaved(false); }}>
                         {TRACK_MOUNTS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
                       </select>
@@ -573,7 +605,7 @@ export function SpecialTool() {
                   {gIsLift && (
                     <div className="grow"><label>High lift amount</label>
                       <div className="ctl selectwrap">
-                        <select data-testid="so-high-lift" value={gEffLift}
+                        <select disabled={!gOpen} data-testid="so-high-lift" value={gEffLift}
                           onChange={(e) => { setGLift(Number(e.target.value)); setSaved(false); }}>
                           <option value={0}>Select…</option>
                           {gLiftSteps.map((n) => <option key={n} value={n}>{n}&quot;</option>)}
@@ -584,7 +616,7 @@ export function SpecialTool() {
                   {gIsLift && (
                     <div className="grow"><label>Incline style</label>
                       <div className="ctl selectwrap">
-                        <select data-testid="so-incline" value={gIncline}
+                        <select disabled={!gOpen} data-testid="so-incline" value={gIncline}
                           onChange={(e) => { setGIncline(e.target.value as InclineStyle); setSaved(false); }}>
                           {INCLINE_STYLES.map((i) => <option key={i.value} value={i.value}>{i.label}</option>)}
                         </select>
@@ -599,7 +631,7 @@ export function SpecialTool() {
                   <div className="grow">
                     <label>Lock</label>
                     <div className="ctl selectwrap">
-                      <select value={gLock} onChange={(e) => { setGLock(e.target.value); setSaved(false); }}>
+                      <select disabled={!gOpen} value={gLock} onChange={(e) => { setGLock(e.target.value); setSaved(false); }}>
                         <option value="none">No lock</option>
                         <option value="slide">Inside slide lock</option>
                         <option value="lockbar">Lockbar assembly</option>
@@ -618,23 +650,12 @@ export function SpecialTool() {
 
               {(md || flatMargin) && (
                 <>
-                  {/* A dropdown, not chips — the stock tabs ask this the same
-                      way under Assembly type, and the two should read alike. */}
-                  <div className="grow"><label>Assembly type</label>
-                    <div className="ctl selectwrap">
-                      <select data-testid="so-assembly" value={kind}
-                        onChange={(e) => { setKind(e.target.value as "door" | "section"); setSaved(false); }}>
-                        <option value="door">Complete door</option>
-                        <option value="section">Replacement section</option>
-                      </select>
-                    </div>
-                  </div>
                   {/* Only once the configurator is open — before that the copy
                       beside the quote is the one in play. */}
                   {step === 2 && <div className="grow">
                     <label>Home owner surcharge</label>
                     <div className="ctl selectwrap">
-                      <select data-testid="so-homeowner" value={homeowner}
+                      <select data-testid="so-homeowner" disabled={gridded && !gOpen} value={homeowner}
                         onChange={(e) => { setHomeowner(e.target.value as "no" | "single" | "double"); setSaved(false); }}>
                         <option value="no">No</option>
                         <option value="single">Single door</option>
@@ -650,11 +671,9 @@ export function SpecialTool() {
           {scope === "commercial" && cModel && (
             <div className="step">
               <div className="step-h"><span className="step-n">2</span><h3>{cMfr} {cModel}</h3></div>
-              <div className="field"><label className="lbl">Ordering</label>
-                <div className="chips">
-                  <button type="button" className={`chip ${kind === "door" ? "sel" : ""}`} onClick={() => { setKind("door"); setSaved(false); }}>Complete door</button>
-                  <button type="button" className={`chip ${kind === "section" ? "sel" : ""}`} onClick={() => { setKind("section"); setSaved(false); }}>Sections</button>
-                </div>
+              <div className="field"><label className="lbl">Assembly type</label>
+                <OptionButtons label="Assembly type" testid="so-c-assembly" options={SO_C_ASSEMBLIES} value={kind}
+                  onChange={(v) => { setKind(v); setSaved(false); }} />
               </div>
               <div className="field">
                 <label className="lbl">Home owner surcharge</label>
@@ -756,6 +775,12 @@ export function SpecialTool() {
                 <span className="tl">Quote total</span>
                 <span className="tv">{fmt(total)}</span>
               </div>
+              {gridded && kind === "door" && copyText && (
+                <div className="descbox">
+                  <div className="desclbl">Door description</div>
+                  <div className="desctext" data-testid="so-desc">{copyText}</div>
+                </div>
+              )}
               <div className="qfoot">
                 <CopyQuickBooks item={QB_SPECIAL_ORDERS} description={copyText ?? label}
                   rate={(n?.sell ?? 0) + hoMarkup} qty={qty} testId="copy-qb" />
