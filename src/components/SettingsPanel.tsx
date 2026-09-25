@@ -25,7 +25,7 @@ export function SettingsPanel({
               </span>
               <span className="acct-who">
                 <b>{username}</b>
-                <small>{roleLabel}</small>
+                {roleLabel && <small>{roleLabel}</small>}
               </span>
               <a className="btn" href="/api/logout">
                 Sign out

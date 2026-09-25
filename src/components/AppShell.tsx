@@ -128,10 +128,11 @@ function flatLabel(t: { label: string; over?: string }): string {
   return t.over ? `${t.over} ${t.label}` : t.label;
 }
 
+/** What shows under the name. A counter gets nothing — Brandon, 25/9/2026. */
 function roleLabel(role: string): string {
   if (role === "admin") return "Admin";
   if (role === "semiadmin") return "Semi-admin";
-  return "Counter";
+  return "";
 }
 
 export function AppShell(props: {
@@ -342,7 +343,7 @@ function Shell({
           <span className="avatar" aria-hidden="true">{user.username.charAt(0) || "?"}</span>
           <span className="side-who">
             <span className="side-who-name">{user.username}</span>
-            <span className="side-who-role">{role}</span>
+            {role && <span className="side-who-role">{role}</span>}
           </span>
           <a className="side-out" href="/api/logout" aria-label="Sign out" title="Sign out">
             <Icon name="logout" />

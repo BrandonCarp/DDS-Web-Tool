@@ -101,3 +101,13 @@ describe("scanner cart", () => {
     vi.unstubAllGlobals();
   });
 });
+
+describe("the name card", () => {
+  it("shows nothing under a counter's name, and Admin under Brandon's", () => {
+    shell("user");
+    expect(document.querySelector(".side-who-role")).toBeNull();
+    cleanup();
+    shell("admin");
+    expect(document.querySelector(".side-who-role")?.textContent).toBe("Admin");
+  });
+});

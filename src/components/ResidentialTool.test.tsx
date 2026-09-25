@@ -412,10 +412,10 @@ describe("residential tool — vinyl molding", () => {
   it("Yes puts the door on row 1 and the vinyl on row 3, row 2 left blank", async () => {
     await priceIt();
     fireEvent.click(screen.getByTestId("vinyl-ask-yes"));
-    await waitFor(() => screen.getByTestId("vinyl-price"));
-    // White 9' x 7': one 9' header and two 7' legs, 23 ft at 0.95.
-    expect(screen.getByTestId("vinyl-price").textContent).toBe("$21.85");
+    await waitFor(() => screen.getByTestId("vinyl-line"));
+    // White 9' x 7': one 9' header and two 7' legs — the pieces, never a price.
     expect(screen.getByTestId("vinyl-line").textContent?.trim()).toBe("WHITE vinyl (1) 9FT & (2) 7FT");
+    expect(screen.queryByTestId("vinyl-price")).toBeNull();
     const rows = (await copyFrom(screen.getByTestId("copy-qb"))).split("\n");
     expect(rows).toHaveLength(3);
     expect(rows[1]).toBe("");
@@ -425,9 +425,9 @@ describe("residential tool — vinyl molding", () => {
   it("can change its mind in the quote card", async () => {
     await priceIt();
     fireEvent.click(screen.getByTestId("vinyl-ask-yes"));
-    await waitFor(() => screen.getByTestId("vinyl-price"));
+    await waitFor(() => screen.getByTestId("vinyl-line"));
     fireEvent.click(screen.getByTestId("vinyl-no"));
-    expect(screen.queryByTestId("vinyl-price")).toBeNull();
+    expect(screen.queryByTestId("vinyl-line")).toBeNull();
     expect((await copyFrom(screen.getByTestId("copy-qb"))).split("\n")).toHaveLength(1);
   });
 
