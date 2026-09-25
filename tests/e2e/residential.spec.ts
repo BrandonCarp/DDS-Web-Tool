@@ -33,6 +33,7 @@ async function setSize(page: Page, widthFt: string, heightFt: string) {
   await page.getByTestId("width-in").selectOption("0");
   await page.getByTestId("height-ft").selectOption(heightFt);
   await page.getByTestId("height-in").selectOption("0");
+  await page.getByTestId("color").selectOption("White");
 }
 
 test.describe("authenticated", () => {

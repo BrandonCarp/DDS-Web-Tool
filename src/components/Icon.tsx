@@ -63,6 +63,25 @@ const PATHS = {
       <path d="M12 6.6v13.2" />
     </>
   ),
+  door: (
+    <>
+      <rect x="4" y="4" width="16" height="16" rx="1.5" />
+      <path d="M4 8h16M4 12h16M4 16h16" />
+    </>
+  ),
+  sections: (
+    <>
+      <rect x="4" y="4.5" width="16" height="3.8" rx="1" />
+      <rect x="4" y="10.1" width="16" height="3.8" rx="1" />
+      <rect x="4" y="15.7" width="16" height="3.8" rx="1" />
+    </>
+  ),
+  section: (
+    <>
+      <rect x="4" y="9.7" width="16" height="4.6" rx="1" />
+      <path d="M6.5 6.2h11M6.5 17.8h11" strokeDasharray="1.6 2.2" />
+    </>
+  ),
   download: (
     <>
       <path d="M12 4v10.5M7.5 10 12 14.5 16.5 10" />

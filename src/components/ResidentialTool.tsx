@@ -15,6 +15,7 @@ import { dataKey, modelSort } from "@/lib/pricing/model-groups";
 import { windowDesigns, designWidthCode } from "@/lib/pricing/data/inserts";
 import { RES_SECTION_WIDTHS, sectionWidthLabel } from "@/lib/pricing/data/res-section-meta";
 import { stockedWidths, stockedHeights, sizeParts, sizeCode, stockedColors, solidOnlyHeight, torsionOnlyHeight } from "@/lib/pricing/data/stock-colors";
+import { OptionButtons, type ButtonOption } from "./OptionButtons";
 
 const GLASS = [
   { value: "solid", label: "Solid (no windows)" },
@@ -36,6 +37,14 @@ const LOCKS: { value: LockKey; label: string }[] = [
   { value: "slide", label: "Inside slide lock" },
   { value: "lockbar", label: "Lockbar assembly" },
   { value: "lockbar_installed", label: "Lockbar installed" },
+];
+
+// Complete door, sections only, or one replacement section. It decides which
+// questions step 2 asks, so it is answered up front in step 1, as buttons.
+const ASSEMBLIES: ButtonOption<string>[] = [
+  { value: "complete", label: "Complete door", icon: "door" },
+  { value: "sectionsonly", label: "Sections only", icon: "sections" },
+  { value: "sections", label: "Replacement section", icon: "section" },
 ];
 
 const fmt = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -113,7 +122,8 @@ export function ResidentialTool({
   const [secWidth, setSecWidth] = useState("");
   const [secGlass, setSecGlass] = useState<"solid" | "glazed">("solid");
   const [secLock, setSecLock] = useState<"none" | "installed">("none");
-  const [color, setColor] = useState("White");
+  // No default: the counter has to choose the color — Brandon, 25/9/2026.
+  const [color, setColor] = useState("");
   const [glass, setGlass] = useState("solid");
   const [framing, setFraming] = useState("plain");
   const [windesign, setWindesign] = useState("");
@@ -165,6 +175,11 @@ export function ResidentialTool({
   const wf = parseInt(widthFt, 10);
   const hf = parseInt(heightFt, 10);
   const sizeComplete = sections ? !!activeSecWidth : Number.isFinite(wf) && Number.isFinite(hf);
+  // Step 2 opens in order: the size, then the color, then everything else.
+  // The other answers hang off those two — which colors are floored, which
+  // glass, which springs — so nothing else can be touched before them.
+  const colorChosen = colorList.includes(color);
+  const optionsOpen = sizeComplete && colorChosen;
 
   // Window/insert designs available for this exact door (model + style + width).
   const wDesigns = useMemo(
@@ -325,7 +340,7 @@ export function ResidentialTool({
   function onPickModel(m: string) {
     setModel(m);
     const list = stockedColors(m);
-    if (!list.includes(color)) setColor(list[0] ?? "White");
+    if (color && !list.includes(color)) setColor("");
     // Glass grade follows the model: Gallery = double strength only, everything
     // else = single strength only. Keep "windows" selected across the switch.
     const gallery = (COLLECTIONS[dataKey(m)] ?? coll) === "Gallery Collection";
@@ -336,8 +351,8 @@ export function ResidentialTool({
   function resetConfig() {
     setWidthFt(""); setWidthIn("0");
     setHeightFt(""); setHeightIn("0");
-    setAssembly("complete"); setSecKind("bt"); setSecHeight("18"); setSecWidth(""); setSecGlass("solid"); setSecLock("none");
-    setColor((COLORS[dataKey(model)] ?? ["White"])[0]);
+    setSecKind("bt"); setSecHeight("18"); setSecWidth(""); setSecGlass("solid"); setSecLock("none");
+    setColor("");
     setGlass("solid"); setFraming("plain"); setWindesign("");
     setSpring("extension"); setTrack("r12"); setLock("none");
     setQty(1);
@@ -357,7 +372,7 @@ export function ResidentialTool({
 
   function clearAll() {
     setWidthFt(""); setWidthIn("0"); setHeightFt(""); setHeightIn("0");
-    setAssembly("complete"); setSecKind("bt"); setSecHeight("18"); setSecWidth(""); setSecGlass("solid"); setSecLock("none");
+    setSecKind("bt"); setSecHeight("18"); setSecWidth(""); setSecGlass("solid"); setSecLock("none");
     setGlass("solid"); setFraming("plain"); setWindesign("");
     setSpring("extension"); setTrack("r12"); setLock("none"); setQty(1);
   }
@@ -404,6 +419,12 @@ export function ResidentialTool({
                   </div>
                 </div>
               )}
+              {model && (
+                <div className="field">
+                  <label className="lbl">Assembly type</label>
+                  <OptionButtons label="Assembly type" testid="assembly" options={ASSEMBLIES} value={assembly} onChange={setAssembly} />
+                </div>
+              )}
               <button data-testid="configure" className="btn primary configbtn" disabled={!model} onClick={() => setStep(2)}>
                 Configure
               </button>
@@ -435,22 +456,20 @@ export function ResidentialTool({
               <button type="button" className="btn backbtn" onClick={onBack}>‹ Back</button>
               <span className="mlbl">Model</span>
               <span className="mval">{model}</span>
+              <span className="mtag" data-testid="assembly-tag">{ASSEMBLIES.find((a) => a.value === assembly)?.label}</span>
               <span className="muted-note" style={{ marginLeft: "auto" }}>{collection}</span>
             </div>
 
+            {!optionsOpen && (
+              <div className="cfg-hint" data-testid="cfg-hint">
+                {!sizeComplete
+                  ? `Start with the ${sections ? "section width" : "size"}. The other options open once it is set.`
+                  : "Now choose the color, then the rest of the options open."}
+              </div>
+            )}
             <div className="cfg2">
               <div className="ggroup">
                 <div className="ghdr">Layout options</div>
-                <div className="grow">
-                  <label>Assembly type</label>
-                  <div className="ctl selectwrap">
-                    <select value={assembly} onChange={(e) => setAssembly(e.target.value)}>
-                      <option value="complete">Complete door</option>
-                      <option value="sectionsonly">Sections only</option>
-                      <option value="sections">Replacement section</option>
-                    </select>
-                  </div>
-                </div>
                 {sections && (
                   <>
                     <div className="grow">
@@ -548,7 +567,8 @@ export function ResidentialTool({
                 <div className="grow">
                   <label>Color</label>
                   <div className="ctl selectwrap">
-                    <select data-testid="color" value={color} onChange={(e) => setColor(e.target.value)}>
+                    <select data-testid="color" value={colorChosen ? color : ""} disabled={!sizeComplete} onChange={(e) => setColor(e.target.value)}>
+                      {!colorChosen && <option value="">Select color…</option>}
                       {colorList.map((c) => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
@@ -560,7 +580,7 @@ export function ResidentialTool({
                 <div className="grow">
                   <label>Glass type</label>
                   <div className="ctl selectwrap">
-                    <select data-testid="style" value={glass} disabled={!sizeComplete} onChange={(e) => setGlass(e.target.value)}>
+                    <select data-testid="style" value={glass} disabled={!optionsOpen} onChange={(e) => setGlass(e.target.value)}>
                       {glassOptions.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
                     </select>
                   </div>
@@ -568,7 +588,7 @@ export function ResidentialTool({
                 <div className="grow">
                   <label>Framing / insert</label>
                   <div className="ctl selectwrap">
-                    <select value={framing} onChange={(e) => setFraming(e.target.value)} disabled={glass === "solid" || !sizeComplete}>
+                    <select value={framing} onChange={(e) => setFraming(e.target.value)} disabled={glass === "solid" || !optionsOpen}>
                       <option value="plain">Plain (no insert)</option>
                       <option value="insert">Insert</option>
                     </select>
@@ -578,7 +598,7 @@ export function ResidentialTool({
                   <div className="grow">
                     <label>Window design</label>
                     <div className="ctl selectwrap">
-                      <select data-testid="windesign" value={activeDesign} onChange={(e) => setWindesign(e.target.value)}>
+                      <select data-testid="windesign" value={activeDesign} disabled={!optionsOpen} onChange={(e) => setWindesign(e.target.value)}>
                         <option value="">Select a design…</option>
                         {wDesigns.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
                       </select>
@@ -595,7 +615,7 @@ export function ResidentialTool({
                 <div className="grow">
                   <label>Spring</label>
                   <div className="ctl selectwrap">
-                    <select data-testid="spring" value={springLocked ? "torsion" : spring} disabled={springLocked}
+                    <select data-testid="spring" value={springLocked ? "torsion" : spring} disabled={springLocked || !optionsOpen}
                       onChange={(e) => setSpring(e.target.value as SpringKey)}>
                       {!springLocked && <option value="extension">Extension</option>}
                       <option value="torsion">Torsion</option>
@@ -605,7 +625,7 @@ export function ResidentialTool({
                 <div className="grow">
                   <label>Track lift / radius</label>
                   <div className="ctl selectwrap">
-                    <select data-testid="track" value={track} onChange={(e) => setTrack(e.target.value as TrackKey)}>
+                    <select data-testid="track" value={track} disabled={!optionsOpen} onChange={(e) => setTrack(e.target.value as TrackKey)}>
                       {TRACKS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                     </select>
                   </div>
@@ -620,7 +640,7 @@ export function ResidentialTool({
                       <div className="grow">
                         <label>Glass</label>
                         <div className="ctl selectwrap">
-                          <select value={secGlass} onChange={(e) => setSecGlass(e.target.value as "solid" | "glazed")}>
+                          <select value={secGlass} disabled={!optionsOpen} onChange={(e) => setSecGlass(e.target.value as "solid" | "glazed")}>
                             <option value="solid">Solid — no windows</option>
                             <option value="glazed">Glazed (glass section)</option>
                           </select>
@@ -629,7 +649,7 @@ export function ResidentialTool({
                     <div className="grow">
                       <label>Home owner surcharge</label>
                       <div className="ctl selectwrap">
-                        <select data-testid="sec-homeowner" value={homeowner ? "yes" : "no"}
+                        <select data-testid="sec-homeowner" disabled={!optionsOpen} value={homeowner ? "yes" : "no"}
                           onChange={(e) => setHomeowner(e.target.value === "yes")}>
                           <option value="no">No</option>
                           <option value="yes">Yes</option>
@@ -640,7 +660,7 @@ export function ResidentialTool({
                         <div className="grow">
                           <label>Lockbar</label>
                           <div className="ctl selectwrap">
-                            <select value={secLock} onChange={(e) => setSecLock(e.target.value as "none" | "installed")}>
+                            <select value={secLock} disabled={!optionsOpen} onChange={(e) => setSecLock(e.target.value as "none" | "installed")}>
                               <option value="none">No lockbar</option>
                               <option value="installed">Lockbar installed</option>
                             </select>
@@ -654,7 +674,7 @@ export function ResidentialTool({
                     <div className="grow">
                       <label>Home owner surcharge</label>
                       <div className="ctl selectwrap">
-                        <select data-testid="sec-homeowner" value={homeowner ? "yes" : "no"}
+                        <select data-testid="sec-homeowner" disabled={!optionsOpen} value={homeowner ? "yes" : "no"}
                           onChange={(e) => setHomeowner(e.target.value === "yes")}>
                           <option value="no">No</option>
                           <option value="yes">Yes</option>
@@ -668,7 +688,7 @@ export function ResidentialTool({
                     <div className="grow">
                       <label>Lock</label>
                       <div className="ctl selectwrap">
-                        <select data-testid="lock" value={lock} onChange={(e) => setLock(e.target.value as LockKey)}>
+                        <select data-testid="lock" value={lock} disabled={!optionsOpen} onChange={(e) => setLock(e.target.value as LockKey)}>
                           {LOCKS.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
                         </select>
                       </div>
@@ -679,7 +699,7 @@ export function ResidentialTool({
                       <div className="grow">
                         <label>Upgraded hardware</label>
                         <div className="ctl selectwrap">
-                          <select data-testid="upgraded-hardware" value={upgradedHardware ? "yes" : "no"}
+                          <select data-testid="upgraded-hardware" disabled={!optionsOpen} value={upgradedHardware ? "yes" : "no"}
                             onChange={(e) => setUpgradedHardware(e.target.value === "yes")}>
                             <option value="no">No</option>
                             <option value="yes">Yes</option>
@@ -690,7 +710,7 @@ export function ResidentialTool({
                     <div className="grow">
                       <label>Home owner surcharge</label>
                       <div className="ctl selectwrap">
-                        <select data-testid="homeowner" value={homeowner ? "yes" : "no"}
+                        <select data-testid="homeowner" disabled={!optionsOpen} value={homeowner ? "yes" : "no"}
                           onChange={(e) => setHomeowner(e.target.value === "yes")}>
                           <option value="no">No</option>
                           <option value="yes">Yes</option>
@@ -702,7 +722,7 @@ export function ResidentialTool({
               </div>
             </div>
 
-            <button data-testid="get-price" className="btn primary configbtn" type="button" onClick={getPrice}>
+            <button data-testid="get-price" className="btn primary configbtn" type="button" disabled={!optionsOpen} onClick={getPrice}>
               Get price
             </button>
             {liveError && <div className="alert warn" data-testid="error">{liveError}</div>}

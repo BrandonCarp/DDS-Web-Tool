@@ -39,8 +39,8 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
-/** Walk the tool to the configure step for a model. */
-async function configure(model = "4050") {
+/** Walk step 1 as far as picking a model. */
+function pickModel(model = "4050") {
   render(<ResidentialTool models={MODELS} />);
   const series = screen.getByTestId("series") as HTMLSelectElement;
   // Models are grouped by collection, so find the one holding this model
@@ -56,8 +56,14 @@ async function configure(model = "4050") {
     }
   }
   if (!found) throw new Error(`no collection offers ${model}`);
+}
+
+/** Walk the tool to the configure step for a model, as a given assembly. */
+async function configure(model = "4050", assemblyType?: string) {
+  pickModel(model);
+  if (assemblyType) fireEvent.click(screen.getByTestId(`assembly-${assemblyType}`));
   fireEvent.click(screen.getByTestId("configure"));
-  await waitFor(() => screen.getByTestId("width-ft"));
+  await waitFor(() => screen.getByText("‹ Back"));
 }
 
 describe("residential tool — model list", () => {
@@ -106,6 +112,7 @@ describe("residential tool — what gets sent", () => {
   const priceIt = async () => {
     fireEvent.change(screen.getByTestId("width-ft"), { target: { value: "9" } });
     fireEvent.change(screen.getByTestId("height-ft"), { target: { value: "7" } });
+    fireEvent.change(screen.getByTestId("color"), { target: { value: "White" } });
     fireEvent.click(screen.getByTestId("get-price"));
     await waitFor(() => expect(bodies.length).toBeGreaterThan(0));
   };
@@ -157,48 +164,44 @@ describe("residential tool — what gets sent", () => {
 });
 
 describe("residential tool — sections only", () => {
-  /** Switch the assembly type once the configurator is open. */
-  const assembly = (v: string) => {
-    const s = [...document.querySelectorAll("select")]
-      .find((x) => [...x.options].some((o) => o.value === "sectionsonly"))!;
-    fireEvent.change(s, { target: { value: v } });
-  };
-
   it("drops the track group", async () => {
     // Neither track nor spring ships with sections, and the engine already
     // forces r12/extension — the dropdowns were asking a question with no
     // effect on the quote.
-    await configure();
-    expect(screen.getByTestId("track")).toBeTruthy();
-    assembly("sectionsonly");
+    await configure("4050", "sectionsonly");
     expect(screen.queryByTestId("track")).toBeNull();
     expect(screen.queryByTestId("spring")).toBeNull();
   });
 
   it("drops upgraded hardware", async () => {
     // Hinges and rollers are door hardware; sections ship without them.
-    await configure();
-    expect(screen.getByTestId("upgraded-hardware")).toBeTruthy();
-    assembly("sectionsonly");
+    await configure("4050", "sectionsonly");
     expect(screen.queryByTestId("upgraded-hardware")).toBeNull();
   });
 
   it("keeps lock and the home owner surcharge", async () => {
     // Both still apply: a lock ships with sections, and the surcharge is about
     // who is buying rather than what is in the box.
-    await configure();
-    assembly("sectionsonly");
+    await configure("4050", "sectionsonly");
     expect(screen.getByTestId("lock")).toBeTruthy();
     expect(screen.getByTestId("homeowner")).toBeTruthy();
   });
 
   it("never sends the hardware flag", async () => {
-    // Turn it on as a complete door, then switch — the flag must not survive.
+    // Turn it on as a complete door, go back and switch — the flag must not
+    // survive.
     await configure();
     fireEvent.change(screen.getByTestId("width-ft"), { target: { value: "9" } });
     fireEvent.change(screen.getByTestId("height-ft"), { target: { value: "7" } });
+    fireEvent.change(screen.getByTestId("color"), { target: { value: "White" } });
     fireEvent.change(screen.getByTestId("upgraded-hardware"), { target: { value: "yes" } });
-    assembly("sectionsonly");
+    fireEvent.click(screen.getByText("‹ Back"));
+    fireEvent.click(screen.getByTestId("assembly-sectionsonly"));
+    fireEvent.click(screen.getByTestId("configure"));
+    await waitFor(() => screen.getByText("‹ Back"));
+    fireEvent.change(screen.getByTestId("width-ft"), { target: { value: "9" } });
+    fireEvent.change(screen.getByTestId("height-ft"), { target: { value: "7" } });
+    fireEvent.change(screen.getByTestId("color"), { target: { value: "White" } });
     fireEvent.click(screen.getByTestId("get-price"));
     await waitFor(() => expect(bodies.length).toBeGreaterThan(0));
     expect(bodies[bodies.length - 1].upgradedHardware).toBe(false);
@@ -214,21 +217,13 @@ describe("residential tool — sections only", () => {
 });
 
 describe("residential tool — replacement sections", () => {
-  const assembly = (v: string) => {
-    const s = [...document.querySelectorAll("select")]
-      .find((x) => [...x.options].some((o) => o.value === "sections"))!;
-    fireEvent.change(s, { target: { value: v } });
-  };
-
   it("offers the home owner surcharge on a bottom section", async () => {
-    await configure();
-    assembly("sections");
+    await configure("4050", "sections");
     expect(screen.getByTestId("sec-homeowner")).toBeTruthy();
   });
 
   it("offers it on an intermediate too", async () => {
-    await configure();
-    assembly("sections");
+    await configure("4050", "sections");
     const kind = [...document.querySelectorAll("select")]
       .find((x) => [...x.options].some((o) => o.value === "int"));
     if (kind) fireEvent.change(kind, { target: { value: "int" } });
@@ -236,14 +231,57 @@ describe("residential tool — replacement sections", () => {
   });
 
   it("sends it with the section request", async () => {
-    await configure();
-    assembly("sections");
+    await configure("4050", "sections");
     fireEvent.change(screen.getByTestId("sec-width"), { target: { value: "9" } });
+    fireEvent.change(screen.getByTestId("color"), { target: { value: "White" } });
     fireEvent.change(screen.getByTestId("sec-homeowner"), { target: { value: "yes" } });
     fireEvent.click(screen.getByTestId("get-price"));
     await waitFor(() => expect(bodies.length).toBeGreaterThan(0));
     const last = bodies[bodies.length - 1];
     expect(last.assembly).toBe("sections");
     expect(last.homeowner).toBe(true);
+  });
+});
+
+describe("residential tool — assembly type and the order of step 2", () => {
+  it("asks for the assembly type in step 1, once a model is picked", () => {
+    pickModel();
+    const opts = ["complete", "sectionsonly", "sections"].map((v) => screen.getByTestId(`assembly-${v}`));
+    expect(opts.map((b) => b.textContent)).toEqual(["Complete door", "Sections only", "Replacement section"]);
+    expect(opts[0].getAttribute("aria-checked")).toBe("true");
+    fireEvent.click(opts[2]);
+    expect(opts[2].getAttribute("aria-checked")).toBe("true");
+    expect(opts[0].getAttribute("aria-checked")).toBe("false");
+  });
+
+  it("leaves no assembly question in step 2, and shows the one chosen", async () => {
+    await configure("4050", "sectionsonly");
+    expect(screen.queryByTestId("assembly-complete")).toBeNull();
+    expect(screen.getByTestId("assembly-tag").textContent).toBe("Sections only");
+  });
+
+  it("opens the size first, then the color, then the rest", async () => {
+    await configure();
+    const off = (t: string) => (screen.getByTestId(t) as HTMLSelectElement | HTMLButtonElement).disabled;
+    const rest = ["style", "spring", "track", "lock", "upgraded-hardware", "homeowner", "get-price"];
+    expect(off("width-ft")).toBe(false);
+    expect(off("color")).toBe(true);
+    for (const t of rest) expect(off(t), `${t} before a size`).toBe(true);
+
+    fireEvent.change(screen.getByTestId("width-ft"), { target: { value: "9" } });
+    fireEvent.change(screen.getByTestId("height-ft"), { target: { value: "7" } });
+    expect(off("color")).toBe(false);
+    for (const t of rest) expect(off(t), `${t} before a color`).toBe(true);
+
+    fireEvent.change(screen.getByTestId("color"), { target: { value: "White" } });
+    for (const t of rest) expect(off(t), `${t} after the color`).toBe(false);
+    expect(screen.queryByTestId("cfg-hint")).toBeNull();
+  });
+
+  it("never picks the color for you", async () => {
+    await configure();
+    fireEvent.change(screen.getByTestId("width-ft"), { target: { value: "9" } });
+    fireEvent.change(screen.getByTestId("height-ft"), { target: { value: "7" } });
+    expect((screen.getByTestId("color") as HTMLSelectElement).value).toBe("");
   });
 });
