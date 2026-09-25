@@ -123,10 +123,16 @@ export const VINYL_COLORS = Object.keys(VINYL_STOCK).sort();
 
 export interface VinylQuote {
   color: string;
-  /** Stock length used for the header piece, in feet. */
+  /** Stock length used for the header piece, in feet — the longest, when the
+      header takes more than one piece (see headerPieces). */
   headerFt: number;
   /** Stock length used for each of the two side pieces, in feet. */
   legFt: number;
+  /** Every stock length the header takes: one, unless the opening is wider
+      than the colour is stocked long. */
+  headerPieces: number[];
+  /** The same for each side piece. */
+  legPieces: number[];
   /** Total linear feet for one door, before the quantity multiplier. */
   feetPerDoor: number;
   /** Total linear feet actually ordered — this is the QuickBooks quantity. */
@@ -137,11 +143,24 @@ export interface VinylQuote {
   description: string;
 }
 
-/** Smallest stock length that reaches `need`, or null if nothing does. */
-function coveringLength(color: string, need: number): number | null {
+/**
+ * Stock lengths that cover `need`: the smallest one that reaches. Past the
+ * longest length the colour is stocked in — 18' in white and black, 16' in the
+ * rest — it is the longest, plus the smallest that covers what is left
+ * (Brandon, 25/9/2026). Null only for a colour that is not stocked at all.
+ */
+function coveringLengths(color: string, need: number): number[] | null {
   const stock = VINYL_STOCK[color];
-  if (!stock) return null;
-  return stock.find((s) => s >= need) ?? null;
+  if (!stock?.length) return null;
+  const longest = stock[stock.length - 1];
+  const pieces: number[] = [];
+  let left = need;
+  while (left > longest) {
+    pieces.push(longest);
+    left -= longest;
+  }
+  if (left > 0) pieces.push(stock.find((s) => s >= left)!);
+  return pieces;
 }
 
 /**
@@ -151,8 +170,9 @@ function coveringLength(color: string, need: number): number | null {
  * the piece counts, never the piece sizes. The tool does not expose it — one
  * opening is one set — but it is kept so a multi-door quote stays a one-liner.
  *
- * Returns null when the opening is larger than the colour is stocked in, which
- * is a special order rather than something to quote here.
+ * An opening longer than the colour is stocked in takes the longest length
+ * plus extra pieces (coveringLengths). Returns null only for a colour that is
+ * not stocked.
  */
 export function vinylForDoor(
   color: string,
@@ -160,26 +180,29 @@ export function vinylForDoor(
   heightFt: number,
   setCount = 1,
 ): VinylQuote | null {
-  const headerFt = coveringLength(color, widthFt);
-  const legFt = coveringLength(color, heightFt);
-  if (headerFt == null || legFt == null) return null;
+  const headerPieces = coveringLengths(color, widthFt);
+  const legPieces = coveringLengths(color, heightFt);
+  if (headerPieces == null || legPieces == null) return null;
 
   const sets = Math.max(1, Math.trunc(setCount) || 1);
-  const feetPerDoor = headerFt + legFt * 2;
+  const sum = (a: number[]) => a.reduce((t, x) => t + x, 0);
+  const feetPerDoor = sum(headerPieces) + sum(legPieces) * 2;
   const feet = feetPerDoor * sets;
   const pricePerFt = VINYL_PRICE_PER_FT[color] ?? 0;
 
-  // When all three pieces land on the same stock length the counter calls it a
-  // count of three rather than reading out the same number twice.
-  const body =
-    headerFt === legFt
-      ? `[${3 * sets}] - ${headerFt}FT`
-      : `[${1 * sets}] - ${headerFt}FT AND [${2 * sets}] - ${legFt}FT`;
+  // One count per stock length, header first then the legs, so pieces that
+  // land on the same length read as one count: three 16s are "[3] - 16FT",
+  // never the same number twice.
+  const counts = new Map<number, number>();
+  for (const ft of [...headerPieces, ...legPieces, ...legPieces]) counts.set(ft, (counts.get(ft) ?? 0) + 1);
+  const body = [...counts].map(([ft, n]) => `[${n * sets}] - ${ft}FT`).join(" AND ");
 
   return {
     color,
-    headerFt,
-    legFt,
+    headerFt: headerPieces[0],
+    legFt: legPieces[0],
+    headerPieces,
+    legPieces,
     feetPerDoor,
     feet,
     pricePerFt,

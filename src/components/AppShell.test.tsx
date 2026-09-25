@@ -69,3 +69,15 @@ describe("sidebar", () => {
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Parts");
   });
 });
+
+describe("chosen fields", () => {
+  it("marks a field someone changes, and unmarks it when emptied", () => {
+    shell();
+    const series = screen.getByTestId("series") as HTMLSelectElement;
+    const value = [...series.options].map((o) => o.value).find(Boolean)!;
+    fireEvent.change(series, { target: { value } });
+    expect(series.hasAttribute("data-set")).toBe(true);
+    fireEvent.change(series, { target: { value: "" } });
+    expect(series.hasAttribute("data-set")).toBe(false);
+  });
+});

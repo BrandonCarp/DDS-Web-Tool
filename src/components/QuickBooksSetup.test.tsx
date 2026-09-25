@@ -55,7 +55,7 @@ describe("QuickBooks setup tab", () => {
     openTab();
     const text = screen.getByTestId("qb-setup").textContent ?? "";
     expect(text).toMatch(/F9/);
-    expect(text).toMatch(/Copy for QuickBooks/);
+    expect(text).toMatch(/the QuickBooks button/);
     expect(text).toMatch(/Sleep 120/);
   });
 

@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { cleanup, render, fireEvent } from "@testing-library/react";
+import { cleanup, render, fireEvent, screen } from "@testing-library/react";
 import { ExtensionTool } from "./ExtensionTool";
 import { CopyQuickBooks } from "./CopyQuickBooks";
+import { copyFrom } from "./test-clipboard";
 
 let copied = "";
 beforeEach(() => {
@@ -70,5 +71,21 @@ describe("on the picker tabs", () => {
     expect(item).toBe("EXTENSION SPRING");
     expect(qty).toBe("1");
     expect(Number(rate)).toBeGreaterThan(0);
+  });
+});
+
+describe("QuickBooks button — more than one line", () => {
+  it("puts each extra line two rows down, with a blank row between", async () => {
+    cleanup();
+    render(<CopyQuickBooks item="STOCK DOOR" description="a door" rate={100} qty={1} testId="m"
+      extraLines={[{ item: "VINYL", description: "white molding", qty: 23, rate: 0.95 }]} />);
+    const copied = await copyFrom(screen.getByTestId("m"));
+    expect(copied).toBe("STOCK DOOR\tA DOOR\t1\t100.00\n\nVINYL\tWHITE MOLDING\t23\t0.95");
+  });
+
+  it("is labelled QuickBooks", () => {
+    cleanup();
+    render(<CopyQuickBooks item="STOCK DOOR" description="a door" rate={100} qty={1} testId="l" />);
+    expect(screen.getByTestId("l").textContent).toBe("QuickBooks");
   });
 });

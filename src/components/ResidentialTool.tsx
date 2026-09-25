@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { EstimateSheet } from "@/components/EstimateSheet";
 import { priceText } from "@/components/CopyButton";
 import { CopyQuickBooks } from "./CopyQuickBooks";
-import { QB_STOCK_DOORS } from "@/lib/pricing/data/quickbooks";
+import { QB_STOCK_DOORS, QB_VINYL } from "@/lib/pricing/data/quickbooks";
 import { QbLineDemo } from "@/components/QbLineDemo";
 import { QB_ITEMS } from "@/lib/qb/iif";
 import { useCustomerJob } from "@/components/CustomerJobFields";
@@ -16,6 +16,8 @@ import { windowDesigns, designWidthCode, plainWindowsFor, takesInserts } from "@
 import { RES_SECTION_WIDTHS, sectionWidthLabel } from "@/lib/pricing/data/res-section-meta";
 import { stockedWidths, stockedHeights, sizeParts, sizeCode, stockedColors, solidOnlyHeight, torsionOnlyHeight } from "@/lib/pricing/data/stock-colors";
 import { OptionButtons, type ButtonOption } from "./OptionButtons";
+import { vinylForDoor, vinylForDoorColor } from "@/lib/pricing/data/vinyl";
+import { VinylPrompt, YES_NO } from "./VinylPrompt";
 
 const GLASS = [
   { value: "solid", label: "Solid (no windows)" },
@@ -127,6 +129,10 @@ export function ResidentialTool({
   const [glass, setGlass] = useState("solid");
   const [framing, setFraming] = useState("plain");
   const [windesign, setWindesign] = useState("");
+  // Vinyl molding for this door: asked when Get price is pressed, changeable
+  // in the quote card after — Brandon, 25/9/2026.
+  const [vinylOn, setVinylOn] = useState(false);
+  const [askVinyl, setAskVinyl] = useState(false);
   const [spring, setSpring] = useState<SpringKey>("extension");
   const [track, setTrack] = useState<TrackKey>("r12");
   const [lock, setLock] = useState<LockKey>("none");
@@ -362,7 +368,7 @@ export function ResidentialTool({
     setHeightFt(""); setHeightIn("0");
     setSecKind("bt"); setSecHeight("18"); setSecWidth(""); setSecGlass("solid"); setSecLock("none");
     setColor("");
-    setGlass("solid"); setFraming("plain"); setWindesign("");
+    setGlass("solid"); setFraming("plain"); setWindesign(""); setVinylOn(false);
     setSpring("extension"); setTrack("r12"); setLock("none");
     setQty(1);
     setResult(null); setError(null); setSaved(false);
@@ -377,12 +383,19 @@ export function ResidentialTool({
   const total = unit * Math.max(1, qty);
   const dims = `${widthFt || "—"}'${widthIn || "0"}" x ${heightFt || "—"}'${heightIn || "0"}"`;
   const description = result?.description ?? "";
+  // The door's vinyl stop molding, in the vinyl that matches its colour and cut
+  // to its opening, exactly as the Vinyl tab works it out. Whole doors only: a
+  // replacement section goes into an opening that already has its molding.
+  const vinylColor = sections ? null : vinylForDoorColor(color);
+  const vinyl = vinylColor && sizeComplete
+    ? vinylForDoor(vinylColor, wf + (parseInt(widthIn, 10) || 0) / 12, hf + (parseInt(heightIn, 10) || 0) / 12, Math.max(1, qty))
+    : null;
 
 
   function clearAll() {
     setWidthFt(""); setWidthIn("0"); setHeightFt(""); setHeightIn("0");
     setSecKind("bt"); setSecHeight("18"); setSecWidth(""); setSecGlass("solid"); setSecLock("none");
-    setGlass("solid"); setFraming("plain"); setWindesign("");
+    setGlass("solid"); setFraming("plain"); setWindesign(""); setVinylOn(false);
     setSpring("extension"); setTrack("r12"); setLock("none"); setQty(1);
   }
 
@@ -728,9 +741,15 @@ export function ResidentialTool({
               </div>
             </div>
 
-            <button data-testid="get-price" className="btn primary configbtn" type="button" disabled={!optionsOpen || priced} onClick={getPrice}>
+            <button data-testid="get-price" className="btn primary configbtn" type="button" disabled={!optionsOpen || priced} onClick={() => { void getPrice(); if (vinyl) setAskVinyl(true); }}>
               Get price
             </button>
+            {askVinyl && vinyl && (
+              <VinylPrompt
+                detail={`${vinyl.color} vinyl stop molding for this ${widthFt}'${widthIn || 0}" x ${heightFt}'${heightIn || 0}" door.`}
+                onAnswer={(yes) => { setVinylOn(yes); setAskVinyl(false); }}
+              />
+            )}
             {liveError && <div className="alert warn" data-testid="error">{liveError}</div>}
           </div>
         </div>
@@ -760,9 +779,29 @@ export function ResidentialTool({
                 <span className="tl">Quote total</span>
                 <span className="tv" data-testid="total">{fmt(total)}</span>
               </div>
+              {!sections && (
+                <div className="qtyrow vinylrow" data-testid="vinyl-row">
+                  <label>Vinyl molding</label>
+                  {vinyl ? (
+                    <OptionButtons label="Vinyl molding" testid="vinyl" options={YES_NO} value={vinylOn ? "yes" : "no"}
+                      onChange={(v) => setVinylOn(v === "yes")} />
+                  ) : (
+                    <span className="muted-note">None to match {color}</span>
+                  )}
+                </div>
+              )}
+              {vinylOn && vinyl && (
+                <div className="lines">
+                  <div className="qline">
+                    <span className="nm">{vinyl.color} vinyl · {vinyl.feet} ft</span>
+                    <span className="vl" data-testid="vinyl-price">{fmt(vinyl.total)}</span>
+                  </div>
+                </div>
+              )}
               <div className="qfoot">
                 <CopyQuickBooks item={QB_STOCK_DOORS} description={description}
-                  rate={unit} qty={qty} testId="copy-qb" />
+                  rate={unit} qty={qty} testId="copy-qb"
+                  extraLines={vinylOn && vinyl ? [{ item: QB_VINYL, description: vinyl.description, qty: vinyl.feet, rate: vinyl.pricePerFt }] : undefined} />
               </div>
             </>
           ) : (

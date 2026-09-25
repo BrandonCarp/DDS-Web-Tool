@@ -28,6 +28,7 @@ export function CopyQuickBooks({
   defaultQty = 1,
   testId = "copy-qb",
   onCopy,
+  extraLines,
 }: {
   /** Must match an item in the QuickBooks list — see data/quickbooks.ts. */
   item: string;
@@ -40,10 +41,19 @@ export function CopyQuickBooks({
   defaultQty?: number;
   testId?: string;
   onCopy?: () => void;
+  /** More invoice lines, each pasted two rows below the one before with a
+      blank row between — how a door's vinyl rides along (Brandon, 25/9/2026). */
+  extraLines?: { item: string; description: string; qty: number; rate: number }[];
 }) {
   const [own, setOwn] = useState(defaultQty);
   const controlled = qty !== undefined;
   const n = controlled ? qty : own;
+  // One clipboard line per invoice row; an empty line leaves that row blank.
+  // The paste script moves down a row for every line break.
+  const text = [
+    quickBooksRow(item, description, n, rate),
+    ...(extraLines ?? []).flatMap((l) => ["", quickBooksRow(l.item, l.description, l.qty, l.rate)]),
+  ].join("\n");
 
   return (
     <span className="qbline">
@@ -60,8 +70,8 @@ export function CopyQuickBooks({
         </label>
       )}
       <CopyButton
-        text={quickBooksRow(item, description, n, rate)}
-        label="Copy for QuickBooks"
+        text={text}
+        label="QuickBooks"
         primary
         testId={testId}
         onCopy={onCopy}

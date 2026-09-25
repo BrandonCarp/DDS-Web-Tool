@@ -2,7 +2,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { cleanup, render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { ResidentialTool } from "./ResidentialTool";
-import { copiedQbLine } from "./test-clipboard";
+import { copiedQbLine, copyFrom } from "./test-clipboard";
+import { QB_VINYL } from "@/lib/pricing/data/quickbooks";
 
 /**
  * What these cover, and why.
@@ -378,5 +379,60 @@ describe("residential tool — framing, by model", () => {
     expect(rowOf("width-ft")).toBe("Width");
     expect(rowOf("height-ft")).toBe("Height");
     expect(screen.queryByText("Measure size")).toBeNull();
+  });
+});
+
+describe("residential tool — vinyl molding", () => {
+  async function priceIt(assemblyType?: string) {
+    await configure("4050", assemblyType);
+    if (assemblyType === "sections") {
+      fireEvent.change(screen.getByTestId("sec-width"), { target: { value: "9" } });
+    } else {
+      fireEvent.change(screen.getByTestId("width-ft"), { target: { value: "9" } });
+      fireEvent.change(screen.getByTestId("height-ft"), { target: { value: "7" } });
+    }
+    fireEvent.change(screen.getByTestId("color"), { target: { value: "White" } });
+    fireEvent.click(screen.getByTestId("get-price"));
+    await waitFor(() => expect(bodies.length).toBeGreaterThan(0));
+  }
+
+  it("asks about vinyl when Get price is pressed", async () => {
+    await priceIt();
+    expect(screen.getByTestId("vinyl-prompt").textContent).toContain("WHITE vinyl");
+  });
+
+  it("No copies the door line alone", async () => {
+    await priceIt();
+    fireEvent.click(screen.getByTestId("vinyl-ask-no"));
+    expect(screen.queryByTestId("vinyl-prompt")).toBeNull();
+    await waitFor(() => screen.getByTestId("copy-qb"));
+    expect((await copyFrom(screen.getByTestId("copy-qb"))).split("\n")).toHaveLength(1);
+  });
+
+  it("Yes puts the door on row 1 and the vinyl on row 3, row 2 left blank", async () => {
+    await priceIt();
+    fireEvent.click(screen.getByTestId("vinyl-ask-yes"));
+    await waitFor(() => screen.getByTestId("vinyl-price"));
+    // White 9' x 7': one 9' header and two 7' legs, 23 ft at 0.95.
+    expect(screen.getByTestId("vinyl-price").textContent).toBe("$21.85");
+    const rows = (await copyFrom(screen.getByTestId("copy-qb"))).split("\n");
+    expect(rows).toHaveLength(3);
+    expect(rows[1]).toBe("");
+    expect(rows[2].split("\t")).toEqual([QB_VINYL, "WHITE VINYL STOP MOLDING,  [1] - 9FT AND [2] - 7FT", "23", "0.95"]);
+  });
+
+  it("can change its mind in the quote card", async () => {
+    await priceIt();
+    fireEvent.click(screen.getByTestId("vinyl-ask-yes"));
+    await waitFor(() => screen.getByTestId("vinyl-price"));
+    fireEvent.click(screen.getByTestId("vinyl-no"));
+    expect(screen.queryByTestId("vinyl-price")).toBeNull();
+    expect((await copyFrom(screen.getByTestId("copy-qb"))).split("\n")).toHaveLength(1);
+  });
+
+  it("never asks for a replacement section — its opening already has molding", async () => {
+    await priceIt("sections");
+    expect(screen.queryByTestId("vinyl-prompt")).toBeNull();
+    expect(screen.queryByTestId("vinyl-row")).toBeNull();
   });
 });

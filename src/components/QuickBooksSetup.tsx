@@ -3,7 +3,7 @@
 /**
  * The QuickBooks paste helper, and how to install it.
  *
- * Copy for QuickBooks puts a whole invoice line on the clipboard —
+ * The QuickBooks button puts a whole invoice line on the clipboard —
  * ITEM, DESCRIPTION, QTY, RATE, tab separated. QuickBooks will not spread a
  * multi-column paste across a row, and its own Copy Line uses a private
  * clipboard format a browser cannot write, so a small AutoHotkey script does
@@ -23,7 +23,7 @@ export function QuickBooksSetup() {
           <div className="ghdr">QuickBooks paste helper — one-time setup</div>
           <div className="qbsetup-body">
             <p>
-              This lets <strong>Copy for QuickBooks</strong> fill an entire invoice
+              This lets the <strong>QuickBooks</strong> button fill an entire invoice
               line — item, description, quantity and rate — instead of typing each
               box. Set it up once on this computer and it works from then on.
               About five minutes.
@@ -82,7 +82,7 @@ export function QuickBooksSetup() {
 
             <h4 className="qbstep-h">How to use it</h4>
             <ol className="qbsteps">
-              <li>Build the quote here and press <strong>Copy for QuickBooks</strong></li>
+              <li>Build the quote here and press <strong>QuickBooks</strong></li>
               <li>
                 In QuickBooks, click the <strong>first box</strong> of an invoice
                 line — the Item column
@@ -109,7 +109,7 @@ export function QuickBooksSetup() {
               </li>
               <li>
                 <strong>Only the first box fills</strong> — the clipboard lost the
-                tabs between fields. Press Copy for QuickBooks again and retry.
+                tabs between fields. Press QuickBooks again and retry.
               </li>
               <li>
                 <strong>The description appears twice</strong> — an older copy of

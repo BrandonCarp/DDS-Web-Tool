@@ -18,7 +18,8 @@ export function OptionButtons<T extends string>({
 }: {
   label: string;
   options: readonly ButtonOption<T>[];
-  value: T;
+  /** null: nothing chosen yet, as in a yes/no question just asked. */
+  value: T | null;
   onChange: (v: T) => void;
   testid: string;
 }) {

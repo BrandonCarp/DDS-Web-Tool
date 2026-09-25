@@ -461,6 +461,32 @@ html, body { margin: 0; padding: 0; }
   font-size: 14px; color: var(--on-accent);
 }
 
+/* A field someone has filled or picked gets a green edge — the in-stock green —
+   so what has been chosen stands out from what is still on its default
+   (Brandon, 25/9/2026). AppShell marks a field data-set when it is changed; an
+   emptied one loses it, and one reset to its blank option drops the colour. */
+.tool-shell select[data-set]:not(:focus):not(:has(option[value=""]:checked)),
+.tool-shell :is(input, textarea)[data-set]:not(:focus):not(:placeholder-shown) { border-color: var(--good); }
+.tool-shell .qbqty:has(input[data-set]:not(:focus)) { border-color: var(--good); }
+
+/* The vinyl question: a small modal over the whole window, and its row in the
+   quote card. */
+.tool-shell .modal-scrim {
+  position: fixed; inset: 0; z-index: 60;
+  display: grid; place-items: center; padding: 20px;
+  background: rgba(0, 0, 0, .6);
+}
+.tool-shell .modal {
+  width: min(420px, 100%); padding: 22px 24px 24px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg);
+  box-shadow: var(--shadow-float);
+}
+.tool-shell .modal h3 { margin-bottom: 6px; font-size: 18px; }
+.tool-shell .modal .muted-note { margin-bottom: 16px; }
+.tool-shell .modal .optbtn { flex: 1; justify-content: center; min-height: 46px; font-size: 15px; }
+.tool-shell .vinylrow .optbtns { flex-wrap: nowrap; }
+.tool-shell .vinylrow .optbtn { min-height: 34px; padding: 5px 14px; }
+
 /* Two-way switch between whole views (stock springs / cut to size). */
 .tool-shell .modeswitch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
 .tool-shell .modebtn {

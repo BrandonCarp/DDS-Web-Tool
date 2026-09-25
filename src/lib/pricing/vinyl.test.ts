@@ -43,9 +43,24 @@ describe("vinyl stop molding", () => {
     expect(two.description).toBe("BLACK VINYL STOP MOLDING,  [2] - 16FT AND [4] - 8FT");
   });
 
-  it("returns nothing when the opening outruns the stocked lengths", () => {
-    expect(vinylForDoor("WHITE", 20, 7)).toBeNull(); // white tops out at 18
-    expect(vinylForDoor("BRONZE", 18, 7)).toBeNull(); // bronze is 16 only
+  it("past the longest length stocked, uses the longest plus what covers the rest", () => {
+    // White tops out at 18': a 20' header is an 18 and the shortest that covers 2'.
+    const white = vinylForDoor("WHITE", 20, 7)!;
+    expect(white.headerPieces).toEqual([18, 7]);
+    expect(white.description).toBe("WHITE VINYL STOP MOLDING,  [1] - 18FT AND [3] - 7FT");
+    expect(white.feet).toBe(18 + 7 + 7 * 2);
+    // Almond runs to 16' but stocks short lengths too.
+    const almond = vinylForDoor("ALMOND", 18, 8)!;
+    expect(almond.headerPieces).toEqual([16, 7]);
+    expect(almond.description).toBe("ALMOND VINYL STOP MOLDING,  [1] - 16FT AND [1] - 7FT AND [2] - 8FT");
+    // Bronze is 16' only, so the extra piece is another 16.
+    const bronze = vinylForDoor("BRONZE", 18, 7)!;
+    expect(bronze.headerPieces).toEqual([16, 16]);
+    expect(bronze.description).toBe("BRONZE VINYL STOP MOLDING,  [4] - 16FT");
+  });
+
+  it("still returns nothing for a colour that is not stocked", () => {
+    expect(vinylForDoor("PURPLE", 9, 7)).toBeNull();
   });
 
   it("resolves Ultra Grain from the finish word, not the wood family", () => {

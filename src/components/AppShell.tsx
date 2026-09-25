@@ -229,6 +229,24 @@ function Shell({
     reset();
     return () => { clearTimeout(t); evs.forEach((e) => window.removeEventListener(e, reset)); };
   }, []);
+  // A field someone changes is marked data-set, which the stylesheet edges in
+  // the in-stock green, so what has been chosen stands out from what is still
+  // on its default (Brandon, 25/9/2026). Emptying it takes the mark away. One
+  // listener for the whole app, catching events on their way down.
+  useEffect(() => {
+    const mark = (e: Event) => {
+      const el = e.target;
+      if (!(el instanceof HTMLInputElement || el instanceof HTMLSelectElement || el instanceof HTMLTextAreaElement)) return;
+      if (el.value.trim() === "") el.removeAttribute("data-set");
+      else el.setAttribute("data-set", "");
+    };
+    document.addEventListener("input", mark, true);
+    document.addEventListener("change", mark, true);
+    return () => {
+      document.removeEventListener("input", mark, true);
+      document.removeEventListener("change", mark, true);
+    };
+  }, []);
   // Only the master admin (Brandon's login) gets Inventory and the admin
   // panel link. Semi-admins lost the link on 24/9/2026 — Brandon.
   const isMaster = user.role === "admin";
