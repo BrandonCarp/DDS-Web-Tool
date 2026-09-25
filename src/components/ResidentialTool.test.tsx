@@ -333,3 +333,50 @@ describe("residential tool — the quote card once priced", () => {
     expect(line.rate).toBe(100);
   });
 });
+
+describe("residential tool — framing, by model", () => {
+  const SHORT = 'PLAIN SHORT 19-1/2" X 12"', LONG = 'PLAIN LONG 40-1/2" X 12"';
+  const options = (id: string) =>
+    [...(screen.getByTestId(id) as HTMLSelectElement).options].map((o) => o.textContent);
+
+  it("offers each model its own plain windows, then Inserts where it takes them", async () => {
+    const expected: Record<string, string[]> = {
+      T50S: [SHORT, "Inserts"],
+      "4050": [SHORT, LONG, "Inserts"],
+      "9130": [SHORT, LONG, "Inserts"],
+      "4053": [LONG, "Inserts"],
+      "9133": [LONG, "Inserts"],
+      GD1SP: ['PLAIN LONG 42" X 16"'],
+      GD1LP: ['PLAIN ARCH 1 42" X 16"', "Inserts"],
+    };
+    for (const [model, want] of Object.entries(expected)) {
+      cleanup();
+      await configure(model);
+      expect(options("framing"), model).toEqual(want);
+    }
+  });
+
+  it("sends the plain window chosen", async () => {
+    await configure("4050");
+    fireEvent.change(screen.getByTestId("width-ft"), { target: { value: "9" } });
+    fireEvent.change(screen.getByTestId("height-ft"), { target: { value: "7" } });
+    fireEvent.change(screen.getByTestId("color"), { target: { value: "White" } });
+    const glass = options("style").length && [...(screen.getByTestId("style") as HTMLSelectElement).options]
+      .map((o) => o.value).find((v) => v !== "solid")!;
+    fireEvent.change(screen.getByTestId("style"), { target: { value: glass } });
+    fireEvent.change(screen.getByTestId("framing"), { target: { value: LONG } });
+    fireEvent.click(screen.getByTestId("get-price"));
+    await waitFor(() => expect(bodies.length).toBeGreaterThan(0));
+    const last = bodies[bodies.length - 1];
+    expect(last.style).toBe("glass");
+    expect(last.plainWindow).toBe(LONG);
+  });
+
+  it("labels the size rows Width and Height, beside their own boxes", async () => {
+    await configure();
+    const rowOf = (id: string) => screen.getByTestId(id).closest(".grow")!.querySelector("label")!.textContent;
+    expect(rowOf("width-ft")).toBe("Width");
+    expect(rowOf("height-ft")).toBe("Height");
+    expect(screen.queryByText("Measure size")).toBeNull();
+  });
+});

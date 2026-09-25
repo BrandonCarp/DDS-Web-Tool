@@ -12,7 +12,7 @@ import type { LockKey, Quote, SpringKey, TrackKey, WindowStyle } from "@/lib/pri
 import { COLORS, COLLECTIONS } from "@/lib/pricing/data/catalog-meta";
 import type { ParsedDoor } from "@/lib/pricing/data/parse-request";
 import { dataKey, modelSort } from "@/lib/pricing/model-groups";
-import { windowDesigns, designWidthCode } from "@/lib/pricing/data/inserts";
+import { windowDesigns, designWidthCode, plainWindowsFor, takesInserts } from "@/lib/pricing/data/inserts";
 import { RES_SECTION_WIDTHS, sectionWidthLabel } from "@/lib/pricing/data/res-section-meta";
 import { stockedWidths, stockedHeights, sizeParts, sizeCode, stockedColors, solidOnlyHeight, torsionOnlyHeight } from "@/lib/pricing/data/stock-colors";
 import { OptionButtons, type ButtonOption } from "./OptionButtons";
@@ -141,7 +141,15 @@ export function ResidentialTool({
   const [errorRaw, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
-  const style = styleFrom(glass, framing);
+  // Framing, per model: the plain windows it takes (by their order names), then
+  // Inserts where it takes them. A model with no list keeps the old pair.
+  const plainOpts = plainWindowsFor(model);
+  const framingOpts = plainOpts.length
+    ? [...plainOpts.map((w) => ({ value: w, label: w })),
+       ...(takesInserts(model) ? [{ value: "insert", label: "Inserts" }] : [])]
+    : [{ value: "plain", label: "Plain (no insert)" }, { value: "insert", label: "Insert" }];
+  const activeFraming = framingOpts.some((o) => o.value === framing) ? framing : framingOpts[0].value;
+  const style = styleFrom(glass, activeFraming);
   const collection = COLLECTIONS[dataKey(model)] ?? coll;
   const isGallery = collection === "Gallery Collection";
   const sections = assembly === "sections";
@@ -225,7 +233,7 @@ export function ResidentialTool({
 
 
 
-  const cfgSig = JSON.stringify([model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, activeDesign, assembly, secKind, secHeight, activeSecWidth, secGlass, secLock, upgradedHardware, homeowner]);
+  const cfgSig = JSON.stringify([model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, activeDesign, activeFraming, assembly, secKind, secHeight, activeSecWidth, secGlass, secLock, upgradedHardware, homeowner]);
   const result = resultRaw && resultSig === cfgSig ? resultRaw : null;
   const liveError = errorRaw && resultSig === cfgSig ? errorRaw : null;
 
@@ -300,6 +308,7 @@ export function ResidentialTool({
           heightFt: Number(heightFt), heightIn: Number(heightIn || 0),
           style, color, track, spring, lock,
           windesign: activeDesign || undefined,
+          plainWindow: style === "glass" && activeFraming !== "plain" ? activeFraming : undefined,
             // Sections carry no hinges or rollers, so the flag never goes out
             // for them even if it was left on from a complete-door quote.
             upgradedHardware: sectionsOnly ? false : upgradedHardware,
@@ -460,13 +469,6 @@ export function ResidentialTool({
               <span className="muted-note" style={{ marginLeft: "auto" }}>{collection}</span>
             </div>
 
-            {!optionsOpen && (
-              <div className="cfg-hint" data-testid="cfg-hint">
-                {!sizeComplete
-                  ? `Start with the ${sections ? "section width" : "size"}. The other options open once it is set.`
-                  : "Now choose the color, then the rest of the options open."}
-              </div>
-            )}
             <div className="cfg2">
               <div className="ggroup">
                 <div className="ghdr">Layout options</div>
@@ -503,66 +505,71 @@ export function ResidentialTool({
                     </div>
                   </div>
                 ) : (
+                <>
                 <div className="grow">
-                  <label>Measure size</label>
+                  <label>Width</label>
                   {/* Same two-box ft/in shape as before — the feet box is a
                       dropdown now, offering only the sizes DDS floors for this
                       model. Inches follow from whatever that size is, so they
                       are shown but not separately chosen. Models floored in
                       nothing keep free entry. */}
-                  <div className="ctl dimstack">
-                    <div className="dimrow">
-                      {stockSizes ? (
-                        <div className="selectwrap dimsel">
-                          <select data-testid="width-ft" value={widthFt} onChange={(e) => pickWidth(e.target.value)}>
-                            <option value="">ft</option>
-                            {stockWFt.map((f) => <option key={f} value={f}>{f}</option>)}
-                          </select>
-                        </div>
-                      ) : (
-                        <input data-testid="width-ft" type="number" min={0} placeholder="ft" value={widthFt} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setWidthFt(v); }} />
-                      )}
-                      <span className="u">ft</span>
-                      {stockSizes ? (
-                        <div className="selectwrap dimsel">
-                          <select data-testid="width-in" value={widthIn} onChange={(e) => setWidthIn(e.target.value)}>
-                            {widthInOptions.map((v) => <option key={v} value={v}>{v}</option>)}
-                          </select>
-                        </div>
-                      ) : (
-                        <select data-testid="width-in" className="insel" value={widthIn} onChange={(e) => setWidthIn(e.target.value)}>
-                          {["0", "2", "4", "6", "8", "10"].map((v) => <option key={v} value={v}>{v}</option>)}
+                  <div className="ctl dimrow">
+                    {stockSizes ? (
+                      <div className="selectwrap dimsel">
+                        <select data-testid="width-ft" value={widthFt} onChange={(e) => pickWidth(e.target.value)}>
+                          <option value="">ft</option>
+                          {stockWFt.map((f) => <option key={f} value={f}>{f}</option>)}
                         </select>
-                      )}
-                      <span className="u">in W</span>
-                    </div>
-                    {!sections && <div className="dimrow">
-                      {stockSizes ? (
-                        <div className="selectwrap dimsel">
-                          <select data-testid="height-ft" value={heightFt} onChange={(e) => pickHeight(e.target.value)}>
-                            <option value="">ft</option>
-                            {stockHFt.map((f) => <option key={f} value={f}>{f}</option>)}
-                          </select>
-                        </div>
-                      ) : (
-                        <input data-testid="height-ft" type="number" min={0} placeholder="ft" value={heightFt} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setHeightFt(v); }} />
-                      )}
-                      <span className="u">ft</span>
-                      {stockSizes ? (
-                        <div className="selectwrap dimsel">
-                          <select data-testid="height-in" value={heightIn} onChange={(e) => setHeightIn(e.target.value)}>
-                            {heightInOptions.map((v) => <option key={v} value={v}>{v}</option>)}
-                          </select>
-                        </div>
-                      ) : (
-                        <select data-testid="height-in" className="insel" value={heightIn} onChange={(e) => setHeightIn(e.target.value)}>
-                          {["0", "3", "6", "9"].map((v) => <option key={v} value={v}>{v}</option>)}
+                      </div>
+                    ) : (
+                      <input data-testid="width-ft" type="number" min={0} placeholder="ft" value={widthFt} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setWidthFt(v); }} />
+                    )}
+                    <span className="u">ft</span>
+                    {stockSizes ? (
+                      <div className="selectwrap dimsel">
+                        <select data-testid="width-in" value={widthIn} onChange={(e) => setWidthIn(e.target.value)}>
+                          {widthInOptions.map((v) => <option key={v} value={v}>{v}</option>)}
                         </select>
-                      )}
-                      <span className="u">in H</span>
-                    </div>}
+                      </div>
+                    ) : (
+                      <select data-testid="width-in" className="insel" value={widthIn} onChange={(e) => setWidthIn(e.target.value)}>
+                        {["0", "2", "4", "6", "8", "10"].map((v) => <option key={v} value={v}>{v}</option>)}
+                      </select>
+                    )}
+                    <span className="u">in</span>
                   </div>
                 </div>
+                {!sections && (
+                <div className="grow">
+                  <label>Height</label>
+                  <div className="ctl dimrow">
+                    {stockSizes ? (
+                      <div className="selectwrap dimsel">
+                        <select data-testid="height-ft" value={heightFt} onChange={(e) => pickHeight(e.target.value)}>
+                          <option value="">ft</option>
+                          {stockHFt.map((f) => <option key={f} value={f}>{f}</option>)}
+                        </select>
+                      </div>
+                    ) : (
+                      <input data-testid="height-ft" type="number" min={0} placeholder="ft" value={heightFt} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setHeightFt(v); }} />
+                    )}
+                    <span className="u">ft</span>
+                    {stockSizes ? (
+                      <div className="selectwrap dimsel">
+                        <select data-testid="height-in" value={heightIn} onChange={(e) => setHeightIn(e.target.value)}>
+                          {heightInOptions.map((v) => <option key={v} value={v}>{v}</option>)}
+                        </select>
+                      </div>
+                    ) : (
+                      <select data-testid="height-in" className="insel" value={heightIn} onChange={(e) => setHeightIn(e.target.value)}>
+                        {["0", "3", "6", "9"].map((v) => <option key={v} value={v}>{v}</option>)}
+                      </select>
+                    )}
+                    <span className="u">in</span>
+                  </div>
+                </div>
+                )}
+                </>
                 )}
                 <div className="grow">
                   <label>Color</label>
@@ -586,20 +593,19 @@ export function ResidentialTool({
                   </div>
                 </div>
                 <div className="grow">
-                  <label>Framing / insert</label>
+                  <label>Framing</label>
                   <div className="ctl selectwrap">
-                    <select value={framing} onChange={(e) => setFraming(e.target.value)} disabled={glass === "solid" || !optionsOpen}>
-                      <option value="plain">Plain (no insert)</option>
-                      <option value="insert">Insert</option>
+                    <select data-testid="framing" value={activeFraming} onChange={(e) => setFraming(e.target.value)} disabled={glass === "solid" || !optionsOpen}>
+                      {framingOpts.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
                   </div>
                 </div>
                 {sizeComplete && wDesigns.length > 0 && (
                   <div className="grow">
-                    <label>Window design</label>
+                    <label>Inserts</label>
                     <div className="ctl selectwrap">
                       <select data-testid="windesign" value={activeDesign} disabled={!optionsOpen} onChange={(e) => setWindesign(e.target.value)}>
-                        <option value="">Select a design…</option>
+                        <option value="">Select an insert…</option>
                         {wDesigns.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
                       </select>
                     </div>
@@ -623,7 +629,7 @@ export function ResidentialTool({
                   </div>
                 </div>
                 <div className="grow">
-                  <label>Track lift / radius</label>
+                  <label>Track</label>
                   <div className="ctl selectwrap">
                     <select data-testid="track" value={track} disabled={!optionsOpen} onChange={(e) => setTrack(e.target.value as TrackKey)}>
                       {TRACKS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}

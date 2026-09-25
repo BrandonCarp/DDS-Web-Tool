@@ -124,3 +124,35 @@ export function designName(id: string | undefined | null): string | null {
   return d ? d.name : null;
 }
 
+
+/**
+ * The plain (no-insert) windows each stock model takes, by the name they go on
+ * the order under — short or long matters to whoever pulls the door. Listed
+ * models offer these, then Inserts where they take them (Brandon, 25/9/2026).
+ * A model not listed keeps the plain / insert pair.
+ *
+ * Every plain window prices as the door's glass price; only the description
+ * changes. The engine checks a window against this list before using it.
+ */
+const PLAIN_SHORT = 'PLAIN SHORT 19-1/2" X 12"';
+const PLAIN_LONG = 'PLAIN LONG 40-1/2" X 12"';
+export const PLAIN_WINDOWS: Record<string, readonly string[]> = {
+  T50S: [PLAIN_SHORT],
+  "4050": [PLAIN_SHORT, PLAIN_LONG],
+  "9130": [PLAIN_SHORT, PLAIN_LONG],
+  "4053": [PLAIN_LONG],
+  "9133": [PLAIN_LONG],
+  GD1SP: ['PLAIN LONG 42" X 16"'],
+  GD1LP: ['PLAIN ARCH 1 42" X 16"'],
+};
+
+/** Models offered no inserts at all. */
+const NO_INSERTS = new Set(["GD1SP"]);
+
+export function plainWindowsFor(model: string): readonly string[] {
+  return PLAIN_WINDOWS[model] ?? [];
+}
+
+export function takesInserts(model: string): boolean {
+  return !NO_INSERTS.has(model);
+}

@@ -144,3 +144,23 @@ describe("price route — validation", () => {
     expect(json.priced).toBe(false);
   });
 });
+
+describe("price route — which plain window", () => {
+  const LONG = 'PLAIN LONG 40-1/2" X 12"';
+
+  it("names the plain window chosen in the description", async () => {
+    const { json } = await post(door({ style: "glass", plainWindow: LONG }));
+    expect(json.description.toUpperCase()).toContain(`WINDOWS IN THE TOP SECTION, ${LONG}, NO INSERTS`);
+  });
+
+  it("prices every plain window as the door's glass price", async () => {
+    const short = await post(door({ style: "glass", plainWindow: 'PLAIN SHORT 19-1/2" X 12"' }));
+    const long = await post(door({ style: "glass", plainWindow: LONG }));
+    expect(long.json.unitPrice).toBe(short.json.unitPrice);
+  });
+
+  it("ignores a plain window the model does not take", async () => {
+    const { json } = await post(door({ model: "T50S", style: "glass", plainWindow: LONG }));
+    expect(json.description.toUpperCase()).not.toContain("PLAIN LONG");
+  });
+});

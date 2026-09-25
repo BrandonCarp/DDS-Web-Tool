@@ -470,11 +470,6 @@ export function SpecialTool() {
                     <span className="mtag" data-testid="so-assembly-tag">Complete door</span>
                     <span className="muted-note" style={{ marginLeft: "auto" }}>{series}</span>
                   </div>
-                  {!gOpen && (
-                    <div className="cfg-hint" data-testid="so-cfg-hint">
-                      {!gSizeSet ? "Start with the size. The other options open once it is set." : "Now choose the color, then the rest of the options open."}
-                    </div>
-                  )}
                   <div className="socfg"><div className="cfg2">
                   <div className="ggroup">
                   <div className="ghdr">Layout options</div>
@@ -550,10 +545,10 @@ export function SpecialTool() {
                   )}
                   {gDesigns.length > 0 && (
                     <div className="grow">
-                      <label>Window design</label>
+                      <label>Inserts</label>
                       <div className="ctl selectwrap">
                         <select disabled={!gOpen} data-testid="so-windesign" value={gDesign} onChange={(e) => { setGDesign(e.target.value); setSaved(false); }}>
-                          <option value="">Select a design…</option>
+                          <option value="">Select an insert…</option>
                           {gDesigns.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
                         </select>
                       </div>
@@ -580,7 +575,7 @@ export function SpecialTool() {
                       </select>
                     </div>
                   </div>
-                  <div className="grow"><label>Track lift / radius</label>
+                  <div className="grow"><label>Track</label>
                     <div className="ctl selectwrap">
                       <select disabled={!gOpen} data-testid="so-track" value={gTrack}
                         onChange={(e) => { setGTrack(e.target.value); if (e.target.value !== "high_lift") setGLift(0); setSaved(false); }}>

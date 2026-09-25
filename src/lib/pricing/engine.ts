@@ -8,7 +8,7 @@ import { STOCK_PRICES } from "./data/stock-prices";
 import { highLiftPrice, mountPhrase } from "./data/track-lift";
 import { ADDONS, ULTRAGRAIN, GRADE_RES, COLLECTIONS_RES } from "./data/addons";
 import { dataKey, expandModels } from "./model-groups";
-import { windowDesigns, designName } from "./data/inserts";
+import { windowDesigns, designName, plainWindowsFor } from "./data/inserts";
 import { RES_SECTIONS } from "./data/res-sections";
 import { colorInStock, sectionColorInStock, sizeCode } from "./data/stock-colors";
 import { colorTakesPremium } from "./data/catalog-meta";
@@ -324,7 +324,13 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
     // Windows with no insert design chosen says NO INSERTS outright. Trailing
     // off after "in the top section" left the installer unable to tell a plain
     // glazed door from one whose insert nobody filled in.
-    winTxt = `${grade ? grade + " windows" : "windows"} in the top section${dn ? ", " + dn + " inserts" : ", no inserts"}`;
+    // A plain window says which one, by its order name: short or long matters
+    // to whoever pulls the door — Brandon, 25/9/2026. Its own clause, so the
+    // wording before it is exactly what it always was.
+    const plain = opts.style === "glass" && opts.plainWindow && plainWindowsFor(model).includes(opts.plainWindow)
+      ? ", " + opts.plainWindow.toLowerCase()
+      : "";
+    winTxt = `${grade ? grade + " windows" : "windows"} in the top section${plain}${dn ? ", " + dn + " inserts" : ", no inserts"}`;
   }
   const springTxt = torsionOnly || opts.spring === "torsion" ? "torsion springs" : "extension springs";
   const lockTxt =
