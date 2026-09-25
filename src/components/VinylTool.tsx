@@ -105,6 +105,12 @@ export function VinylTool() {
 
             {quote ? (
               <>
+                <div className="total">
+                  <span>
+                    Quantity <b data-testid="vinyl-qty">{quote.feet}</b> ft
+                  </span>
+                  <b data-testid="vinyl-total">{fmt(quote.total)}</b>
+                </div>
                 <div className="qfoot">
                   <CopyQuickBooks item={QB_VINYL} description={quote.description} rate={quote.pricePerFt} qty={quote.feet} testId="vinyl-copy-qb" />
                   <button

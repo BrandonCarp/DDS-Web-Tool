@@ -33,6 +33,7 @@ describe("Extension Springs tab", () => {
 
     // The card names the spring; its description and price go to QuickBooks.
     expect(screen.queryByTestId("ext-desc")).toBeNull();
+    expect(screen.getByTestId("ext-price").textContent).toContain(first.price.toFixed(2));
     const line = await copiedQbLine(screen.getByTestId("ext-copy-qb"));
     expect(line.description).toBe(first.desc);
     expect(line.rate).toBeCloseTo(first.price, 2);
@@ -86,6 +87,7 @@ describe("Torsion Springs tab", () => {
 
     clickRow("stock-list", handed?.name ?? "");
 
+    expect(screen.getByTestId("stock-price").textContent).toContain((handed?.price ?? 0).toFixed(2));
     const line = await copiedQbLine(screen.getByTestId("stock-copy-qb"));
     expect(line.description).toContain("[1] - RIGHT");
     expect(line.rate).toBeCloseTo(handed?.price ?? 0, 2);

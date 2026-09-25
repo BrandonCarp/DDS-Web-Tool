@@ -156,6 +156,10 @@ export function TorsionTool() {
             ) : (
             <>
 
+              <div className="total" style={{ borderTop: 0, paddingTop: 18 }}>
+                <span className="tl">Spring price (each)</span>
+                <span className="tv" data-testid="stock-price">{fmt(stockUnit)}</span>
+              </div>
               <div className="row2" style={{ margin: "0 20px 16px" }}>
                 <div className="field">
                   <label className="lbl">Right springs (red)</label>
@@ -192,6 +196,10 @@ export function TorsionTool() {
           ) : (
             <>
 
+              <div className="total" style={{ borderTop: 0, paddingTop: 18 }}>
+                <span className="tl">Spring price (each)</span>
+                <span className="tv" data-testid="tor-price">{fmt(price)}</span>
+              </div>
               <div className="row2" style={{ margin: "0 20px 16px" }}>
                 <div className="field">
                   <label className="lbl">Right springs (red)</label>

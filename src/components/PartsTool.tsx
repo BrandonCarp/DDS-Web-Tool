@@ -328,6 +328,10 @@ export function PartsTool() {
                         This one has no price yet — look it up before the order goes out.
                       </div>
                     )}
+                    <div className="total">
+                      <span>Quantity {qtyText}</span>
+                      <b data-testid="parts-price">{fmt(price)}</b>
+                    </div>
                     <div className="qfoot">
                       {price != null && (
                         <CopyQuickBooks item={categoryItem(hit?.category ?? catName)} description={description}

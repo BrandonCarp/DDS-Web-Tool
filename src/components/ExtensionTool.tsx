@@ -64,6 +64,10 @@ export function ExtensionTool() {
               </div>
             ) : (
               <>
+                <div className="total">
+                  <span>Quantity {qtyText}</span>
+                  <b data-testid="ext-price">{fmt(price)}</b>
+                </div>
                 <div className="qfoot">
                   <CopyQuickBooks item={QB_EXTENSION} description={description} rate={price} testId="ext-copy-qb" />
                   <button className="btn" type="button" onClick={() => setPickedName(null)}>

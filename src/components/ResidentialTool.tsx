@@ -750,6 +750,10 @@ export function ResidentialTool({
                 <label htmlFor="qty">Quantity</label>
                 <input id="qty" type="number" min={1} value={qty} onChange={(e) => setQty(Number(e.target.value))} />
               </div>
+              <div className="total">
+                <span className="tl">Quote total</span>
+                <span className="tv" data-testid="total">{fmt(total)}</span>
+              </div>
               <div className="qfoot">
                 <CopyQuickBooks item={QB_STOCK_DOORS} description={description}
                   rate={unit} qty={qty} testId="copy-qb" />

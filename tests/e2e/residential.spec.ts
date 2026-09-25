@@ -64,6 +64,7 @@ test.describe("authenticated", () => {
     const answer = page.waitForResponse((r) => r.url().includes("/api/price"));
     await page.getByTestId("get-price").click();
     expect((await (await answer).json()).unitPrice).toBeCloseTo(934.63, 2);
+    await expect(page.locator("aside.quote").getByTestId("total")).toHaveText("$934.63");
   });
 
   test("shows the in-stock badge and Copy for QuickBooks", async ({ page }) => {

@@ -183,6 +183,16 @@ export function OperatorsTool() {
               </div>
             ) : (
               <>
+                <div className="total">
+                  <span>Quantity 1</span>
+                  {price == null ? (
+                    <b className="nopricing" data-testid="op-price">
+                      Price not set
+                    </b>
+                  ) : (
+                    <b data-testid="op-price">{fmt(price)}</b>
+                  )}
+                </div>
                 {price == null && (
                   <div className="muted-note" style={{ padding: "0 22px 4px" }}>
                     This one has no price yet — look it up before the order goes out.

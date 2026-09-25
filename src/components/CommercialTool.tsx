@@ -455,6 +455,10 @@ export function CommercialTool() {
                 <label htmlFor="cqty">Quantity</label>
                 <input id="cqty" type="number" min={1} value={qty} onChange={(e) => setQty(Number(e.target.value))} />
               </div>
+              <div className="total">
+                <span className="tl">Quote total</span>
+                <span className="tv" data-testid="comm-total">{fmt(total)}</span>
+              </div>
               <div className="qfoot">
                 <CopyQuickBooks item={QB_STOCK_DOORS} description={result.description ?? ""}
                   rate={unit + hoMarkup} qty={qty} testId="copy-qb" />

@@ -307,7 +307,7 @@ describe("residential tool — the quote card once priced", () => {
     expect(button().disabled).toBe(false);
   });
 
-  it("shows the model, the stock marker, the quantity and Copy for QuickBooks — nothing else", async () => {
+  it("shows the model, the stock marker, the quantity, the price and Copy for QuickBooks — nothing else", async () => {
     await priceIt();
     // The card, not the page: the printed estimate sheet (hidden on screen)
     // still carries the full breakdown.
@@ -316,7 +316,9 @@ describe("residential tool — the quote card once priced", () => {
     expect(card.getByTestId("source-badge").textContent).toContain("In stock");
     expect(card.getByTestId("copy-qb")).toBeTruthy();
     expect(cardEl.querySelector("#qty")).toBeTruthy();
-    for (const gone of ["total", "price", "copy-desc", "copy-price"]) {
+    // The price came back on 25/9/2026; the line items did not.
+    expect(card.getByTestId("total").textContent).toBe("$100.00");
+    for (const gone of ["price", "copy-desc", "copy-price"]) {
       expect(card.queryByTestId(gone), gone).toBeNull();
     }
     expect(card.queryByText("TEST DESCRIPTION")).toBeNull();
