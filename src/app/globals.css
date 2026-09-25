@@ -71,13 +71,15 @@
   /* Sidebar darkest, the main area a step lighter, panels a step lighter
      again — Brandon, 25/9/2026. */
   --rail: #131112;
-  --canvas: #1c191a;
-  --surface: #242022;
-  --surface-2: #2a2628;
-  --surface-3: #332e30;
-  --line: #3a3437;
-  --line-2: #302b2d;
-  --line-strong: #4d4548;
+  /* Lifted a smidge on 25/9/2026 so the main area pops off the sidebar; the
+     panels and their lines moved with it, so they still stand out. */
+  --canvas: #201d1e;
+  --surface: #282425;
+  --surface-2: #2e2a2c;
+  --surface-3: #373234;
+  --line: #3e383b;
+  --line-2: #342f31;
+  --line-strong: #514a4d;
 
   --ink: #efebeb;
   --ink-2: #d8d1d2;
