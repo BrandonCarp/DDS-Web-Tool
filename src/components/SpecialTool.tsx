@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useCustomerJob } from "@/components/CustomerJobFields";
-import { CopyButton, CopyPrice, priceText } from "@/components/CopyButton";
+import { priceText } from "@/components/CopyButton";
 import { CopyQuickBooks } from "./CopyQuickBooks";
 import { QB_SPECIAL_ORDERS } from "@/lib/pricing/data/quickbooks";
 import {
@@ -700,11 +700,6 @@ export function SpecialTool() {
           <div className="qhead">
             <div className="ql">Special order</div>
             <div className="qmodel">{scope === "residential" ? series || "—" : `${cMfr} ${cModel || "—"}`}</div>
-            <div className="qsub">
-              {scope === "residential"
-                ? ser ? (flatMargin ? `Special order · ${kind === "section" ? "Sections" : "Door"}` : modelGroup ? `${modelMember || modelGroup} · ${kind === "section" ? "Sections" : "Door"}` : "Select a model") : "Select a series"
-                : cModel ? (kind === "section" ? "Sections" : "Complete door") : "Select a model"}
-            </div>
           </div>
           {/* Nothing is priced until Configure. A door has to be chosen before
               either route makes sense — the grid needs a model to look up, and
@@ -761,31 +756,13 @@ export function SpecialTool() {
             <div className="lines" />
           ) : (
             <>
-              <div className="lines">
-                <div className="qline">
-                  <span className="nm">{label}</span>
-                  <span className="vl" data-testid="so-sell">{fmt(n.sell)}</span>
-                </div>
-              </div>
               <div className="qtyrow">
                 <label htmlFor="soqty">Quantity</label>
                 <input id="soqty" type="number" min={1} value={qty} onChange={(e) => { setQty(Number(e.target.value)); setSaved(false); }} />
               </div>
-              <div className="total">
-                <span className="tl">Quote total</span>
-                <span className="tv">{fmt(total)}</span>
-              </div>
-              {gridded && kind === "door" && copyText && (
-                <div className="descbox">
-                  <div className="desclbl">Door description</div>
-                  <div className="desctext" data-testid="so-desc">{copyText}</div>
-                </div>
-              )}
               <div className="qfoot">
                 <CopyQuickBooks item={QB_SPECIAL_ORDERS} description={copyText ?? label}
-                  rate={(n?.sell ?? 0) + hoMarkup} qty={qty} testId="copy-qb" />
-                <CopyButton text={(copyText ?? label).toUpperCase()} label="Copy description" primary onCopy={saveQuote} testId="so-copy-desc" />
-                <CopyPrice amount={(n?.sell ?? 0) + hoMarkup} onCopy={saveQuote} testId="so-copy-price" />
+                  rate={(n?.sell ?? 0) + hoMarkup} qty={qty} onCopy={saveQuote} testId="copy-qb" />
               </div>
             </>
           )}

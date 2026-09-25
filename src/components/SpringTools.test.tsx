@@ -6,6 +6,7 @@ import { TorsionTool } from "./TorsionTool";
 import { AppShell } from "./AppShell";
 import { CustomerJobProvider } from "./CustomerJobFields";
 import { EXTENSION_SPRINGS, STOCK_TORSION_SPRINGS } from "@/lib/pricing/data/springs";
+import { copiedQbLine } from "./test-clipboard";
 
 // The last runtime crash on this tool (part!.name with no branch for the custom
 // cable path) got through tsc AND next build. Rendering the tab is the only
@@ -23,15 +24,18 @@ function clickRow(listTestId: string, name: string) {
 }
 
 describe("Extension Springs tab", () => {
-  it("renders and prices a spring off the list", () => {
+  it("renders and prices a spring off the list", async () => {
     render(<ExtensionTool />);
     expect(screen.getByText("No spring selected")).toBeTruthy();
 
     const first = EXTENSION_SPRINGS.items[0];
     clickRow("ext-list", first.name);
 
-    expect(screen.getByTestId("ext-desc").textContent).toBe(first.desc);
-    expect(screen.getByTestId("ext-price").textContent).toContain(first.price.toFixed(2));
+    // The card names the spring; its description and price go to QuickBooks.
+    expect(screen.queryByTestId("ext-desc")).toBeNull();
+    const line = await copiedQbLine(screen.getByTestId("ext-copy-qb"));
+    expect(line.description).toBe(first.desc);
+    expect(line.rate).toBeCloseTo(first.price, 2);
   });
 
   it("searches across every door height", () => {
@@ -74,7 +78,7 @@ describe("Torsion Springs tab", () => {
     expect(screen.queryByTestId("tor-wire")).toBeNull();
   });
 
-  it("prices a stock spring as a pair by default", () => {
+  it("prices a stock spring as a pair by default", async () => {
     renderTool();
     fireEvent.click(screen.getByTestId("mode-stock"));
     const handed = STOCK_TORSION_SPRINGS.items.find((p) => p.hands);
@@ -82,11 +86,10 @@ describe("Torsion Springs tab", () => {
 
     clickRow("stock-list", handed?.name ?? "");
 
-    expect(screen.getByTestId("stock-desc").textContent).toContain("[1] - RIGHT");
-    expect(screen.getByTestId("stock-price").textContent).toContain(
-      (handed?.price ?? 0).toFixed(2),
-    );
-    expect(screen.queryByTestId("tor-price")).toBeNull();
+    const line = await copiedQbLine(screen.getByTestId("stock-copy-qb"));
+    expect(line.description).toContain("[1] - RIGHT");
+    expect(line.rate).toBeCloseTo(handed?.price ?? 0, 2);
+    expect(screen.queryByTestId("tor-copy-qb")).toBeNull();
   });
 
   it("keeps both entries alive across a switch", () => {
@@ -96,13 +99,13 @@ describe("Torsion Springs tab", () => {
     fireEvent.click(screen.getByTestId("mode-stock"));
     const handed = STOCK_TORSION_SPRINGS.items.find((p) => p.hands);
     clickRow("stock-list", handed?.name ?? "");
-    expect(screen.getByTestId("stock-desc")).toBeTruthy();
+    expect(screen.getByTestId("stock-copy-qb")).toBeTruthy();
 
     // Back to the configurator: the length typed before the detour survives,
     // and the stock spring is no longer driving the card.
     fireEvent.click(screen.getByTestId("mode-config"));
     expect(screen.getByTestId("tor-length").getAttribute("value")).toBe("24.5");
-    expect(screen.queryByTestId("stock-desc")).toBeNull();
+    expect(screen.queryByTestId("stock-copy-qb")).toBeNull();
   });
 });
 

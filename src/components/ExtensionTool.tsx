@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CopyButton, CopyPrice, priceText } from "@/components/CopyButton";
+import { priceText } from "@/components/CopyButton";
 import { CopyQuickBooks } from "./CopyQuickBooks";
 import { QB_EXTENSION } from "@/lib/pricing/data/quickbooks";
 import { QbLineDemo } from "@/components/QbLineDemo";
@@ -56,7 +56,6 @@ export function ExtensionTool() {
             <div className="qhead">
               <div className="qeyebrow">Extension spring</div>
               <div className="qtitle">{part ? part.name : "No spring selected"}</div>
-              {part && <div className="qsub">QuickBooks item: {QB_ITEMS.parts}</div>}
             </div>
 
             {!part ? (
@@ -65,20 +64,8 @@ export function ExtensionTool() {
               </div>
             ) : (
               <>
-                <div className="descbox no-print">
-                  <div className="desclbl">Spring description</div>
-                  <div className="desctext" data-testid="ext-desc">
-                    {description}
-                  </div>
-                </div>
-                <div className="total">
-                  <span>Quantity {qtyText}</span>
-                  <b data-testid="ext-price">{fmt(price)}</b>
-                </div>
                 <div className="qfoot">
                   <CopyQuickBooks item={QB_EXTENSION} description={description} rate={price} testId="ext-copy-qb" />
-                  <CopyButton text={description} label="Copy description" testId="ext-copy-desc" />
-                  <CopyPrice amount={price} testId="ext-copy-price" />
                   <button className="btn" type="button" onClick={() => setPickedName(null)}>
                     Clear
                   </button>

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import { BOOT_SCRIPT } from "@/lib/theme";
+import { BOOT_SCRIPT } from "@/lib/sidebar";
 
 // Archivo, served from the repo so no font request leaves the building. One
 // variable file covers every weight and the width axis the headings and the
@@ -22,8 +22,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    // suppressHydrationWarning: BOOT_SCRIPT sets data-theme / data-sidebar on
-    // <html> before React hydrates, so the server's copy never has them.
+    // suppressHydrationWarning: BOOT_SCRIPT sets data-sidebar on <html>
+    // before React hydrates, so the server's copy never has it.
     <html lang="en" className={archivo.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: BOOT_SCRIPT }} />

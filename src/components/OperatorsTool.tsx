@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CopyButton, CopyPrice, priceText } from "@/components/CopyButton";
+import { priceText } from "@/components/CopyButton";
 import { CopyQuickBooks } from "./CopyQuickBooks";
 import { categoryItem } from "@/lib/pricing/data/quickbooks";
 import { QbLineDemo } from "@/components/QbLineDemo";
@@ -175,7 +175,6 @@ export function OperatorsTool() {
             <div className="qhead">
               <div className="qeyebrow">Operator quote</div>
               <div className="qtitle">{chosen ? chosen.name : "Nothing selected"}</div>
-              {chosen && <div className="qsub">QuickBooks item: {QB_ITEMS.operators}</div>}
             </div>
 
             {!chosen ? (
@@ -184,22 +183,6 @@ export function OperatorsTool() {
               </div>
             ) : (
               <>
-                <div className="descbox no-print">
-                  <div className="desclbl">Description</div>
-                  <div className="desctext" data-testid="op-desc">
-                    {chosen.desc}
-                  </div>
-                </div>
-                <div className="total">
-                  <span>Quantity 1</span>
-                  {price == null ? (
-                    <b className="nopricing" data-testid="op-price">
-                      Price not set
-                    </b>
-                  ) : (
-                    <b data-testid="op-price">{fmt(price)}</b>
-                  )}
-                </div>
                 {price == null && (
                   <div className="muted-note" style={{ padding: "0 22px 4px" }}>
                     This one has no price yet — look it up before the order goes out.
@@ -209,10 +192,6 @@ export function OperatorsTool() {
                   {price != null && (
                     <CopyQuickBooks item={categoryItem(hit?.section)} description={chosen.desc}
                       rate={price} testId="op-copy-qb" />
-                  )}
-                  <CopyButton text={chosen.desc} label="Copy description" testId="op-copy-desc" />
-                  {price != null && (
-                    <CopyPrice amount={price} testId="op-copy-price" />
                   )}
                   <button className="btn" type="button" onClick={() => setPicked(null)}>
                     Clear

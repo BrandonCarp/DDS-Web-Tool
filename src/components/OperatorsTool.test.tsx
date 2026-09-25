@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { OperatorsTool } from "./OperatorsTool";
 import { OPERATOR_CATALOGUE } from "@/lib/pricing/data/operator-catalogue";
+import { copiedQbLine } from "./test-clipboard";
 
 /**
  * Several operators share a model number and differ only by rail length: the
@@ -30,13 +31,14 @@ function openSection(name: string) {
 }
 
 describe("operators that share a model number", () => {
-  it("quotes the rail length that was clicked", () => {
+  it("quotes the rail length that was clicked", async () => {
     render(<OperatorsTool />);
     openSection("RESIDENTIAL CHAIN DRIVES");
     const rows = rowsNamed("2240L");
     expect(rows).toHaveLength(3);
     fireEvent.click(rows[2]);
-    expect(screen.getByTestId("op-desc").textContent).toContain("10FT CHAIN RAIL");
+    const line = await copiedQbLine(screen.getByTestId("op-copy-qb"));
+    expect(line.description).toContain("10FT CHAIN RAIL");
     // Only the clicked row lights up, not every 2240L.
     const lit = list().getAllByRole("button").filter((b) => b.classList.contains("on"));
     expect(lit).toEqual([rows[2]]);

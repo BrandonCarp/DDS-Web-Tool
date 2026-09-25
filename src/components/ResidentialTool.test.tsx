@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { cleanup, render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { ResidentialTool } from "./ResidentialTool";
+import { copiedQbLine } from "./test-clipboard";
 
 /**
  * What these cover, and why.
@@ -283,5 +284,50 @@ describe("residential tool — assembly type and the order of step 2", () => {
     fireEvent.change(screen.getByTestId("width-ft"), { target: { value: "9" } });
     fireEvent.change(screen.getByTestId("height-ft"), { target: { value: "7" } });
     expect((screen.getByTestId("color") as HTMLSelectElement).value).toBe("");
+  });
+});
+
+describe("residential tool — the quote card once priced", () => {
+  async function priceIt() {
+    await configure();
+    fireEvent.change(screen.getByTestId("width-ft"), { target: { value: "9" } });
+    fireEvent.change(screen.getByTestId("height-ft"), { target: { value: "7" } });
+    fireEvent.change(screen.getByTestId("color"), { target: { value: "White" } });
+    fireEvent.click(screen.getByTestId("get-price"));
+    await waitFor(() => expect(screen.getByTestId("source-badge")).toBeTruthy());
+  }
+
+  it("grays out Get price once priced, until something changes", async () => {
+    await priceIt();
+    const button = () => screen.getByTestId("get-price") as HTMLButtonElement;
+    expect(button().disabled).toBe(true);
+    const lock = screen.getByTestId("lock") as HTMLSelectElement;
+    const other = [...lock.options].map((o) => o.value).find((v) => v !== lock.value)!;
+    fireEvent.change(lock, { target: { value: other } });
+    expect(button().disabled).toBe(false);
+  });
+
+  it("shows the model, the stock marker, the quantity and Copy for QuickBooks — nothing else", async () => {
+    await priceIt();
+    // The card, not the page: the printed estimate sheet (hidden on screen)
+    // still carries the full breakdown.
+    const cardEl = document.querySelector("aside.quote") as HTMLElement;
+    const card = within(cardEl);
+    expect(card.getByTestId("source-badge").textContent).toContain("In stock");
+    expect(card.getByTestId("copy-qb")).toBeTruthy();
+    expect(cardEl.querySelector("#qty")).toBeTruthy();
+    for (const gone of ["total", "price", "copy-desc", "copy-price"]) {
+      expect(card.queryByTestId(gone), gone).toBeNull();
+    }
+    expect(card.queryByText("TEST DESCRIPTION")).toBeNull();
+    expect(cardEl.querySelector(".qsub")).toBeNull();
+  });
+
+  it("still copies the whole line to QuickBooks", async () => {
+    await priceIt();
+    const line = await copiedQbLine(screen.getByTestId("copy-qb"));
+    expect(line.description).toBe("TEST DESCRIPTION");
+    expect(line.qty).toBe(1);
+    expect(line.rate).toBe(100);
   });
 });

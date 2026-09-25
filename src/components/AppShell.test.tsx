@@ -2,11 +2,12 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { AppShell } from "./AppShell";
+import { BOOT_SCRIPT } from "@/lib/sidebar";
 
 /**
- * The sidebar shell: who sees the admin panel, the Settings tab's theme
- * switch, and the collapsed sidebar. Theme and sidebar live on <html>, so
- * each test puts it back.
+ * The sidebar shell: who sees the admin panel, the Settings tab, and the
+ * collapsed sidebar. The sidebar state lives on <html>, so each test puts it
+ * back.
  */
 afterEach(() => {
   cleanup();
@@ -31,28 +32,22 @@ describe("admin panel link", () => {
 });
 
 describe("settings", () => {
-  it("opens from the sidebar", () => {
+  it("opens from the sidebar, with the account on it", () => {
     shell();
     fireEvent.click(screen.getByRole("button", { name: "Settings" }));
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Settings");
-    expect(screen.getByTestId("theme-light")).toBeTruthy();
+    expect(screen.getByText("Sign out", { selector: "a.btn" }).getAttribute("href")).toBe("/api/logout");
   });
 
-  it("starts light and switches to dark, remembering the choice", async () => {
+  it("is always dark: no theme to pick, and an old light choice is ignored", () => {
+    // A computer that picked Light before 25/9/2026 still has it stored.
+    localStorage.setItem("dds-theme", "light");
+    new Function(BOOT_SCRIPT)();
+    expect(document.documentElement.dataset.theme).toBeUndefined();
     shell();
     fireEvent.click(screen.getByRole("button", { name: "Settings" }));
-    expect(screen.getByTestId("theme-light").getAttribute("aria-checked")).toBe("true");
-
-    fireEvent.click(screen.getByTestId("theme-dark"));
-    expect(document.documentElement.dataset.theme).toBe("dark");
-    expect(localStorage.getItem("dds-theme")).toBe("dark");
-    await waitFor(() =>
-      expect(screen.getByTestId("theme-dark").getAttribute("aria-checked")).toBe("true"),
-    );
-
-    fireEvent.click(screen.getByTestId("theme-light"));
-    expect(document.documentElement.dataset.theme).toBe("light");
-    expect(localStorage.getItem("dds-theme")).toBe("light");
+    expect(screen.queryByTestId("theme-light")).toBeNull();
+    expect(screen.queryByTestId("theme-dark")).toBeNull();
   });
 });
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CopyButton, CopyPrice, priceText } from "@/components/CopyButton";
+import { priceText } from "@/components/CopyButton";
 import { CopyQuickBooks } from "./CopyQuickBooks";
 import { QB_TORSION } from "@/lib/pricing/data/quickbooks";
 import { QbLineDemo } from "@/components/QbLineDemo";
@@ -147,11 +147,6 @@ export function TorsionTool() {
           <div className="qhead">
             <div className="ql">Torsion spring</div>
             <div className="qmodel">{onStock ? "Stock" : "Cut to size"}</div>
-            <div className="qsub">
-              {onStock
-                ? (stockPart?.sub ?? STOCK_TORSION_SPRINGS.name)
-                : wire ? `${fmtWire(wire)}″ · ${TORSION.id_labels[id]}` : "Select options"}
-            </div>
           </div>
           {onStock ? (
             stockPart == null ? (
@@ -160,14 +155,6 @@ export function TorsionTool() {
               </div>
             ) : (
             <>
-              <div className="total" style={{ borderTop: 0, paddingTop: 18 }}>
-                <span className="tl">Spring price (each)</span>
-                <span className="tv" data-testid="stock-price">{fmt(stockUnit)}</span>
-              </div>
-              <div className="descbox no-print">
-                <div className="desclbl">Spring description</div>
-                <div className="desctext" data-testid="stock-desc">{stockDesc}</div>
-              </div>
 
               <div className="row2" style={{ margin: "0 20px 16px" }}>
                 <div className="field">
@@ -186,15 +173,10 @@ export function TorsionTool() {
                 </div>
               </div>
 
-              <div className="muted-note" style={{ margin: "0 20px 14px" }}>
-                Quantity {stockQty} · QuickBooks item {QB_ITEMS.parts}
-              </div>
 
               {stockReady ? (
                 <div className="qfoot">
                   <CopyQuickBooks item={QB_TORSION} description={stockDesc} rate={stockUnit} testId="stock-copy-qb" />
-                  <CopyButton text={stockDesc} label="Copy description" testId="stock-copy-desc" />
-                  <CopyPrice amount={stockUnit} testId="stock-copy-price" />
                   <button className="btn" type="button" onClick={clear}>Clear</button>
                 </div>
               ) : (
@@ -209,14 +191,6 @@ export function TorsionTool() {
             <div className="lines" />
           ) : (
             <>
-              <div className="total" style={{ borderTop: 0, paddingTop: 18 }}>
-                <span className="tl">Spring price (each)</span>
-                <span className="tv" data-testid="tor-price">{fmt(price)}</span>
-              </div>
-              <div className="descbox no-print">
-                <div className="desclbl">Spring description</div>
-                <div className="desctext" data-testid="tor-desc">{description}</div>
-              </div>
 
               <div className="row2" style={{ margin: "0 20px 16px" }}>
                 <div className="field">
@@ -237,8 +211,6 @@ export function TorsionTool() {
 
               <div className="qfoot">
                 <CopyQuickBooks item={QB_TORSION} description={description} rate={price} onCopy={record} testId="tor-copy-qb" />
-                <CopyButton text={description} label="Copy description" onCopy={record} testId="tor-copy-desc" />
-                <CopyPrice amount={price} onCopy={record} testId="tor-copy-price" />
                 <button className="btn" type="button" onClick={clear}>Clear</button>
               </div>
             </>

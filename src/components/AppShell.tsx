@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import type { ParsedDoor } from "@/lib/pricing/data/parse-request";
 import { IDLE_MS } from "@/lib/session-timeout";
-import { applySidebarCollapsed } from "@/lib/theme";
+import { applySidebarCollapsed } from "@/lib/sidebar";
 import { ResidentialTool } from "./ResidentialTool";
 import { QuickEntry } from "./QuickEntry";
 import { QuickBooksSetup } from "./QuickBooksSetup";
@@ -59,51 +59,42 @@ type Tab = {
       them on a special order — Brandon, 12/9/2026. */
   over?: string;
   icon: IconName;
-  /** The page heading, and the one line under it saying what the tab is for. */
+  /** The page heading. */
   title: string;
-  blurb: string;
 };
 
 const QUOTING_TABS: readonly Tab[] = [
   {
     id: "residential", label: "Residential", over: "Stock", icon: "residential",
     title: "Stock Residential",
-    blurb: "Doors we keep in stock. Choose the model, configure it, then get the price.",
   },
   {
     id: "commercial", label: "Commercial", over: "Stock", icon: "commercial",
     title: "Stock Commercial",
-    blurb: "Commercial doors and replacement sections we keep in stock.",
   },
   {
     id: "special", label: "Special Order", icon: "special",
     title: "Special Order",
-    blurb: "Doors we order in. Gridded Clopay models price by size; anything else prices from the manufacturer's total.",
   },
   {
     id: "torsion", label: "Torsion Springs", icon: "torsion",
     title: "Torsion Springs",
-    blurb: "A stock spring off the shelf, or one cut to size.",
   },
   {
     id: "extension", label: "Extension Springs", icon: "extension",
     title: "Extension Springs",
-    blurb: "Extension springs and kits from the shelf.",
   },
   {
     id: "parts", label: "Parts", icon: "parts",
     title: "Parts",
-    blurb: "Shelf parts by category, or search every category at once.",
   },
   {
     id: "vinyl", label: "Vinyl", icon: "vinyl",
     title: "Vinyl",
-    blurb: "Vinyl stop molding, priced from the door size.",
   },
   {
     id: "operators", label: "Operators", icon: "operators",
     title: "Operators",
-    blurb: "Openers and accessories, by type and section or by model number.",
   },
 ];
 
@@ -113,19 +104,16 @@ const QUOTING_TABS: readonly Tab[] = [
 const QB_TAB: Tab = {
   id: "qbsetup", label: "QB Setup", icon: "download",
   title: "QuickBooks Setup",
-  blurb: "A one-time install on each computer, so Copy for QuickBooks fills a whole invoice line.",
 };
 // Inventory is visible ONLY to the master admin (role "admin") — it's a
 // placeholder until that build starts.
 const INVENTORY_TAB: Tab = {
   id: "inventory", label: "Inventory", icon: "inventory",
   title: "Inventory",
-  blurb: "Stock on hand by model, size and color. Coming soon.",
 };
 const SETTINGS_TAB: Tab = {
   id: "settings", label: "Settings", icon: "settings",
   title: "Settings",
-  blurb: "How the app looks on this computer, and your account.",
 };
 
 /** Tab label for the phone dropdown, where the tag cannot sit beside it. */
@@ -381,7 +369,6 @@ function Shell({
         <div className="main-inner">
           <header className="pagehead">
             <h1>{current.title}</h1>
-            <p>{current.blurb}</p>
           </header>
 
           {quickEntry && (

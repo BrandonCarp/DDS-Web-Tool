@@ -212,7 +212,6 @@ export function PartsTool() {
             <div className="qhead">
               <div className="qeyebrow">Parts quote</div>
               <div className="qtitle">{showing ? title : "No part selected"}</div>
-              {showing && <div className="qsub">QuickBooks item: {QB_ITEMS.parts}</div>}
             </div>
 
             {!showing ? (
@@ -324,23 +323,16 @@ export function PartsTool() {
 
                 {ready ? (
                   <>
-                    <div className="descbox no-print">
-                      <div className="desclbl">Part description</div>
-                      <div className="desctext" data-testid="parts-desc">
-                        {description}
+                    {price == null && (
+                      <div className="muted-note" style={{ margin: "0 20px 12px" }}>
+                        This one has no price yet — look it up before the order goes out.
                       </div>
-                    </div>
-                    <div className="total">
-                      <span>Quantity {qtyText}</span>
-                      <b data-testid="parts-price">{fmt(price)}</b>
-                    </div>
+                    )}
                     <div className="qfoot">
                       {price != null && (
                         <CopyQuickBooks item={categoryItem(hit?.category ?? catName)} description={description}
                           rate={price} testId="parts-copy-qb" />
                       )}
-                      <CopyButton text={description} label="Copy description" testId="parts-copy-desc" />
-                      <CopyPrice amount={price} testId="parts-copy-price" />
                       <button className="btn" type="button" onClick={clear}>
                         Clear
                       </button>

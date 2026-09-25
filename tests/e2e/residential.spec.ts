@@ -46,9 +46,13 @@ test.describe("authenticated", () => {
     await configureT50S(page);
     await setSize(page, "8", "7");
     await page.getByTestId("style").selectOption("solid");
+    // The card no longer shows prices — they travel in the QuickBooks line —
+    // so the price is read from what the server answered.
+    const answer = page.waitForResponse((r) => r.url().includes("/api/price"));
     await page.getByTestId("get-price").click();
-    await expect(page.getByTestId("price")).toHaveText("$566.06");
+    expect((await (await answer).json()).unitPrice).toBeCloseTo(566.06, 2);
     await expect(page.getByTestId("source-badge")).toContainText(/in stock/i);
+    await expect(page.getByTestId("get-price")).toBeDisabled();
   });
 
   test("adds torsion, track and lock upcharges to the total", async ({ page }) => {
@@ -57,19 +61,20 @@ test.describe("authenticated", () => {
     await page.getByTestId("spring").selectOption("torsion");
     await page.getByTestId("track").selectOption("r32");
     await page.getByTestId("lock").selectOption("lockbar_installed");
+    const answer = page.waitForResponse((r) => r.url().includes("/api/price"));
     await page.getByTestId("get-price").click();
-    await expect(page.getByTestId("total")).toHaveText("$934.63");
+    expect((await (await answer).json()).unitPrice).toBeCloseTo(934.63, 2);
   });
 
-  test("shows the in-stock badge and a description", async ({ page }) => {
+  test("shows the in-stock badge and Copy for QuickBooks", async ({ page }) => {
     // A stocked model only offers stocked sizes and colours now, so every size
-    // reachable from this tab is in stock. The badge and the description are
-    // what a counter actually reads off the screen.
+    // reachable from this tab is in stock. Once priced, the card shows the
+    // badge and the QuickBooks button — the price and description go to QB.
     await configureT50S(page);
     await setSize(page, "9", "7");
     await page.getByTestId("get-price").click();
     await expect(page.getByTestId("source-badge")).toContainText(/in stock/i);
-    await expect(page.getByTestId("total")).toContainText("$");
+    await expect(page.getByTestId("copy-qb")).toBeVisible();
   });
 });
 

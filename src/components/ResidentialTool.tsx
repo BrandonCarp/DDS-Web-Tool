@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { EstimateSheet } from "@/components/EstimateSheet";
-import { CopyButton, CopyPrice, priceText } from "@/components/CopyButton";
+import { priceText } from "@/components/CopyButton";
 import { CopyQuickBooks } from "./CopyQuickBooks";
 import { QB_STOCK_DOORS } from "@/lib/pricing/data/quickbooks";
 import { QbLineDemo } from "@/components/QbLineDemo";
@@ -722,7 +722,7 @@ export function ResidentialTool({
               </div>
             </div>
 
-            <button data-testid="get-price" className="btn primary configbtn" type="button" disabled={!optionsOpen} onClick={getPrice}>
+            <button data-testid="get-price" className="btn primary configbtn" type="button" disabled={!optionsOpen || priced} onClick={getPrice}>
               Get price
             </button>
             {liveError && <div className="alert warn" data-testid="error">{liveError}</div>}
@@ -735,7 +735,6 @@ export function ResidentialTool({
           <div className="qhead">
             <div className="ql">Residential quote</div>
             <div className="qmodel">{model}</div>
-            {sizeComplete && <div className="qsub">{sections ? `${activeSecWidth ? sectionWidthLabel(activeSecWidth) : "—"} wide · ${secKind === "bt" ? "bottom" : "intermediate"} section · ${color}` : `${dims} · ${style} · ${color}`}</div>}
             {priced && (
               <span data-testid="source-badge" className={`stockbadge ${result?.isStock ? "yes" : "no"}`}>
                 {result?.isStock ? "✓ In stock — Doors Direct South" : "Special order — not stocked"}
@@ -747,37 +746,13 @@ export function ResidentialTool({
             <div className="lines" />
           ) : priced ? (
             <>
-              <div className="lines">
-                {result!.lines.map((l, i) => {
-                  const prefix = l.kind === "add" && l.value > 0 ? "+" : "";
-                  const cls = l.kind === "add" ? "vl add" : l.kind === "minus" ? "vl minus" : "vl";
-                  return (
-                    <div className="qline" key={i}>
-                      <span className="nm">{l.name}</span>
-                      <span className={cls} {...(i === 0 ? { "data-testid": "price" } : {})}>
-                        {prefix}{fmt(l.value)}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
               <div className="qtyrow">
                 <label htmlFor="qty">Quantity</label>
                 <input id="qty" type="number" min={1} value={qty} onChange={(e) => setQty(Number(e.target.value))} />
               </div>
-              <div className="total">
-                <span className="tl">Quote total</span>
-                <span className="tv" data-testid="total">{fmt(total)}</span>
-              </div>
-              <div className="descbox no-print">
-                <div className="desclbl">Door description</div>
-                <div className="desctext">{description.toUpperCase()}</div>
-              </div>
               <div className="qfoot">
                 <CopyQuickBooks item={QB_STOCK_DOORS} description={description}
                   rate={unit} qty={qty} testId="copy-qb" />
-                <CopyButton text={description.toUpperCase()} label="Copy description" testId="copy-desc" />
-                <CopyPrice amount={unit} testId="copy-price" />
               </div>
             </>
           ) : (

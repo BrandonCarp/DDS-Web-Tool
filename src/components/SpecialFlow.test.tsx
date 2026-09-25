@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { cleanup, render, screen, fireEvent } from "@testing-library/react";
 import { SpecialTool } from "./SpecialTool";
+import { copiedQbLine } from "./test-clipboard";
 
 /**
  * Special order follows the same two steps as the stock tabs: choose the door,
@@ -135,10 +136,10 @@ describe("special order — two steps", () => {
 });
 
 describe("special order — glass types reach the price", () => {
-  const total = () => {
-    const el = [...document.querySelectorAll("*")].reverse()
-      .find((e) => /^\$[\d,]+\.\d\d$/.test(e.textContent ?? "") && e.children.length === 0);
-    return Number((el?.textContent ?? "0").replace(/[$,]/g, ""));
+  // The card no longer shows a total; the QuickBooks line carries it.
+  const total = async () => {
+    const line = await copiedQbLine(screen.getByTestId("copy-qb"));
+    return line.rate * line.qty;
   };
 
   it("moves the total when a named glass is chosen", async () => {
@@ -151,11 +152,11 @@ describe("special order — glass types reach the price", () => {
     await settle();
     fireEvent.change(sel("so-style"), { target: { value: "glass" } });
     await settle();
-    expect(total()).toBeCloseTo(897.37, 1);
+    expect(await total()).toBeCloseTo(897.37, 1);
     fireEvent.change(sel("so-glass"), { target: { value: "insulated_rain" } });
     await settle();
     // Book: 8' short band, 4 windows, insulated rain 392.08, at 43 margin.
-    expect(total()).toBeCloseTo(723.25 + 392.08 / 0.57, 0);
+    expect(await total()).toBeCloseTo(723.25 + 392.08 / 0.57, 0);
   });
 
   it("offers thirteen types at a priced width", async () => {
@@ -281,12 +282,13 @@ describe("special order — reads like the stock tabs", () => {
     expect(maybe("so-cfg-hint")).toBeNull();
   });
 
-  it("shows the door description it copies", async () => {
+  it("copies the door description to QuickBooks rather than showing it", async () => {
     await configured();
     await settle();
-    const desc = screen.getByTestId("so-desc").textContent ?? "";
-    expect(desc).toMatch(/white/i);
-    expect(desc).toMatch(/4050/);
+    expect(maybe("so-desc")).toBeNull();
+    const line = await copiedQbLine(screen.getByTestId("copy-qb"));
+    expect(line.description).toMatch(/white/i);
+    expect(line.description).toMatch(/4050/);
   });
 });
 
