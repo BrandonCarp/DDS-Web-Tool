@@ -1,4 +1,18 @@
 #Requires AutoHotkey v2.0
+#SingleInstance Force   ; running it again swaps in the new copy, with no "already running?" box
+
+; Start with Windows. The first double-click is the only one ever needed: the
+; script puts a shortcut to itself in the Startup folder, and repoints it if the
+; file has moved since. Keep this file somewhere it will stay (Documents, not
+; Downloads) — the shortcut points at wherever it is.
+startupLink := A_Startup "\DDS QuickBooks paste.lnk"
+current := ""
+if FileExist(startupLink)
+    FileGetShortcut startupLink, &current
+if (current != A_ScriptFullPath) {
+    try FileDelete startupLink
+    FileCreateShortcut A_ScriptFullPath, startupLink
+}
 
 ; Types a tab-separated clipboard line into QuickBooks, field by field.
 ; F9 with the cursor in the first cell of an invoice line.
