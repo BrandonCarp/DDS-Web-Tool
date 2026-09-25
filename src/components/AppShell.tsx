@@ -15,6 +15,8 @@ import { PartsTool } from "./PartsTool";
 import { VinylTool } from "./VinylTool";
 import { OperatorsTool } from "./OperatorsTool";
 import { SettingsPanel } from "./SettingsPanel";
+import { InventoryTool } from "./InventoryTool";
+import { ScannerTool } from "./ScannerTool";
 import { CustomerJobProvider, useCustomerJob } from "./CustomerJobFields";
 import { Icon, type IconName } from "./Icon";
 import { useSidebarCollapsed } from "./useShellPrefs";
@@ -95,6 +97,11 @@ const QUOTING_TABS: readonly Tab[] = [
   {
     id: "operators", label: "Operators", icon: "operators",
     title: "Operators",
+  },
+  // Scan parts into a cart for QuickBooks — every counter gets it (Brandon, 25/9/2026).
+  {
+    id: "scanner", label: "Scanner", icon: "barcode",
+    title: "Scanner",
   },
 ];
 
@@ -407,24 +414,8 @@ function Shell({
           {mode === "vinyl" && <VinylTool />}
           {mode === "operators" && <OperatorsTool />}
           {mode === "settings" && <SettingsPanel username={user.username} roleLabel={role} />}
-          {mode === "inventory" && isMaster && (
-            <div className="wrap one">
-              <section className="config-col">
-                <div className="panel">
-                  <div className="empty">
-                    <div className="empty-icon">
-                      <Icon name="inventory" size={26} />
-                    </div>
-                    <div className="emptymsg">Not built yet</div>
-                    <p className="muted-note">
-                      Stock on hand by model, size and color, built on receiving documents in and
-                      daily sales out. Only you can see this tab.
-                    </p>
-                  </div>
-                </div>
-              </section>
-            </div>
-          )}
+          {mode === "scanner" && <ScannerTool />}
+          {mode === "inventory" && isMaster && <InventoryTool />}
         </div>
       </main>
     </div>

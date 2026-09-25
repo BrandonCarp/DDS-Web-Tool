@@ -487,6 +487,59 @@ html, body { margin: 0; padding: 0; }
 .tool-shell .vinylrow .optbtns { flex-wrap: nowrap; }
 .tool-shell .vinylrow .optbtn { min-height: 34px; padding: 5px 14px; }
 
+/* Inventory: one scan box that keeps the cursor, and what the last scan did. */
+/* The scan boxes are blank: their placeholder is a single space, there only so
+   the browser can tell an empty box (:placeholder-shown) and the green
+   filled-in edge stays off it. */
+.tool-shell input.scanbox { min-height: 56px; padding: 12px 16px; font-size: 20px; font-weight: 600; letter-spacing: .03em; }
+.tool-shell input.invqty { width: 140px; }
+.tool-shell .scanstate { margin-top: 8px; font-size: 13px; color: var(--muted); }
+.tool-shell .scanstate.on { color: var(--good); font-weight: 600; }
+.tool-shell .scanresult { margin-top: 16px; padding: 18px 20px; border-left: 4px solid var(--good); }
+.tool-shell .scanresult.warn { border-left-color: var(--accent-ink); }
+.tool-shell .scanresult.err { border-left-color: var(--bad); color: var(--bad); font-weight: 600; }
+.tool-shell .scanresult.undone { opacity: .7; }
+.tool-shell .sr-top { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.tool-shell .sr-verb { color: var(--good); }
+.tool-shell .sr-name { margin-top: 4px; font-size: 21px; font-weight: 700; font-stretch: 108%; color: var(--ink); }
+.tool-shell .sr-desc { margin-top: 2px; font-size: 13.5px; color: var(--muted); }
+.tool-shell .sr-count { margin-top: 10px; font-size: 15px; color: var(--ink-2); }
+.tool-shell .sr-count b { margin-right: 8px; font-size: 30px; font-weight: 700; font-stretch: 112%; color: var(--ink); }
+.tool-shell .sr-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-top: 14px; }
+.tool-shell .sr-link { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 12px; }
+.tool-shell .invsearch { padding: 12px 20px; border-bottom: 1px solid var(--line); }
+.tool-shell .partrow.static { cursor: default; }
+.tool-shell .partrow.static:hover { background: none; }
+.tool-shell .partprice.neg { color: var(--bad); }
+
+/* Scanner: the cart, laid out like QuickBooks lines — item, quantity, price for
+   one, remove. No line totals and no grand total (Brandon, 25/9/2026). */
+.tool-shell .cart-head, .tool-shell .cart-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) 84px 120px 40px; gap: 12px; align-items: center;
+  padding: 10px 18px;
+}
+.tool-shell .cart-head { border-bottom: 1px solid var(--line); background: var(--surface-2); font-size: 12.5px; color: var(--muted); }
+.tool-shell .cart-head span:nth-child(n+2), .tool-shell .cart-price { text-align: right; }
+.tool-shell .cart-row + .cart-row { border-top: 1px solid var(--line-2); }
+/* A part's photo sits left of its name, in the cart and the inventory lists. */
+.tool-shell .partphoto { flex: none; width: 44px; height: 44px; object-fit: cover; border: 1px solid var(--line); background: #fff; }
+.tool-shell .partphoto.big { width: 64px; height: 64px; }
+.tool-shell :is(.cart-item, .partwho, .sr-item) { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.tool-shell .cart-text { display: flex; flex-direction: column; min-width: 0; }
+.tool-shell .cart-item small { font-size: 12.5px; color: var(--muted); }
+.tool-shell .cart-row input.cart-qty { min-height: 38px; padding: 6px 8px; text-align: center; }
+.tool-shell .cart-price { font-size: 15px; }
+.tool-shell .cart-del {
+  display: grid; place-items: center; width: 34px; height: 34px;
+  border: 1px solid var(--line-strong); background: none; color: var(--muted);
+  font-size: 18px; line-height: 1; cursor: pointer;
+}
+.tool-shell .cart-del:hover { border-color: var(--bad); color: var(--bad); }
+.tool-shell .scanpanel { padding: 16px 20px 4px; }
+.tool-shell .scannote { margin-top: 8px; font-size: 13px; }
+.tool-shell .scannote.ok { color: var(--good); }
+.tool-shell .scannote.err { color: var(--bad); }
+
 /* Two-way switch between whole views (stock springs / cut to size). */
 .tool-shell .modeswitch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
 .tool-shell .modebtn {

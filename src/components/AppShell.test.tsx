@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { AppShell } from "./AppShell";
 import { BOOT_SCRIPT } from "@/lib/sidebar";
@@ -79,5 +79,25 @@ describe("chosen fields", () => {
     expect(series.hasAttribute("data-set")).toBe(true);
     fireEvent.change(series, { target: { value: "" } });
     expect(series.hasAttribute("data-set")).toBe(false);
+  });
+});
+
+describe("scanner cart", () => {
+  it("empties when someone leaves the Scanner tab", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => ({
+      ok: true, status: 200,
+      json: async () => ({ code: "12345", item: { key: "FASTENERS|TEK", name: "TEK", desc: "TEK, BAG OF 100", qbItem: "FASTENER", price: 10.95 } }),
+    }) as Response));
+    shell();
+    const tab = (id: string) => document.querySelector(`.side [data-tab="${id}"]`) as HTMLElement;
+    fireEvent.click(tab("scanner"));
+    const box = screen.getByTestId("scanner-box");
+    fireEvent.change(box, { target: { value: "12345" } });
+    fireEvent.keyDown(box, { key: "Enter" });
+    await waitFor(() => expect(screen.getAllByTestId("cart-row")).toHaveLength(1));
+    fireEvent.click(tab("residential"));
+    fireEvent.click(tab("scanner"));
+    expect(screen.queryAllByTestId("cart-row")).toHaveLength(0);
+    vi.unstubAllGlobals();
   });
 });

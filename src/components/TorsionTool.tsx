@@ -202,14 +202,14 @@ export function TorsionTool() {
               </div>
               <div className="row2" style={{ margin: "0 20px 16px" }}>
                 <div className="field">
-                  <label className="lbl">Right springs (red)</label>
+                  <label className="lbl">RHW</label>
                   <input
                     data-testid="tor-right" type="number" min={0} value={right}
                     onChange={(e) => setRight(Math.max(0, Math.trunc(Number(e.target.value)) || 0))}
                   />
                 </div>
                 <div className="field">
-                  <label className="lbl">Left springs (black)</label>
+                  <label className="lbl">LHW</label>
                   <input
                     data-testid="tor-left" type="number" min={0} value={left}
                     onChange={(e) => setLeft(Math.max(0, Math.trunc(Number(e.target.value)) || 0))}

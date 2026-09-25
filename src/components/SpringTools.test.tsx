@@ -170,3 +170,16 @@ describe("stock tab labels", () => {
     expect(opts).toContain("Stock Commercial");
   });
 });
+
+describe("Torsion Springs tab — cut to size", () => {
+  it("labels the two hand boxes RHW and LHW", () => {
+    render(<CustomerJobProvider><TorsionTool /></CustomerJobProvider>);
+    // The hand boxes show once a spring is priced: a wire size and a length.
+    const wire = screen.getByTestId("tor-wire") as HTMLSelectElement;
+    fireEvent.change(wire, { target: { value: [...wire.options].map((o) => o.value).find(Boolean) } });
+    fireEvent.change(screen.getByTestId("tor-length"), { target: { value: "24.5" } });
+    const label = (id: string) => screen.getByTestId(id).closest(".field")!.querySelector("label")!.textContent;
+    expect(label("tor-right")).toBe("RHW");
+    expect(label("tor-left")).toBe("LHW");
+  });
+});
