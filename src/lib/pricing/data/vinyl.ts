@@ -133,6 +133,9 @@ export interface VinylQuote {
   headerPieces: number[];
   /** The same for each side piece. */
   legPieces: number[];
+  /** Each stock length used and how many of it, header first then the legs —
+      what the description and the quote card both read out. */
+  pieces: { ft: number; count: number }[];
   /** Total linear feet for one door, before the quantity multiplier. */
   feetPerDoor: number;
   /** Total linear feet actually ordered — this is the QuickBooks quantity. */
@@ -195,7 +198,8 @@ export function vinylForDoor(
   // never the same number twice.
   const counts = new Map<number, number>();
   for (const ft of [...headerPieces, ...legPieces, ...legPieces]) counts.set(ft, (counts.get(ft) ?? 0) + 1);
-  const body = [...counts].map(([ft, n]) => `[${n * sets}] - ${ft}FT`).join(" AND ");
+  const pieces = [...counts].map(([ft, n]) => ({ ft, count: n * sets }));
+  const body = pieces.map((p) => `[${p.count}] - ${p.ft}FT`).join(" AND ");
 
   return {
     color,
@@ -203,6 +207,7 @@ export function vinylForDoor(
     legFt: legPieces[0],
     headerPieces,
     legPieces,
+    pieces,
     feetPerDoor,
     feet,
     pricePerFt,

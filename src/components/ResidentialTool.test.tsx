@@ -415,6 +415,7 @@ describe("residential tool — vinyl molding", () => {
     await waitFor(() => screen.getByTestId("vinyl-price"));
     // White 9' x 7': one 9' header and two 7' legs, 23 ft at 0.95.
     expect(screen.getByTestId("vinyl-price").textContent).toBe("$21.85");
+    expect(screen.getByTestId("vinyl-line").textContent?.trim()).toBe("WHITE vinyl (1) 9FT & (2) 7FT");
     const rows = (await copyFrom(screen.getByTestId("copy-qb"))).split("\n");
     expect(rows).toHaveLength(3);
     expect(rows[1]).toBe("");

@@ -21,6 +21,7 @@ describe("vinyl stop molding", () => {
     const v = vinylForDoor("BLACK", 14, 8)!;
     expect(v.headerFt).toBe(16);
     expect(v.legFt).toBe(8);
+    expect(v.pieces).toEqual([{ ft: 16, count: 1 }, { ft: 8, count: 2 }]);
   });
 
   it("uses white's extra lengths — a 12ft door is one 12ft piece in white only", () => {
@@ -41,6 +42,7 @@ describe("vinyl stop molding", () => {
     expect(two.feet).toBe(one.feet * 2);
     expect(two.total).toBe(Math.round(one.total * 2 * 100) / 100);
     expect(two.description).toBe("BLACK VINYL STOP MOLDING,  [2] - 16FT AND [4] - 8FT");
+    expect(two.pieces).toEqual([{ ft: 16, count: 2 }, { ft: 8, count: 4 }]);
   });
 
   it("past the longest length stocked, uses the longest plus what covers the rest", () => {

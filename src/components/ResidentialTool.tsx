@@ -793,7 +793,10 @@ export function ResidentialTool({
               {vinylOn && vinyl && (
                 <div className="lines">
                   <div className="qline">
-                    <span className="nm">{vinyl.color} vinyl · {vinyl.feet} ft</span>
+                    {/* The pieces, as the Vinyl tab quotes them, not the footage — Brandon, 25/9/2026. */}
+                    <span className="nm" data-testid="vinyl-line">
+                      {vinyl.color} vinyl {vinyl.pieces.map((p) => `(${p.count}) ${p.ft}FT`).join(" & ")}
+                    </span>
                     <span className="vl" data-testid="vinyl-price">{fmt(vinyl.total)}</span>
                   </div>
                 </div>
