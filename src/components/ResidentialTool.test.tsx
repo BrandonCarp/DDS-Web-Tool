@@ -347,7 +347,7 @@ describe("residential tool — framing, by model", () => {
       "9130": [SHORT, LONG, "Inserts"],
       "4053": [LONG, "Inserts"],
       "9133": [LONG, "Inserts"],
-      GD1SP: ['PLAIN LONG 42" X 16"'],
+      GD1SP: ['PLAIN LONG 42" X 16"', "PLAIN ARCH 1", "Inserts"],
       GD1LP: ['PLAIN LONG 42" X 16"', "PLAIN ARCH 1", "Inserts"],
     };
     for (const [model, want] of Object.entries(expected)) {

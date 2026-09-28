@@ -143,13 +143,14 @@ export const PLAIN_WINDOWS: Record<string, readonly string[]> = {
   "9130": [PLAIN_SHORT, PLAIN_LONG],
   "4053": [PLAIN_LONG],
   "9133": [PLAIN_LONG],
-  GD1SP: [GALLERY_LONG],
-  // The GD1LP takes the long window or the arch — Brandon, 25/9/2026.
+  // Both Gallery doors take the long window or the arch, then Inserts —
+  // GD1LP from 25/9/2026, GD1SP matched to it on 28/9/2026 (Brandon).
+  GD1SP: [GALLERY_LONG, "PLAIN ARCH 1"],
   GD1LP: [GALLERY_LONG, "PLAIN ARCH 1"],
 };
 
-/** Models offered no inserts at all. */
-const NO_INSERTS = new Set(["GD1SP"]);
+/** Models offered no inserts at all. None today: the GD1SP took them from 28/9/2026. */
+const NO_INSERTS = new Set<string>();
 
 export function plainWindowsFor(model: string): readonly string[] {
   return PLAIN_WINDOWS[model] ?? [];
