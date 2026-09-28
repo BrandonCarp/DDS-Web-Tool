@@ -189,7 +189,7 @@ describe("offered heights", () => {
     // must not offer a height it cannot price.
     // Both models grid 9'0" now, so both offer the full nine.
     for (const m of ["4050/4051/4053", "T50S/T50L"]) {
-      expect(offeredHeights(m), m).toEqual(["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8", "9"]);
+      expect(offeredHeights(m), m).toEqual(["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8", "8.3", "8.6", "8.9", "9"]);
     }
   });
 
@@ -201,6 +201,8 @@ describe("offered heights", () => {
         track: "r12", spring: "extension", lock: "none" }).quote!.unitPrice;
     for (const h of ["6", "6.3", "6.6", "6.9", "7"]) expect(at(h), h).toBe(782.19);
     for (const h of ["7.6", "7.9", "8"]) expect(at(h), h).toBe(954.95);
+    // 8'3" to 8'9" price as 9'0" (28/9/2026).
+    for (const h of ["8.3", "8.6", "8.9"]) expect(at(h), h).toBe(at("9"));
   });
 
   it("agrees with the residential tab at every offered height", () => {

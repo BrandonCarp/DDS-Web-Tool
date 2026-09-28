@@ -39,8 +39,11 @@ const SHORT_HEIGHTS = ["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8"];
  * price 9'0" at every stocked width on the 4050 group, the 9130/9133 and the
  * Gallery pair, and the only gap in the range is the T50S at 7'6" — handled by
  * its own entry below.
+ *
+ * 8'3", 8'6" and 8'9" joined on 28/9/2026 (Brandon). They price as 9'0": the
+ * engine's 9' tier already runs from 8'3" up, so nothing else had to change.
  */
-const WHITE_HEIGHTS = [...SHORT_HEIGHTS, "9"];
+const WHITE_HEIGHTS = [...SHORT_HEIGHTS, "8.3", "8.6", "8.9", "9"];
 
 /**
  * Heights floored ONLY as solid doors.

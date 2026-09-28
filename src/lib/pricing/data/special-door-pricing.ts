@@ -185,7 +185,8 @@ export function compareWidths(a: string, b: string): number {
  * offeredHeights() filters this per model against what is actually gridded, so
  * the T50S offers 9'0" and the 4050 does not.
  */
-export const OFFERED_HEIGHTS = ["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8", "9"];
+// 8'3", 8'6" and 8'9" joined on 28/9/2026 (Brandon), pricing off the 9' grid.
+export const OFFERED_HEIGHTS = ["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8", "8.3", "8.6", "8.9", "9"];
 
 /** True when a height's price already includes torsion springs. */
 export function heightForcesTorsion(height: string, available: string[]): boolean {

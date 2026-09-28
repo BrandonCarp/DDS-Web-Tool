@@ -776,8 +776,9 @@ export function ResidentialTool({
                 <input id="qty" type="number" min={1} value={qty} onChange={(e) => setQty(Number(e.target.value))} />
               </div>
               <div className="total">
-                <span className="tl">Quote total</span>
-                <span className="tv" data-testid="total">{fmt(total)}</span>
+                {/* One door's price, whatever the quantity — like the springs (Brandon, 28/9/2026). */}
+                <span className="tl">Door price (each)</span>
+                <span className="tv" data-testid="total">{fmt(unit)}</span>
               </div>
               {!sections && (
                 <div className="qtyrow vinylrow" data-testid="vinyl-row">

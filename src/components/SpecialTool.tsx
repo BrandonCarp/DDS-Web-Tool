@@ -756,8 +756,8 @@ export function SpecialTool() {
                 <input id="soqty" type="number" min={1} value={qty} onChange={(e) => { setQty(Number(e.target.value)); setSaved(false); }} />
               </div>
               <div className="total">
-                <span className="tl">Quote total</span>
-                <span className="tv" data-testid="so-total">{fmt(total)}</span>
+                <span className="tl">Door price (each)</span>
+                <span className="tv" data-testid="so-total">{fmt(n.sell + hoMarkup)}</span>
               </div>
               <div className="qfoot">
                 <CopyQuickBooks item={QB_SPECIAL_ORDERS} description={copyText ?? label}

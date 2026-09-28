@@ -74,7 +74,7 @@ describe("upgraded hardware on the description", () => {
 
   it("goes last, after the lock", () => {
     expect(desc({ upgradedHardware: true })).toMatch(/no lock, upgraded hardware$/);
-    expect(desc({ lock: "lockbar", upgradedHardware: true })).toMatch(/lockbar, upgraded hardware$/);
+    expect(desc({ lock: "lockbar", upgradedHardware: true })).toMatch(/lockbar assembly, upgraded hardware$/);
   });
 
   it("says nothing when it is not selected", () => {

@@ -165,7 +165,7 @@ const TRACK_NAME: Record<string, string> = {
 };
 const LOCK_NAME: Record<string, string> = {
   slide: "Inside slide lock",
-  lockbar: "Lockbar",
+  lockbar: "Lockbar assembly",
   lockbar_installed: "Lockbar installed",
 };
 const LOCK_VALUE: Record<string, number> = {
@@ -334,7 +334,7 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
   }
   const springTxt = torsionOnly || opts.spring === "torsion" ? "torsion springs" : "extension springs";
   const lockTxt =
-    ({ none: "no lock", slide: "inside slide lock", lockbar: "lockbar", lockbar_installed: "lockbar installed" } as Record<string, string>)[opts.lock] ||
+    ({ none: "no lock", slide: "inside slide lock", lockbar: "lockbar assembly", lockbar_installed: "lockbar installed" } as Record<string, string>)[opts.lock] ||
     "no lock";
   // Track wording. An angle mount names what it fastens to, exactly as the
   // commercial tool has always phrased it, so the two read alike on a quote.
@@ -491,7 +491,7 @@ export function quoteResidentialSectionsOnly(
   // Track and springs are dropped from the wording: neither ships, and a
   // QuickBooks line that lists them invites a customer to expect them.
   const lockTxt =
-    ({ none: "no lock", slide: "inside slide lock", lockbar: "lockbar", lockbar_installed: "lockbar installed" } as Record<string, string>)[opts.lock] ||
+    ({ none: "no lock", slide: "inside slide lock", lockbar: "lockbar assembly", lockbar_installed: "lockbar installed" } as Record<string, string>)[opts.lock] ||
     "no lock";
   // Lock first, then "sections only" last — Brandon's wording, and it puts the
   // fact that no hardware ships at the end of the line where it reads loudest.

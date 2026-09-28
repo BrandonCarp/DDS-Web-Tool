@@ -97,7 +97,7 @@ describe("size dropdown options", () => {
   it("runs every model 6'0\" to 9'0\"", () => {
     // 9'0" went on for every model on 12/9/2026 — the sheets price it at every
     // stocked width. 10'0" came off the same day: nothing is priced above 9'0".
-    const band = ["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8", "9"];
+    const band = ["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8", "8.3", "8.6", "8.9", "9"];
     for (const m of ["4050", "4051", "4053", "9130", "9133", "GD1LP", "GD1SP", "T50S", "T52S"]) {
       expect(stockedHeights(m), m).toEqual(band);
     }
@@ -262,6 +262,20 @@ describe("stocked colours narrow with the size", () => {
         for (const c of stockedColors(m, w, "7")) {
           expect(colorInStock(m, c, w, "7"), `${m} ${c} ${w}`).toBe(true);
         }
+      }
+    }
+  });
+});
+
+describe("the heights between 8' and 9'", () => {
+  it("price exactly as 9'0\" — the 9' tier already starts at 8'3\"", () => {
+    for (const model of ["T50S", "4050", "9133", "GD1LP"]) {
+      const nine = priceResidential(model, { widthFt: 9, widthIn: 0, heightFt: 9, heightIn: 0 }, "solid");
+      expect(nine.price, model).not.toBeNull();
+      for (const heightIn of [3, 6, 9]) {
+        const between = priceResidential(model, { widthFt: 9, widthIn: 0, heightFt: 8, heightIn }, "solid");
+        expect(between.price, `${model} 8'${heightIn}"`).toBe(nine.price);
+        expect(between.isStock, `${model} 8'${heightIn}"`).toBe(nine.isStock);
       }
     }
   });

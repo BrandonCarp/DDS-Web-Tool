@@ -437,6 +437,7 @@ html, body { margin: 0; padding: 0; }
 .tool-shell .optbtn {
   display: inline-flex; align-items: center; gap: 8px;
   min-height: 40px; padding: 8px 14px;
+  white-space: nowrap;   /* COMPLETE DOOR on one line; the row wraps, a label never does */
   border: 1px solid var(--line-strong); border-radius: var(--r-field);
   background: var(--surface); color: var(--ink-2);
   font-size: 14px; font-weight: 700;

@@ -437,3 +437,20 @@ describe("residential tool — vinyl molding", () => {
     expect(screen.queryByTestId("vinyl-row")).toBeNull();
   });
 });
+
+describe("residential tool — the door price is for one door", () => {
+  it("does not change when the quantity does", async () => {
+    await configure();
+    fireEvent.change(screen.getByTestId("width-ft"), { target: { value: "9" } });
+    fireEvent.change(screen.getByTestId("height-ft"), { target: { value: "7" } });
+    fireEvent.change(screen.getByTestId("color"), { target: { value: "White" } });
+    fireEvent.click(screen.getByTestId("get-price"));
+    await waitFor(() => expect(screen.getByTestId("source-badge")).toBeTruthy());
+    fireEvent.click(screen.getByTestId("vinyl-ask-no"));
+    const card = document.querySelector("aside.quote") as HTMLElement;
+    const price = () => within(card).getByTestId("total").textContent;
+    expect(price()).toBe("$100.00");
+    fireEvent.change(card.querySelector("#qty") as HTMLInputElement, { target: { value: "3" } });
+    expect(price()).toBe("$100.00");
+  });
+});
