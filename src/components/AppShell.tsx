@@ -51,7 +51,7 @@ const SHOW_BROCHURE = false;
  * Hidden since 24/9/2026 — Brandon. The tab, its page and its tests all stay,
  * so bringing it back is this one line.
  */
-const SHOW_QB_SETUP = false;
+const SHOW_QB_SETUP = true;
 
 type Tab = {
   id: string;
