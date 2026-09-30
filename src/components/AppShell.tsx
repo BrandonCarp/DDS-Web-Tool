@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ParsedDoor } from "@/lib/pricing/data/parse-request";
 import { IDLE_MS } from "@/lib/session-timeout";
 import { applySidebarCollapsed } from "@/lib/sidebar";
@@ -12,6 +12,8 @@ import { SpecialTool } from "./SpecialTool";
 import { TorsionTool } from "./TorsionTool";
 import { ExtensionTool } from "./ExtensionTool";
 import { PartsTool } from "./PartsTool";
+import { TopBar } from "./TopBar";
+import type { SearchHit, SearchPick } from "@/lib/search";
 import { TRACK_CATEGORIES, CABLE_CATEGORIES } from "@/lib/pricing/data/springs";
 import { VinylTool } from "./VinylTool";
 import { OperatorsTool } from "./OperatorsTool";
@@ -284,10 +286,27 @@ function Shell({
   // stays mounted so the tools keep compiling and simply save blank
   // customer fields; restoring the feature is two JSX lines below.
   const { setCustName, setCustPo, setCustJob } = useCustomerJob();
+  // A search result opens its tab with the item picked. Each jump gets a new
+  // number, used as the tool's key, so a second search on the same tab still
+  // rebuilds it on the new item; a plain tab click clears the jump.
+  const [jump, setJump] = useState<{ n: number; tab: string; pick?: SearchPick } | null>(null);
+  const jumps = useRef(0);
   const pickTab = (id: string) => {
     setMode(id);
+    setJump(null);
     setCustName(""); setCustPo(""); setCustJob("");
   };
+  const jumpTo = (hit: SearchHit) => {
+    pickTab(hit.tab);
+    setJump({ n: ++jumps.current, tab: hit.tab, pick: hit.pick });
+  };
+  const at = (tab: string) => (jump?.tab === tab ? jump : null);
+  // The picked row can sit below the fold of a long list; bring it into view.
+  useEffect(() => {
+    if (!jump?.pick) return;
+    const t = setTimeout(() => document.querySelector(".main .partrow.on")?.scrollIntoView?.({ block: "nearest" }), 0);
+    return () => clearTimeout(t);
+  }, [jump]);
   const role = roleLabel(user.role);
 
   return (
@@ -351,16 +370,6 @@ function Shell({
           <NavTab tab={SETTINGS_TAB} active={mode === SETTINGS_TAB.id} collapsed={collapsed} onPick={pickTab} />
         </nav>
 
-        <div className="side-user">
-          <span className="avatar" aria-hidden="true">{user.username.charAt(0) || "?"}</span>
-          <span className="side-who">
-            <span className="side-who-name">{user.username}</span>
-            {role && <span className="side-who-role">{role}</span>}
-          </span>
-          <a className="side-out" href="/api/logout" aria-label="Sign out" title="Sign out">
-            <Icon name="logout" />
-          </a>
-        </div>
       </aside>
 
       {/* Phones and narrow windows: the sidebar gives way to this bar. Both are
@@ -404,6 +413,8 @@ function Shell({
       </div>
 
       <main className="main">
+        <TopBar tabs={tabs} doorModels={models} username={user.username} role={role} isAdmin={isMaster}
+          onJump={jumpTo} onSettings={() => pickTab(SETTINGS_TAB.id)} />
         <div className="main-inner">
           <header className="pagehead">
             <h1>{current.title}</h1>
@@ -416,18 +427,19 @@ function Shell({
             />
           )}
           {mode === "residential" && (
-            <ResidentialTool models={models} prefill={prefill} onPrefillUsed={() => setPrefill(null)} />
+            <ResidentialTool key={at("residential")?.n ?? 0} openOn={at("residential")?.pick}
+              models={models} prefill={prefill} onPrefillUsed={() => setPrefill(null)} />
           )}
-          {mode === "commercial" && <CommercialTool />}
-          {mode === "special" && <SpecialTool />}
-          {mode === "torsion" && <TorsionTool />}
-          {mode === "extension" && <ExtensionTool />}
+          {mode === "commercial" && <CommercialTool key={at("commercial")?.n ?? 0} openOn={at("commercial")?.pick} />}
+          {mode === "special" && <SpecialTool key={at("special")?.n ?? 0} openOn={at("special")?.pick} />}
+          {mode === "torsion" && <TorsionTool key={at("torsion")?.n ?? 0} openOn={at("torsion")?.pick} />}
+          {mode === "extension" && <ExtensionTool key={at("extension")?.n ?? 0} openOn={at("extension")?.pick} />}
           {mode === "qbsetup" && qbSetup && <QuickBooksSetup />}
-          {mode === "parts" && <PartsTool />}
-          {mode === "track" && <PartsTool categories={TRACK_CATEGORIES} eyebrow="Track quote" finder="Find track" />}
-          {mode === "cables" && <PartsTool categories={CABLE_CATEGORIES} eyebrow="Cables quote" finder="Find a cable" />}
+          {mode === "parts" && <PartsTool key={at("parts")?.n ?? 0} openOn={at("parts")?.pick} />}
+          {mode === "track" && <PartsTool key={at("track")?.n ?? 0} openOn={at("track")?.pick} categories={TRACK_CATEGORIES} eyebrow="Track quote" finder="Find track" />}
+          {mode === "cables" && <PartsTool key={at("cables")?.n ?? 0} openOn={at("cables")?.pick} categories={CABLE_CATEGORIES} eyebrow="Cables quote" finder="Find a cable" />}
           {mode === "vinyl" && <VinylTool />}
-          {mode === "operators" && <OperatorsTool />}
+          {mode === "operators" && <OperatorsTool key={at("operators")?.n ?? 0} openOn={at("operators")?.pick} />}
           {mode === "settings" && <SettingsPanel username={user.username} roleLabel={role} />}
           {mode === "scanner" && <ScannerTool />}
           {mode === "inventory" && isMaster && <InventoryTool />}

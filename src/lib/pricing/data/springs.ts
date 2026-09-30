@@ -22,13 +22,41 @@ function category(name: string): PartCategory {
   return PART_CATEGORIES.find((c) => c.name === name) ?? { name, items: [] };
 }
 
-export const EXTENSION_SPRINGS: PartCategory = category(EXTENSION_CATEGORY);
-export const STOCK_TORSION_SPRINGS: PartCategory = category(TORSION_CATEGORY);
+const EXTENSION_ALL = category(EXTENSION_CATEGORY);
+const TORSION_ALL = category(TORSION_CATEGORY);
 
-/** What the Parts tab browses and searches — the shelf, springs excluded. */
-export const SHELF_PART_CATEGORIES: PartCategory[] = PART_CATEGORIES.filter(
-  (c) => c.name !== EXTENSION_CATEGORY && c.name !== TORSION_CATEGORY,
-);
+/**
+ * Kits are the rows a spring sheet files under no height heading: 7FT and 8FT
+ * EXT KIT, 7FT and 8FT TOR KIT. They sell from the Parts tab (Brandon,
+ * 30/9/2026), so the spring tabs list springs only.
+ */
+const isKit = (p: Part) => !p.sub;
+export const EXTENSION_SPRINGS: PartCategory = {
+  name: EXTENSION_CATEGORY, items: EXTENSION_ALL.items.filter((p) => !isKit(p)),
+};
+export const STOCK_TORSION_SPRINGS: PartCategory = {
+  name: TORSION_CATEGORY, items: TORSION_ALL.items.filter((p) => !isKit(p)),
+};
+export const EXTENSION_KITS_CATEGORY = "EXTENSION KITS";
+export const TORSION_KITS_CATEGORY = "TORSION KITS";
+
+/**
+ * What the shelf holds: every category but the two spring sheets, plus the
+ * kits as two categories of their own, slotted in alphabetically (DRUMS stays
+ * first, as the sheet has it). The Parts, Track and Cables tabs split this.
+ */
+export const SHELF_PART_CATEGORIES: PartCategory[] = (() => {
+  const shelf = PART_CATEGORIES.filter((c) => c.name !== EXTENSION_CATEGORY && c.name !== TORSION_CATEGORY);
+  const kits: PartCategory[] = [
+    { name: EXTENSION_KITS_CATEGORY, items: EXTENSION_ALL.items.filter(isKit) },
+    { name: TORSION_KITS_CATEGORY, items: TORSION_ALL.items.filter(isKit) },
+  ];
+  for (const kit of kits) {
+    const at = shelf.findIndex((c, i) => i > 0 && c.name.localeCompare(kit.name) > 0);
+    shelf.splice(at < 0 ? shelf.length : at, 0, kit);
+  }
+  return shelf;
+})();
 
 /**
  * Tracks and cables have their own tabs (Brandon, 29/9/2026), so the Parts tab

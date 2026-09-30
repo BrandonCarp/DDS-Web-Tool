@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { SearchPick } from "@/lib/search";
 import { useCustomerJob } from "@/components/CustomerJobFields";
 import { priceText } from "@/components/CopyButton";
 import { CopyQuickBooks } from "./CopyQuickBooks";
@@ -91,19 +92,23 @@ function soCommercial(mfr: string, kind: "door" | "section", priceStr: string) {
   return { sell: list / (1 - margin / 100), margin };
 }
 
-export function SpecialTool() {
+export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
+  // A door chosen in the top bar's search opens at step 1 with it chosen.
+  const start = openOn?.kind === "sodoor" ? openOn : null;
+  const res = start?.scope === "residential" ? start : null;
+  const com = start?.scope === "commercial" ? start : null;
   const { custName, custPo, custJob } = useCustomerJob();
   // Empty until the counter picks one — a special order is residential or
   // commercial before anything else can be asked.
-  const [scope, setScope] = useState<"" | "residential" | "commercial">("");
+  const [scope, setScope] = useState<"" | "residential" | "commercial">(start?.scope ?? "");
   // residential
-  const [rMfr, setRMfr] = useState("Clopay");
-  const [series, setSeries] = useState("");
-  const [model, setModel] = useState("");
+  const [rMfr, setRMfr] = useState(res?.mfr ?? "Clopay");
+  const [series, setSeries] = useState(res?.series ?? "");
+  const [model, setModel] = useState(res?.model ?? "");
   // commercial
-  const [cMfr, setCMfr] = useState("Clopay");
-  const [cSeries, setCSeries] = useState("");
-  const [cModel, setCModel] = useState("");
+  const [cMfr, setCMfr] = useState(com?.mfr ?? "Clopay");
+  const [cSeries, setCSeries] = useState(com?.series ?? "");
+  const [cModel, setCModel] = useState(com?.model ?? "");
   // shared
   const [kind, setKind] = useState<"door" | "section">("door");
   // Gridded configurator (4050/4051/4053 today). Independent of the manual

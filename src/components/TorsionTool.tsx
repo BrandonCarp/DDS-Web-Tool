@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { SearchPick } from "@/lib/search";
 import { priceText } from "@/components/CopyButton";
 import { CopyQuickBooks } from "./CopyQuickBooks";
 import { QB_TORSION } from "@/lib/pricing/data/quickbooks";
@@ -14,7 +15,7 @@ import { partDescription, partPrice, partQuantity } from "@/lib/pricing/data/par
 
 const fmt = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-export function TorsionTool() {
+export function TorsionTool({ openOn }: { openOn?: SearchPick } = {}) {
   const { custName, custPo, custJob } = useCustomerJob();
   const [id, setId] = useState("2");
   const [wire, setWire] = useState("");
@@ -28,8 +29,9 @@ export function TorsionTool() {
   // card sourced from something you cannot see. Both sets of state survive the
   // switch — flip to check a stock size and your cut-to-size entry is still
   // there when you flip back.
-  const [view, setView] = useState<"config" | "stock">("config");
-  const [stockName, setStockName] = useState<string | null>(null);
+  // A stock spring chosen in the top bar's search opens the stock list on it.
+  const [view, setView] = useState<"config" | "stock">(openOn?.kind === "spring" ? "stock" : "config");
+  const [stockName, setStockName] = useState<string | null>(openOn?.kind === "spring" ? openOn.name : null);
   const [stockRight, setStockRight] = useState(1);
   const [stockLeft, setStockLeft] = useState(1);
 

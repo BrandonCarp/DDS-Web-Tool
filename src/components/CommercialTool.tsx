@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import type { SearchPick } from "@/lib/search";
 import { EstimateSheet } from "@/components/EstimateSheet";
 import { priceText } from "@/components/CopyButton";
 import { CopyQuickBooks } from "./CopyQuickBooks";
@@ -23,10 +24,11 @@ interface CommQuote {
 }
 const fmt = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-export function CommercialTool() {
+export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
+  const start = openOn?.kind === "commdoor" ? openOn : null;
   const [step, setStep] = useState<1 | 2>(1);
-  const [mfr, setMfr] = useState("");
-  const [model, setModel] = useState("");
+  const [mfr, setMfr] = useState(start?.mfr ?? "");
+  const [model, setModel] = useState(start?.model ?? "");
 
   // complete-door config
   const [size, setSize] = useState("");

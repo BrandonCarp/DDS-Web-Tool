@@ -16,6 +16,7 @@ import { windowDesigns, designWidthCode, plainWindowsFor, takesInserts } from "@
 import { RES_SECTION_WIDTHS, sectionWidthLabel } from "@/lib/pricing/data/res-section-meta";
 import { stockedWidths, stockedHeights, sizeParts, sizeCode, stockedColors, solidOnlyHeight, torsionOnlyHeight } from "@/lib/pricing/data/stock-colors";
 import { OptionButtons, type ButtonOption } from "./OptionButtons";
+import type { SearchPick } from "@/lib/search";
 import { vinylForDoor, vinylForDoorColor } from "@/lib/pricing/data/vinyl";
 import { VinylPrompt, YES_NO } from "./VinylPrompt";
 
@@ -60,8 +61,11 @@ export function ResidentialTool({
   models,
   prefill = null,
   onPrefillUsed,
+  openOn,
 }: {
   models: string[];
+  /** A door chosen in the top bar's search: open on it at step 1. */
+  openOn?: SearchPick;
   /** A configuration handed over by the quick-entry box. */
   prefill?: ParsedDoor | null;
   /** Called once it has been applied, so it is not applied twice. */
@@ -79,8 +83,9 @@ export function ResidentialTool({
   const collections = Object.keys(doorTree);
 
   const [step, setStep] = useState<1 | 2>(1);
-  const [coll, setColl] = useState("");
-  const [model, setModel] = useState("");
+  const startModel = openOn?.kind === "resdoor" ? openOn.model : "";
+  const [coll, setColl] = useState(startModel ? COLLECTIONS[dataKey(startModel)] || "Other" : "");
+  const [model, setModel] = useState(startModel);
 
   // sizes are strings so the fields can start blank (prompt the user, like index.html)
   const [widthFt, setWidthFt] = useState("");

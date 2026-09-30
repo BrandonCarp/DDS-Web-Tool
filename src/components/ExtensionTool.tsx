@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { SearchPick } from "@/lib/search";
 import { priceText } from "@/components/CopyButton";
 import { CopyQuickBooks } from "./CopyQuickBooks";
 import { QB_EXTENSION } from "@/lib/pricing/data/quickbooks";
@@ -25,8 +26,8 @@ const fmt = (n: number) =>
  * sheet ever grows a per-foot or handed extension row, CI says so before the
  * counter finds out.
  */
-export function ExtensionTool() {
-  const [pickedName, setPickedName] = useState<string | null>(null);
+export function ExtensionTool({ openOn }: { openOn?: SearchPick } = {}) {
+  const [pickedName, setPickedName] = useState<string | null>(openOn?.kind === "spring" ? openOn.name : null);
 
   const part = pickedName
     ? (EXTENSION_SPRINGS.items.find((p) => p.name === pickedName) ?? null)

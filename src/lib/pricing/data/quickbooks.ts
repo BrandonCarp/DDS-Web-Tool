@@ -60,6 +60,16 @@ export function quickBooksRow(
  * counter what shelf to look on. The QuickBooks item is what goes on an
  * invoice, so the brand comes off and the rest shortens.
  */
+/**
+ * The kits moved from the spring tabs into Parts (30/9/2026) but still bill as
+ * the springs they come with — without this they would fall to the singular
+ * rule below and paste as "EXTENSION KIT", an item QuickBooks does not have.
+ */
+const KIT_ITEM: Record<string, string> = {
+  "EXTENSION KITS": QB_EXTENSION,
+  "TORSION KITS": QB_TORSION,
+};
+
 const OPERATOR_ITEM: Record<string, string> = {
   "LIFTMASTER LOGIC 5": "LOGIC 5",
   "LIFTMASTER ACCESSORIES": "ACCESSORY",
@@ -90,6 +100,8 @@ export function categoryItem(categoryName: string | null | undefined): string {
   // catalogue names are written for browsing — "LIFTMASTER LOGIC 5" tells a
   // counter what shelf to look at — where the item list wants the short trade
   // name. Anything not listed here falls through to the singular rule below.
+  const kit = KIT_ITEM[raw];
+  if (kit) return kit;
   const override = OPERATOR_ITEM[raw];
   if (override) return override;
   const named = OPERATOR_ITEM[raw];

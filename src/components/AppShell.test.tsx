@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { AppShell } from "./AppShell";
 import { BOOT_SCRIPT } from "@/lib/sidebar";
+import { EXTENSION_SPRINGS } from "@/lib/pricing/data/springs";
 
 /**
  * The sidebar shell: who sees the admin panel, the Settings tab, and the
@@ -102,12 +103,108 @@ describe("scanner cart", () => {
   });
 });
 
-describe("the name card", () => {
-  it("shows nothing under a counter's name, and Admin under Brandon's", () => {
+describe("the top bar", () => {
+  const menu = () => screen.getByTestId("user-menu");
+  const search = () => screen.getByTestId("qsearch") as HTMLInputElement;
+  const find = (text: string) => {
+    fireEvent.focus(search());
+    fireEvent.change(search(), { target: { value: text } });
+    return screen.getAllByTestId("qsearch-hit");
+  };
+  const title = () => document.querySelector("aside.quote .qtitle")?.textContent;
+
+  it("shows who is signed in at the top right; the sidebar has no name card", () => {
     shell("user");
-    expect(document.querySelector(".side-who-role")).toBeNull();
+    expect(document.querySelector(".umenu-name")?.textContent).toBe("bc");
+    expect(document.querySelector(".umenu-role")).toBeNull(); // nothing under a counter's name
+    expect(document.querySelector(".side-user")).toBeNull();
     cleanup();
     shell("admin");
-    expect(document.querySelector(".side-who-role")?.textContent).toBe("Admin");
+    expect(document.querySelector(".umenu-role")?.textContent).toBe("Admin");
+  });
+
+  it("keeps Settings and Sign out in the name menu, and the admin panel for the admin", () => {
+    shell("user");
+    fireEvent.click(menu());
+    expect(screen.getByTestId("sign-out").getAttribute("href")).toBe("/api/logout");
+    expect(screen.queryByText("Admin panel", { selector: ".umenu-pop a" })).toBeNull();
+    fireEvent.click(screen.getByRole("menuitem", { name: /settings/i }));
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Settings");
+    cleanup();
+    shell("admin");
+    fireEvent.click(menu());
+    expect(screen.getByText("Admin panel", { selector: ".umenu-pop a" }).getAttribute("href")).toBe("/admin");
+  });
+
+  it("puts the cursor in the search with Ctrl+K", () => {
+    shell();
+    fireEvent.keyDown(window, { key: "k", ctrlKey: true });
+    expect(document.activeElement).toBe(search());
+  });
+
+  it("opens a part on its own tab, already picked", () => {
+    shell();
+    fireEvent.mouseDown(find("1100-18")[0]);
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Parts");
+    expect(title()).toBe("1100-18");
+  });
+
+  it("opens a spring on the Extension Springs tab, already picked", () => {
+    shell();
+    const spring = EXTENSION_SPRINGS.items[0].name;
+    fireEvent.mouseDown(find(spring)[0]);
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Extension Springs");
+    expect(title()).toBe(spring);
+  });
+
+  it("opens a kit on the Parts tab, where kits sell now", () => {
+    shell();
+    fireEvent.mouseDown(find("7ft tor kit")[0]);
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Parts");
+    expect(title()).toBe("7FT TOR KIT");
+  });
+
+  it("opens the 4050 on Residential at step 1, ready to configure", () => {
+    shell();
+    const hit = find("4050").find((h) => h.textContent?.includes("Stock residential"))!;
+    fireEvent.mouseDown(hit);
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Stock Residential");
+    expect((screen.getByTestId("model") as HTMLSelectElement).value).toBe("4050");
+    expect((screen.getByTestId("configure") as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("opens the 4050 on Special Order with maker, collection and model chosen", () => {
+    shell();
+    const hit = find("4050").find((h) => h.textContent?.includes("Special order"))!;
+    fireEvent.mouseDown(hit);
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Special Order");
+    expect((screen.getByTestId("so-series") as HTMLSelectElement).value).toBe("Premium Steel Collection");
+    expect((screen.getByTestId("so-model") as HTMLSelectElement).selectedOptions[0].textContent).toBe("4050");
+    expect(screen.getByTestId("so-configure")).toBeTruthy();
+  });
+
+  it("opens a 4050 on the Special Order tab, chosen and ready to configure", () => {
+    shell();
+    const hit = find("4050").find((h) => h.textContent?.includes("Special Order"))!;
+    fireEvent.mouseDown(hit);
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Special Order");
+    expect((screen.getByTestId("so-model") as HTMLSelectElement).value).toContain("4050");
+    expect(screen.getByTestId("so-configure")).toBeTruthy();
+  });
+
+  it("opens a 4050 on the Residential tab at step 1, chosen", () => {
+    shell();
+    const hit = find("4050").find((h) => h.textContent?.includes("Residential"))!;
+    fireEvent.mouseDown(hit);
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Stock Residential");
+    expect((screen.getByTestId("model") as HTMLSelectElement).value).toBe("4050");
+    expect((screen.getByTestId("configure") as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("switches to the new item when a second search lands on the same tab", () => {
+    shell();
+    fireEvent.mouseDown(find("1100-18")[0]);
+    fireEvent.mouseDown(find("400-12")[0]);
+    expect(title()).toBe("400-12");
   });
 });

@@ -14,6 +14,7 @@ import {
 } from "@/lib/pricing/data/parts";
 import { PARTS_TAB_CATEGORIES } from "@/lib/pricing/data/springs";
 import type { PartCategory } from "@/lib/pricing/data/parts";
+import type { SearchPick } from "@/lib/search";
 import { cableQuote, CABLE_GAUGES } from "@/lib/pricing/data/cables";
 
 const fmt = (n: number) =>
@@ -44,16 +45,20 @@ export function PartsTool({
   categories = PARTS_TAB_CATEGORIES,
   eyebrow = "Parts quote",
   finder = "Find a part",
+  openOn,
 }: {
+  /** A part chosen in the top bar's search: open on it, already picked. */
+  openOn?: SearchPick;
   /** What this tab browses and searches. The Track and Cables tabs pass their
       one category; the Parts tab gets the rest of the shelf (29/9/2026). */
   categories?: PartCategory[];
   eyebrow?: string;
   finder?: string;
 } = {}) {
-  const [catName, setCatName] = useState(categories[0]?.name ?? "");
+  const start = openOn?.kind === "part" && categories.some((c) => c.name === openOn.category) ? openOn : null;
+  const [catName, setCatName] = useState(start?.category ?? categories[0]?.name ?? "");
   const [query, setQuery] = useState("");
-  const [pickedName, setPickedName] = useState<string | null>(null);
+  const [pickedName, setPickedName] = useState<string | null>(start?.name ?? null);
   const [feet, setFeet] = useState("");
   // Cut-to-length cables: measured feet + inches, priced as a pair.
   const [cabGauge, setCabGauge] = useState(CABLE_GAUGES[0].label);

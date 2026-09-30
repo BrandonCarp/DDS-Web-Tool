@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { PART_CATEGORIES } from "./data/parts";
+import { categoryItem, QB_EXTENSION, QB_TORSION } from "./data/quickbooks";
 import {
   EXTENSION_CATEGORY,
   EXTENSION_SPRINGS,
@@ -25,7 +26,8 @@ describe("springs split out of the parts shelf", () => {
     const names = SHELF_PART_CATEGORIES.map((c) => c.name);
     expect(names).not.toContain(EXTENSION_CATEGORY);
     expect(names).not.toContain(TORSION_CATEGORY);
-    expect(SHELF_PART_CATEGORIES.length).toBe(PART_CATEGORIES.length - 2);
+    // Two spring sheets out, the two kit categories in (30/9/2026).
+    expect(SHELF_PART_CATEGORIES.length).toBe(PART_CATEGORIES.length - 2 + 2);
   });
 
   it("keeps every other category and every item intact", () => {
@@ -36,24 +38,23 @@ describe("springs split out of the parts shelf", () => {
   });
 
   it("prices nothing differently — the move is a move, not a repricing", () => {
-    const source = PART_CATEGORIES.find((c) => c.name === EXTENSION_CATEGORY);
-    expect(EXTENSION_SPRINGS.items).toBe(source?.items);
+    const source = PART_CATEGORIES.find((c) => c.name === EXTENSION_CATEGORY)!;
+    for (const p of EXTENSION_SPRINGS.items) expect(source.items).toContain(p); // the same rows, untouched
   });
 });
 
 describe("spring groups", () => {
-  it("puts kits first and labels the rest by door height", () => {
-    const groups = springGroups(STOCK_TORSION_SPRINGS);
-    expect(groups[0].label).toBe(KITS_GROUP);
-    expect(groups.map((g) => g.label)).toEqual([KITS_GROUP, "7FT", "8FT", "9FT"]);
+  it("labels torsion springs by door height, with no kits among them", () => {
+    expect(springGroups(STOCK_TORSION_SPRINGS).map((g) => g.label)).toEqual(["7FT", "8FT", "9FT"]);
   });
 
   it("groups extension springs by 7ft and 8ft", () => {
-    expect(springGroups(EXTENSION_SPRINGS).map((g) => g.label)).toEqual([
-      KITS_GROUP,
-      "7FT",
-      "8FT",
-    ]);
+    expect(springGroups(EXTENSION_SPRINGS).map((g) => g.label)).toEqual(["7FT", "8FT"]);
+  });
+
+  it("still files an unheaded row under KITS, should a sheet add one", () => {
+    const groups = springGroups({ name: "X", items: [{ name: "A", desc: "A", price: 1 }, { name: "B", desc: "B", price: 1, sub: "X, 7FT" }] });
+    expect(groups.map((g) => g.label)).toEqual([KITS_GROUP, "7FT"]);
   });
 
   it("loses no item to grouping", () => {
@@ -94,5 +95,28 @@ describe("track and cables have their own tabs", () => {
   it("loses nothing: the three tabs together are the whole shelf", () => {
     const all = [...PARTS_TAB_CATEGORIES, ...TRACK_CATEGORIES, ...CABLE_CATEGORIES];
     expect(names(all).sort()).toEqual(names(SHELF_PART_CATEGORIES).sort());
+  });
+});
+
+describe("the kits sell from the Parts tab", () => {
+  const names = (c: string) => SHELF_PART_CATEGORIES.find((x) => x.name === c)?.items.map((p) => p.name);
+
+  it("takes them off the spring tabs and gives Parts two kit categories", () => {
+    expect(names("EXTENSION KITS")).toEqual(["7FT EXT KIT", "8FT EXT KIT"]);
+    expect(names("TORSION KITS")).toEqual(["7FT TOR KIT", "8FT TOR KIT"]);
+    expect(EXTENSION_SPRINGS.items.some((p) => /KIT/.test(p.name))).toBe(false);
+    expect(STOCK_TORSION_SPRINGS.items.some((p) => /KIT/.test(p.name))).toBe(false);
+  });
+
+  it("files them alphabetically, after DRUMS", () => {
+    const order = SHELF_PART_CATEGORIES.map((c) => c.name);
+    expect(order[0]).toBe("DRUMS");
+    expect(order.indexOf("EXTENSION KITS")).toBe(order.indexOf("END BEARING PLATES") + 1);
+    expect(order.indexOf("TORSION KITS")).toBe(order.indexOf("TOOLS") + 1);
+  });
+
+  it("still bills them to QuickBooks as the springs they come with", () => {
+    expect(categoryItem("EXTENSION KITS")).toBe(QB_EXTENSION);
+    expect(categoryItem("TORSION KITS")).toBe(QB_TORSION);
   });
 });

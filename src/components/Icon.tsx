@@ -100,6 +100,13 @@ const PATHS = {
   track: <path d="M5 21V12a7 7 0 0 1 7-7h7M9 21v-8.5A3.5 3.5 0 0 1 12.5 9H19" />,
   // A cable looping from one end to the other.
   cable: <path d="M4 17c3 0 3-10 6-10s3 10 6 10 3-6 4-6M4 17h.01M20 11h.01" />,
+  search: (
+    <>
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="m16 16 4.5 4.5" />
+    </>
+  ),
+  chevdown: <path d="m7 10 5 5 5-5" />,
   download: (
     <>
       <path d="M12 4v10.5M7.5 10 12 14.5 16.5 10" />

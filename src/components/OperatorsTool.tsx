@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import type { SearchPick } from "@/lib/search";
 import { priceText } from "@/components/CopyButton";
 import { CopyQuickBooks } from "./CopyQuickBooks";
 import { categoryItem } from "@/lib/pricing/data/quickbooks";
@@ -21,11 +22,12 @@ import { OPERATOR_GROUPS, type Operator } from "@/lib/pricing/data/operators";
 const fmt = (n: number) =>
   "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-export function OperatorsTool() {
-  const [group, setGroup] = useState<string>(OPERATOR_GROUPS[0]);
-  const [sectionName, setSectionName] = useState(OPERATOR_CATALOGUE[0].name);
+export function OperatorsTool({ openOn }: { openOn?: SearchPick } = {}) {
+  const start = openOn?.kind === "operator" ? openOn : null;
+  const [group, setGroup] = useState<string>(start?.group ?? OPERATOR_GROUPS[0]);
+  const [sectionName, setSectionName] = useState(start?.section ?? OPERATOR_CATALOGUE[0].name);
   const [query, setQuery] = useState("");
-  const [picked, setPicked] = useState<string | null>(null);
+  const [picked, setPicked] = useState<string | null>(start?.desc ?? null);
 
   const searching = query.trim().length > 0;
   const sections = OPERATOR_CATALOGUE.filter((s) => s.group === group);
