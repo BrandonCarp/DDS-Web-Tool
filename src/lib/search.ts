@@ -15,6 +15,7 @@ import {
 import type { PartCategory } from "@/lib/pricing/data/parts";
 import { OPERATOR_CATALOGUE } from "@/lib/pricing/data/operator-catalogue";
 import { operatorPrice } from "@/lib/pricing/data/operator-pricing";
+import { priceNotSet } from "@/lib/pricing/data/part-pricing";
 import { COLLECTIONS } from "@/lib/pricing/data/catalog-meta";
 import { dataKey } from "@/lib/pricing/model-groups";
 import { commMfrs, commModelsFor, SLAB_LABEL } from "@/lib/pricing/data/commercial-meta";
@@ -54,7 +55,7 @@ function partEntries(cats: PartCategory[], tab: string): Entry[] {
     c.items.map((p) => ({
       id: `${tab}|${c.name}|${p.name}|${p.desc}`,
       tab, label: p.name, detail: p.desc || c.name,
-      price: p.perFoot ? `${money(p.price)} / ft` : money(p.price),
+      price: priceNotSet(p) ? null : p.perFoot ? `${money(p.price)} / ft` : money(p.price),
       pick: { kind: "part" as const, category: c.name, name: p.name },
       hay: `${p.name} ${p.desc} ${c.name}`.toLowerCase(),
     })),

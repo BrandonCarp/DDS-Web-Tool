@@ -91,3 +91,12 @@ export function partPrice(part: Part, feet?: number): number {
   if (!part.perFoot) return part.price;
   return Math.round(part.price * billedFeet(part, feet) * 100) / 100;
 }
+
+/**
+ * True for a part listed before it has a price (the cable rolls, 30/9/2026).
+ * Such a part shows "Price not set" and is never quoted, pasted into
+ * QuickBooks or added to the cart at its placeholder 0.
+ */
+export function priceNotSet(part: Part): boolean {
+  return (part as { priceNotSet?: boolean }).priceNotSet === true;
+}

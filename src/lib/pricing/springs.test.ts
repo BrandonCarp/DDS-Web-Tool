@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { PART_CATEGORIES } from "./data/parts";
+import { priceNotSet } from "./data/part-pricing";
 import { categoryItem, QB_EXTENSION, QB_TORSION } from "./data/quickbooks";
 import {
   EXTENSION_CATEGORY,
@@ -172,5 +173,22 @@ describe("cable hardware (30/9/2026)", () => {
   it("keeps the cables the sheet already had", () => {
     const sheet = PART_CATEGORIES.find((c) => c.name === "CABLES")!;
     for (const p of sheet.items) expect(CABLE_CATEGORIES[0].items).toContain(p);
+  });
+});
+
+describe("cable rolls, listed before they have prices (30/9/2026)", () => {
+  it("lists 250FT and 500FT rolls in 1/8\", 5/32\" and 3/16\", each marked price not set", () => {
+    const rolls = CABLE_CATEGORIES[0].items.filter((p) => p.sub === "CABLE ROLLS");
+    expect(rolls.map((p) => p.name)).toEqual([
+      '1/8" CABLE, 250FT ROLL', '1/8" CABLE, 500FT ROLL',
+      '5/32" CABLE, 250FT ROLL', '5/32" CABLE, 500FT ROLL',
+      '3/16" CABLE, 250FT ROLL', '3/16" CABLE, 500FT ROLL',
+    ]);
+    for (const p of rolls) expect(priceNotSet(p), p.name).toBe(true);
+  });
+
+  it("marks nothing else as unpriced", () => {
+    const flagged = SHELF_PART_CATEGORIES.flatMap((c) => c.items).filter(priceNotSet);
+    expect(flagged.every((p) => /CABLE, \d+FT ROLL$/.test(p.name))).toBe(true);
   });
 });

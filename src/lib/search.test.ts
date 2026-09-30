@@ -26,6 +26,10 @@ describe("quick search", () => {
     expect(find('36" adder')[0]).toMatchObject({ tab: "track", label: '36" ADDER PIECE', price: "$129.95" });
   });
 
+  it("finds a cable roll with no price shown, since it has none yet", () => {
+    expect(find("5/32 500ft")[0]).toMatchObject({ tab: "cables", label: '5/32" CABLE, 500FT ROLL', price: null });
+  });
+
   it("sends track and cables to their own tabs", () => {
     expect(find('2" raw track')[0]).toMatchObject({ tab: "track", pick: { kind: "part", category: "TRACKS" } });
     expect(find("cable keepers")[0]).toMatchObject({ tab: "cables", pick: { kind: "part", category: "CABLES" } });

@@ -16,7 +16,7 @@ import { PARTS_TAB_CATEGORIES } from "@/lib/pricing/data/springs";
 import type { PartCategory } from "@/lib/pricing/data/parts";
 import type { SearchPick } from "@/lib/search";
 import { cableQuote, CABLE_GAUGES } from "@/lib/pricing/data/cables";
-import { billedFeet, feetLimits } from "@/lib/pricing/data/part-pricing";
+import { billedFeet, feetLimits, priceNotSet } from "@/lib/pricing/data/part-pricing";
 
 const fmt = (n: number) =>
   "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -111,7 +111,9 @@ export function PartsTool({
     : part
       ? partDescription(part, ft, right, left)
       : "";
-  const price = onCable ? (cabQ?.total ?? 0) : part ? partPrice(part, ft) : 0;
+  // A part with no price yet has no price here — never its placeholder 0 — so
+  // the card says so and offers nothing to paste or add to the cart.
+  const price: number | null = onCable ? (cabQ?.total ?? 0) : part ? (priceNotSet(part) ? null : partPrice(part, ft)) : 0;
   const qtyText = onCable ? "1" : part ? String(partQuantity(part, right, left)) : "1";
   const title = onCable ? CUSTOM_CABLE : (part?.name ?? "");
   const showing = onCable || !!part;
@@ -226,8 +228,8 @@ export function PartsTool({
                           {searching && <span className="partcat">{category}</span>}
                         </span>
                         <span className="partprice">
-                          {fmt(p.price)}
-                          {p.perFoot && <span className="perft">/ft</span>}
+                          {priceNotSet(p) ? "Price not set" : fmt(p.price)}
+                          {p.perFoot && !priceNotSet(p) && <span className="perft">/ft</span>}
                         </span>
                       </button>
                     </li>
@@ -375,7 +377,7 @@ export function PartsTool({
                     )}
                     <div className="total">
                       <span>Quantity {qtyText}</span>
-                      <b data-testid="parts-price">{fmt(price)}</b>
+                      <b data-testid="parts-price">{price == null ? "Price not set" : fmt(price)}</b>
                     </div>
                     <div className="qfoot">
                       {price != null && (
@@ -412,7 +414,7 @@ export function PartsTool({
           typed="PAR"
           description={description}
           qty={qtyText}
-          rate={priceText(price)}
+          rate={priceText(price ?? 0)}
         />
       )}
     </>

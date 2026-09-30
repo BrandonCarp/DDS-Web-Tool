@@ -72,3 +72,16 @@ describe("raw track on the Track tab", () => {
     expect(screen.getByTestId("parts-feet-note").textContent).toContain("Charged as 24 ft");
   });
 });
+
+describe("a part with no price yet", () => {
+  it("says Price not set, and offers nothing to paste or add to the cart", () => {
+    show(<PartsTool categories={CABLE_CATEGORIES} eyebrow="Cables quote" finder="Find a cable" />);
+    const row = screen.getByText('1/8" CABLE, 250FT ROLL').closest("button")!;
+    expect(row.textContent).toContain("Price not set");
+    fireEvent.click(row);
+    expect(screen.getByTestId("parts-price").textContent).toBe("Price not set");
+    expect(screen.getByText(/no price yet/i)).toBeTruthy();
+    expect(screen.queryByTestId("parts-copy-qb")).toBeNull();
+    expect(screen.queryByTestId("parts-copy-qb-cart")).toBeNull();
+  });
+});

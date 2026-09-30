@@ -50,7 +50,10 @@ export const TORSION_KITS_CATEGORY = "TORSION KITS";
  * They belong in NEW_PARTS_LIST.xlsx: once they are in it and gen_parts.py has
  * been re-run, delete them here, or they will show twice.
  */
-export const HAND_ADDED_PARTS: Record<string, Part[]> = {
+/** A hand-added part may be listed before it has a price: see priceNotSet. */
+export type ShelfPart = Part & { priceNotSet?: boolean };
+
+export const HAND_ADDED_PARTS: Record<string, ShelfPart[]> = {
   TRACKS: [
     { name: '36" ADDER PIECE', desc: '36" ADDER PIECE', price: 129.95, sub: "ADDER PIECES" },
     { name: '54" ADDER PIECE', desc: '54" ADDER PIECE', price: 149.95, sub: "ADDER PIECES" },
@@ -71,6 +74,15 @@ export const HAND_ADDED_PARTS: Record<string, Part[]> = {
     { name: '3/16" SLEEVES', desc: '3/16" SLEEVES,  BAG OF 100', price: 29.95, sub: "CABLE HARDWARE" },
     { name: '3/16" STOPS', desc: '3/16" STOPS,  BAG OF 100', price: 29.95, sub: "CABLE HARDWARE" },
     { name: '3/16" THIMBLES', desc: '3/16" THIMBLES,  BAG OF 100', price: 29.95, sub: "CABLE HARDWARE" },
+    // Cable rolls: listed now, prices to come (30/9/2026). The 0 is only a
+    // placeholder — priceNotSet keeps a roll from ever being quoted at it.
+    // When a price arrives, set it and delete priceNotSet on the same line.
+    { name: '1/8" CABLE, 250FT ROLL', desc: '1/8" CABLE,  250FT ROLL', price: 0, priceNotSet: true, sub: "CABLE ROLLS" },
+    { name: '1/8" CABLE, 500FT ROLL', desc: '1/8" CABLE,  500FT ROLL', price: 0, priceNotSet: true, sub: "CABLE ROLLS" },
+    { name: '5/32" CABLE, 250FT ROLL', desc: '5/32" CABLE,  250FT ROLL', price: 0, priceNotSet: true, sub: "CABLE ROLLS" },
+    { name: '5/32" CABLE, 500FT ROLL', desc: '5/32" CABLE,  500FT ROLL', price: 0, priceNotSet: true, sub: "CABLE ROLLS" },
+    { name: '3/16" CABLE, 250FT ROLL', desc: '3/16" CABLE,  250FT ROLL', price: 0, priceNotSet: true, sub: "CABLE ROLLS" },
+    { name: '3/16" CABLE, 500FT ROLL', desc: '3/16" CABLE,  500FT ROLL', price: 0, priceNotSet: true, sub: "CABLE ROLLS" },
   ],
 };
 
