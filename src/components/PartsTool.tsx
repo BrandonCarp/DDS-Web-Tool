@@ -12,7 +12,8 @@ import {
   partQuantity,
   type Part,
 } from "@/lib/pricing/data/parts";
-import { SHELF_PART_CATEGORIES } from "@/lib/pricing/data/springs";
+import { PARTS_TAB_CATEGORIES } from "@/lib/pricing/data/springs";
+import type { PartCategory } from "@/lib/pricing/data/parts";
 import { cableQuote, CABLE_GAUGES } from "@/lib/pricing/data/cables";
 
 const fmt = (n: number) =>
@@ -39,8 +40,18 @@ const CUSTOM_CABLE = "Custom cut cable";
  * and nothing else; that is deliberate, so there is exactly one place to quote
  * a spring from.
  */
-export function PartsTool() {
-  const [catName, setCatName] = useState(SHELF_PART_CATEGORIES[0]?.name ?? "");
+export function PartsTool({
+  categories = PARTS_TAB_CATEGORIES,
+  eyebrow = "Parts quote",
+  finder = "Find a part",
+}: {
+  /** What this tab browses and searches. The Track and Cables tabs pass their
+      one category; the Parts tab gets the rest of the shelf (29/9/2026). */
+  categories?: PartCategory[];
+  eyebrow?: string;
+  finder?: string;
+} = {}) {
+  const [catName, setCatName] = useState(categories[0]?.name ?? "");
   const [query, setQuery] = useState("");
   const [pickedName, setPickedName] = useState<string | null>(null);
   const [feet, setFeet] = useState("");
@@ -59,11 +70,11 @@ export function PartsTool() {
   // Search spans every category; browsing stays inside the chosen one.
   const results = useMemo(() => {
     if (!searching) {
-      const cat = SHELF_PART_CATEGORIES.find((c) => c.name === catName);
+      const cat = categories.find((c) => c.name === catName);
       return (cat?.items ?? []).map((p) => ({ part: p, category: cat?.name ?? catName }));
     }
     const q = query.trim().toLowerCase();
-    return SHELF_PART_CATEGORIES.flatMap((c) =>
+    return categories.flatMap((c) =>
       c.items
         .filter(
           (p) =>
@@ -73,7 +84,7 @@ export function PartsTool() {
         )
         .map((p) => ({ part: p, category: c.name })),
     ).slice(0, 60);
-  }, [searching, query, catName]);
+  }, [searching, query, catName, categories]);
 
   const hit = onCable ? null : results.find((r) => r.part.name === pickedName) ?? null;
   const part: Part | null = hit?.part ?? null;
@@ -116,8 +127,10 @@ export function PartsTool() {
           <div className="panel">
             <div className="step">
               <div className="ggroup">
-                <div className="ghdr">Find a part</div>
+                <div className="ghdr">{finder}</div>
                 <div className="gbody">
+                  {/* One category (Track, Cables): nothing to choose, just search. */}
+                  {categories.length > 1 && (
                   <div className="grow">
                     <label>Category</label>
                     <div className="ctl selectwrap">
@@ -130,7 +143,7 @@ export function PartsTool() {
                           setQuery("");
                         }}
                       >
-                        {SHELF_PART_CATEGORIES.map((c) => (
+                        {categories.map((c) => (
                           <option key={c.name} value={c.name}>
                             {c.name} ({c.items.length})
                           </option>
@@ -138,6 +151,7 @@ export function PartsTool() {
                       </select>
                     </div>
                   </div>
+                  )}
 
                   <div className="grow">
                     <label>Search</label>
@@ -155,8 +169,8 @@ export function PartsTool() {
                     </div>
                     <div className="muted-note" style={{ marginTop: 6 }}>
                       {searching
-                        ? `${results.length} match${results.length === 1 ? "" : "es"} across all categories`
-                        : "Searches every category at once"}
+                        ? `${results.length} match${results.length === 1 ? "" : "es"}${categories.length > 1 ? " across all categories" : ""}`
+                        : categories.length > 1 ? "Searches every category at once" : "Searches the list below"}
                     </div>
                   </div>
                 </div>
@@ -210,7 +224,7 @@ export function PartsTool() {
         <aside className="quote">
           <div className="qcard">
             <div className="qhead">
-              <div className="qeyebrow">Parts quote</div>
+              <div className="qeyebrow">{eyebrow}</div>
               <div className="qtitle">{showing ? title : "No part selected"}</div>
             </div>
 

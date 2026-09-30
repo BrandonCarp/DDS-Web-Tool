@@ -148,7 +148,9 @@ html, body { margin: 0; padding: 0; }
   padding: 18px 14px 14px;
   background: var(--rail);
   border-right: 1px solid var(--line);
-  overflow-x: hidden; overflow-y: auto;
+  /* Only the tab list scrolls (below), so the logo and the name card with its
+     sign-out never leave a short window. */
+  overflow: hidden;
 }
 .tool-shell .side-top {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
@@ -169,26 +171,31 @@ html, body { margin: 0; padding: 0; }
 }
 .tool-shell :is(.side-toggle, .side-out, .mbar-btn):hover { background: var(--surface-3); color: var(--ink); }
 
-.tool-shell .side-nav { display: flex; flex-direction: column; flex: 1 0 auto; gap: 2px; }
+.tool-shell .side-nav {
+  display: flex; flex-direction: column; flex: 1 1 auto; gap: 2px;
+  min-height: 0; overflow-x: hidden; overflow-y: auto;
+}
 /* The two section names are the one place the app uses capitals as a label —
    lifted straight from the reference Brandon picked. */
 .tool-shell .side-label {
-  padding: 16px 12px 6px;
+  padding: 10px 12px 4px;
   font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
   color: var(--muted-2);
 }
 .tool-shell .side-label:first-child { padding-top: 0; }
-.tool-shell .side-spacer { flex: 1 0 20px; }
+.tool-shell .side-spacer { flex: 1 0 6px; }
 
 .tool-shell .side :is(.tab, .navlink) {
   display: flex; align-items: center; gap: 11px;
-  width: 100%; min-height: 40px;
-  padding: 8px 10px 8px 11px;
+  /* 34px, not 40: eleven quoting tabs and the others fit a 760px-tall window
+     since Track and Cables joined (Brandon, 29/9/2026). */
+  width: 100%; min-height: 34px; flex: none;
+  padding: 6px 10px 6px 11px;
   border: 1px solid transparent; border-radius: var(--r-sm);
   background: none; color: var(--ink-2);
   /* A touch smaller than body text: bold capitals run wide, and the longest
      name (EXTENSION SPRINGS) has to fit beside its icon. */
-  font-size: 13.5px; font-weight: 700; letter-spacing: .01em; text-align: left; text-decoration: none; white-space: nowrap;
+  font-size: 13px; font-weight: 700; letter-spacing: .01em; text-align: left; text-decoration: none; white-space: nowrap;
   cursor: pointer;
   transition: background-color .12s, color .12s;
 }

@@ -96,6 +96,10 @@ const PATHS = {
   ),
   tally: <path d="M7 5v14M11 5v14M15 5v14M4.5 15.5l15-7" />,
   barcode: <path d="M4 6v12M6.6 6v12M9.2 6v12M10.6 6v12M13.4 6v12M16 6v12M17.4 6v12M20 6v12" />,
+  // Two rails bending from the wall onto the ceiling.
+  track: <path d="M5 21V12a7 7 0 0 1 7-7h7M9 21v-8.5A3.5 3.5 0 0 1 12.5 9H19" />,
+  // A cable looping from one end to the other.
+  cable: <path d="M4 17c3 0 3-10 6-10s3 10 6 10 3-6 4-6M4 17h.01M20 11h.01" />,
   download: (
     <>
       <path d="M12 4v10.5M7.5 10 12 14.5 16.5 10" />

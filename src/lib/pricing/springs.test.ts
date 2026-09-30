@@ -5,6 +5,9 @@ import {
   EXTENSION_SPRINGS,
   KITS_GROUP,
   SHELF_PART_CATEGORIES,
+  PARTS_TAB_CATEGORIES,
+  TRACK_CATEGORIES,
+  CABLE_CATEGORIES,
   STOCK_TORSION_SPRINGS,
   TORSION_CATEGORY,
   springGroups,
@@ -75,5 +78,21 @@ describe("shapes the spring tabs assume", () => {
     for (const p of STOCK_TORSION_SPRINGS.items) {
       expect(p.perFoot).toBeFalsy();
     }
+  });
+});
+
+describe("track and cables have their own tabs", () => {
+  const names = (cats: { name: string }[]) => cats.map((c) => c.name);
+
+  it("takes them off the Parts tab and gives each its own", () => {
+    expect(names(PARTS_TAB_CATEGORIES)).not.toContain("TRACKS");
+    expect(names(PARTS_TAB_CATEGORIES)).not.toContain("CABLES");
+    expect(names(TRACK_CATEGORIES)).toEqual(["TRACKS"]);
+    expect(names(CABLE_CATEGORIES)).toEqual(["CABLES"]);
+  });
+
+  it("loses nothing: the three tabs together are the whole shelf", () => {
+    const all = [...PARTS_TAB_CATEGORIES, ...TRACK_CATEGORIES, ...CABLE_CATEGORIES];
+    expect(names(all).sort()).toEqual(names(SHELF_PART_CATEGORIES).sort());
   });
 });

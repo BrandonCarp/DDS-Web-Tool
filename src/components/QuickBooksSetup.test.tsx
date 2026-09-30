@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, afterEach } from "vitest";
 import { cleanup, render, screen, fireEvent, within } from "@testing-library/react";
-import { AppShell } from "./AppShell";
+import { AppShell, SHOW_QB_SETUP } from "./AppShell";
 
 afterEach(cleanup);
 const shell = (role = "user") =>
@@ -66,15 +66,14 @@ describe("QuickBooks setup tab", () => {
   });
 });
 
-describe("QuickBooks setup tab is hidden", () => {
-  it("is not offered in the app, to anyone", () => {
-    // SHOW_QB_SETUP is off; everything above renders it switched on.
+describe("QuickBooks setup tab follows SHOW_QB_SETUP", () => {
+  it("is offered to everyone exactly when the flag is on", () => {
+    // Taking the tab down is one line in AppShell.tsx; this stays green either way.
     for (const role of ["user", "semiadmin", "admin"]) {
       cleanup();
       render(<AppShell models={["4050"]} user={{ username: "bc", role }} />);
       const opts = within(screen.getByTestId("tabsel")).getAllByRole("option").map((o) => o.getAttribute("value"));
-      expect(opts, role).not.toContain("qbsetup");
-      expect(screen.queryByText("QB Setup"), role).toBeNull();
+      expect(opts.includes("qbsetup"), role).toBe(SHOW_QB_SETUP);
     }
   });
 });

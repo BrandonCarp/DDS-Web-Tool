@@ -12,6 +12,7 @@ import { SpecialTool } from "./SpecialTool";
 import { TorsionTool } from "./TorsionTool";
 import { ExtensionTool } from "./ExtensionTool";
 import { PartsTool } from "./PartsTool";
+import { TRACK_CATEGORIES, CABLE_CATEGORIES } from "@/lib/pricing/data/springs";
 import { VinylTool } from "./VinylTool";
 import { OperatorsTool } from "./OperatorsTool";
 import { SettingsPanel } from "./SettingsPanel";
@@ -51,7 +52,9 @@ const SHOW_BROCHURE = false;
  * Hidden since 24/9/2026 — Brandon. The tab, its page and its tests all stay,
  * so bringing it back is this one line.
  */
-const SHOW_QB_SETUP = true;
+// The QuickBooks setup tab. Set to false to take it down — that is the whole
+// change; the tests follow whichever way it is set.
+export const SHOW_QB_SETUP = true;
 
 type Tab = {
   id: string;
@@ -89,6 +92,15 @@ const QUOTING_TABS: readonly Tab[] = [
   {
     id: "parts", label: "Parts", icon: "parts",
     title: "Parts",
+  },
+  // Track and cables left Parts for tabs of their own — Brandon, 29/9/2026.
+  {
+    id: "track", label: "Track", icon: "track",
+    title: "Track",
+  },
+  {
+    id: "cables", label: "Cables", icon: "cable",
+    title: "Cables",
   },
   {
     id: "vinyl", label: "Vinyl", icon: "vinyl",
@@ -412,6 +424,8 @@ function Shell({
           {mode === "extension" && <ExtensionTool />}
           {mode === "qbsetup" && qbSetup && <QuickBooksSetup />}
           {mode === "parts" && <PartsTool />}
+          {mode === "track" && <PartsTool categories={TRACK_CATEGORIES} eyebrow="Track quote" finder="Find track" />}
+          {mode === "cables" && <PartsTool categories={CABLE_CATEGORIES} eyebrow="Cables quote" finder="Find a cable" />}
           {mode === "vinyl" && <VinylTool />}
           {mode === "operators" && <OperatorsTool />}
           {mode === "settings" && <SettingsPanel username={user.username} roleLabel={role} />}
