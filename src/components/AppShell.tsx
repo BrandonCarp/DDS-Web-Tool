@@ -13,6 +13,7 @@ import { TorsionTool } from "./TorsionTool";
 import { ExtensionTool } from "./ExtensionTool";
 import { PartsTool } from "./PartsTool";
 import { TopBar } from "./TopBar";
+import { CartProvider, CartTool, useCart } from "./Cart";
 import type { SearchHit, SearchPick } from "@/lib/search";
 import { TRACK_CATEGORIES, CABLE_CATEGORIES } from "@/lib/pricing/data/springs";
 import { VinylTool } from "./VinylTool";
@@ -117,6 +118,11 @@ const QUOTING_TABS: readonly Tab[] = [
     id: "scanner", label: "Scanner", icon: "barcode",
     title: "Scanner",
   },
+  // Lines from any quote, pasted into QuickBooks together — 30/9/2026.
+  {
+    id: "cart", label: "Cart", icon: "cart",
+    title: "Cart",
+  },
 ];
 
 // The paste helper install. Its own tab rather than a panel hanging under
@@ -164,7 +170,9 @@ export function AppShell(props: {
 }) {
   return (
     <CustomerJobProvider>
-      <Shell {...props} />
+      <CartProvider>
+        <Shell {...props} />
+      </CartProvider>
     </CustomerJobProvider>
   );
 }
@@ -174,17 +182,20 @@ function NavTab({
   active,
   collapsed,
   onPick,
+  count = 0,
 }: {
   tab: Tab;
   active: boolean;
   collapsed: boolean;
   onPick: (id: string) => void;
+  /** Lines waiting in the cart: the tab glows red and shows the count until Clear. */
+  count?: number;
 }) {
   return (
     <button
       type="button"
       data-tab={tab.id}
-      className={`tab${active ? " active" : ""}`}
+      className={`tab${active ? " active" : ""}${count ? " glow" : ""}`}
       aria-current={active ? "page" : undefined}
       // Collapsed, the icon is all that shows, so the name moves to a tooltip.
       title={collapsed ? flatLabel(tab) : undefined}
@@ -199,6 +210,7 @@ function NavTab({
       ) : (
         <span className="tab-main">{tab.label}</span>
       )}
+      {count > 0 && <span className="tab-count" data-testid={`${tab.id}-count`}>{count}</span>}
       {active && (
         <span className="tab-chev">
           <Icon name="chevron" size={16} />
@@ -301,6 +313,7 @@ function Shell({
     setJump({ n: ++jumps.current, tab: hit.tab, pick: hit.pick });
   };
   const at = (tab: string) => (jump?.tab === tab ? jump : null);
+  const cartCount = useCart()?.lines.length ?? 0;
   // The tab's name is part of the key. The Parts, Track and Cables tabs are all
   // one component: with a bare number as the key, React took them for the same
   // element and carried Track's category into Cables (30/9/2026).
@@ -333,7 +346,8 @@ function Shell({
         <nav className="side-nav">
           <div className="side-label">Quoting</div>
           {QUOTING_TABS.map((t) => (
-            <NavTab key={t.id} tab={t} active={mode === t.id} collapsed={collapsed} onPick={pickTab} />
+            <NavTab key={t.id} tab={t} active={mode === t.id} collapsed={collapsed} onPick={pickTab}
+              count={t.id === "cart" ? cartCount : 0} />
           ))}
 
           <div className="side-spacer" />
@@ -390,7 +404,7 @@ function Shell({
           >
             {tabs.map((t) => (
               <option key={t.id} value={t.id}>
-                {flatLabel(t)}
+                {flatLabel(t)}{t.id === "cart" && cartCount ? ` (${cartCount})` : ""}
               </option>
             ))}
           </select>
@@ -446,6 +460,7 @@ function Shell({
           {mode === "operators" && <OperatorsTool key={keyFor("operators")} openOn={at("operators")?.pick} />}
           {mode === "settings" && <SettingsPanel username={user.username} roleLabel={role} />}
           {mode === "scanner" && <ScannerTool />}
+          {mode === "cart" && <CartTool />}
           {mode === "inventory" && isMaster && <InventoryTool />}
         </div>
       </main>

@@ -226,3 +226,22 @@ describe("switching between the tabs built on the Parts tool", () => {
     expect(list()).toContain("1100-18");
   });
 });
+
+describe("the Cart tab", () => {
+  it("glows, with a count, from the first add until Clear", () => {
+    shell();
+    const tab = (id: string) => document.querySelector(`.side [data-tab="${id}"]`) as HTMLElement;
+    fireEvent.click(tab("parts"));
+    fireEvent.click(document.querySelector("ul.partlist .partrow") as HTMLElement);
+    fireEvent.click(screen.getByTestId("parts-copy-qb-cart"));
+    expect(tab("cart").classList.contains("glow")).toBe(true);
+    expect(screen.getByTestId("cart-count").textContent).toBe("1");
+    fireEvent.click(tab("residential")); // still glowing on another tab
+    expect(tab("cart").classList.contains("glow")).toBe(true);
+    fireEvent.click(tab("cart"));
+    expect(screen.getAllByTestId("cartline")).toHaveLength(1);
+    fireEvent.click(screen.getByTestId("cart-clear"));
+    expect(tab("cart").classList.contains("glow")).toBe(false);
+    expect(screen.queryByTestId("cart-count")).toBeNull();
+  });
+});

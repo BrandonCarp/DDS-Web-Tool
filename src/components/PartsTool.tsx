@@ -16,6 +16,7 @@ import { PARTS_TAB_CATEGORIES } from "@/lib/pricing/data/springs";
 import type { PartCategory } from "@/lib/pricing/data/parts";
 import type { SearchPick } from "@/lib/search";
 import { cableQuote, CABLE_GAUGES } from "@/lib/pricing/data/cables";
+import { billedFeet, feetLimits } from "@/lib/pricing/data/part-pricing";
 
 const fmt = (n: number) =>
   "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -98,10 +99,13 @@ export function PartsTool({
   const ft = Math.max(0, Math.trunc(Number(feet) || 0));
   const needsFeet = !!part?.perFoot;
   const needsHands = !!part?.hands;
+  // Raw track is sold 1FT to 24FT only (30/9/2026); outside that, no line.
+  const limits = part ? feetLimits(part) : null;
+  const feetOk = !limits || (ft >= limits.min && ft <= limits.max);
 
   const ready = onCable
     ? !!cabQ
-    : !!part && (!needsFeet || ft > 0) && (!needsHands || right + left > 0);
+    : !!part && (!needsFeet || (ft > 0 && feetOk)) && (!needsHands || right + left > 0);
   const description = onCable
     ? (cabQ?.description ?? "")
     : part
@@ -336,15 +340,30 @@ export function PartsTool({
                         <input
                           data-testid="parts-feet"
                           type="number"
-                          min={1}
+                          min={limits?.min ?? 1}
+                          max={limits?.max}
                           value={feet}
                           onChange={(e) => setFeet(e.target.value)}
-                          placeholder="e.g. 50"
+                          placeholder={limits ? `${limits.min} to ${limits.max}` : "e.g. 50"}
                         />
                       </div>
-                      <div className="muted-note" style={{ marginTop: 6 }}>
-                        Sold by the foot — the total goes on the line, quantity stays 1
-                      </div>
+                      {limits ? (
+                        ft > 0 && !feetOk ? (
+                          <div className="muted-note err" role="alert" style={{ marginTop: 6 }} data-testid="parts-feet-error">
+                            Raw track is sold from {limits.min} to {limits.max} ft.
+                          </div>
+                        ) : (
+                          <div className="muted-note" style={{ marginTop: 6 }} data-testid="parts-feet-note">
+                            {ft > 0
+                              ? `Charged as ${billedFeet(part!, ft)} ft — up to 12 ft bills a 12 ft stick, over 12 ft a 24 ft one`
+                              : "Up to 12 ft bills a 12 ft stick; over 12 ft, a 24 ft stick"}
+                          </div>
+                        )
+                      ) : (
+                        <div className="muted-note" style={{ marginTop: 6 }}>
+                          Sold by the foot — the total goes on the line, quantity stays 1
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

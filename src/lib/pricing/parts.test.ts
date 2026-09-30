@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { PART_CATEGORIES, partDescription, partPrice, partQuantity } from "./data/parts";
+import { PART_CATEGORIES, partDescription, partPrice, partQuantity, billedFeet, feetLimits } from "./data/parts";
 import { QB_ITEMS } from "../qb/iif";
 
 const find = (cat: string, name: string) => {
@@ -28,7 +28,8 @@ describe("parts list", () => {
 
   it("writes the footage onto a per-foot description", () => {
     // The sheet leaves a trailing comma for exactly this.
-    expect(partDescription(find("TRACKS", '2" RAW TRACK'), 10)).toBe('2" RAW TRACK,  10FT');
+    // Raw track names the stick it bills (below): 10FT asked, 12FT sold.
+    expect(partDescription(find("TRACKS", '2" RAW TRACK'), 10)).toBe('2" RAW TRACK,  12FT');
     expect(partDescription(find("BRUSH SEAL / RETAINERS", '1" BRUSH SEAL'), 50)).toBe(
       '1" BRUSH SEAL,  50FT',
     );
@@ -36,7 +37,7 @@ describe("parts list", () => {
   });
 
   it("extends a per-foot part into the rate, keeping quantity at 1", () => {
-    expect(partPrice(find("TRACKS", '2" RAW TRACK'), 10)).toBe(37.5); // 10 x 3.75
+    expect(partPrice(find("TRACKS", '2" RAW TRACK'), 10)).toBe(45); // a 12FT stick x 3.75
     expect(partPrice(find("BRUSH SEAL / RETAINERS", '1" BRUSH SEAL'), 50)).toBe(137.5);
     expect(partPrice(find("RETAINERS", '2" U RETAINER'), 8)).toBe(30);
   });
@@ -101,5 +102,23 @@ describe("QuickBooks item names", () => {
     expect(QB_ITEMS.parts).toBe("PARTS");
     expect(QB_ITEMS.vinyl).toBe("VINYL");
     expect(QB_ITEMS.operators).toBe("OPERATORS");
+  });
+});
+
+describe("raw track sticks (30/9/2026)", () => {
+  const raw2 = () => find("TRACKS", '2" RAW TRACK');
+  const raw3 = () => find("TRACKS", '3" RAW TRACK');
+
+  it("bills a 12FT stick up to 12FT and a 24FT stick above", () => {
+    for (const [asked, billed] of [[1, 12], [10, 12], [12, 12], [13, 24], [24, 24]]) {
+      expect(billedFeet(raw2(), asked), `${asked}FT`).toBe(billed);
+    }
+    expect(partPrice(raw3(), 13)).toBe(24 * 8.5);
+  });
+
+  it("is sold from 1FT to 24FT, and nothing else is limited", () => {
+    expect(feetLimits(raw2())).toEqual({ min: 1, max: 24 });
+    expect(feetLimits(raw3())).toEqual({ min: 1, max: 24 });
+    expect(feetLimits(find("BRUSH SEAL / RETAINERS", '1" BRUSH SEAL'))).toBeNull();
   });
 });

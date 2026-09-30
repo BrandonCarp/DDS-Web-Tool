@@ -629,6 +629,27 @@ html, body { margin: 0; padding: 0; }
 .tool-shell .scannote.ok { color: var(--good); }
 .tool-shell .scannote.err { color: var(--bad); }
 
+/* Add to cart, under the QuickBooks button on every quote (30/9/2026). */
+.tool-shell .addcart { width: 100%; justify-content: center; gap: 8px; }
+.tool-shell .muted-note.err { color: var(--bad); }
+
+/* The Cart tab glows red, with a count, while anything is in the cart — until
+   Clear empties it (Brandon, 30/9/2026). Still red, not pulsing, for anyone
+   who has asked their system for less motion. */
+@keyframes cart-glow {
+  0%, 100% { text-shadow: 0 0 0 transparent; }
+  50% { text-shadow: 0 0 10px var(--accent-ink), 0 0 2px var(--accent-ink); }
+}
+.tool-shell .side .tab.glow, .tool-shell .side .tab.glow .icon { color: var(--accent-ink); }
+.tool-shell .side .tab.glow .tab-main { animation: cart-glow 1.6s ease-in-out infinite; }
+.tool-shell .tab-count {
+  margin-left: auto; min-width: 20px; padding: 0 6px; border-radius: 999px;
+  background: var(--accent); color: var(--on-accent);
+  font-size: 11px; line-height: 20px; text-align: center;
+}
+:root[data-sidebar="collapsed"] .tool-shell .tab-count { display: none; }
+@media (prefers-reduced-motion: reduce) { .tool-shell .side .tab.glow .tab-main { animation: none; } }
+
 /* Two-way switch between whole views (stock springs / cut to size). */
 .tool-shell .modeswitch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
 .tool-shell .modebtn {

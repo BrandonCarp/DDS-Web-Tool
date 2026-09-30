@@ -148,7 +148,6 @@ def main():
         "// rate, so the per-foot figure never lands on the QuickBooks line.\n"
         "// Vinyl stop molding is deliberately absent: it takes a door size rather\n"
         "// than a footage and bills the other way round. See data/vinyl.ts.\n\n"
-        'import { handSuffix } from "./torsion";\n\n'
         "export interface Part {\n"
         "  name: string;\n"
         "  /** Verbiage copied into the QuickBooks description column. */\n"
@@ -170,37 +169,9 @@ def main():
         "export const PART_CATEGORIES: PartCategory[] = [\n"
         + "\n".join(body)
         + "\n];\n\n"
-        "/**\n"
-        " * Description ready for QuickBooks.\n"
-        " *\n"
-        " * Per-foot parts get the footage written on (`2\" RAW TRACK,  10FT`).\n"
-        " * Hand-ordered parts get the counts appended (`... [2] - RIGHTS AND [1] - LEFT`).\n"
-        " */\n"
-        "export function partDescription(\n"
-        "  part: Part,\n"
-        "  feet?: number,\n"
-        "  right?: number,\n"
-        "  left?: number,\n"
-        "): string {\n"
-        "  if (part.hands) {\n"
-        "    const suffix = handSuffix(right ?? 0, left ?? 0);\n"
-        "    return suffix ? `${part.desc} ${suffix}` : part.desc;\n"
-        "  }\n"
-        "  if (!part.perFoot || !feet) return part.desc;\n"
-        "  const base = part.desc.replace(/,\\s*$/, \"\");\n"
-        "  return `${base},  ${feet}FT`;\n"
-        "}\n\n"
-        "/** Springs are priced each — the pair shows up as quantity 2, not a doubled rate. */\n"
-        "export function partQuantity(part: Part, right?: number, left?: number): number {\n"
-        "  if (!part.hands) return 1;\n"
-        "  return Math.max(0, Math.trunc(right ?? 0)) + Math.max(0, Math.trunc(left ?? 0));\n"
-        "}\n\n"
-        "/** Extended price: per-foot parts charge rate x footage, others charge each. */\n"
-        "export function partPrice(part: Part, feet?: number): number {\n"
-        "  if (!part.perFoot) return part.price;\n"
-        "  const ft = Math.max(0, Math.trunc(feet ?? 0));\n"
-        "  return Math.round(part.price * ft * 100) / 100;\n"
-        "}\n"
+        '// How parts are described and priced lives in part-pricing.ts, which\n'
+        '// scripts/gen_parts.py never writes — see the note there.\n'
+        'export { partDescription, partQuantity, partPrice, billedFeet, feetLimits } from "./part-pricing";\n'
     )
     print(f"{len(cats)} categories, {n} items, {pf} per-foot -> {OUT}", file=sys.stderr)
 

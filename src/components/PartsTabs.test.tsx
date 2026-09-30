@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { PartsTool } from "./PartsTool";
 import { CustomerJobProvider } from "./CustomerJobFields";
 import { TRACK_CATEGORIES, CABLE_CATEGORIES } from "@/lib/pricing/data/springs";
@@ -45,5 +45,29 @@ describe("Track tab headings", () => {
   it("adds no headings to the Parts tab", () => {
     show(<PartsTool />);
     expect(screen.queryAllByTestId("parts-group")).toHaveLength(0);
+  });
+});
+
+describe("raw track on the Track tab", () => {
+  const pickRaw = () => {
+    show(<PartsTool categories={TRACK_CATEGORIES} eyebrow="Track quote" finder="Find track" />);
+    fireEvent.click(screen.getByText('2" RAW TRACK').closest("button")!);
+  };
+  const feet = (v: string) => fireEvent.change(screen.getByTestId("parts-feet"), { target: { value: v } });
+
+  it("refuses more than 24 ft, with no line to copy", () => {
+    pickRaw();
+    feet("30");
+    expect(screen.getByTestId("parts-feet-error").textContent).toContain("1 to 24 ft");
+    expect(screen.queryByTestId("parts-copy-qb")).toBeNull();
+  });
+
+  it("says what a length is charged as", () => {
+    pickRaw();
+    feet("10");
+    expect(screen.getByTestId("parts-feet-note").textContent).toContain("Charged as 12 ft");
+    expect(screen.getByTestId("parts-copy-qb")).toBeTruthy();
+    feet("13");
+    expect(screen.getByTestId("parts-feet-note").textContent).toContain("Charged as 24 ft");
   });
 });

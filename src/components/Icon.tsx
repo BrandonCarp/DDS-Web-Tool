@@ -107,6 +107,13 @@ const PATHS = {
     </>
   ),
   chevdown: <path d="m7 10 5 5 5-5" />,
+  cart: (
+    <>
+      <path d="M3 4h2.2l2.3 11h10.1L20 7.5H6.4" />
+      <circle cx="9.5" cy="19.5" r="1.3" />
+      <circle cx="16.5" cy="19.5" r="1.3" />
+    </>
+  ),
   download: (
     <>
       <path d="M12 4v10.5M7.5 10 12 14.5 16.5 10" />

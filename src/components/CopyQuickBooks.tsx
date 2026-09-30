@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CopyButton } from "./CopyButton";
+import { AddToCart } from "./Cart";
 import { quickBooksRow } from "@/lib/pricing/data/quickbooks";
 
 /**
@@ -56,6 +57,7 @@ export function CopyQuickBooks({
   ].join("\n");
 
   return (
+    <>
     <span className="qbline">
       {!controlled && (
         <label className="qbqty">
@@ -77,5 +79,8 @@ export function CopyQuickBooks({
         onCopy={onCopy}
       />
     </span>
+    {/* The same lines, kept in the Cart tab for later (30/9/2026). */}
+    <AddToCart lines={[{ item, description, qty: n, rate }, ...(extraLines ?? [])]} testId={`${testId}-cart`} />
+    </>
   );
 }
