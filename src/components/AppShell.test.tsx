@@ -208,3 +208,21 @@ describe("the top bar", () => {
     expect(title()).toBe("400-12");
   });
 });
+
+describe("switching between the tabs built on the Parts tool", () => {
+  it("gives each its own list: Track, then Cables, then Parts, in one visit", () => {
+    // They share one component. Each needs its own key, or React keeps the
+    // last tab's category when the next one opens — Cables showed "TRACKS"
+    // and "Nothing matches" (30/9/2026).
+    shell();
+    const tab = (id: string) => document.querySelector(`.side [data-tab="${id}"]`) as HTMLElement;
+    const list = () => screen.getByTestId("parts-list").textContent ?? "";
+    fireEvent.click(tab("track"));
+    expect(list()).toContain("20R");
+    fireEvent.click(tab("cables"));
+    expect(list()).toContain("CABLE KEEPERS");
+    expect(list()).not.toContain("Nothing matches");
+    fireEvent.click(tab("parts"));
+    expect(list()).toContain("1100-18");
+  });
+});

@@ -301,6 +301,10 @@ function Shell({
     setJump({ n: ++jumps.current, tab: hit.tab, pick: hit.pick });
   };
   const at = (tab: string) => (jump?.tab === tab ? jump : null);
+  // The tab's name is part of the key. The Parts, Track and Cables tabs are all
+  // one component: with a bare number as the key, React took them for the same
+  // element and carried Track's category into Cables (30/9/2026).
+  const keyFor = (tab: string) => `${tab}-${at(tab)?.n ?? 0}`;
   // The picked row can sit below the fold of a long list; bring it into view.
   useEffect(() => {
     if (!jump?.pick) return;
@@ -427,19 +431,19 @@ function Shell({
             />
           )}
           {mode === "residential" && (
-            <ResidentialTool key={at("residential")?.n ?? 0} openOn={at("residential")?.pick}
+            <ResidentialTool key={keyFor("residential")} openOn={at("residential")?.pick}
               models={models} prefill={prefill} onPrefillUsed={() => setPrefill(null)} />
           )}
-          {mode === "commercial" && <CommercialTool key={at("commercial")?.n ?? 0} openOn={at("commercial")?.pick} />}
-          {mode === "special" && <SpecialTool key={at("special")?.n ?? 0} openOn={at("special")?.pick} />}
-          {mode === "torsion" && <TorsionTool key={at("torsion")?.n ?? 0} openOn={at("torsion")?.pick} />}
-          {mode === "extension" && <ExtensionTool key={at("extension")?.n ?? 0} openOn={at("extension")?.pick} />}
+          {mode === "commercial" && <CommercialTool key={keyFor("commercial")} openOn={at("commercial")?.pick} />}
+          {mode === "special" && <SpecialTool key={keyFor("special")} openOn={at("special")?.pick} />}
+          {mode === "torsion" && <TorsionTool key={keyFor("torsion")} openOn={at("torsion")?.pick} />}
+          {mode === "extension" && <ExtensionTool key={keyFor("extension")} openOn={at("extension")?.pick} />}
           {mode === "qbsetup" && qbSetup && <QuickBooksSetup />}
-          {mode === "parts" && <PartsTool key={at("parts")?.n ?? 0} openOn={at("parts")?.pick} />}
-          {mode === "track" && <PartsTool key={at("track")?.n ?? 0} openOn={at("track")?.pick} categories={TRACK_CATEGORIES} eyebrow="Track quote" finder="Find track" />}
-          {mode === "cables" && <PartsTool key={at("cables")?.n ?? 0} openOn={at("cables")?.pick} categories={CABLE_CATEGORIES} eyebrow="Cables quote" finder="Find a cable" />}
+          {mode === "parts" && <PartsTool key={keyFor("parts")} openOn={at("parts")?.pick} />}
+          {mode === "track" && <PartsTool key={keyFor("track")} openOn={at("track")?.pick} categories={TRACK_CATEGORIES} eyebrow="Track quote" finder="Find track" />}
+          {mode === "cables" && <PartsTool key={keyFor("cables")} openOn={at("cables")?.pick} categories={CABLE_CATEGORIES} eyebrow="Cables quote" finder="Find a cable" />}
           {mode === "vinyl" && <VinylTool />}
-          {mode === "operators" && <OperatorsTool key={at("operators")?.n ?? 0} openOn={at("operators")?.pick} />}
+          {mode === "operators" && <OperatorsTool key={keyFor("operators")} openOn={at("operators")?.pick} />}
           {mode === "settings" && <SettingsPanel username={user.username} roleLabel={role} />}
           {mode === "scanner" && <ScannerTool />}
           {mode === "inventory" && isMaster && <InventoryTool />}
