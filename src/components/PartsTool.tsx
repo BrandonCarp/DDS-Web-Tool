@@ -352,13 +352,11 @@ export function PartsTool({
                           <div className="muted-note err" role="alert" style={{ marginTop: 6 }} data-testid="parts-feet-error">
                             Raw track is sold from {limits.min} to {limits.max} ft.
                           </div>
-                        ) : (
+                        ) : ft > 0 ? (
                           <div className="muted-note" style={{ marginTop: 6 }} data-testid="parts-feet-note">
-                            {ft > 0
-                              ? `Charged as ${billedFeet(part!, ft)} ft — up to 12 ft bills a 12 ft stick, over 12 ft a 24 ft one`
-                              : "Up to 12 ft bills a 12 ft stick; over 12 ft, a 24 ft stick"}
+                            Charged as {billedFeet(part!, ft)} ft
                           </div>
-                        )
+                        ) : null
                       ) : (
                         <div className="muted-note" style={{ marginTop: 6 }}>
                           Sold by the foot — the total goes on the line, quantity stays 1

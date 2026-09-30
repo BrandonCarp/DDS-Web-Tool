@@ -62,8 +62,9 @@ describe("raw track on the Track tab", () => {
     expect(screen.queryByTestId("parts-copy-qb")).toBeNull();
   });
 
-  it("says what a length is charged as", () => {
+  it("says what a length is charged as, and nothing before one is entered", () => {
     pickRaw();
+    expect(screen.queryByTestId("parts-feet-note")).toBeNull();
     feet("10");
     expect(screen.getByTestId("parts-feet-note").textContent).toContain("Charged as 12 ft");
     expect(screen.getByTestId("parts-copy-qb")).toBeTruthy();

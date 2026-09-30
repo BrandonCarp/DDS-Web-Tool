@@ -30,12 +30,12 @@ describe("4300 family — special order configurator", () => {
   });
 
   it("carries the widths each sheet actually holds", () => {
-    // The 7ft sheet runs to 20'0", the 8ft one stops at 14'10" — Brandon is
-    // entering the rest later, so the two ranges differ on purpose.
+    // Both sheets run 6'2" to 20'0" since the 9/30 workbook filled in the 8ft
+    // sheet past 14'10".
     expect(griddedWidths(G, "7")).toHaveLength(84);
-    expect(griddedWidths(G, "8")).toHaveLength(53);
+    expect(griddedWidths(G, "8")).toHaveLength(84);
     expect(griddedWidths(G, "7")).toContain("20");
-    expect(griddedWidths(G, "8")).not.toContain("16");
+    expect(griddedWidths(G, "8")).toContain("20");
   });
 
   it("keys 11-foot widths the same way as every other foot", () => {
@@ -64,9 +64,9 @@ describe("4300 family — pricing", () => {
   });
 
   it("sends an 8ft width past the sheet to the manual total", () => {
-    // 16'0" x 8'0" is not on the 8ft sheet yet. It must decline rather than
-    // reach for a 7ft price.
-    const r = specialDoorQuote({ ...base, width: "16", height: "8" });
+    // Past 20'0" there is no sheet at either height. It must decline rather
+    // than reach for another width's price.
+    const r = specialDoorQuote({ ...base, width: "20.2", height: "8" });
     expect(r.quote).toBeUndefined();
     expect(r.reason).toMatch(/not on the grid|total/i);
   });

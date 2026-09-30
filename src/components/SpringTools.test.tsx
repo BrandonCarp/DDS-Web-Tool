@@ -183,3 +183,32 @@ describe("Torsion Springs tab — cut to size", () => {
     expect(label("tor-left")).toBe("LHW");
   });
 });
+
+describe("Torsion Springs tab — the quantity is the springs counted", () => {
+  it("pastes a stock pair as quantity 2, and 2 rights and 2 lefts as 4, with no Qty box", async () => {
+    render(<CustomerJobProvider><TorsionTool /></CustomerJobProvider>);
+    fireEvent.click(screen.getByTestId("mode-stock"));
+    fireEvent.click(document.querySelector("ul.partlist .partrow") as HTMLElement);
+    expect(screen.queryByTestId("stock-copy-qb-qty")).toBeNull();
+    let line = await copiedQbLine(screen.getByTestId("stock-copy-qb"));
+    expect(line.qty).toBe(2);
+    expect(line.description).toContain("[1] - RIGHT AND [1] - LEFT");
+    fireEvent.change(screen.getByTestId("stock-right"), { target: { value: "2" } });
+    fireEvent.change(screen.getByTestId("stock-left"), { target: { value: "2" } });
+    line = await copiedQbLine(screen.getByTestId("stock-copy-qb"));
+    expect(line.qty).toBe(4);
+  });
+
+  it("waits on a cut spring until RHW or LHW is entered, then pastes their count", async () => {
+    render(<CustomerJobProvider><TorsionTool /></CustomerJobProvider>);
+    const wire = screen.getByTestId("tor-wire") as HTMLSelectElement;
+    fireEvent.change(wire, { target: { value: [...wire.options].map((o) => o.value).find(Boolean) } });
+    fireEvent.change(screen.getByTestId("tor-length"), { target: { value: "24.5" } });
+    expect(screen.queryByTestId("tor-copy-qb")).toBeNull();
+    expect(screen.getByText("Enter how many RHW and LHW")).toBeTruthy();
+    fireEvent.change(screen.getByTestId("tor-right"), { target: { value: "1" } });
+    fireEvent.change(screen.getByTestId("tor-left"), { target: { value: "1" } });
+    expect(screen.queryByTestId("tor-copy-qb-qty")).toBeNull();
+    expect((await copiedQbLine(screen.getByTestId("tor-copy-qb"))).qty).toBe(2);
+  });
+});

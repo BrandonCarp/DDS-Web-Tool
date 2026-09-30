@@ -558,3 +558,36 @@ describe("the corrected 9ft sheet", () => {
     expect(r.quote?.base).toBeCloseTo(2283.09, 2);
   });
 });
+
+describe("special order grids, checked against the 9/30 workbook", () => {
+  const q = (model: string, width: string, height: string, style: "solid" | "glass" | "inserts") =>
+    specialDoorQuote({ model, width, height, style, color: "White", track: "r12", spring: "extension", lock: "none" }).quote;
+
+  it("runs every grid in unbroken 2-inch steps, with proper width keys", () => {
+    const good = /^\d+(\.(2|4|6|8|10))?$/;
+    const inches = (k: string) => { const [f, i] = k.split("."); return +f * 12 + +(i ?? 0); };
+    for (const [group, tiers] of Object.entries(SPECIAL_DOORS)) {
+      for (const [tier, widths] of Object.entries(tiers)) {
+        const keys = Object.keys(widths);
+        expect(keys.filter((k) => !good.test(k)), `${group} ${tier}ft keys`).toEqual([]);
+        const run = keys.map(inches).sort((a, b) => a - b);
+        for (let i = 1; i < run.length; i++) expect(run[i] - run[i - 1], `${group} ${tier}ft after ${run[i - 1]}in`).toBe(2);
+      }
+    }
+  });
+
+  it("quotes the T52S at 11'0\" to 11'8\", which sat under broken keys", () => {
+    for (const w of ["11", "11.2", "11.4", "11.6", "11.8"]) expect(q("T52S/T52L", w, "7", "solid")?.unitPrice, w).toBe(1255.84);
+  });
+
+  it("takes the 4300 at 8ft out to 20'0\"", () => {
+    expect(griddedWidths("4300/4301/4310", "8").slice(-1)[0]).toBe("20");
+    expect(q("4300/4301/4310", "15", "8", "solid")?.unitPrice).toBe(1789.32);
+    expect(q("4300/4301/4310", "19", "8", "solid")?.unitPrice).toBe(2318.41); // its own TOTAL at 44M, not the $2266.63 typed
+  });
+
+  it("keeps the app's price where the workbook disagrees with its own TOTAL", () => {
+    expect(q("4300/4301/4310", "9.2", "8", "inserts")?.unitPrice).toBe(1679.91); // sheet: 1326.27
+    expect(q("T52S/T52L", "14", "7", "glass")?.unitPrice).toBe(1357.54); // sheet: 1375.54
+  });
+});

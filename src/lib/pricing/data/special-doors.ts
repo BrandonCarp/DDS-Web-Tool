@@ -11,6 +11,14 @@
 // adders come from ADDONS at quote time, the same ones a stock door uses.
 //
 // Shape: model -> height tier -> widthKey -> PriceTriple.
+// 30/9/2026, applied by hand from "Copy of UPDATED PRICING 9-8 (002).xlsx":
+//   4300/4301/4310 at 8ft gained 15'0" to 20'0" (it stopped at 14'10"). 19'0"
+//   solid is the sheet's own TOTAL at 44M, $2318.41, not the $2266.63 typed.
+//   T52S/T52L at 7ft had 11'0" to 11'8" under broken keys ("11.00", "11.02"…)
+//   the configurator could not find; same prices, proper keys.
+//   Kept the app's price where the sheet disagrees with its own TOTAL: 4300
+//   8ft 9'2" to 9'10" inserts ($1679.91, not $1326.27) and T52S 7ft 14'0"
+//   glass ($1357.54, not $1375.54).
 import type { PriceTriple } from "../types";
 
 export const SPECIAL_DOORS: Record<string, Record<string, Record<string, Partial<PriceTriple>>>> =
@@ -2909,6 +2917,161 @@ export const SPECIAL_DOORS: Record<string, Record<string, Record<string, Partial
         "solid": 2064.96,
         "glass": 2348.86,
         "inserts": 2481.3
+      },
+      "15": {
+        "solid": 1789.32,
+        "glass": 2071.21,
+        "inserts": 2205.66
+      },
+      "15.2": {
+        "solid": 2103.45,
+        "glass": 2385.34,
+        "inserts": 2519.79
+      },
+      "15.4": {
+        "solid": 2103.45,
+        "glass": 2385.34,
+        "inserts": 2519.79
+      },
+      "15.6": {
+        "solid": 1822.77,
+        "glass": 2104.66,
+        "inserts": 2239.11
+      },
+      "15.8": {
+        "solid": 1822.77,
+        "glass": 2104.66,
+        "inserts": 2239.11
+      },
+      "15.10": {
+        "solid": 2144.77,
+        "glass": 2426.66,
+        "inserts": 2561.11
+      },
+      "16": {
+        "solid": 1858.71,
+        "glass": 2180.89,
+        "inserts": 2334.55
+      },
+      "16.2": {
+        "solid": 2345.68,
+        "glass": 2667.86,
+        "inserts": 2821.52
+      },
+      "16.4": {
+        "solid": 2345.68,
+        "glass": 2667.86,
+        "inserts": 2821.52
+      },
+      "16.6": {
+        "solid": 2345.68,
+        "glass": 2667.86,
+        "inserts": 2821.52
+      },
+      "16.8": {
+        "solid": 2345.68,
+        "glass": 2667.86,
+        "inserts": 2821.52
+      },
+      "16.10": {
+        "solid": 2345.68,
+        "glass": 2667.86,
+        "inserts": 2821.52
+      },
+      "17": {
+        "solid": 2033.43,
+        "glass": 2355.61,
+        "inserts": 2509.27
+      },
+      "17.2": {
+        "solid": 2519.54,
+        "glass": 2841.71,
+        "inserts": 2995.38
+      },
+      "17.4": {
+        "solid": 2519.54,
+        "glass": 2841.71,
+        "inserts": 2995.38
+      },
+      "17.6": {
+        "solid": 2519.54,
+        "glass": 2841.71,
+        "inserts": 2995.38
+      },
+      "17.8": {
+        "solid": 2519.54,
+        "glass": 2841.71,
+        "inserts": 2995.38
+      },
+      "17.10": {
+        "solid": 2519.54,
+        "glass": 2841.71,
+        "inserts": 2995.38
+      },
+      "18": {
+        "solid": 2184.59,
+        "glass": 2506.77,
+        "inserts": 2660.43
+      },
+      "18.2": {
+        "solid": 2673.45,
+        "glass": 2995.63,
+        "inserts": 3149.29
+      },
+      "18.4": {
+        "solid": 2673.45,
+        "glass": 2995.63,
+        "inserts": 3149.29
+      },
+      "18.6": {
+        "solid": 2673.45,
+        "glass": 2995.63,
+        "inserts": 3149.29
+      },
+      "18.8": {
+        "solid": 2673.45,
+        "glass": 2995.63,
+        "inserts": 3149.29
+      },
+      "18.10": {
+        "solid": 2673.45,
+        "glass": 2995.63,
+        "inserts": 3149.29
+      },
+      "19": {
+        "solid": 2318.41,
+        "glass": 2680.86,
+        "inserts": 2853.73
+      },
+      "19.2": {
+        "solid": 2837.32,
+        "glass": 3199.77,
+        "inserts": 3372.64
+      },
+      "19.4": {
+        "solid": 2837.32,
+        "glass": 3199.77,
+        "inserts": 3372.64
+      },
+      "19.6": {
+        "solid": 2837.32,
+        "glass": 3199.77,
+        "inserts": 3372.64
+      },
+      "19.8": {
+        "solid": 2837.32,
+        "glass": 3199.77,
+        "inserts": 3372.64
+      },
+      "19.10": {
+        "solid": 2837.32,
+        "glass": 3199.77,
+        "inserts": 3372.64
+      },
+      "20": {
+        "solid": 2460.93,
+        "glass": 2863.66,
+        "inserts": 3055.73
       }
     }
   },
@@ -3064,27 +3227,27 @@ export const SPECIAL_DOORS: Record<string, Record<string, Record<string, Partial
         "glass": 1426.68,
         "inserts": 1540.55
       },
-      "11.00": {
+      "11": {
         "solid": 1255.84,
         "glass": 1426.68,
         "inserts": 1540.55
       },
-      "11.02": {
+      "11.2": {
         "solid": 1255.84,
         "glass": 1426.68,
         "inserts": 1540.55
       },
-      "11.04": {
+      "11.4": {
         "solid": 1255.84,
         "glass": 1426.68,
         "inserts": 1540.55
       },
-      "11.06": {
+      "11.6": {
         "solid": 1255.84,
         "glass": 1426.68,
         "inserts": 1540.55
       },
-      "11.08": {
+      "11.8": {
         "solid": 1255.84,
         "glass": 1426.68,
         "inserts": 1540.55

@@ -182,7 +182,7 @@ export function TorsionTool({ openOn }: { openOn?: SearchPick } = {}) {
 
               {stockReady ? (
                 <div className="qfoot">
-                  <CopyQuickBooks item={QB_TORSION} description={stockDesc} rate={stockUnit} testId="stock-copy-qb" />
+                  <CopyQuickBooks item={QB_TORSION} description={stockDesc} rate={stockUnit} qty={stockRight + stockLeft} testId="stock-copy-qb" />
                   <button className="btn" type="button" onClick={clear}>Clear</button>
                 </div>
               ) : (
@@ -219,10 +219,19 @@ export function TorsionTool({ openOn }: { openOn?: SearchPick } = {}) {
                 </div>
               </div>
 
-              <div className="qfoot">
-                <CopyQuickBooks item={QB_TORSION} description={description} rate={price} onCopy={record} testId="tor-copy-qb" />
-                <button className="btn" type="button" onClick={clear}>Clear</button>
-              </div>
+              {/* The quantity is the springs counted — [1] and [1] pastes 2 — so
+                  there is nothing to paste until at least one is (30/9/2026). */}
+              {right + left > 0 ? (
+                <div className="qfoot">
+                  <CopyQuickBooks item={QB_TORSION} description={description} rate={price} qty={right + left} onCopy={record} testId="tor-copy-qb" />
+                  <button className="btn" type="button" onClick={clear}>Clear</button>
+                </div>
+              ) : (
+                <div className="qfoot">
+                  <span className="muted-note">Enter how many RHW and LHW</span>
+                  <button className="btn" type="button" onClick={clear}>Clear</button>
+                </div>
+              )}
             </>
           )}
         </div>

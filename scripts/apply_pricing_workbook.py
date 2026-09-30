@@ -42,7 +42,21 @@ MODEL_KEYS = {
     "4050/4053/4051": {"special": "4050/4051/4053", "grid": "4050-4051-4053"},
     "4050/4051/4053": {"special": "4050/4051/4053", "grid": "4050-4051-4053"},
     "T50S/T50L": {"special": "T50S/T50L", "grid": "T50S"},
+    # Special order only (30/9/2026): no stock or standard grid to write.
+    "4300/4310/4301": {"special": "4300/4301/4310", "grid": None},
+    "T52S/T52L": {"special": "T52S/T52L", "grid": None},
+    "9200": {"special": "9200/9203", "grid": None},
 }
+
+
+def tab_matches_model(tab: str, model: str) -> bool:
+    """A tab's name and its MODEL cell must name the same door. 30/9/2026: two
+    9200 tabs carried a copied "T50S/T50L" header, which would have written
+    9200 prices over the T50S."""
+    def names(s: str) -> set:
+        found = set(re.findall(r"[A-Z]*\d+[A-Z]*", s.upper()))
+        return {n for n in found if not re.fullmatch(r"\d+FT", n)}  # "7FT" is a height, not a door
+    return bool(names(tab) & names(model))
 
 
 def width_key(feet: int, inches: int) -> str:
@@ -100,7 +114,14 @@ def main():
 
     tabs = {}
     for name in wb.sheetnames:
-        model, tier, grid, marker, offs = read_tab(wb[name])
+        try:
+            model, tier, grid, marker, offs = read_tab(wb[name])
+        except SystemExit as e:
+            print(f"  skipped '{name}': {e}")  # the STOCK tabs hold several heights
+            continue
+        model = re.sub(r"\s*\d+\s*FT$", "", model or "", flags=re.I)  # "9200 7ft" -> "9200"
+        if not tab_matches_model(name, model):
+            sys.exit(f"ABORT — tab '{name}' says MODEL {model!r}; fix the header before applying")
         if model not in MODEL_KEYS:
             print(f"  skipped '{name}': unknown model {model!r}")
             continue
@@ -135,6 +156,8 @@ def main():
     changed = 0
     for (model, tier), grid in tabs.items():
         key = MODEL_KEYS[model]["grid"]
+        if key is None:
+            continue
         start = src.index(f'"{key}": {{')
         end = src.index("\n  },", start)
         block = src[start:end]
@@ -166,6 +189,8 @@ def main():
     src = path.read_text(encoding="utf-8")
     for model in {m for m, _ in tabs}:
         key = MODEL_KEYS[model]["grid"]
+        if key is None:
+            continue
         start = src.index(f'"{key}": {{')
         end = src.index("\n  },", start)
         block = src[start:end]
