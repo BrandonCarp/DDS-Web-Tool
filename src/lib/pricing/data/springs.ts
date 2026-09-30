@@ -60,6 +60,18 @@ export const HAND_ADDED_PARTS: Record<string, Part[]> = {
     { name: '100" PIERCED TRACK', desc: '100" PIERCED TRACK,  PAIR', price: 39.95, sub: "PIERCED TRACK" },
     { name: '112" PIERCED TRACK', desc: '112" PIERCED TRACK,  PAIR', price: 45.95, sub: "PIERCED TRACK" },
   ],
+  // Sleeves, stops and thimbles for cable, bags of 100 (30/9/2026).
+  CABLES: [
+    { name: '1/8" SLEEVES', desc: '1/8" SLEEVES,  BAG OF 100', price: 19.95, sub: "CABLE HARDWARE" },
+    { name: '1/8" STOPS', desc: '1/8" STOPS,  BAG OF 100', price: 19.95, sub: "CABLE HARDWARE" },
+    { name: '1/8" THIMBLES', desc: '1/8" THIMBLES,  BAG OF 100', price: 19.95, sub: "CABLE HARDWARE" },
+    { name: '5/32" SLEEVES', desc: '5/32" SLEEVES,  BAG OF 100', price: 24.95, sub: "CABLE HARDWARE" },
+    { name: '5/32" STOPS', desc: '5/32" STOPS,  BAG OF 100', price: 24.95, sub: "CABLE HARDWARE" },
+    { name: '5/32" THIMBLES', desc: '5/32" THIMBLES,  BAG OF 100', price: 24.95, sub: "CABLE HARDWARE" },
+    { name: '3/16" SLEEVES', desc: '3/16" SLEEVES,  BAG OF 100', price: 29.95, sub: "CABLE HARDWARE" },
+    { name: '3/16" STOPS', desc: '3/16" STOPS,  BAG OF 100', price: 29.95, sub: "CABLE HARDWARE" },
+    { name: '3/16" THIMBLES', desc: '3/16" THIMBLES,  BAG OF 100', price: 29.95, sub: "CABLE HARDWARE" },
+  ],
 };
 
 /**
@@ -81,7 +93,7 @@ function trackCategory(c: PartCategory): PartCategory {
 export const SHELF_PART_CATEGORIES: PartCategory[] = (() => {
   const shelf = PART_CATEGORIES
     .filter((c) => c.name !== EXTENSION_CATEGORY && c.name !== TORSION_CATEGORY)
-    .map((c) => (c.name === "TRACKS" ? trackCategory(c) : c));
+    .map((c) => (c.name === "TRACKS" ? trackCategory(c) : { ...c, items: [...c.items, ...(HAND_ADDED_PARTS[c.name] ?? [])] }));
   const kits: PartCategory[] = [
     { name: EXTENSION_KITS_CATEGORY, items: EXTENSION_ALL.items.filter(isKit) },
     { name: TORSION_KITS_CATEGORY, items: TORSION_ALL.items.filter(isKit) },

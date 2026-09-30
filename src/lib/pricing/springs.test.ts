@@ -155,3 +155,22 @@ describe("pierced track (30/9/2026)", () => {
     for (const p of pierced) expect(p.desc).toMatch(/PAIR$/);
   });
 });
+
+describe("cable hardware (30/9/2026)", () => {
+  it("sells sleeves, stops and thimbles in bags of 100, priced by size, on the Cables tab", () => {
+    const items = CABLE_CATEGORIES[0].items.filter((p) => p.sub === "CABLE HARDWARE");
+    expect(items).toHaveLength(9);
+    const price = (n: string) => items.find((p) => p.name === n)?.price;
+    for (const kind of ["SLEEVES", "STOPS", "THIMBLES"]) {
+      expect(price(`1/8" ${kind}`), kind).toBe(19.95);
+      expect(price(`5/32" ${kind}`), kind).toBe(24.95);
+      expect(price(`3/16" ${kind}`), kind).toBe(29.95);
+    }
+    for (const p of items) expect(p.desc).toMatch(/BAG OF 100$/);
+  });
+
+  it("keeps the cables the sheet already had", () => {
+    const sheet = PART_CATEGORIES.find((c) => c.name === "CABLES")!;
+    for (const p of sheet.items) expect(CABLE_CATEGORIES[0].items).toContain(p);
+  });
+});
