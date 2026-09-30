@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { CopyButton, CopyPrice, priceText } from "@/components/CopyButton";
 import { CopyQuickBooks } from "./CopyQuickBooks";
 import { categoryItem } from "@/lib/pricing/data/quickbooks";
@@ -90,6 +90,7 @@ export function PartsTool({
         .map((p) => ({ part: p, category: c.name })),
     ).slice(0, 60);
   }, [searching, query, catName, categories]);
+  const grouped = !searching && results.length > 0 && results.every((r) => r.part.sub);
 
   const hit = onCable ? null : results.find((r) => r.part.name === pickedName) ?? null;
   const part: Part | null = hit?.part ?? null;
@@ -201,8 +202,15 @@ export function PartsTool({
                   {results.length === 0 && catName !== "CABLES" && (
                     <li className="partempty">Nothing matches that — try fewer letters.</li>
                   )}
-                  {results.map(({ part: p, category }) => (
-                    <li key={`${category}-${p.name}`}>
+                  {results.map(({ part: p, category }, i) => (
+                    <Fragment key={`${category}-${p.name}`}>
+                    {/* A list where every item has a heading (Track) shows the
+                        headings as rows of their own, so a group is never
+                        hidden below the fold with nothing saying it is there. */}
+                    {grouped && p.sub !== results[i - 1]?.part.sub && (
+                      <li className="partgroup" data-testid="parts-group">{p.sub}</li>
+                    )}
+                    <li>
                       <button
                         type="button"
                         className={`partrow ${!onCable && pickedName === p.name ? "on" : ""}`}
@@ -210,7 +218,7 @@ export function PartsTool({
                       >
                         <span className="partname">
                           {p.name}
-                          {p.sub && <span className="partsub">{p.sub}</span>}
+                          {p.sub && !grouped && <span className="partsub">{p.sub}</span>}
                           {searching && <span className="partcat">{category}</span>}
                         </span>
                         <span className="partprice">
@@ -219,6 +227,7 @@ export function PartsTool({
                         </span>
                       </button>
                     </li>
+                    </Fragment>
                   ))}
                 </ul>
               </div>

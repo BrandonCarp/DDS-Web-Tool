@@ -45,8 +45,38 @@ export const TORSION_KITS_CATEGORY = "TORSION KITS";
  * kits as two categories of their own, slotted in alphabetically (DRUMS stays
  * first, as the sheet has it). The Parts, Track and Cables tabs split this.
  */
+/**
+ * Parts the price sheet does not carry yet, added by hand — Brandon, 30/9/2026.
+ * They belong in NEW_PARTS_LIST.xlsx: once they are in it and gen_parts.py has
+ * been re-run, delete them here, or they will show twice.
+ */
+export const HAND_ADDED_PARTS: Record<string, Part[]> = {
+  TRACKS: [
+    { name: '36" ADDER PIECE', desc: '36" ADDER PIECE', price: 129.95, sub: "ADDER PIECES" },
+    { name: '54" ADDER PIECE', desc: '54" ADDER PIECE', price: 149.95, sub: "ADDER PIECES" },
+  ],
+};
+
+/**
+ * The Track tab reads residential sets first, then the adders, commercial sets
+ * and raw track, each under its own heading (30/9/2026). The sheet lists raw
+ * track with no heading, so it gets one here. Sorting is stable: within a
+ * heading the sheet's order holds.
+ */
+const TRACK_ORDER = ["RESIDENTIAL TRACKS", "ADDER PIECES", "COMMERCIAL TRACKS", "RAW TRACK"];
+function trackCategory(c: PartCategory): PartCategory {
+  const items = [...c.items.map((p) => (p.sub ? p : { ...p, sub: "RAW TRACK" })), ...(HAND_ADDED_PARTS.TRACKS ?? [])];
+  const rank = (p: Part) => {
+    const i = TRACK_ORDER.indexOf(p.sub ?? "");
+    return i < 0 ? TRACK_ORDER.length : i;
+  };
+  return { name: c.name, items: items.sort((a, b) => rank(a) - rank(b)) };
+}
+
 export const SHELF_PART_CATEGORIES: PartCategory[] = (() => {
-  const shelf = PART_CATEGORIES.filter((c) => c.name !== EXTENSION_CATEGORY && c.name !== TORSION_CATEGORY);
+  const shelf = PART_CATEGORIES
+    .filter((c) => c.name !== EXTENSION_CATEGORY && c.name !== TORSION_CATEGORY)
+    .map((c) => (c.name === "TRACKS" ? trackCategory(c) : c));
   const kits: PartCategory[] = [
     { name: EXTENSION_KITS_CATEGORY, items: EXTENSION_ALL.items.filter(isKit) },
     { name: TORSION_KITS_CATEGORY, items: TORSION_ALL.items.filter(isKit) },

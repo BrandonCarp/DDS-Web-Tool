@@ -33,3 +33,17 @@ describe("Parts, Track and Cables tabs", () => {
     expect(document.body.textContent).toContain(CABLE_CATEGORIES[0].items[0].name);
   });
 });
+
+describe("Track tab headings", () => {
+  it("shows its groups as headings, residential first", () => {
+    show(<PartsTool categories={TRACK_CATEGORIES} eyebrow="Track quote" finder="Find track" />);
+    expect(screen.getAllByTestId("parts-group").map((h) => h.textContent)).toEqual([
+      "RESIDENTIAL TRACKS", "ADDER PIECES", "COMMERCIAL TRACKS", "RAW TRACK",
+    ]);
+  });
+
+  it("adds no headings to the Parts tab", () => {
+    show(<PartsTool />);
+    expect(screen.queryAllByTestId("parts-group")).toHaveLength(0);
+  });
+});

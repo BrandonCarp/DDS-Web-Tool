@@ -22,6 +22,10 @@ describe("quick search", () => {
     expect(hit.price).toMatch(/^\$/);
   });
 
+  it("finds the hand-added adder pieces on the Track tab", () => {
+    expect(find('36" adder')[0]).toMatchObject({ tab: "track", label: '36" ADDER PIECE', price: "$129.95" });
+  });
+
   it("sends track and cables to their own tabs", () => {
     expect(find('2" raw track')[0]).toMatchObject({ tab: "track", pick: { kind: "part", category: "TRACKS" } });
     expect(find("cable keepers")[0]).toMatchObject({ tab: "cables", pick: { kind: "part", category: "CABLES" } });

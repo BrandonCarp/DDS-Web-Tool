@@ -6,6 +6,7 @@ import {
   EXTENSION_SPRINGS,
   KITS_GROUP,
   SHELF_PART_CATEGORIES,
+  HAND_ADDED_PARTS,
   PARTS_TAB_CATEGORIES,
   TRACK_CATEGORIES,
   CABLE_CATEGORIES,
@@ -34,7 +35,8 @@ describe("springs split out of the parts shelf", () => {
     const shelfItems = SHELF_PART_CATEGORIES.reduce((n, c) => n + c.items.length, 0);
     const moved = EXTENSION_SPRINGS.items.length + STOCK_TORSION_SPRINGS.items.length;
     const all = PART_CATEGORIES.reduce((n, c) => n + c.items.length, 0);
-    expect(shelfItems + moved).toBe(all);
+    const added = Object.values(HAND_ADDED_PARTS).reduce((n, list) => n + list.length, 0);
+    expect(shelfItems + moved).toBe(all + added);
   });
 
   it("prices nothing differently — the move is a move, not a repricing", () => {
@@ -118,5 +120,27 @@ describe("the kits sell from the Parts tab", () => {
   it("still bills them to QuickBooks as the springs they come with", () => {
     expect(categoryItem("EXTENSION KITS")).toBe(QB_EXTENSION);
     expect(categoryItem("TORSION KITS")).toBe(QB_TORSION);
+  });
+});
+
+describe("the Track tab", () => {
+  const items = () => TRACK_CATEGORIES[0].items;
+
+  it("reads residential sets first, then the adders, commercial sets and raw track", () => {
+    const order = [...new Set(items().map((p) => p.sub))];
+    expect(order).toEqual(["RESIDENTIAL TRACKS", "ADDER PIECES", "COMMERCIAL TRACKS", "RAW TRACK"]);
+  });
+
+  it("keeps every track from the sheet, and adds the two adder pieces at their prices", () => {
+    const sheet = PART_CATEGORIES.find((c) => c.name === "TRACKS")!;
+    expect(items()).toHaveLength(sheet.items.length + 2);
+    for (const p of sheet.items) expect(items().some((q) => q.name === p.name && q.price === p.price)).toBe(true);
+    const adder = (n: string) => items().find((p) => p.name === n)?.price;
+    expect(adder('36" ADDER PIECE')).toBe(129.95);
+    expect(adder('54" ADDER PIECE')).toBe(149.95);
+  });
+
+  it("still prices raw track by the foot", () => {
+    expect(items().find((p) => p.name === '2" RAW TRACK')?.perFoot).toBe(true);
   });
 });
