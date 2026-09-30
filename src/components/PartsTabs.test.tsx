@@ -38,7 +38,7 @@ describe("Track tab headings", () => {
   it("shows its groups as headings, residential first", () => {
     show(<PartsTool categories={TRACK_CATEGORIES} eyebrow="Track quote" finder="Find track" />);
     expect(screen.getAllByTestId("parts-group").map((h) => h.textContent)).toEqual([
-      "RESIDENTIAL TRACKS", "ADDER PIECES", "COMMERCIAL TRACKS", "RAW TRACK",
+      "RESIDENTIAL TRACKS", "ADDER PIECES", "PIERCED TRACK", "COMMERCIAL TRACKS", "RAW TRACK",
     ]);
   });
 

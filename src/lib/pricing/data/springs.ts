@@ -54,6 +54,11 @@ export const HAND_ADDED_PARTS: Record<string, Part[]> = {
   TRACKS: [
     { name: '36" ADDER PIECE', desc: '36" ADDER PIECE', price: 129.95, sub: "ADDER PIECES" },
     { name: '54" ADDER PIECE', desc: '54" ADDER PIECE', price: 149.95, sub: "ADDER PIECES" },
+    // Pierced track is sold in pairs; the price is the pair's (30/9/2026).
+    { name: '76" PIERCED TRACK', desc: '76" PIERCED TRACK,  PAIR', price: 29.95, sub: "PIERCED TRACK" },
+    { name: '88" PIERCED TRACK', desc: '88" PIERCED TRACK,  PAIR', price: 34.95, sub: "PIERCED TRACK" },
+    { name: '100" PIERCED TRACK', desc: '100" PIERCED TRACK,  PAIR', price: 39.95, sub: "PIERCED TRACK" },
+    { name: '112" PIERCED TRACK', desc: '112" PIERCED TRACK,  PAIR', price: 45.95, sub: "PIERCED TRACK" },
   ],
 };
 
@@ -63,7 +68,7 @@ export const HAND_ADDED_PARTS: Record<string, Part[]> = {
  * track with no heading, so it gets one here. Sorting is stable: within a
  * heading the sheet's order holds.
  */
-const TRACK_ORDER = ["RESIDENTIAL TRACKS", "ADDER PIECES", "COMMERCIAL TRACKS", "RAW TRACK"];
+const TRACK_ORDER = ["RESIDENTIAL TRACKS", "ADDER PIECES", "PIERCED TRACK", "COMMERCIAL TRACKS", "RAW TRACK"];
 function trackCategory(c: PartCategory): PartCategory {
   const items = [...c.items.map((p) => (p.sub ? p : { ...p, sub: "RAW TRACK" })), ...(HAND_ADDED_PARTS.TRACKS ?? [])];
   const rank = (p: Part) => {

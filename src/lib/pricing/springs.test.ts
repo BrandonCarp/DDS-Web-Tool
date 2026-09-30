@@ -128,12 +128,12 @@ describe("the Track tab", () => {
 
   it("reads residential sets first, then the adders, commercial sets and raw track", () => {
     const order = [...new Set(items().map((p) => p.sub))];
-    expect(order).toEqual(["RESIDENTIAL TRACKS", "ADDER PIECES", "COMMERCIAL TRACKS", "RAW TRACK"]);
+    expect(order).toEqual(["RESIDENTIAL TRACKS", "ADDER PIECES", "PIERCED TRACK", "COMMERCIAL TRACKS", "RAW TRACK"]);
   });
 
   it("keeps every track from the sheet, and adds the two adder pieces at their prices", () => {
     const sheet = PART_CATEGORIES.find((c) => c.name === "TRACKS")!;
-    expect(items()).toHaveLength(sheet.items.length + 2);
+    expect(items()).toHaveLength(sheet.items.length + HAND_ADDED_PARTS.TRACKS.length);
     for (const p of sheet.items) expect(items().some((q) => q.name === p.name && q.price === p.price)).toBe(true);
     const adder = (n: string) => items().find((p) => p.name === n)?.price;
     expect(adder('36" ADDER PIECE')).toBe(129.95);
@@ -142,5 +142,16 @@ describe("the Track tab", () => {
 
   it("still prices raw track by the foot", () => {
     expect(items().find((p) => p.name === '2" RAW TRACK')?.perFoot).toBe(true);
+  });
+});
+
+describe("pierced track (30/9/2026)", () => {
+  it("sells four lengths, by the pair, under their own heading", () => {
+    const pierced = TRACK_CATEGORIES[0].items.filter((p) => p.sub === "PIERCED TRACK");
+    expect(pierced.map((p) => [p.name, p.price])).toEqual([
+      ['76" PIERCED TRACK', 29.95], ['88" PIERCED TRACK', 34.95],
+      ['100" PIERCED TRACK', 39.95], ['112" PIERCED TRACK', 45.95],
+    ]);
+    for (const p of pierced) expect(p.desc).toMatch(/PAIR$/);
   });
 });
