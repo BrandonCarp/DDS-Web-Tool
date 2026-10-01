@@ -144,6 +144,14 @@ describe("cut torsion springs, 30/9/2026 rules", () => {
     }
   });
 
+  it("prices a fraction of an inch as the next whole inch (1/10/2026)", () => {
+    for (const id of ID_ORDER) {
+      const at23 = torsionPrice("0.25", id, 23);
+      for (const len of [22.25, 22.5, 22.75]) expect(torsionPrice("0.25", id, len), `${id} ${len}`).toBe(at23);
+      expect(torsionPrice("0.25", id, 22)!).toBeLessThan(at23!);
+    }
+  });
+
   it("prices .187 and .192 wire as .207 of the same ID and length", () => {
     for (const id of ID_ORDER) {
       for (const len of [20, 30, 41.5]) {

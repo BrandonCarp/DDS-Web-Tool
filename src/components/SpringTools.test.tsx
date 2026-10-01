@@ -96,7 +96,8 @@ describe("Torsion Springs tab", () => {
 
   it("keeps both entries alive across a switch", () => {
     renderTool();
-    fireEvent.change(screen.getByTestId("tor-length"), { target: { value: "24.5" } });
+    fireEvent.change(screen.getByTestId("tor-length"), { target: { value: "24" } });
+    fireEvent.change(screen.getByTestId("tor-length-frac"), { target: { value: "0.5" } });
 
     fireEvent.click(screen.getByTestId("mode-stock"));
     const handed = STOCK_TORSION_SPRINGS.items.find((p) => p.hands);
@@ -106,7 +107,8 @@ describe("Torsion Springs tab", () => {
     // Back to the configurator: the length typed before the detour survives,
     // and the stock spring is no longer driving the card.
     fireEvent.click(screen.getByTestId("mode-config"));
-    expect(screen.getByTestId("tor-length").getAttribute("value")).toBe("24.5");
+    expect(screen.getByTestId("tor-length").getAttribute("value")).toBe("24");
+    expect((screen.getByTestId("tor-length-frac") as HTMLSelectElement).value).toBe("0.5");
     expect(screen.queryByTestId("stock-copy-qb")).toBeNull();
   });
 });
@@ -177,7 +179,8 @@ describe("Torsion Springs tab — cut to size", () => {
     // The hand boxes show once a spring is priced: a wire size and a length.
     const wire = screen.getByTestId("tor-wire") as HTMLSelectElement;
     fireEvent.change(wire, { target: { value: [...wire.options].map((o) => o.value).find(Boolean) } });
-    fireEvent.change(screen.getByTestId("tor-length"), { target: { value: "24.5" } });
+    fireEvent.change(screen.getByTestId("tor-length"), { target: { value: "24" } });
+    fireEvent.change(screen.getByTestId("tor-length-frac"), { target: { value: "0.5" } });
     const label = (id: string) => screen.getByTestId(id).closest(".field")!.querySelector("label")!.textContent;
     expect(label("tor-right")).toBe("RHW");
     expect(label("tor-left")).toBe("LHW");
@@ -203,12 +206,50 @@ describe("Torsion Springs tab — the quantity is the springs counted", () => {
     render(<CustomerJobProvider><TorsionTool /></CustomerJobProvider>);
     const wire = screen.getByTestId("tor-wire") as HTMLSelectElement;
     fireEvent.change(wire, { target: { value: [...wire.options].map((o) => o.value).find(Boolean) } });
-    fireEvent.change(screen.getByTestId("tor-length"), { target: { value: "24.5" } });
+    fireEvent.change(screen.getByTestId("tor-length"), { target: { value: "24" } });
+    fireEvent.change(screen.getByTestId("tor-length-frac"), { target: { value: "0.5" } });
     expect(screen.queryByTestId("tor-copy-qb")).toBeNull();
     expect(screen.getByText("Enter how many RHW and LHW")).toBeTruthy();
     fireEvent.change(screen.getByTestId("tor-right"), { target: { value: "1" } });
     fireEvent.change(screen.getByTestId("tor-left"), { target: { value: "1" } });
     expect(screen.queryByTestId("tor-copy-qb-qty")).toBeNull();
     expect((await copiedQbLine(screen.getByTestId("tor-copy-qb"))).qty).toBe(2);
+  });
+});
+
+describe("cut spring length — whole inches and a fraction (1/10/2026)", () => {
+  const setup = () => {
+    render(<CustomerJobProvider><TorsionTool /></CustomerJobProvider>);
+    const wire = screen.getByTestId("tor-wire") as HTMLSelectElement;
+    fireEvent.change(wire, { target: { value: "0.218" } });
+    // RHW only shows once the spring is priced, so a length goes in first.
+    fireEvent.change(screen.getByTestId("tor-length"), { target: { value: "23" } });
+    fireEvent.change(screen.getByTestId("tor-right"), { target: { value: "1" } });
+  };
+  const length = (inches: string, frac: string) => {
+    fireEvent.change(screen.getByTestId("tor-length"), { target: { value: inches } });
+    fireEvent.change(screen.getByTestId("tor-length-frac"), { target: { value: frac } });
+  };
+
+  it("offers 0, 1/4, 1/2 and 3/4 inch, starting at 0", () => {
+    render(<CustomerJobProvider><TorsionTool /></CustomerJobProvider>);
+    const frac = screen.getByTestId("tor-length-frac") as HTMLSelectElement;
+    expect([...frac.options].map((o) => o.textContent)).toEqual(["0", "1/4″", "1/2″", "3/4″"]);
+    expect(frac.value).toBe("0");
+  });
+
+  it("prices any fraction as the next whole inch, and describes the length cut", async () => {
+    setup();
+    length("23", "0");
+    const at23 = (await copiedQbLine(screen.getByTestId("tor-copy-qb"))).rate;
+    for (const f of ["0.25", "0.5", "0.75"]) {
+      length("22", f);
+      expect((await copiedQbLine(screen.getByTestId("tor-copy-qb"))).rate, `22 + ${f}`).toBe(at23);
+    }
+    length("22", "0.5");
+    // The length cut, as cut springs have always written it (descriptions.test.ts).
+    expect((await copiedQbLine(screen.getByTestId("tor-copy-qb"))).description).toContain('22.5" LONG');
+    length("22", "0");
+    expect((await copiedQbLine(screen.getByTestId("tor-copy-qb"))).rate).toBeLessThan(at23);
   });
 });

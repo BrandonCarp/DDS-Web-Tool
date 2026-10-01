@@ -629,6 +629,15 @@ html, body { margin: 0; padding: 0; }
 .tool-shell .scannote.ok { color: var(--good); }
 .tool-shell .scannote.err { color: var(--bad); }
 
+/* A cut spring's length: whole inches typed, the fraction picked beside it. */
+.tool-shell .lenrow { display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 8px; }
+/* The cut spring's wire and length boxes, a size down — a few characters each
+   do not need half the card (Brandon, 1/10/2026). */
+.tool-shell .row2.compact { grid-template-columns: repeat(2, minmax(0, 240px)); justify-content: start; }
+.tool-shell .row2.compact select, .tool-shell .row2.compact input { min-height: 36px; padding-top: 6px; padding-bottom: 6px; }
+.tool-shell .row2.compact .lenrow { grid-template-columns: minmax(0, 1fr) 84px; }
+@media (max-width: 720px) { .tool-shell .row2.compact { grid-template-columns: minmax(0, 1fr); } }
+
 /* Add to cart, under the QuickBooks button on every quote (30/9/2026). */
 .tool-shell .addcart { width: 100%; justify-content: center; gap: 8px; }
 .tool-shell .muted-note.err { color: var(--bad); }

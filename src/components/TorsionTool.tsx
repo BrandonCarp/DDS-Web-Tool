@@ -20,6 +20,8 @@ export function TorsionTool({ openOn }: { openOn?: SearchPick } = {}) {
   const [id, setId] = useState("2");
   const [wire, setWire] = useState("");
   const [length, setLength] = useState("");
+  // Whole inches are typed; the fraction is picked (Brandon, 1/10/2026).
+  const [frac, setFrac] = useState("0");
   // Hand counts default to 0/0 — the description then reads as the bare spring
   // spec, with no quantities appended.
   const [right, setRight] = useState(0);
@@ -36,7 +38,7 @@ export function TorsionTool({ openOn }: { openOn?: SearchPick } = {}) {
   const [stockLeft, setStockLeft] = useState(1);
 
   const wires = TORSION.stock_wires[id] ?? Object.keys(TORSION.ppi).filter((w) => TORSION.ppi[w][id] != null);
-  const len = parseFloat(length);
+  const len = parseFloat(length) + parseFloat(frac);
   const price = wire && Number.isFinite(len) && len > 0 ? torsionPrice(wire, id, len) : null;
 
   const springs = Math.max(0, right) + Math.max(0, left);
@@ -71,7 +73,7 @@ export function TorsionTool({ openOn }: { openOn?: SearchPick } = {}) {
   function pickId(v: string) { setId(v); setWire(""); }
   function pickStock(name: string) { setStockName(name); setStockRight(1); setStockLeft(1); }
   function clear() {
-    setWire(""); setLength(""); setRight(0); setLeft(0);
+    setWire(""); setLength(""); setFrac("0"); setRight(0); setLeft(0);
     setStockName(null); setStockRight(1); setStockLeft(1);
   }
 
@@ -114,7 +116,7 @@ export function TorsionTool({ openOn }: { openOn?: SearchPick } = {}) {
           </div>
           <div className="step">
             <div className="step-h"><span className="step-n">2</span><h3>Wire size &amp; length</h3></div>
-            <div className="row2">
+            <div className="row2 compact">
               <div className="field"><label className="lbl">Wire size <span className="req">*</span></label>
                 <div className="selectwrap">
                   <select data-testid="tor-wire" value={wire} onChange={(e) => setWire(e.target.value)}>
@@ -124,7 +126,16 @@ export function TorsionTool({ openOn }: { openOn?: SearchPick } = {}) {
                 </div>
               </div>
               <div className="field"><label className="lbl">Length (inches) <span className="req">*</span></label>
-                <input data-testid="tor-length" type="text" inputMode="decimal" value={length} onChange={(e) => setLength(e.target.value)} placeholder="e.g. 24.5" />
+                <div className="lenrow">
+                  <input data-testid="tor-length" type="text" inputMode="numeric" value={length} onChange={(e) => setLength(e.target.value)}
+                    placeholder="e.g. 24" aria-label="Whole inches" />
+                  <select data-testid="tor-length-frac" value={frac} onChange={(e) => setFrac(e.target.value)} aria-label="Fraction of an inch">
+                    <option value="0">0</option>
+                    <option value="0.25">1/4″</option>
+                    <option value="0.5">1/2″</option>
+                    <option value="0.75">3/4″</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>

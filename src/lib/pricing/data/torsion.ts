@@ -215,11 +215,17 @@ export function upTo95(price: number): number {
   return (cents <= target ? target : target + 100) / 100;
 }
 
-/** Price one cut-to-size spring: length x rate, the cone and any filler, up to .95. */
+/**
+ * Price one cut-to-size spring: length x rate, the cone and any filler, up to
+ * .95. A fraction of an inch prices as the next whole inch — 22-1/4", 22-1/2"
+ * and 22-3/4" all sell as a 23" spring (Brandon, 1/10/2026). The description
+ * still says the length cut.
+ */
 export function torsionPrice(wireStr: string, id: string, len: number): number | null {
   const ppi = effPPI(pricedWire(wireStr), id);
   if (ppi == null || !(len > 0)) return null;
-  return upTo95(len * ppi + (TORSION.cone[id] || 0) + (id === "6" ? len * TORSION.filler_per_inch : 0));
+  const inches = Math.ceil(len - 1e-9); // 23.0000001 from float maths is still 23
+  return upTo95(inches * ppi + (TORSION.cone[id] || 0) + (id === "6" ? inches * TORSION.filler_per_inch : 0));
 }
 
 export function fmtWire(w: string): string { return parseFloat(w).toFixed(3).replace(/^0/, ""); }
