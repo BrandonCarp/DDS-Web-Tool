@@ -720,6 +720,18 @@ html, body { margin: 0; padding: 0; }
 
 .tool-shell .empty { padding: 36px 24px; text-align: center; color: var(--muted); }
 .tool-shell .empty img.emptyimg { display: block; width: 100%; max-width: 280px; margin: 0 auto 18px; border-radius: var(--r-md); }
+/* The welcome cards' door photos, one fading into the next (1/10/2026). The
+   frame keeps the photos' own shape, so none is squashed or letterboxed. */
+.tool-shell .doorshow {
+  position: relative; width: 100%; max-width: 300px; aspect-ratio: 1190 / 692;
+  margin: 0 auto 18px; overflow: hidden; border-radius: var(--r-md); background: var(--surface-2);
+}
+.tool-shell .doorshow img {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  opacity: 0; transition: opacity .8s ease;
+}
+.tool-shell .doorshow img.on { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .tool-shell .doorshow img { transition: none; } }
 .tool-shell .empty .emptymsg { font-size: 16px; font-weight: 700; color: var(--ink); }
 .tool-shell .empty p.muted-note { max-width: 46ch; margin: 8px auto 0; }
 .tool-shell .empty-icon {

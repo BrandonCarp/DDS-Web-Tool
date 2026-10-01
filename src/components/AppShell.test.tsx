@@ -245,3 +245,15 @@ describe("the Cart tab", () => {
     expect(screen.queryByTestId("cart-count")).toBeNull();
   });
 });
+
+describe("the welcome cards", () => {
+  it("rotate door photos under Residential and Commercial, each with its own words", () => {
+    shell();
+    expect(screen.getByTestId("door-show").querySelector("img")?.getAttribute("src")).toMatch(/^\/door-photos\/residential\//);
+    expect(screen.getByText("Select your residential configuration")).toBeTruthy();
+    fireEvent.click(document.querySelector('.side [data-tab="commercial"]') as HTMLElement);
+    expect(screen.getByTestId("door-show").querySelector("img")?.getAttribute("src")).toMatch(/^\/door-photos\/commercial\//);
+    expect(screen.getByText("Select your commercial configuration")).toBeTruthy();
+    expect(screen.getByText("Pick a manufacturer and model, then Configure.")).toBeTruthy();
+  });
+});

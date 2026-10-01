@@ -2,6 +2,8 @@
 
 import { useCallback, useMemo, useState } from "react";
 import type { SearchPick } from "@/lib/search";
+import { DoorSlideshow } from "./DoorSlideshow";
+import { COMMERCIAL_PHOTOS } from "@/lib/door-photos";
 import { EstimateSheet } from "@/components/EstimateSheet";
 import { priceText } from "@/components/CopyButton";
 import { CopyQuickBooks } from "./CopyQuickBooks";
@@ -187,8 +189,12 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
         </section>
         <aside className="quote">
           <div className="panel">
-            <div className="qhead"><div className="ql">Commercial quote</div><div className="qmodel">{model ? `${mfr} ${model}` : mfr || "—"}</div></div>
-            <div className="lines" />
+            {/* The same welcome as Residential, with commercial doors (1/10/2026). */}
+            <div className="empty">
+              <DoorSlideshow photos={COMMERCIAL_PHOTOS} testId="door-show" />
+              <div className="emptymsg">Select your commercial configuration</div>
+              <div className="muted-note" style={{ marginTop: 8 }}>Pick a manufacturer and model, then Configure.</div>
+            </div>
           </div>
         </aside>
       </div>

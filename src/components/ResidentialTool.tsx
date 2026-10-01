@@ -17,6 +17,8 @@ import { RES_SECTION_WIDTHS, sectionWidthLabel } from "@/lib/pricing/data/res-se
 import { stockedWidths, stockedHeights, sizeParts, sizeCode, stockedColors, solidOnlyHeight, torsionOnlyHeight } from "@/lib/pricing/data/stock-colors";
 import { OptionButtons, type ButtonOption } from "./OptionButtons";
 import type { SearchPick } from "@/lib/search";
+import { DoorSlideshow } from "./DoorSlideshow";
+import { RESIDENTIAL_PHOTOS } from "@/lib/door-photos";
 import { vinylForDoor, vinylForDoorColor } from "@/lib/pricing/data/vinyl";
 import { VinylPrompt, YES_NO } from "./VinylPrompt";
 
@@ -461,8 +463,7 @@ export function ResidentialTool({
         <aside className="quote">
           <div className="panel">
             <div className="empty">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="emptyimg" src="/door-res.webp" alt="Garage door" />
+              <DoorSlideshow photos={RESIDENTIAL_PHOTOS} testId="door-show" />
               <div className="emptymsg">Select your residential configuration</div>
               <div className="muted-note" style={{ marginTop: 8 }}>Pick a series and model, then Configure.</div>
             </div>
