@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { quoteCommercial, commStockCheck } from "./commercial";
-import { torsionPrice, effPPI } from "./data/torsion";
+import { torsionPrice, effPPI, upTo95, ID_ORDER } from "./data/torsion";
 import { SPECIAL } from "./data/special-orders";
 
 const complete = (over: Record<string, unknown> = {}) => ({
@@ -112,15 +112,47 @@ describe("3200 sections — stocked sizes only", () => {
 });
 
 describe("torsion springs (cut to size)", () => {
-  it("prices length × ppi + cone (matches the TSC workbook example: $69.66)", () => {
-    expect(torsionPrice("0.218", "2", 38)).toBeCloseTo(69.66, 2);
+  it("prices length × ppi + cone, up to .95 (the TSC workbook's $69.66 sells at $69.95)", () => {
+    expect(torsionPrice("0.218", "2", 38)).toBe(69.95);
   });
   it("goes UP a wire size when the requested size isn't priced", () => {
     expect(effPPI("0.2", "2")).toBe(1.48); // 0.200 not priced -> 0.207's rate
   });
   it("adds filler on 6-inch ID springs", () => {
     const p = torsionPrice("0.331", "6", 20)!;
-    expect(p).toBeCloseTo(20 * 6.52 + 50.3 + 20 * 0.53, 2);
+    expect(p).toBe(upTo95(20 * 6.52 + 50.3 + 20 * 0.53));
+  });
+});
+
+describe("cut torsion springs, 30/9/2026 rules", () => {
+  it("rounds every price up to the next .95", () => {
+    expect(upTo95(54.85)).toBe(54.95);
+    expect(upTo95(54.95)).toBe(54.95);
+    expect(upTo95(54.96)).toBe(55.95);
+    expect(upTo95(55)).toBe(55.95);
+    expect(upTo95(54.9500001)).toBe(54.95); // float dust does not cost a dollar
+  });
+
+  it("ends every cut spring price in .95", () => {
+    for (const w of ["0.192", "0.218", "0.25", "0.331"]) {
+      for (const id of ID_ORDER) {
+        for (const len of [17, 24.5, 38, 41.25]) {
+          const p = torsionPrice(w, id, len);
+          if (p != null) expect(Math.round(p * 100) % 100, `${w} ${id} ${len}`).toBe(95);
+        }
+      }
+    }
+  });
+
+  it("prices .187 and .192 wire as .207 of the same ID and length", () => {
+    for (const id of ID_ORDER) {
+      for (const len of [20, 30, 41.5]) {
+        const asOf207 = torsionPrice("0.207", id, len);
+        expect(torsionPrice("0.187", id, len), `.187 ${id} ${len}`).toBe(asOf207);
+        expect(torsionPrice("0.192", id, len), `.192 ${id} ${len}`).toBe(asOf207);
+      }
+    }
+    expect(torsionPrice("0.192", "2", 30)).toBe(54.95); // was $36.02 at .192's own rate
   });
 });
 

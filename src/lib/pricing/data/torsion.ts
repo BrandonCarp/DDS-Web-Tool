@@ -194,11 +194,32 @@ export function effPPI(wireStr: string, id: string): number | null {
   return best;
 }
 
-/** Price one cut-to-size spring. */
+/**
+ * .187 and .192 wire sell at the .207 price for the same inside diameter and
+ * length — Brandon, 30/9/2026. Only the 2" ID had cheaper rates for them; at
+ * the larger IDs they already went up to .207's or a larger wire's.
+ */
+function pricedWire(wireStr: string): string {
+  const w = parseFloat(wireStr);
+  return Math.abs(w - 0.187) < 1e-9 || Math.abs(w - 0.192) < 1e-9 ? "0.207" : wireStr;
+}
+
+/**
+ * Up to the next price ending in .95 — Brandon, 30/9/2026: $54.85 is $54.95,
+ * $54.95 stays, $54.96 is $55.95. Worked in whole cents, so float dust such as
+ * 54.9500001 cannot push a price up a dollar.
+ */
+export function upTo95(price: number): number {
+  const cents = Math.round(price * 100);
+  const target = Math.floor(cents / 100) * 100 + 95;
+  return (cents <= target ? target : target + 100) / 100;
+}
+
+/** Price one cut-to-size spring: length x rate, the cone and any filler, up to .95. */
 export function torsionPrice(wireStr: string, id: string, len: number): number | null {
-  const ppi = effPPI(wireStr, id);
+  const ppi = effPPI(pricedWire(wireStr), id);
   if (ppi == null || !(len > 0)) return null;
-  return len * ppi + (TORSION.cone[id] || 0) + (id === "6" ? len * TORSION.filler_per_inch : 0);
+  return upTo95(len * ppi + (TORSION.cone[id] || 0) + (id === "6" ? len * TORSION.filler_per_inch : 0));
 }
 
 export function fmtWire(w: string): string { return parseFloat(w).toFixed(3).replace(/^0/, ""); }
