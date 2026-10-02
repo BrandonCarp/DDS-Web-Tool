@@ -273,6 +273,21 @@ export const SPRING_LABEL = "TORSION SPRINGS";
  */
 const FIELD_SEP = ",  ";
 
+/**
+ * A length in inches the way the counter says it, and the way the stock
+ * springs are written: 22, 22-1/4, 22-1/2, 22-3/4 — Brandon, 1/10/2026, to
+ * match the fraction picker. A length that is not a quarter inch (typed before
+ * the picker existed) stays as typed rather than being rounded to a fraction.
+ */
+export function inchesText(len: number): string {
+  const whole = Math.floor(len + 1e-9);
+  const quarters = Math.round((len - whole) * 4);
+  if (Math.abs(len - whole - quarters / 4) > 1e-9) return String(len);
+  if (quarters === 0 || quarters === 4) return String(whole + quarters / 4);
+  const frac = ["", "1/4", "1/2", "3/4"][quarters];
+  return whole ? `${whole}-${frac}` : frac;
+}
+
 export function springBase(wire: string, id: string, lengthIn: number): string {
   // The stock springs already describe themselves this way, straight off the
   // parts sheet. A cut-to-size spring is the same product at a different
@@ -282,7 +297,7 @@ export function springBase(wire: string, id: string, lengthIn: number): string {
     SPRING_LABEL,
     ID_LABELS_ASCII[id] ?? id,
     `${wireCode(wire)} WIRE`,
-    `${lengthIn}" LONG`,
+    `${inchesText(lengthIn)}" LONG`,
   ].join(FIELD_SEP);
 }
 

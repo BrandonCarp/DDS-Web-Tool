@@ -247,8 +247,8 @@ describe("cut spring length — whole inches and a fraction (1/10/2026)", () => 
       expect((await copiedQbLine(screen.getByTestId("tor-copy-qb"))).rate, `22 + ${f}`).toBe(at23);
     }
     length("22", "0.5");
-    // The length cut, as cut springs have always written it (descriptions.test.ts).
-    expect((await copiedQbLine(screen.getByTestId("tor-copy-qb"))).description).toContain('22.5" LONG');
+    // The length cut, written as the counter picked it (descriptions.test.ts).
+    expect((await copiedQbLine(screen.getByTestId("tor-copy-qb"))).description).toContain('22-1/2" LONG');
     length("22", "0");
     expect((await copiedQbLine(screen.getByTestId("tor-copy-qb"))).rate).toBeLessThan(at23);
   });

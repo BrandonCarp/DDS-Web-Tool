@@ -9,7 +9,7 @@ import { QbLineDemo } from "@/components/QbLineDemo";
 import { QB_ITEMS } from "@/lib/qb/iif";
 import { useCustomerJob } from "@/components/CustomerJobFields";
 import { SpringPicker } from "@/components/SpringPicker";
-import { TORSION, ID_ORDER, torsionPrice, fmtWire, springDescription } from "@/lib/pricing/data/torsion";
+import { TORSION, ID_ORDER, torsionPrice, fmtWire, springDescription, inchesText } from "@/lib/pricing/data/torsion";
 import { STOCK_TORSION_SPRINGS } from "@/lib/pricing/data/springs";
 import { partDescription, partPrice, partQuantity } from "@/lib/pricing/data/parts";
 
@@ -62,7 +62,7 @@ export function TorsionTool({ openOn }: { openOn?: SearchPick } = {}) {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         quoteType: "spring",
-        model: "Torsion spring", size: `${fmtWire(wire)}″ × ${TORSION.id_labels[id]} × ${len}″`,
+        model: "Torsion spring", size: `${fmtWire(wire)}″ × ${TORSION.id_labels[id]} × ${inchesText(len)}″`,
         style: null, color: null,
         unitPrice: price, qty: n, total: price * n,
         description, customer: custName, poNumber: custPo, jobName: custJob,
@@ -261,7 +261,7 @@ export function TorsionTool({ openOn }: { openOn?: SearchPick } = {}) {
     ) : !onStock && price != null ? (
       <QbLineDemo
         model="Torsion spring"
-        size={`${id} ID \u00b7 ${wire} wire \u00b7 ${len}\u2033`}
+        size={`${id} ID \u00b7 ${wire} wire \u00b7 ${inchesText(len)}\u2033`}
         item={QB_ITEMS.spring}
         typed="SPR"
         description={description.toUpperCase()}

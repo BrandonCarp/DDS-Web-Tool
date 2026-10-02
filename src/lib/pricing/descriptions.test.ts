@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { parsePrice } from "@/components/SpecialTool";
 import { SPECIAL, SO_MANUFACTURERS, SO_OUTSIDE_MFRS, seriesFor, isOutsideMfr } from "./data/special-orders";
-import { springDescription, springBase, wireCode, ID_LABELS_ASCII, SPRING_LABEL } from "./data/torsion";
+import { springDescription, springBase, wireCode, ID_LABELS_ASCII, SPRING_LABEL, inchesText } from "./data/torsion";
 import { STOCK_TORSION_SPRINGS } from "./data/springs";
 import { quoteCommercial } from "./commercial";
 import { quoteResidential } from "./engine";
@@ -28,7 +28,7 @@ describe("torsion spring description", () => {
   it("opens with TORSION SPRINGS, matching the stock springs off the shelf", () => {
     // Brandon's example: TORSION SPRINGS, 2" ID, 218 WIRE, 23-1/4" LONG ...
     expect(springDescription("0.218", "2", 23.25, 1, 1)).toBe(
-      'TORSION SPRINGS,  2" ID,  218 WIRE,  23.25" LONG [1] - RIGHT AND [1] - LEFT',
+      'TORSION SPRINGS,  2" ID,  218 WIRE,  23-1/4" LONG [1] - RIGHT AND [1] - LEFT',
     );
     expect(springBase("0.218", "2", 23.25).startsWith(`${SPRING_LABEL},`)).toBe(true);
   });
@@ -40,12 +40,9 @@ describe("torsion spring description", () => {
     // stock one on the same estimate, so it is pinned rather than trusted.
     const stock = STOCK_TORSION_SPRINGS.items.find((p) => p.hands && p.desc.includes("218 WIRE"));
     expect(stock?.desc).toBe('TORSION SPRINGS,  2" ID,  218 WIRE,  23-1/4" LONG');
-    expect(springBase("0.218", "2", 23.25)).toBe('TORSION SPRINGS,  2" ID,  218 WIRE,  23.25" LONG');
-
-    // Same shape either side of the join: label, then three comma-two-space
-    // fields. Only the length differs, because one is cut and one is stocked.
-    const shape = (d: string) => d.split(",  ").length;
-    expect(shape(springBase("0.218", "2", 23.25))).toBe(shape(stock?.desc ?? ""));
+    // Since lengths are written as fractions (1/10/2026), a spring cut to a
+    // stocked length reads exactly like the stocked one.
+    expect(springBase("0.218", "2", 23.25)).toBe(stock?.desc);
   });
 
   it("appends nothing when both hand counts are zero", () => {
@@ -324,5 +321,24 @@ describe("price entry parsing", () => {
   it("quotes the 3200 door at the right number now", () => {
     const list = parsePrice("1,741.92");
     expect(list / (1 - 45 / 100)).toBeCloseTo(3167.13, 2);
+  });
+});
+
+describe("cut spring lengths are written as fractions (1/10/2026)", () => {
+  it("writes quarter inches the way the counter says them", () => {
+    expect(inchesText(22)).toBe("22");
+    expect(inchesText(22.25)).toBe("22-1/4");
+    expect(inchesText(22.5)).toBe("22-1/2");
+    expect(inchesText(22.75)).toBe("22-3/4");
+  });
+
+  it("leaves a length that is not a quarter inch as typed", () => {
+    expect(inchesText(22.3)).toBe("22.3");
+  });
+
+  it("puts the fraction in the QuickBooks description", () => {
+    expect(springDescription("0.25", "2", 24.5, 1, 1)).toBe(
+      'TORSION SPRINGS,  2" ID,  250 WIRE,  24-1/2" LONG [1] - RIGHT AND [1] - LEFT',
+    );
   });
 });
