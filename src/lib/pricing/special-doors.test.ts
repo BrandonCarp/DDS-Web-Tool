@@ -1,3 +1,4 @@
+import { SPECIAL } from "./data/special-orders";
 import { describe, it, expect } from "vitest";
 import {
   specialDoorQuote, hasGrid, griddedHeights, griddedWidths, compareWidths, offeredHeights,
@@ -589,5 +590,50 @@ describe("special order grids, checked against the 9/30 workbook", () => {
   it("keeps the app's price where the workbook disagrees with its own TOTAL", () => {
     expect(q("4300/4301/4310", "9.2", "8", "inserts")?.unitPrice).toBe(1679.91); // sheet: 1326.27
     expect(q("T52S/T52L", "14", "7", "glass")?.unitPrice).toBe(1357.54); // sheet: 1375.54
+  });
+});
+
+describe("4308 and 4138, priced from Clopay's total at the Modern Collection margin (2/10/2026)", () => {
+  const q = (model: string, width: string, height: string, style: "solid" | "glass" | "inserts") =>
+    specialDoorQuote({ model, width, height, style, color: "White", track: "r12", spring: "extension", lock: "none" });
+  const modern = SPECIAL["Modern Collection"].models!;
+
+  it("sells at TOTAL / (1 - the catalog's door margin): what a typed total gives today", () => {
+    expect(modern["4308"].door).toBe(45);
+    expect(modern["4138"].door).toBe(45);
+    // [model, width, height, style, Clopay TOTAL on the 9/2 sheet]
+    const samples: [string, string, string, "solid" | "glass" | "inserts", number][] = [
+      ["4138", "6.2", "7", "solid", 436.54], ["4138", "6.2", "8", "solid", 527.83], ["4138", "6.2", "9", "glass", 893.78],
+      ["4308", "6.2", "7", "inserts", 656.99], ["4308", "6.2", "8", "solid", 588.78],
+    ];
+    for (const [model, w, h, style, total] of samples) {
+      const margin = modern[model].door;
+      expect(q(model, w, h, style).quote?.unitPrice, `${model} ${w}x${h} ${style}`).toBeCloseTo(total / (1 - margin / 100), 2);
+    }
+  });
+
+  it("covers 6'2\" to 18'0\" for the 4138 at every height and the 4308 at 7ft", () => {
+    for (const [model, h] of [["4138", "7"], ["4138", "8"], ["4138", "9"], ["4308", "7"]]) {
+      const widths = griddedWidths(model, h);
+      expect([widths.length, widths[0], widths.slice(-1)[0]], `${model} ${h}ft`).toEqual([72, "6.2", "18"]);
+    }
+    expect(hasGrid("4308") && hasGrid("4138")).toBe(true);
+  });
+
+  it("has the 4308 at 8ft only to 8'2\" so far; wider goes to the typed total", () => {
+    expect(griddedWidths("4308", "8").slice(-1)[0]).toBe("8.2");
+    expect(q("4308", "10", "8", "solid").quote).toBeUndefined();
+  });
+
+  it("holds the 4308 8'6\" x 7' glass off the grid: its row carries the solid price", () => {
+    // Sheet row 50: TOTAL $613.85, the 8'6" solid's, against $794.80 for every
+    // glass width around it. Until the sheet is fixed it asks for the total.
+    expect(q("4308", "8.6", "7", "glass").quote).toBeUndefined();
+    expect(q("4308", "8.6", "7", "solid").quote?.unitPrice).toBe(1116.09);
+    expect(q("4308", "8.6", "7", "inserts").quote?.unitPrice).toBe(1521.02);
+  });
+
+  it("keeps the 4138 9ft 10'6\" glass, whose row has a height typo on the sheet", () => {
+    expect(q("4138", "10.6", "9", "glass").quote?.unitPrice).toBe(2692.16);
   });
 });
