@@ -1,4 +1,5 @@
 import { SPECIAL } from "./data/special-orders";
+import { windowDesigns } from "./data/inserts";
 import { describe, it, expect } from "vitest";
 import {
   specialDoorQuote, hasGrid, griddedHeights, griddedWidths, compareWidths, offeredHeights,
@@ -635,5 +636,30 @@ describe("4308 and 4138, priced from Clopay's total at the Modern Collection mar
 
   it("keeps the 4138 9ft 10'6\" glass, whose row has a height typo on the sheet", () => {
     expect(q("4138", "10.6", "9", "glass").quote?.unitPrice).toBe(2692.16);
+  });
+});
+
+describe("galvanized torsion springs on special orders (5/10/2026)", () => {
+  const q = (width: string, height: string, spring: "extension" | "torsion" | "galvanized") =>
+    specialDoorQuote({ model: "4050/4051/4053", width, height, style: "solid", color: "White", track: "r12", spring, lock: "none" }).quote!;
+
+  it("adds $40 on a single door and $45 on a double, and says so in the description", () => {
+    expect(q("8", "7", "galvanized").unitPrice).toBeCloseTo(q("8", "7", "extension").unitPrice + 40, 2);
+    expect(q("16", "7", "galvanized").unitPrice).toBeCloseTo(q("16", "7", "extension").unitPrice + 45, 2);
+    expect(q("8", "7", "galvanized").description).toContain("galvanized torsion springs");
+  });
+
+  it("charges only the difference where the height already includes torsion", () => {
+    expect(q("16", "9", "galvanized").unitPrice).toBeCloseTo(q("16", "9", "torsion").unitPrice + 10, 2);
+  });
+});
+
+describe("long-panel inserts on the 4050 and 9130 (5/10/2026)", () => {
+  it("offers the long designs the 4053 gets, because they take long windows", () => {
+    for (const m of ["4050", "9130"]) {
+      const ids = windowDesigns(m, "inserts", "16").map((d) => d.id);
+      for (const long of ["608", "610", "612", "611", "613"]) expect(ids, `${m} ${long}`).toContain(long);
+    }
+    expect(windowDesigns("T50S", "inserts", "16").map((d) => d.id)).not.toContain("612"); // short windows only
   });
 });

@@ -300,7 +300,7 @@ export function ResidentialTool({
     // Inserts require an actual design choice — no pricing a generic "insert"
     // when this model offers specific insert designs.
     if (solidOnly && glass !== "solid") { setGlass("solid"); setFraming("plain"); }
-    if (springLocked && spring !== "torsion") setSpring("torsion");
+    if (springLocked && spring === "extension") setSpring("torsion");
     if (style === "inserts" && wDesigns.length > 0 && !activeDesign) {
       setError("Select a window insert design before getting a price.");
       setResult(null);
@@ -640,10 +640,11 @@ export function ResidentialTool({
                 <div className="grow">
                   <label>Spring</label>
                   <div className="ctl selectwrap">
-                    <select data-testid="spring" value={springLocked ? "torsion" : spring} disabled={springLocked || !optionsOpen}
+                    <select data-testid="spring" value={springLocked && spring === "extension" ? "torsion" : spring} disabled={!optionsOpen}
                       onChange={(e) => setSpring(e.target.value as SpringKey)}>
                       {!springLocked && <option value="extension">Extension</option>}
                       <option value="torsion">Torsion</option>
+                      <option value="galvanized">Galvanized torsion</option>
                     </select>
                   </div>
                 </div>

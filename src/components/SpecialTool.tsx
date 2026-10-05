@@ -205,7 +205,9 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
 
   // High lift is torsion only, and caps at the door height less 3 inches —
   // above that the door is full vertical lift, a different track entirely.
-  const gLiftAllowed = canTakeHighLift(gTorsionOnly ? "torsion" : gSpring);
+  // A tall door locks out extension springs; standard or galvanized torsion stay open.
+  const gSpringUsed = gTorsionOnly && gSpring === "extension" ? "torsion" : gSpring;
+  const gLiftAllowed = canTakeHighLift(gSpringUsed);
   const gIsLift = gTrack === "high_lift";
   const gHeightFt = Number((gHeight || "0").split(".")[0]);
   const gHeightIn = Number((gHeight || "0").split(".")[1] ?? 0);
@@ -242,7 +244,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const gResult = gridded && gWidth && gHeight && gColorChosen
     ? specialDoorQuote({ model: modelGroup, width: gWidth, height: gHeight, style: gStyle, color: gColor,
         windesign: gDesign || undefined, variant: (modelMember || gVariant) || undefined,
-        track: gTrack as never, spring: (gTorsionOnly ? "torsion" : gSpring) as never, lock: gLock as never,
+        track: gTrack as never, spring: gSpringUsed as never, lock: gLock as never,
         glassType: gStyle !== "solid" ? gGlass || undefined : undefined, panelStyle: gPanelEff,
         trackMount: gMount, incline: gIncline, highLiftInches: gIsLift ? gEffLift : 0 })
     : null;
@@ -569,14 +571,15 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                   )}
                   {gSizeSet && <><div className="grow"><label>Spring</label>
                     <div className="ctl selectwrap">
-                      <select value={gTorsionOnly ? "torsion" : gSpring} disabled={gTorsionOnly || !gOpen}
+                      <select data-testid="so-spring" value={gSpringUsed} disabled={!gOpen}
                         onChange={(e) => {
                           setGSpring(e.target.value);
-                          if (e.target.value !== "torsion" && gTrack === "high_lift") { setGTrack("r12"); setGLift(0); }
+                          if (e.target.value === "extension" && gTrack === "high_lift") { setGTrack("r12"); setGLift(0); }
                           setSaved(false);
                         }}>
                         {!gTorsionOnly && <option value="extension">Extension</option>}
                         <option value="torsion">Torsion</option>
+                        <option value="galvanized">Galvanized torsion</option>
                       </select>
                     </div>
                   </div>

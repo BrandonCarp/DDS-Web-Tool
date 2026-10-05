@@ -188,6 +188,19 @@ export function compareWidths(a: string, b: string): number {
 // 8'3", 8'6" and 8'9" joined on 28/9/2026 (Brandon), pricing off the 9' grid.
 export const OFFERED_HEIGHTS = ["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8", "8.3", "8.6", "8.9", "9"];
 
+/**
+ * What the chosen springs add. Torsion is $35 unless the height already
+ * includes it. Galvanized torsion (5/10/2026) is $40 on a single door and $45 on
+ * a double, 12' and over; where torsion is already included, the difference.
+ */
+function springAdder(spring: string, torsionIncluded: boolean, doubleDoor: boolean): number {
+  if (spring === "galvanized") {
+    const price = doubleDoor ? ADDONS.galvanized.double : ADDONS.galvanized.single;
+    return torsionIncluded ? price - ADDONS.torsion : price;
+  }
+  return !torsionIncluded && spring === "torsion" ? ADDONS.torsion : 0;
+}
+
 /** True when a height's price already includes torsion springs. */
 export function heightForcesTorsion(height: string, available: string[]): boolean {
   const tier = tierForOfferedHeight(height, available);
@@ -331,7 +344,7 @@ export function specialDoorQuote(
 
   const adders =
     (input.track === "high_lift" ? 0 : ADDONS.track[input.track as keyof typeof ADDONS.track] ?? 0) +
-    (!torsionOnly && input.spring === "torsion" ? ADDONS.torsion : 0) +
+    springAdder(input.spring, torsionOnly, parseInt(input.width, 10) >= 12) +
     (LOCK[input.lock] ?? 0) +
     lift.value;
 
@@ -366,7 +379,7 @@ export function specialDoorQuote(
     `${input.track === "high_lift" && input.highLiftInches
         ? `${input.highLiftInches}\u2033 high lift track`
         : TRACK_TEXT[input.track] ?? TRACK_TEXT.r12}, ` +
-    `${torsionOnly || input.spring === "torsion" ? "torsion" : "extension"} springs, ` +
+    `${input.spring === "galvanized" ? "galvanized torsion" : torsionOnly || input.spring === "torsion" ? "torsion" : "extension"} springs, ` +
     `${LOCK_TEXT[input.lock] ?? "no lock"}`;
 
   return {

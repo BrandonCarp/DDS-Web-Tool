@@ -43,7 +43,8 @@ export interface PriceResult {
 }
 
 export type TrackKey = "r10" | "r12" | "r15" | "low_headroom" | "r20" | "r32" | "no_tracks" | "high_lift";
-export type SpringKey = "extension" | "torsion";
+/** Galvanized torsion springs are torsion springs too — Brandon, 5/10/2026. */
+export type SpringKey = "extension" | "torsion" | "galvanized";
 export type LockKey = "none" | "slide" | "lockbar" | "lockbar_installed";
 
 export interface QuoteLine {

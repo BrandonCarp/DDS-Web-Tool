@@ -106,7 +106,7 @@ export function highLiftChoices(heightFt?: number, heightIn = 0): number[] {
 
 /** High lift is a torsion option. Extension springs cannot take it at all. */
 export function canTakeHighLift(spring: string): boolean {
-  return spring === "torsion";
+  return spring === "torsion" || spring === "galvanized"; // both are torsion springs
 }
 
 export interface HighLiftInput {

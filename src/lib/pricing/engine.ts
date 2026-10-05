@@ -273,7 +273,17 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
   // No line is pushed when torsion is included in the door price -- a $0.00 row
   // reads as a charge the counter has to explain. The description still says
   // "torsion springs" so the customer sees what they are getting.
-  if (torsionOnly) { /* included at no charge, nothing to show */ }
+  // Galvanized torsion springs (5/10/2026): $40 single, $45 double. Where the
+  // height already includes standard torsion, only the difference is charged.
+  const galvanized = opts.spring === "galvanized";
+  const galvPrice = size.wf >= 12 ? ADDONS.galvanized.double : ADDONS.galvanized.single;
+  if (galvanized)
+    lines.push({
+      name: torsionOnly ? "Galvanized torsion springs (upgrade)" : "Galvanized torsion springs",
+      value: torsionOnly ? galvPrice - ADDONS.torsion : galvPrice,
+      kind: "add" as const,
+    });
+  else if (torsionOnly) { /* included at no charge, nothing to show */ }
   else if (opts.spring === "torsion")
     lines.push({ name: "Torsion springs", value: ADDONS.torsion, kind: "add" as const });
 
@@ -332,7 +342,8 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
       : "";
     winTxt = `${grade ? grade + " windows" : "windows"} in the top section${plain}${dn ? ", " + dn + " inserts" : ", no inserts"}`;
   }
-  const springTxt = torsionOnly || opts.spring === "torsion" ? "torsion springs" : "extension springs";
+  const springTxt = galvanized ? "galvanized torsion springs"
+    : torsionOnly || opts.spring === "torsion" ? "torsion springs" : "extension springs";
   const lockTxt =
     ({ none: "no lock", slide: "inside slide lock", lockbar: "lockbar assembly", lockbar_installed: "lockbar installed" } as Record<string, string>)[opts.lock] ||
     "no lock";

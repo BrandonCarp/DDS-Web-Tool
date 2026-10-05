@@ -44,7 +44,7 @@ export async function POST(req: Request) {
     style: style as WindowStyle,
     color: typeof color === "string" ? color : "White",
     track: (typeof track === "string" ? track : "r12") as TrackKey,
-    spring: (spring === "torsion" ? "torsion" : "extension") as SpringKey,
+    spring: (spring === "torsion" || spring === "galvanized" ? spring : "extension") as SpringKey,
     lock: (typeof lock === "string" ? lock : "none") as LockKey,
     // Known design ids only; the engine additionally checks the design is valid
     // for this model/style/width before it appears in the description.

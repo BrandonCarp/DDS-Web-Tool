@@ -91,9 +91,12 @@ describe("4300 family — options", () => {
     expect(COLORS["4300"].some((c) => c.includes("Ultra-Grain"))).toBe(false);
   });
 
-  it("offers exactly the 4050's window designs at every width", () => {
+  it("offers exactly the 4050's short-window designs at every width", () => {
+    // The 4050 took the long-panel inserts on 5/10/2026 because it takes long
+    // windows; the 4300 family takes short windows only, so it keeps the
+    // short list — the 4050's designs minus the long ones.
     for (const w of ["7", "9", "12", "16", "18"]) {
-      const want = windowDesigns("4050", "inserts", w).map((d) => d.id);
+      const want = windowDesigns("4050", "inserts", w).filter((d) => d.cat !== "long").map((d) => d.id);
       for (const m of ["4300", "4301", "4310"]) {
         expect(windowDesigns(m, "inserts", w).map((d) => d.id), `${m} @ ${w}`).toEqual(want);
       }

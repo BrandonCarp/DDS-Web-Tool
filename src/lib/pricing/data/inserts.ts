@@ -54,7 +54,10 @@ export const ARCHITECTURAL: InsertDesign[] = [
 // Which window designs each specific model can take.
 // short = plain short windows (508/509/510 + Sunsets); shortlong adds long panels; all = everything.
 export const INSERT_RULES: Record<string, "short" | "shortlong" | "all"> = {
-  T50S: "short", T52S: "short", "4050": "short", "9130": "short",
+  T50S: "short", T52S: "short",
+  // The 4050 takes long windows, so it takes the long-panel inserts too, as the
+  // 4053 does — Brandon, 5/10/2026. The 9130 is the same door insulated.
+  "4050": "shortlong", "9130": "shortlong",
   "4051": "shortlong", "4053": "all", "9133": "all",
   // The 4300 family takes the same window and insert options as the 4050 —
   // Brandon, 12/9/2026. 4301 and 4310 are listed so a member selected on the

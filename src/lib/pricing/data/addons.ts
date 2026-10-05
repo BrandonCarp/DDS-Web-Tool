@@ -7,6 +7,9 @@
 
 export const ADDONS = {
   "torsion": 35,
+  // Galvanized torsion springs: $40 on a single door, $45 on a double (12' and
+  // over, as the colour upcharge counts it) — Brandon, 5/10/2026.
+  "galvanized": { "single": 40, "double": 45 },
   "slidelock": 5,
   "lockbar_assembly": 45,
   "lockbar_installed": 70,

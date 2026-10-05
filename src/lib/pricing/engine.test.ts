@@ -154,6 +154,21 @@ describe("quoteResidential — full quote with add-on upcharges", () => {
     expect(q.lines).toHaveLength(1);
   });
 
+  it("adds galvanized torsion: $40 on a single door, $45 on a double (5/10/2026)", () => {
+    const single = priceResidential("T50S", dim(9, 0, 7, 0), "solid").price!;
+    const q1 = quoteResidential("T50S", dim(9, 0, 7, 0), opts({ spring: "galvanized" }));
+    expect(q1.unitPrice).toBeCloseTo(single + 40, 2);
+    expect(q1.description).toContain("galvanized torsion springs");
+    const double = priceResidential("T50S", dim(16, 0, 7, 0), "solid").price!;
+    expect(quoteResidential("T50S", dim(16, 0, 7, 0), opts({ spring: "galvanized" })).unitPrice).toBeCloseTo(double + 45, 2);
+  });
+
+  it("charges only the difference for galvanized where the height already includes torsion", () => {
+    const tall = priceResidential("T50S", dim(16, 0, 9, 0), "solid").price!;
+    expect(quoteResidential("T50S", dim(16, 0, 9, 0), opts({ spring: "torsion" })).unitPrice).toBeCloseTo(tall, 2);
+    expect(quoteResidential("T50S", dim(16, 0, 9, 0), opts({ spring: "galvanized" })).unitPrice).toBeCloseTo(tall + 10, 2);
+  });
+
   it("adds torsion (+35), lockbar installed (+70) and 32in track (+225)", () => {
     const base = priceResidential("T50S", dim(9, 0, 7, 0), "solid").price!;
     const q = quoteResidential("T50S", dim(9, 0, 7, 0), opts({ track: "r32", spring: "torsion", lock: "lockbar_installed" }));

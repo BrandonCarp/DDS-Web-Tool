@@ -60,10 +60,12 @@ describe("T52S / T52L — special order", () => {
     expect(sell("14.2", "glass")).toBeCloseTo(1565.98, 2);
   });
 
-  it("offers the same window designs as the 4050, 507 excluded", () => {
+  it("offers the 4050's short-window designs, 507 excluded", () => {
+    // Short windows only on the T52S, so none of the long-panel inserts the
+    // 4050 took on 5/10/2026.
     for (const w of ["7", "9", "12", "16"]) {
       expect(windowDesigns("T52S", "inserts", w).map((d) => d.id), w)
-        .toEqual(windowDesigns("4050", "inserts", w).map((d) => d.id));
+        .toEqual(windowDesigns("4050", "inserts", w).filter((d) => d.cat !== "long").map((d) => d.id));
     }
     expect(windowDesigns("T52S", "inserts", "9").map((d) => d.id)).not.toContain("507");
   });
