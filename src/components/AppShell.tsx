@@ -15,6 +15,7 @@ import { PartsTool } from "./PartsTool";
 import { TopBar } from "./TopBar";
 import { CartProvider, CartTool, useCart } from "./Cart";
 import { CurrentUserProvider } from "./CurrentUser";
+import { PARTS_TAB_MENU, TRACK_MENU, GROUP_TABS, PART_GROUP_TABS } from "@/lib/pricing/data/parts-menu";
 import type { SearchHit, SearchPick } from "@/lib/search";
 import { TRACK_CATEGORIES, CABLE_CATEGORIES } from "@/lib/pricing/data/springs";
 import { VinylTool } from "./VinylTool";
@@ -97,6 +98,9 @@ const QUOTING_TABS: readonly Tab[] = [
     id: "parts", label: "Parts", icon: "parts",
     title: "Parts",
   },
+  // Tools, Angle, Retainers, Seals and Tube shafts: tabs of their own, like
+  // Residential and Commercial, rather than buttons inside Parts (6/10/2026).
+  ...PART_GROUP_TABS.map((t) => ({ id: t.id, label: t.group, icon: t.icon, title: t.group })),
   // Track and cables left Parts for tabs of their own — Brandon, 29/9/2026.
   {
     id: "track", label: "Track", icon: "track",
@@ -456,8 +460,12 @@ function Shell({
           {mode === "torsion" && <TorsionTool key={keyFor("torsion")} openOn={at("torsion")?.pick} />}
           {mode === "extension" && <ExtensionTool key={keyFor("extension")} openOn={at("extension")?.pick} />}
           {mode === "qbsetup" && qbSetup && <QuickBooksSetup />}
-          {mode === "parts" && <PartsTool key={keyFor("parts")} openOn={at("parts")?.pick} />}
-          {mode === "track" && <PartsTool key={keyFor("track")} openOn={at("track")?.pick} categories={TRACK_CATEGORIES} eyebrow="Track quote" finder="Find track" />}
+          {mode === "parts" && <PartsTool key={keyFor("parts")} openOn={at("parts")?.pick} menu={PARTS_TAB_MENU} />}
+          {GROUP_TABS.map((t) => mode === t.id && (
+            <PartsTool key={keyFor(t.id)} openOn={at(t.id)?.pick} menu={t.menu} group={t.group}
+              categories={t.categories} eyebrow={`${t.group} quote`} finder={`Find ${t.group.toLowerCase()}`} />
+          ))}
+          {mode === "track" && <PartsTool key={keyFor("track")} openOn={at("track")?.pick} menu={TRACK_MENU} chooser="dropdown" categories={TRACK_CATEGORIES} eyebrow="Track quote" finder="Find track" />}
           {mode === "cables" && <PartsTool key={keyFor("cables")} openOn={at("cables")?.pick} categories={CABLE_CATEGORIES} eyebrow="Cables quote" finder="Find a cable" />}
           {mode === "vinyl" && <VinylTool />}
           {mode === "operators" && <OperatorsTool key={keyFor("operators")} openOn={at("operators")?.pick} />}

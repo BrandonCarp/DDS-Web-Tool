@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { PartsTool } from "./PartsTool";
 import { CustomerJobProvider } from "./CustomerJobFields";
 import { TRACK_CATEGORIES, CABLE_CATEGORIES } from "@/lib/pricing/data/springs";
+import { PARTS_MENU, PARTS_TAB_MENU, TRACK_MENU, GROUP_TABS } from "@/lib/pricing/data/parts-menu";
 
 /** The Parts, Track and Cables tabs are one tool, each given its own shelf. */
 afterEach(cleanup);
@@ -83,5 +84,75 @@ describe("a part with no price yet", () => {
     expect(screen.getByText(/no price yet/i)).toBeTruthy();
     expect(screen.queryByTestId("parts-copy-qb")).toBeNull();
     expect(screen.queryByTestId("parts-copy-qb-cart")).toBeNull();
+  });
+});
+
+describe("the Parts buttons (6/10/2026)", () => {
+  const open = (group: string, page?: string) => {
+    fireEvent.click(screen.getByTestId(group));
+    if (page) fireEvent.click(screen.getByTestId(page));
+  };
+
+  it("leaves the five group tabs off the Parts tab's buttons", () => {
+    show(<PartsTool menu={PARTS_TAB_MENU} />);
+    for (const g of ["tools", "angle", "retainers", "seals", "tube-shafts"]) expect(screen.queryByTestId(`group-${g}`), g).toBeNull();
+    expect(screen.getByTestId("group-drums")).toBeTruthy();
+  });
+
+  it("starts on a prompt, then lists just the page's parts", () => {
+    show(<PartsTool menu={PARTS_MENU} />);
+    expect(screen.getByTestId("parts-list").textContent).toContain("Pick a category");
+    expect(screen.queryByTestId("parts-category")).toBeNull();
+    open("group-retainers", "page-l-retainers");
+    expect(screen.getByTestId("parts-page").textContent).toBe("Retainers › L retainers");
+    expect(document.querySelectorAll("ul.partlist .partrow")).toHaveLength(3);
+  });
+
+  it("picks the part straight away on a one-part page", () => {
+    show(<PartsTool menu={PARTS_MENU} />);
+    open("group-tools", "page-felco-cutter");
+    expect(document.querySelector("aside.quote .qtitle")?.textContent).toBe("CABLE CUTTER");
+  });
+
+  it("opens a group with one page directly, and still searches everything", () => {
+    show(<PartsTool menu={PARTS_MENU} />);
+    open("group-locks");
+    expect(screen.getByTestId("parts-page").textContent).toBe("Locks");
+    expect(document.querySelector(".pnav-pages")).toBeNull();
+    fireEvent.change(screen.getByTestId("parts-search"), { target: { value: "wood rubber" } });
+    expect(screen.getByTestId("parts-list").textContent).toContain("WOOD RUBBER");
+  });
+
+  it("opens a group tab straight onto its pages", () => {
+    const angle = GROUP_TABS.find((t) => t.id === "angle")!;
+    show(<PartsTool menu={angle.menu} categories={angle.categories} group="Angle" />);
+    expect(screen.getByTestId("parts-page").textContent).toBe("Angle");
+    expect(document.querySelector(".pnav-groups")).toBeNull();
+    expect([...document.querySelectorAll(".pnav-page")].map((b) => b.textContent)).toEqual(["Galvanized", "White", '2" x 2" x 10\'']);
+  });
+});
+
+describe("the Track buttons and drop-downs (6/10/2026)", () => {
+  const track = () => show(<PartsTool menu={TRACK_MENU} chooser="dropdown" categories={TRACK_CATEGORIES} eyebrow="Track quote" finder="Find track" />);
+  const choices = () => [...(screen.getByTestId("parts-pick") as HTMLSelectElement).options].slice(1).map((o) => o.value);
+
+  it("asks residential or commercial for a complete track, then drops down its sets", () => {
+    track();
+    fireEvent.click(screen.getByTestId("group-complete-track"));
+    expect([...document.querySelectorAll(".pnav-page")].map((b) => b.textContent)).toEqual(["Residential", "Commercial"]);
+    expect(screen.queryByTestId("parts-pick")).toBeNull();
+    fireEvent.click(screen.getByTestId("page-commercial"));
+    expect(choices()).toHaveLength(8);
+    fireEvent.change(screen.getByTestId("parts-pick"), { target: { value: choices()[0] } });
+    expect(document.querySelector("aside.quote .qtitle")?.textContent).toBe(choices()[0]);
+  });
+
+  it("drops down the pieces straight from the other three buttons", () => {
+    track();
+    fireEvent.click(screen.getByTestId("group-adder-pieces"));
+    expect(choices()).toEqual(['36" ADDER PIECE', '54" ADDER PIECE']);
+    fireEvent.click(screen.getByTestId("group-pierced-track"));
+    expect(choices()).toHaveLength(4);
+    expect(screen.queryByTestId("parts-list")).toBeNull(); // the drop-down replaces the list
   });
 });

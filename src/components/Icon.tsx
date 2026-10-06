@@ -114,6 +114,18 @@ const PATHS = {
       <circle cx="16.5" cy="19.5" r="1.3" />
     </>
   ),
+  // The Parts group tabs (6/10/2026).
+  wrench: <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z" />,
+  angle: <path d="M5 4v15h15M9 4v11h11" />,
+  retainer: <path d="M5 6v12h14V6M9 6v8h6V6" />,
+  seal: <path d="M3 10c3 0 3-3 6-3s3 3 6 3 3-3 6-3M3 17h18" />,
+  shaft: (
+    <>
+      <path d="M5 9h14M5 15h14" />
+      <ellipse cx="5" cy="12" rx="1.6" ry="3" />
+      <ellipse cx="19" cy="12" rx="1.6" ry="3" />
+    </>
+  ),
   download: (
     <>
       <path d="M12 4v10.5M7.5 10 12 14.5 16.5 10" />

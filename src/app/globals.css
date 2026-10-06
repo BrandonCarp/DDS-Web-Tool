@@ -187,10 +187,10 @@ html, body { margin: 0; padding: 0; }
 
 .tool-shell .side :is(.tab, .navlink) {
   display: flex; align-items: center; gap: 11px;
-  /* 34px, not 40: eleven quoting tabs and the others fit a 760px-tall window
-     since Track and Cables joined (Brandon, 29/9/2026). */
-  width: 100%; min-height: 34px; flex: none;
-  padding: 6px 10px 6px 11px;
+  /* 32px: with the five Parts group tabs (6/10/2026), all twenty tabs fit a
+     900px-tall window; a shorter one scrolls the tab list. */
+  width: 100%; min-height: 32px; flex: none;
+  padding: 5px 10px 5px 11px;
   border: 1px solid transparent; border-radius: var(--r-sm);
   background: none; color: var(--ink-2);
   /* A touch smaller than body text: bold capitals run wide, and the longest
@@ -637,6 +637,20 @@ html, body { margin: 0; padding: 0; }
 .tool-shell .row2.compact select, .tool-shell .row2.compact input { min-height: 36px; padding-top: 6px; padding-bottom: 6px; }
 .tool-shell .row2.compact .lenrow { grid-template-columns: minmax(0, 1fr) 84px; }
 @media (max-width: 720px) { .tool-shell .row2.compact { grid-template-columns: minmax(0, 1fr); } }
+
+/* The Parts and Track tabs' buttons (6/10/2026): the groups in an even grid,
+   then the chosen group's pages in a row beneath. */
+.tool-shell .pnav { display: grid; gap: 10px; }
+.tool-shell .pnav-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; }
+.tool-shell .pnav-btn, .tool-shell .pnav-page {
+  padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r-sm);
+  background: var(--surface-2); color: var(--ink-2); font-size: 12.5px; text-align: center; cursor: pointer;
+}
+.tool-shell .pnav-btn:hover, .tool-shell .pnav-page:hover { color: var(--ink); border-color: var(--line-strong); }
+.tool-shell .pnav-btn.on, .tool-shell .pnav-page.on { color: var(--accent-ink); border-color: var(--accent); background: var(--surface-3); }
+.tool-shell .pnav-pages { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 10px; border-top: 1px solid var(--line-2); }
+/* A group tab's pages, with no grid of groups above them. */
+.tool-shell .pnav-pages[data-alone] { padding: 0; border: 0; }
 
 /* Add to cart, under the QuickBooks button on every quote (30/9/2026). */
 .tool-shell .addcart { width: 100%; justify-content: center; gap: 8px; }

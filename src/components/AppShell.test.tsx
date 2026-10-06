@@ -217,12 +217,20 @@ describe("switching between the tabs built on the Parts tool", () => {
     shell();
     const tab = (id: string) => document.querySelector(`.side [data-tab="${id}"]`) as HTMLElement;
     const list = () => screen.getByTestId("parts-list").textContent ?? "";
+    // Parts and Track open on their buttons (6/10/2026), so a page is chosen;
+    // Track then offers its pieces in a drop-down rather than a list.
+    const page = (group: string, entry: string) => {
+      fireEvent.click(screen.getByTestId(group));
+      fireEvent.click(screen.getByTestId(entry));
+    };
     fireEvent.click(tab("track"));
-    expect(list()).toContain("20R");
+    page("group-complete-track", "page-residential");
+    expect(screen.getByTestId("parts-pick").textContent).toContain("20R");
     fireEvent.click(tab("cables"));
     expect(list()).toContain("CABLE KEEPERS");
     expect(list()).not.toContain("Nothing matches");
     fireEvent.click(tab("parts"));
+    page("group-drums", "page-other-drums");
     expect(list()).toContain("1100-18");
   });
 });
@@ -231,8 +239,8 @@ describe("the Cart tab", () => {
   it("glows, with a count, from the first add until Clear", () => {
     shell();
     const tab = (id: string) => document.querySelector(`.side [data-tab="${id}"]`) as HTMLElement;
-    fireEvent.click(tab("parts"));
-    fireEvent.click(document.querySelector("ul.partlist .partrow") as HTMLElement);
+    fireEvent.click(tab("tools"));
+    fireEvent.click(screen.getByTestId("page-felco-cutter")); // one part: picked straight away
     fireEvent.click(screen.getByTestId("parts-copy-qb-cart"));
     expect(tab("cart").classList.contains("glow")).toBe(true);
     expect(screen.getByTestId("cart-count").textContent).toBe("1");
@@ -255,5 +263,47 @@ describe("the welcome cards", () => {
     expect(screen.getByTestId("door-show").querySelector("img")?.getAttribute("src")).toMatch(/^\/door-photos\/commercial\//);
     expect(screen.getByText("Select your commercial configuration")).toBeTruthy();
     expect(screen.getByText("Pick a manufacturer and model, then Configure.")).toBeTruthy();
+  });
+});
+
+describe("the Parts group tabs (6/10/2026)", () => {
+  const ids = () => [...document.querySelectorAll(".side [data-tab]")].map((e) => e.getAttribute("data-tab"));
+
+  it("sit in the side nav right after Parts, like Residential and Commercial", () => {
+    shell();
+    const all = ids();
+    const at = all.indexOf("parts");
+    expect(all.slice(at, at + 7)).toEqual(["parts", "tools", "angle", "retainers", "seals", "tubeshafts", "track"]);
+  });
+
+  it("open straight onto their pages, with no group buttons", () => {
+    shell();
+    fireEvent.click(document.querySelector('.side [data-tab="retainers"]') as HTMLElement);
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Retainers");
+    expect(document.querySelector(".pnav-groups")).toBeNull();
+    fireEvent.click(screen.getByTestId("page-u-retainers"));
+    expect(document.querySelectorAll("ul.partlist .partrow")).toHaveLength(2);
+  });
+
+  it("are where the top-bar search sends their parts", () => {
+    shell();
+    const search = screen.getByTestId("qsearch") as HTMLInputElement;
+    fireEvent.focus(search);
+    fireEvent.change(search, { target: { value: "cable cutter" } });
+    fireEvent.mouseDown(screen.getAllByTestId("qsearch-hit")[0]);
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Tools");
+    expect(document.querySelector("aside.quote .qtitle")?.textContent).toBe("CABLE CUTTER");
+  });
+});
+
+describe("the Parts and Track buttons", () => {
+  it("open the page a top-bar search lands on, with the part picked", () => {
+    shell();
+    const search = screen.getByTestId("qsearch") as HTMLInputElement;
+    fireEvent.focus(search);
+    fireEvent.change(search, { target: { value: "1100-18" } });
+    fireEvent.mouseDown(screen.getAllByTestId("qsearch-hit")[0]);
+    expect(screen.getByTestId("parts-page").textContent).toBe("Drums › Other drums");
+    expect(document.querySelector("aside.quote .qtitle")?.textContent).toBe("1100-18");
   });
 });

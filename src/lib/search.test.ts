@@ -108,3 +108,13 @@ describe("quick search: doors", () => {
     expect(buildIndex(TABS, []).some((e) => e.pick?.kind === "resdoor")).toBe(false);
   });
 });
+
+describe("quick search: the Parts group tabs (6/10/2026)", () => {
+  it("opens a tool on the Tools tab, and a drum still on Parts", () => {
+    const withTabs = buildIndex([...TABS, { id: "tools", label: "Tools" }, { id: "seals", label: "Seals" }]);
+    const first = (q: string) => searchIndex(withTabs, q)[0];
+    expect(first("cable cutter")).toMatchObject({ tab: "tools", pick: { kind: "part", category: "TOOLS", name: "CABLE CUTTER" } });
+    expect(first("jamb seal")).toMatchObject({ tab: "seals" });
+    expect(first("1100-18")).toMatchObject({ tab: "parts" });
+  });
+});

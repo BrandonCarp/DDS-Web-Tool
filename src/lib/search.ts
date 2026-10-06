@@ -16,6 +16,7 @@ import type { PartCategory } from "@/lib/pricing/data/parts";
 import { OPERATOR_CATALOGUE } from "@/lib/pricing/data/operator-catalogue";
 import { operatorPrice } from "@/lib/pricing/data/operator-pricing";
 import { priceNotSet } from "@/lib/pricing/data/part-pricing";
+import { tabForPart } from "@/lib/pricing/data/parts-menu";
 import { COLLECTIONS } from "@/lib/pricing/data/catalog-meta";
 import { dataKey } from "@/lib/pricing/model-groups";
 import { commMfrs, commModelsFor, SLAB_LABEL } from "@/lib/pricing/data/commercial-meta";
@@ -50,15 +51,18 @@ type Entry = SearchHit & { hay: string };
 
 const money = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD" });
 
-function partEntries(cats: PartCategory[], tab: string): Entry[] {
+function partEntries(cats: PartCategory[], tabOf: string | ((category: string, name: string) => string)): Entry[] {
   return cats.flatMap((c) =>
-    c.items.map((p) => ({
+    c.items.map((p) => {
+      const tab = typeof tabOf === "string" ? tabOf : tabOf(c.name, p.name);
+      return {
       id: `${tab}|${c.name}|${p.name}|${p.desc}`,
       tab, label: p.name, detail: p.desc || c.name,
       price: priceNotSet(p) ? null : p.perFoot ? `${money(p.price)} / ft` : money(p.price),
       pick: { kind: "part" as const, category: c.name, name: p.name },
       hay: `${p.name} ${p.desc} ${c.name}`.toLowerCase(),
-    })),
+      };
+    }),
   );
 }
 
@@ -143,7 +147,11 @@ export function buildIndex(tabs: readonly { id: string; label: string }[], resid
   }));
   // Doors next, so a model number finds its doors before any part named alike.
   entries.push(...doorEntries(open, residentialModels));
-  if (open.has("parts")) entries.push(...partEntries(PARTS_TAB_CATEGORIES, "parts"));
+  // A part opens on the tab it is sold from: Tools, Angle… have their own (6/10/2026).
+  if (open.has("parts")) entries.push(...partEntries(PARTS_TAB_CATEGORIES, (c, n) => {
+    const t = tabForPart(c, n);
+    return open.has(t) ? t : "parts";
+  }));
   if (open.has("track")) entries.push(...partEntries(TRACK_CATEGORIES, "track"));
   if (open.has("cables")) entries.push(...partEntries(CABLE_CATEGORIES, "cables"));
   if (open.has("extension")) entries.push(...springEntries(EXTENSION_SPRINGS, "extension"));
