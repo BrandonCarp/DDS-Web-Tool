@@ -135,6 +135,9 @@ export const STOCK_MATRIX: Record<string, Record<string, StockRange>> = {
  */
 export const SECTION_STOCK_COLORS: Record<string, string[]> = {
   T50S: ["White"],
+  // Value Steel 1500 and 73 sections: White only (6/10/2026).
+  "1500": ["White"],
+  "73": ["White"],
   T52S: ["White"],
   "4050": ["White", "Almond", "Sandtone", "Chocolate Brown", "Black"],
   "4051": ["White", "Black"],

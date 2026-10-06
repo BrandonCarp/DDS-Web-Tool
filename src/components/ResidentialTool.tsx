@@ -12,9 +12,9 @@ import type { LockKey, Quote, SpringKey, TrackKey, WindowStyle } from "@/lib/pri
 import { COLORS, COLLECTIONS } from "@/lib/pricing/data/catalog-meta";
 import type { ParsedDoor } from "@/lib/pricing/data/parse-request";
 import { dataKey, modelSort } from "@/lib/pricing/model-groups";
-import { windowDesigns, designWidthCode, plainWindowsFor, takesInserts } from "@/lib/pricing/data/inserts";
-import { RES_SECTION_WIDTHS, sectionWidthLabel } from "@/lib/pricing/data/res-section-meta";
-import { stockedWidths, stockedHeights, sizeParts, sizeCode, stockedColors, solidOnlyHeight, torsionOnlyHeight } from "@/lib/pricing/data/stock-colors";
+import { windowDesigns, designWidthCode, plainWindowsFor, takesInserts, stockLongAllowed } from "@/lib/pricing/data/inserts";
+import { RES_SECTION_WIDTHS, sectionWidthLabel, SECTION_ONLY_MODELS, NO_GLASS_AT_18 } from "@/lib/pricing/data/res-section-meta";
+import { stockedWidths, stockedHeights, sizeParts, sizeCode, stockedColors, solidOnlyHeight, torsionOnlyHeight, SECTION_STOCK_COLORS } from "@/lib/pricing/data/stock-colors";
 import { OptionButtons, type ButtonOption } from "./OptionButtons";
 import type { SearchPick } from "@/lib/search";
 import { DoorSlideshow } from "./DoorSlideshow";
@@ -76,7 +76,7 @@ export function ResidentialTool({
   const doorTree = useMemo(() => {
     const t: Record<string, string[]> = {};
     for (const m of models) {
-      const c = COLLECTIONS[dataKey(m)] || "Other";
+      const c = COLLECTIONS[dataKey(m)] || SECTION_ONLY_MODELS[m]?.collection || "Other";
       (t[c] ||= []).push(m);
     }
     for (const c of Object.keys(t)) t[c].sort(modelSort);
@@ -86,7 +86,7 @@ export function ResidentialTool({
 
   const [step, setStep] = useState<1 | 2>(1);
   const startModel = openOn?.kind === "resdoor" ? openOn.model : "";
-  const [coll, setColl] = useState(startModel ? COLLECTIONS[dataKey(startModel)] || "Other" : "");
+  const [coll, setColl] = useState(startModel ? COLLECTIONS[dataKey(startModel)] || SECTION_ONLY_MODELS[startModel]?.collection || "Other" : "");
   const [model, setModel] = useState(startModel);
 
   // sizes are strings so the fields can start blank (prompt the user, like index.html)
@@ -156,17 +156,25 @@ export function ResidentialTool({
 
   // Framing, per model: the plain windows it takes (by their order names), then
   // Inserts where it takes them. A model with no list keeps the old pair.
-  const plainOpts = plainWindowsFor(model);
+  // The stock 4050 takes long-panel windows and inserts at 8', 9' and 16' only.
+  const longOk = stockLongAllowed(model, Number(widthFt === "" ? NaN : widthFt), parseInt(widthIn, 10) || 0);
+  const plainOpts = plainWindowsFor(model).filter((w) => longOk || !/\bLONG\b/i.test(w));
   const framingOpts = plainOpts.length
     ? [...plainOpts.map((w) => ({ value: w, label: w })),
        ...(takesInserts(model) ? [{ value: "insert", label: "Inserts" }] : [])]
     : [{ value: "plain", label: "Plain (no insert)" }, { value: "insert", label: "Insert" }];
   const activeFraming = framingOpts.some((o) => o.value === framing) ? framing : framingOpts[0].value;
   const style = styleFrom(glass, activeFraming);
-  const collection = COLLECTIONS[dataKey(model)] ?? coll;
+  const collection = COLLECTIONS[dataKey(model)] ?? SECTION_ONLY_MODELS[model]?.collection ?? coll;
   const isGallery = collection === "Gallery Collection";
-  const sections = assembly === "sections";
-  const sectionsOnly = assembly === "sectionsonly";
+  // A model stocked only as sections (1500, 73) is a replacement section, always.
+  const sectionOnly = !!SECTION_ONLY_MODELS[model];
+  const assemblyUsed = sectionOnly ? "sections" : assembly;
+  const sections = assemblyUsed === "sections";
+  const sectionsOnly = assemblyUsed === "sectionsonly";
+  // …and its 18" sections come solid only.
+  const noGlassHere = sections && secHeight === "18" && NO_GLASS_AT_18.has(dataKey(model));
+  const secGlassUsed = noGlassHere ? "solid" : secGlass;
   const secWidths = RES_SECTION_WIDTHS[dataKey(model)] ?? [];
   const activeSecWidth = secWidth && secWidths.includes(secWidth) ? secWidth : "";
   // Only what is on the floor, narrowed to the size once one is chosen. A 7'0"
@@ -175,6 +183,7 @@ export function ResidentialTool({
   const colorList = (() => {
     const w = sections ? activeSecWidth : widthFt ? sizeCode(Number(widthFt), Number(widthIn || 0)) : undefined;
     const h = heightFt ? sizeCode(Number(heightFt), Number(heightIn || 0)) : undefined;
+    if (sectionOnly) return SECTION_STOCK_COLORS[model] ?? ["White"];
     const list = stockedColors(model, w || undefined, sections ? undefined : h);
     return list.length ? list : stockedColors(model);
   })();
@@ -204,8 +213,8 @@ export function ResidentialTool({
 
   // Window/insert designs available for this exact door (model + style + width).
   const wDesigns = useMemo(
-    () => windowDesigns(model, style, designWidthCode(wf, parseInt(widthIn, 10) || 0)),
-    [model, style, wf, widthIn],
+    () => windowDesigns(model, style, designWidthCode(wf, parseInt(widthIn, 10) || 0)).filter((d) => longOk || d.cat !== "long"),
+    [model, style, wf, widthIn, longOk],
   );
   // A previously chosen design that no longer fits this door is simply inactive.
   const activeDesign = windesign && wDesigns.some((d) => d.id === windesign) ? windesign : "";
@@ -246,7 +255,7 @@ export function ResidentialTool({
 
 
 
-  const cfgSig = JSON.stringify([model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, activeDesign, activeFraming, assembly, secKind, secHeight, activeSecWidth, secGlass, secLock, upgradedHardware, homeowner]);
+  const cfgSig = JSON.stringify([model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, activeDesign, activeFraming, assemblyUsed, secKind, secHeight, activeSecWidth, secGlass, secLock, upgradedHardware, homeowner]);
   const result = resultRaw && resultSig === cfgSig ? resultRaw : null;
   const liveError = errorRaw && resultSig === cfgSig ? errorRaw : null;
 
@@ -267,8 +276,8 @@ export function ResidentialTool({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             model, assembly: "sections", widthKey: activeSecWidth,
-            secHeight, secKind, glazed: secKind === "int" && secGlass === "glazed",
-            lockbar: secKind === "int" && secGlass === "solid" && secLock === "installed",
+            secHeight, secKind, glazed: secKind === "int" && secGlassUsed === "glazed",
+            lockbar: secKind === "int" && secGlassUsed === "solid" && secLock === "installed",
             color, homeowner,
           }),
         });
@@ -451,7 +460,9 @@ export function ResidentialTool({
               {model && (
                 <div className="field">
                   <label className="lbl">Assembly type</label>
-                  <OptionButtons label="Assembly type" testid="assembly" options={ASSEMBLIES} value={assembly} onChange={setAssembly} />
+                  <OptionButtons label="Assembly type" testid="assembly"
+                    options={sectionOnly ? ASSEMBLIES.filter((a) => a.value === "sections") : ASSEMBLIES}
+                    value={assemblyUsed} onChange={setAssembly} />
                 </div>
               )}
               <button data-testid="configure" className="btn primary configbtn" disabled={!model} onClick={() => setStep(2)}>
@@ -484,7 +495,7 @@ export function ResidentialTool({
               <button type="button" className="btn backbtn" onClick={onBack}>‹ Back</button>
               <span className="mlbl">Model</span>
               <span className="mval">{model}</span>
-              <span className="mtag" data-testid="assembly-tag">{ASSEMBLIES.find((a) => a.value === assembly)?.label}</span>
+              <span className="mtag" data-testid="assembly-tag">{ASSEMBLIES.find((a) => a.value === assemblyUsed)?.label}</span>
               <span className="muted-note" style={{ marginLeft: "auto" }}>{collection}</span>
             </div>
 
@@ -496,7 +507,7 @@ export function ResidentialTool({
                     <div className="grow">
                       <label>Section type</label>
                       <div className="ctl selectwrap">
-                        <select value={secKind} onChange={(e) => setSecKind(e.target.value as "bt" | "int")}>
+                        <select data-testid="sec-kind" value={secKind} onChange={(e) => setSecKind(e.target.value as "bt" | "int")}>
                           <option value="bt">Bottom section</option>
                           <option value="int">Intermediate section</option>
                         </select>
@@ -505,7 +516,7 @@ export function ResidentialTool({
                     <div className="grow">
                       <label>Section height</label>
                       <div className="ctl selectwrap">
-                        <select value={secHeight} onChange={(e) => setSecHeight(e.target.value as "18" | "21")}>
+                        <select data-testid="sec-height" value={secHeight} onChange={(e) => setSecHeight(e.target.value as "18" | "21")}>
                           <option value="18">18″</option>
                           <option value="21">21″</option>
                         </select>
@@ -666,9 +677,9 @@ export function ResidentialTool({
                       <div className="grow">
                         <label>Glass</label>
                         <div className="ctl selectwrap">
-                          <select value={secGlass} disabled={!optionsOpen} onChange={(e) => setSecGlass(e.target.value as "solid" | "glazed")}>
+                          <select data-testid="sec-glass" value={secGlassUsed} disabled={!optionsOpen} onChange={(e) => setSecGlass(e.target.value as "solid" | "glazed")}>
                             <option value="solid">Solid — no windows</option>
-                            <option value="glazed">Glazed (glass section)</option>
+                            {!noGlassHere && <option value="glazed">Glazed (glass section)</option>}
                           </select>
                         </div>
                       </div>
@@ -682,7 +693,7 @@ export function ResidentialTool({
                         </select>
                       </div>
                     </div>
-                      {secGlass === "solid" && (
+                      {secGlassUsed === "solid" && (
                         <div className="grow">
                           <label>Lockbar</label>
                           <div className="ctl selectwrap">

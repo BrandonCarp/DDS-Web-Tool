@@ -454,3 +454,64 @@ describe("residential tool — the door price is for one door", () => {
     expect(price()).toBe("$100.00");
   });
 });
+
+describe("residential tool — Value Steel 1500 and 73, stock sections only (6/10/2026)", () => {
+  const open = (model: string) => {
+    render(<ResidentialTool models={[...MODELS, "1500", "73"]} />);
+    fireEvent.change(screen.getByTestId("series"), { target: { value: "Value Steel Collection" } });
+    fireEvent.change(screen.getByTestId("model"), { target: { value: model } });
+  };
+  const values = (id: string) => [...(screen.getByTestId(id) as HTMLSelectElement).options].map((o) => o.value).filter(Boolean);
+
+  it("lists them with the T50S and T52S, as replacement sections only", () => {
+    open("1500");
+    expect(values("model")).toEqual(expect.arrayContaining(["T50S", "T52S", "1500", "73"]));
+    expect(screen.queryByTestId("assembly-complete")).toBeNull();
+    expect(screen.queryByTestId("assembly-sectionsonly")).toBeNull();
+    expect(screen.getByTestId("assembly-sections")).toBeTruthy();
+  });
+
+  it("offers 8' and 9' in White, and no glass at 18\"", async () => {
+    open("73");
+    fireEvent.click(screen.getByTestId("configure"));
+    await waitFor(() => screen.getByText("‹ Back"));
+    expect(values("sec-width")).toEqual(["8", "9"]);
+    expect(values("color")).toEqual(["White"]);
+    fireEvent.change(screen.getByTestId("sec-kind"), { target: { value: "int" } });
+    fireEvent.change(screen.getByTestId("sec-height"), { target: { value: "18" } });
+    expect(values("sec-glass")).toEqual(["solid"]);
+    fireEvent.change(screen.getByTestId("sec-height"), { target: { value: "21" } });
+    expect(values("sec-glass")).toEqual(["solid", "glazed"]);
+  });
+});
+
+describe("residential tool — the stock 4050's long panels (6/10/2026)", () => {
+  const LONG = 'PLAIN LONG 40-1/2" X 12"';
+  const labels = (id: string) => [...(screen.getByTestId(id) as HTMLSelectElement).options].map((o) => o.textContent ?? "");
+
+  it("offers the long-panel window at 8', 9' and 16' only", async () => {
+    await configure("4050");
+    const widths = [...(screen.getByTestId("width-ft") as HTMLSelectElement).options].map((o) => o.value).filter(Boolean);
+    for (const w of widths) {
+      fireEvent.change(screen.getByTestId("width-ft"), { target: { value: w } });
+      expect(labels("framing").includes(LONG), `${w}'`).toBe(["8", "9", "16"].includes(w));
+    }
+  });
+
+  it("drops the long insert designs at other widths", async () => {
+    await configure("4050");
+    const widths = [...(screen.getByTestId("width-ft") as HTMLSelectElement).options].map((o) => o.value).filter(Boolean);
+    const other = widths.find((w) => !["8", "9", "16"].includes(w))!;
+    const designs = (w: string) => {
+      fireEvent.change(screen.getByTestId("width-ft"), { target: { value: w } });
+      fireEvent.change(screen.getByTestId("height-ft"), { target: { value: "7" } });
+      fireEvent.change(screen.getByTestId("color"), { target: { value: "White" } });
+      const glass = [...(screen.getByTestId("style") as HTMLSelectElement).options].map((o) => o.value).find((v) => v !== "solid")!;
+      fireEvent.change(screen.getByTestId("style"), { target: { value: glass } });
+      fireEvent.change(screen.getByTestId("framing"), { target: { value: "insert" } });
+      return labels("windesign").join(" ");
+    };
+    expect(designs("16")).toContain("612");
+    expect(designs(other)).not.toMatch(/608|610|611|612|613/);
+  });
+});

@@ -66,6 +66,19 @@ export const INSERT_RULES: Record<string, "short" | "shortlong" | "all"> = {
 };
 
 /** Resolve the width code used by the design width-restriction lists (e.g. 7'6" -> "7.6"). */
+/**
+ * The stock 4050 takes long-panel windows and long-panel inserts only at 8', 9'
+ * and 16' wide — the widths DDS can do them in stock (Brandon, 6/10/2026). Other
+ * widths offer short ones only. Special orders are not limited by this, and
+ * a width not yet chosen is not held against a door.
+ */
+const STOCK_LONG_WIDTHS: Record<string, number[]> = { "4050": [8, 9, 16] };
+export function stockLongAllowed(model: string, widthFt: number, widthIn: number): boolean {
+  const only = STOCK_LONG_WIDTHS[model];
+  if (!only || !Number.isFinite(widthFt) || widthFt <= 0) return true;
+  return widthIn === 0 && only.includes(widthFt);
+}
+
 export function designWidthCode(wf: number, wi: number): string {
   const all = [...DECORATIVE, ...ARCHITECTURAL];
   const candidates: string[] = [];

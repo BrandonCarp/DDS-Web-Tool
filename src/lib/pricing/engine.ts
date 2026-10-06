@@ -10,6 +10,7 @@ import { ADDONS, ULTRAGRAIN, GRADE_RES, COLLECTIONS_RES } from "./data/addons";
 import { dataKey, expandModels } from "./model-groups";
 import { windowDesigns, designName, plainWindowsFor } from "./data/inserts";
 import { RES_SECTIONS } from "./data/res-sections";
+import { SECTION_ONLY_LIST, NO_GLASS_AT_18 } from "./data/res-section-meta";
 import { colorInStock, sectionColorInStock, sizeCode } from "./data/stock-colors";
 import { colorTakesPremium } from "./data/catalog-meta";
 import { collapseUpcharges } from "./types";
@@ -145,7 +146,10 @@ const RESIDENTIAL_HIDDEN = new Set(["4300", "4301", "4302", "4305", "4310"]);
 
 /** Models that have a residential price grid and are offered on that tab. */
 export function listModels(): string[] {
-  return expandModels(Object.keys(RESIDENTIAL_PRICES)).filter((m) => !RESIDENTIAL_HIDDEN.has(m));
+  const doors = expandModels(Object.keys(RESIDENTIAL_PRICES)).filter((m) => !RESIDENTIAL_HIDDEN.has(m));
+  // Models stocked only as sections (1500, 73) are listed too; the Residential
+  // tab offers them as replacement sections and nothing else (6/10/2026).
+  return [...doors, ...SECTION_ONLY_LIST.filter((m) => !doors.includes(m))];
 }
 
 const STYLE_NAME: Record<WindowStyle, string> = {
@@ -422,6 +426,8 @@ export function quoteResidentialSection(model: string, input: ResSectionInput): 
   const row = table[input.widthKey];
   if (!row) return empty;
   const glazed = input.kind === "int" && !!input.glazed;
+  // The 1500 and 73 have no glass at 18" — solid bottoms and intermediates only.
+  if (glazed && input.height === "18" && NO_GLASS_AT_18.has(dataKey(model))) return empty;
   const base = input.kind === "bt" ? row.bottom : glazed ? row.glazed : row.inter;
   const [wft, win] = input.widthKey.split(".");
   const widthTxt = `${wft}'${win ?? 0}"`;

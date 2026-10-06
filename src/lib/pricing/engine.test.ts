@@ -690,9 +690,10 @@ describe("residential model list", () => {
   const opts = { style: "solid" as const, color: "White", track: "r12" as const,
                  spring: "extension" as const, lock: "none" as const };
 
-  it("offers nine models, none of them the 4300 family", () => {
-    // Special order only for now — Brandon, 10/9/2026.
-    expect(listModels()).toEqual(["T50S", "T52S", "4050", "4051", "4053", "9130", "9133", "GD1LP", "GD1SP"]);
+  it("offers nine door models and two section-only ones, none of them the 4300 family", () => {
+    // The 4300s are special order only for now — Brandon, 10/9/2026. The
+    // Value Steel 1500 and 73 are stocked as sections only (6/10/2026).
+    expect(listModels()).toEqual(["T50S", "T52S", "4050", "4051", "4053", "9130", "9133", "GD1LP", "GD1SP", "1500", "73"]);
   });
 
   it("keeps the 4300 family priceable", () => {

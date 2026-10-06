@@ -48,4 +48,16 @@ export const RES_SECTIONS: Record<string, Record<string, ResSectionRow>> = {
     "9": { "bottom": 273.2, "inter": 240.27, "glazed": 574.18 },
     "16": { "bottom": 485.69, "inter": 427.16, "glazed": 1094.98 },
   },
+  // Clopay Value Steel models 1500 and 73: stocked as replacement sections only,
+  // in White, 8' and 9' wide — Brandon's price notes, 6/10/2026. 18" and 21"
+  // share one price, as every row here does; there is no glass at 18" (see
+  // NO_GLASS_AT_18 in res-section-meta.ts).
+  "1500": {
+    "8": { "bottom": 303.73, "inter": 264.80, "glazed": 453.29 },
+    "9": { "bottom": 341.69, "inter": 297.92, "glazed": 486.41 },
+  },
+  "73": {
+    "8": { "bottom": 216.10, "inter": 176.43, "glazed": 377.73 },
+    "9": { "bottom": 243.10, "inter": 198.49, "glazed": 399.78 },
+  },
 };

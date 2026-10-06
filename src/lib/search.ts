@@ -19,6 +19,7 @@ import { priceNotSet } from "@/lib/pricing/data/part-pricing";
 import { tabForPart } from "@/lib/pricing/data/parts-menu";
 import { COLLECTIONS } from "@/lib/pricing/data/catalog-meta";
 import { dataKey } from "@/lib/pricing/model-groups";
+import { SECTION_ONLY_MODELS } from "@/lib/pricing/data/res-section-meta";
 import { commMfrs, commModelsFor, SLAB_LABEL } from "@/lib/pricing/data/commercial-meta";
 import {
   SPECIAL, SO_MANUFACTURERS, seriesFor, SPECIAL_COMMERCIAL, SPECIAL_COMMERCIAL_SERIES, SPECIAL_COMMERCIAL_PINNED,
@@ -91,7 +92,8 @@ function doorEntries(open: Set<string>, residentialModels: readonly string[]): E
   const out: Entry[] = [];
   if (open.has("residential")) {
     for (const m of residentialModels) {
-      out.push(door("residential", m, m, `Stock residential door, ${COLLECTIONS[dataKey(m)] || "Other"}`,
+      out.push(door("residential", m, m,
+        SECTION_ONLY_MODELS[m] ? `Stock sections, ${SECTION_ONLY_MODELS[m].collection}` : `Stock residential door, ${COLLECTIONS[dataKey(m)] || "Other"}`,
         { kind: "resdoor", model: m }));
     }
   }
