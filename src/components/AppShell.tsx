@@ -14,6 +14,7 @@ import { ExtensionTool } from "./ExtensionTool";
 import { PartsTool } from "./PartsTool";
 import { TopBar } from "./TopBar";
 import { CartProvider, CartTool, useCart } from "./Cart";
+import { CurrentUserProvider } from "./CurrentUser";
 import type { SearchHit, SearchPick } from "@/lib/search";
 import { TRACK_CATEGORIES, CABLE_CATEGORIES } from "@/lib/pricing/data/springs";
 import { VinylTool } from "./VinylTool";
@@ -169,11 +170,13 @@ export function AppShell(props: {
   qbSetup?: boolean;
 }) {
   return (
-    <CustomerJobProvider>
-      <CartProvider>
-        <Shell {...props} />
-      </CartProvider>
-    </CustomerJobProvider>
+    <CurrentUserProvider user={props.user}>
+      <CustomerJobProvider>
+        <CartProvider>
+          <Shell {...props} />
+        </CartProvider>
+      </CustomerJobProvider>
+    </CurrentUserProvider>
   );
 }
 

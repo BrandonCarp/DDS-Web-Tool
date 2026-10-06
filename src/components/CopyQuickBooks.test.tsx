@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { cleanup, render, fireEvent, screen } from "@testing-library/react";
 import { ExtensionTool } from "./ExtensionTool";
 import { CopyQuickBooks } from "./CopyQuickBooks";
+import { CurrentUserProvider } from "./CurrentUser";
 import { copyFrom } from "./test-clipboard";
 
 let copied = "";
@@ -87,5 +88,39 @@ describe("QuickBooks button — more than one line", () => {
     cleanup();
     render(<CopyQuickBooks item="STOCK DOOR" description="a door" rate={100} qty={1} testId="l" />);
     expect(screen.getByTestId("l").textContent).toBe("QuickBooks");
+  });
+});
+
+describe("Copy price and Copy description, for Aimee's account only (6/10/2026)", () => {
+  const card = (username: string) =>
+    render(
+      <CurrentUserProvider user={{ username, role: "user" }}>
+        <CopyQuickBooks item="STOCK DOOR" description={"Clopay Model 4050, 8'0\" x 7'0\""} rate={1234.5} qty={2} testId="door" />
+      </CurrentUserProvider>,
+    );
+
+  it("shows both under the QuickBooks button for aimee, in any case", () => {
+    card("Aimee");
+    expect(screen.getByTestId("door-price")).toBeTruthy();
+    expect(screen.getByTestId("door-desc")).toBeTruthy();
+  });
+
+  it("copies the price of one as a bare number, and the description in capitals", async () => {
+    card("aimee");
+    fireEvent.click(screen.getByTestId("door-price"));
+    await settle();
+    expect(copied).toBe("1,234.50");
+    fireEvent.click(screen.getByTestId("door-desc"));
+    await settle();
+    expect(copied).toBe("CLOPAY MODEL 4050, 8'0\" X 7'0\"");
+  });
+
+  it("shows neither for anyone else, or outside a signed-in shell", () => {
+    card("bc");
+    expect(screen.queryByTestId("door-price")).toBeNull();
+    expect(screen.queryByTestId("door-desc")).toBeNull();
+    cleanup();
+    render(<CopyQuickBooks item="STOCK DOOR" description="X" rate={1} testId="door" />);
+    expect(screen.queryByTestId("door-price")).toBeNull();
   });
 });
