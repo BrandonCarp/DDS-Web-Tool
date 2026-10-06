@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import type { SearchPick } from "@/lib/search";
 import { priceText } from "@/components/CopyButton";
 import { CopyQuickBooks } from "./CopyQuickBooks";
-import { categoryItem } from "@/lib/pricing/data/quickbooks";
+import { categoryItem, QB_OPERATORS } from "@/lib/pricing/data/quickbooks";
 import { QbLineDemo } from "@/components/QbLineDemo";
 import { operatorPrice } from "@/lib/pricing/data/operator-pricing";
 import { QB_ITEMS } from "@/lib/qb/iif";
@@ -202,7 +202,7 @@ export function OperatorsTool({ openOn }: { openOn?: SearchPick } = {}) {
                 )}
                 <div className="qfoot">
                   {price != null && (
-                    <CopyQuickBooks item={categoryItem(hit?.section)} description={chosen.desc}
+                    <CopyQuickBooks item={QB_OPERATORS} description={chosen.desc}
                       rate={price} testId="op-copy-qb" />
                   )}
                   <button className="btn" type="button" onClick={() => setPicked(null)}>

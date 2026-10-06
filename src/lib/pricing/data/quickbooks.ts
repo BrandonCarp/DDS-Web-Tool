@@ -31,10 +31,11 @@ export const QB_SPECIAL_ORDERS = "SPECIAL ORDER";
  * are kept so the spring tabs and the kit mapping read as before.
  */
 export const QB_SPRINGS = "SPRINGS";
+export const QB_OPERATORS = "OPERATORS";
 export const QB_TORSION = QB_SPRINGS;
 export const QB_EXTENSION = QB_SPRINGS;
 export const QB_VINYL = "VINYL";
-export const QB_OPERATOR = "OPERATOR";
+export const QB_OPERATOR = "OPERATORS";
 export const QB_KEYPAD = "KEYPAD";
 export const QB_REMOTE = "REMOTE";
 
@@ -76,20 +77,7 @@ const KIT_ITEM: Record<string, string> = {
   "TORSION KITS": QB_TORSION,
 };
 
-const OPERATOR_ITEM: Record<string, string> = {
-  "LIFTMASTER LOGIC 5": "LOGIC 5",
-  "LIFTMASTER ACCESSORIES": "ACCESSORY",
-  "MAXUM OPERATORS": "MAXUM",
-  "RESIDENTIAL BELT DRIVES": "BELT DRIVE",
-  // QuickBooks holds this one as CHAIN OPERATOR, not CHAIN DRIVE — Brandon, 24/9/2026.
-  "RESIDENTIAL CHAIN DRIVES": "CHAIN OPERATOR",
-  // Side mounts go into QuickBooks as JACKSHAFT — Brandon, 24/9/2026.
-  "RESIDENTIAL SIDEMOUNT": "JACKSHAFT",
-  "LIGHT COMMERCIAL SIDEMOUNT": "JACKSHAFT",
-  "BELT RAILS": "BELT RAIL",
-  "CHAIN RAILS": "CHAIN RAIL",
-  "I BEAM RAILS": "I BEAM RAIL",
-};
+
 
 /**
  * The item for a part or an operator: its own category name, singularised.
@@ -108,10 +96,7 @@ export function categoryItem(categoryName: string | null | undefined): string {
   // name. Anything not listed here falls through to the singular rule below.
   const kit = KIT_ITEM[raw];
   if (kit) return kit;
-  const override = OPERATOR_ITEM[raw];
-  if (override) return override;
-  const named = OPERATOR_ITEM[raw];
-  if (named) return named;
+
   return raw
     .split("/")
     .map((part) => {
