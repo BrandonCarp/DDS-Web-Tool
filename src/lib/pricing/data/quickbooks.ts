@@ -30,7 +30,7 @@ export const QB_STOCK_DOORS = "STOCK DOOR";
 export const QB_SPECIAL_ORDERS = "SPECIAL ORDER";
 export const QB_VINYL = "VINYL";
 export const QB_OPERATORS = "OPERATORS";
-export const QB_SPRINGS = "TORSION SPRINGS";
+export const QB_SPRINGS = "SPRINGS";
 /** The spring tabs read better by their own names; both are the one item. */
 export const QB_TORSION = QB_SPRINGS;
 export const QB_EXTENSION = QB_SPRINGS;

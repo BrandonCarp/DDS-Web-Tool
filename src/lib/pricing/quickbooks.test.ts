@@ -62,9 +62,9 @@ describe("item names — one per tab (6/10/2026)", () => {
   });
 
   it("puts every spring on the two spring tabs under TORSION SPRINGS", () => {
-    expect(QB_SPRINGS).toBe("TORSION SPRINGS");
-    expect(QB_TORSION).toBe("TORSION SPRINGS");
-    expect(QB_EXTENSION).toBe("TORSION SPRINGS");
+    expect(QB_SPRINGS).toBe("SPRINGS");
+    expect(QB_TORSION).toBe("SPRINGS");
+    expect(QB_EXTENSION).toBe("SPRINGS");
   });
 
   it("puts the spring kits under PARTS, with the rest of the Parts tab", () => {
