@@ -58,6 +58,7 @@ export function partQuantity(part: Part, right?: number, left?: number): number 
  * the foot.
  */
 const RETAINER_STICKS: { type: RegExp; overFeet: number; billFeet: number }[] = [
+  { type: /\bU\s+RETAINER/i, overFeet: 16, billFeet: 18 },
   { type: /\bU\s+RETAINER/i, overFeet: 8, billFeet: 16 },
   { type: /\bL\s+RETAINER/i, overFeet: 10, billFeet: 18 },
 ];

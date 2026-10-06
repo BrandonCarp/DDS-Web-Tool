@@ -88,6 +88,12 @@ describe("retainer stick lengths", () => {
     expect(partPrice(U!, 12)).toBeCloseTo(U!.price * 16, 2);
   });
 
+    it("bills a U retainer over 16FT as an 18FT stick", () => {
+    expect(billedFeet(U!, 16)).toBe(16);
+    expect(billedFeet(U!, 17)).toBe(18);
+    expect(partPrice(U!, 18)).toBeCloseTo(U!.price * 18, 2);
+  });
+
   it("bills an L retainer over 10FT as an 18FT stick", () => {
     expect(L, "L retainer not found").toBeTruthy();
     expect(billedFeet(L!, 10)).toBe(10);
