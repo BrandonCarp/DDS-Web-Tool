@@ -2,6 +2,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { PartsTool } from "./PartsTool";
+import type { Part, PartCategory } from "@/lib/pricing/data/parts";
+import { copiedQbLine } from "./test-clipboard";
 import { CustomerJobProvider } from "./CustomerJobFields";
 import { TRACK_CATEGORIES, CABLE_CATEGORIES } from "@/lib/pricing/data/springs";
 import { PARTS_MENU, PARTS_TAB_MENU, TRACK_MENU, GROUP_TABS } from "@/lib/pricing/data/parts-menu";
@@ -75,15 +77,30 @@ describe("raw track on the Track tab", () => {
 });
 
 describe("a part with no price yet", () => {
+  // No real part is unpriced since the cable rolls were priced (6/10/2026); a
+  // made-up one keeps the rule tested for the next that arrives without a price.
+  const UNPRICED: PartCategory = { name: "TEST SHELF", items: [{ name: "TEST ROLL", desc: "TEST ROLL", price: 0, priceNotSet: true } as Part] };
+
   it("says Price not set, and offers nothing to paste or add to the cart", () => {
-    show(<PartsTool categories={CABLE_CATEGORIES} eyebrow="Cables quote" finder="Find a cable" />);
-    const row = screen.getByText('1/8" CABLE, 250FT ROLL').closest("button")!;
+    show(<PartsTool categories={[UNPRICED]} eyebrow="Cables quote" finder="Find a cable" />);
+    const row = screen.getByText("TEST ROLL").closest("button")!;
     expect(row.textContent).toContain("Price not set");
     fireEvent.click(row);
     expect(screen.getByTestId("parts-price").textContent).toBe("Price not set");
     expect(screen.getByText(/no price yet/i)).toBeTruthy();
     expect(screen.queryByTestId("parts-copy-qb")).toBeNull();
     expect(screen.queryByTestId("parts-copy-qb-cart")).toBeNull();
+  });
+});
+
+describe("cable rolls on the Cables tab (6/10/2026)", () => {
+  it("paste a 250FT roll at its price", async () => {
+    show(<PartsTool categories={CABLE_CATEGORIES} eyebrow="Cables quote" finder="Find a cable" />);
+    fireEvent.click(screen.getByText('5/32" CABLE, 250FT ROLL').closest("button")!);
+    expect(screen.getByTestId("parts-price").textContent).toBe("$149.95");
+    const line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
+    expect([line.description, line.rate]).toEqual(['5/32" CABLE,  250FT ROLL', 149.95]);
+    expect(screen.queryByText(/500FT/)).toBeNull();
   });
 });
 

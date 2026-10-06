@@ -74,15 +74,10 @@ export const HAND_ADDED_PARTS: Record<string, ShelfPart[]> = {
     { name: '3/16" SLEEVES', desc: '3/16" SLEEVES,  BAG OF 100', price: 29.95, sub: "CABLE HARDWARE" },
     { name: '3/16" STOPS', desc: '3/16" STOPS,  BAG OF 100', price: 29.95, sub: "CABLE HARDWARE" },
     { name: '3/16" THIMBLES', desc: '3/16" THIMBLES,  BAG OF 100', price: 29.95, sub: "CABLE HARDWARE" },
-    // Cable rolls: listed now, prices to come (30/9/2026). The 0 is only a
-    // placeholder — priceNotSet keeps a roll from ever being quoted at it.
-    // When a price arrives, set it and delete priceNotSet on the same line.
-    { name: '1/8" CABLE, 250FT ROLL', desc: '1/8" CABLE,  250FT ROLL', price: 0, priceNotSet: true, sub: "CABLE ROLLS" },
-    { name: '1/8" CABLE, 500FT ROLL', desc: '1/8" CABLE,  500FT ROLL', price: 0, priceNotSet: true, sub: "CABLE ROLLS" },
-    { name: '5/32" CABLE, 250FT ROLL', desc: '5/32" CABLE,  250FT ROLL', price: 0, priceNotSet: true, sub: "CABLE ROLLS" },
-    { name: '5/32" CABLE, 500FT ROLL', desc: '5/32" CABLE,  500FT ROLL', price: 0, priceNotSet: true, sub: "CABLE ROLLS" },
-    { name: '3/16" CABLE, 250FT ROLL', desc: '3/16" CABLE,  250FT ROLL', price: 0, priceNotSet: true, sub: "CABLE ROLLS" },
-    { name: '3/16" CABLE, 500FT ROLL', desc: '3/16" CABLE,  500FT ROLL', price: 0, priceNotSet: true, sub: "CABLE ROLLS" },
+    // Cable rolls: 250FT only, priced 6/10/2026 — the 500FT rolls were dropped.
+    { name: '1/8" CABLE, 250FT ROLL', desc: '1/8" CABLE,  250FT ROLL', price: 99.95, sub: "CABLE ROLLS" },
+    { name: '5/32" CABLE, 250FT ROLL', desc: '5/32" CABLE,  250FT ROLL', price: 149.95, sub: "CABLE ROLLS" },
+    { name: '3/16" CABLE, 250FT ROLL', desc: '3/16" CABLE,  250FT ROLL', price: 199.95, sub: "CABLE ROLLS" },
   ],
 };
 

@@ -26,8 +26,9 @@ describe("quick search", () => {
     expect(find('36" adder')[0]).toMatchObject({ tab: "track", label: '36" ADDER PIECE', price: "$129.95" });
   });
 
-  it("finds a cable roll with no price shown, since it has none yet", () => {
-    expect(find("5/32 500ft")[0]).toMatchObject({ tab: "cables", label: '5/32" CABLE, 500FT ROLL', price: null });
+  it("finds a 250FT cable roll at its price, and no 500FT roll", () => {
+    expect(find("5/32 250ft")[0]).toMatchObject({ tab: "cables", label: '5/32" CABLE, 250FT ROLL', price: "$149.95" });
+    expect(find("500ft")).toEqual([]);
   });
 
   it("sends track and cables to their own tabs", () => {
