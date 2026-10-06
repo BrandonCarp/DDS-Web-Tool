@@ -68,7 +68,7 @@ describe("on the picker tabs", () => {
     fireEvent.click(el("ext-copy-qb")!);
     await settle();
     const [item, , qty, rate] = copied.split("\t");
-    expect(item).toBe("EXTENSION SPRING");
+    expect(item).toBe("SPRINGS"); // every spring is one item, 6/10/2026
     expect(qty).toBe("1");
     expect(Number(rate)).toBeGreaterThan(0);
   });

@@ -25,8 +25,14 @@
 /** Every door, stock or section, residential or commercial. */
 export const QB_STOCK_DOORS = "STOCK DOOR";
 export const QB_SPECIAL_ORDERS = "SPECIAL ORDER";
-export const QB_TORSION = "TORSION SPRING";
-export const QB_EXTENSION = "EXTENSION SPRING";
+/**
+ * Every spring — torsion, extension, cut to size, and the kits — pastes under
+ * the one QuickBooks item SPRINGS (Brandon, 6/10/2026). The two names below
+ * are kept so the spring tabs and the kit mapping read as before.
+ */
+export const QB_SPRINGS = "SPRINGS";
+export const QB_TORSION = QB_SPRINGS;
+export const QB_EXTENSION = QB_SPRINGS;
 export const QB_VINYL = "VINYL";
 export const QB_OPERATOR = "OPERATOR";
 export const QB_KEYPAD = "KEYPAD";

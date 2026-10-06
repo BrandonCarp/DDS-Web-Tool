@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   quickBooksRow, categoryItem,
-  QB_STOCK_DOORS, QB_SPECIAL_ORDERS, QB_TORSION, QB_EXTENSION, QB_VINYL,
+  QB_STOCK_DOORS, QB_SPECIAL_ORDERS, QB_TORSION, QB_EXTENSION, QB_VINYL, QB_SPRINGS,
 } from "./data/quickbooks";
 
 describe("QuickBooks row", () => {
@@ -60,9 +60,15 @@ describe("item names", () => {
     // The item names a line, not a category, and the QTY column already says
     // how many.
     expect(QB_SPECIAL_ORDERS).toBe("SPECIAL ORDER");
-    expect(QB_TORSION).toBe("TORSION SPRING");
-    expect(QB_EXTENSION).toBe("EXTENSION SPRING");
     expect(QB_VINYL).toBe("VINYL");
+  });
+
+  it("puts every spring under the one item SPRINGS (6/10/2026)", () => {
+    expect(QB_SPRINGS).toBe("SPRINGS");
+    expect(QB_TORSION).toBe("SPRINGS");
+    expect(QB_EXTENSION).toBe("SPRINGS");
+    expect(categoryItem("EXTENSION KITS")).toBe("SPRINGS");
+    expect(categoryItem("TORSION KITS")).toBe("SPRINGS");
   });
 
   it("singularises a part or operator category from the data", () => {
