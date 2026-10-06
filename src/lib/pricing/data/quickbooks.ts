@@ -19,26 +19,23 @@
  */
 
 /**
- * Singular throughout — the item names a line item, not a category, and a
- * quantity column already says how many. Brandon, 24/9/2026.
+ * QuickBooks items — one per tab, not one per category (Brandon, 6/10/2026):
+ * every operator and accessory is OPERATORS, every spring on the two spring
+ * tabs is TORSION SPRINGS, everything on the Track tab is TRACKS, and
+ * everything else on the shelf — parts, kits, cables, fasteners — is PARTS.
+ * Doors and vinyl keep their own.
  */
 /** Every door, stock or section, residential or commercial. */
 export const QB_STOCK_DOORS = "STOCK DOOR";
 export const QB_SPECIAL_ORDERS = "SPECIAL ORDER";
-/**
- * Every spring — torsion, extension, cut to size, and the kits — pastes under
- * the one QuickBooks item SPRINGS (Brandon, 6/10/2026). The two names below
- * are kept so the spring tabs and the kit mapping read as before.
- */
-
-export const QB_SPRINGS = "SPRINGS";
+export const QB_VINYL = "VINYL";
 export const QB_OPERATORS = "OPERATORS";
+export const QB_SPRINGS = "TORSION SPRINGS";
+/** The spring tabs read better by their own names; both are the one item. */
 export const QB_TORSION = QB_SPRINGS;
 export const QB_EXTENSION = QB_SPRINGS;
-export const QB_VINYL = "VINYL";
-export const QB_OPERATOR = "OPERATORS";
-export const QB_KEYPAD = "KEYPAD";
-export const QB_REMOTE = "REMOTE";
+export const QB_TRACKS = "TRACKS";
+export const QB_PARTS = "PARTS";
 
 /**
  * Build the clipboard line.
@@ -62,54 +59,12 @@ export function quickBooksRow(
 }
 
 /**
- * Operator groups whose QuickBooks item differs from the catalogue name.
- *
- * The catalogue names are written for browsing — "LIFTMASTER LOGIC 5" tells a
- * counter what shelf to look on. The QuickBooks item is what goes on an
- * invoice, so the brand comes off and the rest shortens.
- */
-/**
- * The kits moved from the spring tabs into Parts (30/9/2026) but still bill as
- * the springs they come with — without this they would fall to the singular
- * rule below and paste as "EXTENSION KIT", an item QuickBooks does not have.
- */
-const KIT_ITEM: Record<string, string> = {
-  "EXTENSION KITS": QB_EXTENSION,
-  "TORSION KITS": QB_TORSION,
-};
-
-
-
-/**
- * The item for a part or an operator: its own category name, singularised.
- *
- * The data carries these as plurals — "DRUMS", "CABLES", "KEYPADS" — and the
- * QuickBooks item list is singular, so the trailing S comes off. Names ending
- * in SS keep it, and a name whose last word is already singular is left alone;
- * a slashed name like "BRUSH SEAL / RETAINERS" has each part handled.
+ * The item for a shelf category: the Track tab's TRACKS, and every other
+ * category — on the Parts tab (the spring kits included), the Cables tab or
+ * scanned off the shelf — is PARTS. "TRACKS" is springs.ts's TRACK_CATEGORY.
  */
 export function categoryItem(categoryName: string | null | undefined): string {
   const raw = (categoryName ?? "").trim().toUpperCase();
   if (!raw) return "";
-  // Names the QuickBooks item list holds differently from the catalogue. The
-  // catalogue names are written for browsing — "LIFTMASTER LOGIC 5" tells a
-  // counter what shelf to look at — where the item list wants the short trade
-  // name. Anything not listed here falls through to the singular rule below.
-  const kit = KIT_ITEM[raw];
-  if (kit) return kit;
-
-  return raw
-    .split("/")
-    .map((part) => {
-      const words = part.trim().split(/\s+/);
-      const last = words[words.length - 1];
-      if (last.length > 4 && last.endsWith("IES")) {
-        // BATTERIES -> BATTERY, ACCESSORIES -> ACCESSORY
-        words[words.length - 1] = last.slice(0, -3) + "Y";
-      } else if (last.length > 3 && last.endsWith("S") && !last.endsWith("SS")) {
-        words[words.length - 1] = last.slice(0, -1);
-      }
-      return words.join(" ");
-    })
-    .join(" / ");
+  return raw === "TRACKS" ? QB_TRACKS : QB_PARTS;
 }

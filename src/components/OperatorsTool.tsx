@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import type { SearchPick } from "@/lib/search";
 import { priceText } from "@/components/CopyButton";
 import { CopyQuickBooks } from "./CopyQuickBooks";
-import { categoryItem, QB_OPERATORS } from "@/lib/pricing/data/quickbooks";
+import { QB_OPERATORS } from "@/lib/pricing/data/quickbooks";
 import { QbLineDemo } from "@/components/QbLineDemo";
 import { operatorPrice } from "@/lib/pricing/data/operator-pricing";
 import { QB_ITEMS } from "@/lib/qb/iif";

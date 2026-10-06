@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
+import { SHELF_PART_CATEGORIES, TRACK_CATEGORY } from "./data/springs";
 import {
   quickBooksRow, categoryItem,
-  QB_STOCK_DOORS, QB_SPECIAL_ORDERS, QB_TORSION, QB_EXTENSION, QB_VINYL, QB_SPRINGS,
+  QB_STOCK_DOORS, QB_SPECIAL_ORDERS, QB_TORSION, QB_EXTENSION, QB_VINYL, QB_SPRINGS, QB_OPERATORS,
 } from "./data/quickbooks";
 
 describe("QuickBooks row", () => {
@@ -49,52 +50,42 @@ describe("QuickBooks row", () => {
   });
 });
 
-describe("item names", () => {
+describe("item names — one per tab (6/10/2026)", () => {
   it("collapses every door onto one item", () => {
-    // Residential, commercial and replacement sections all bill as STOCK
-    // DOOR — Brandon, 24/9/2026.
     expect(QB_STOCK_DOORS).toBe("STOCK DOOR");
-  });
-
-  it("names everything in the singular", () => {
-    // The item names a line, not a category, and the QTY column already says
-    // how many.
     expect(QB_SPECIAL_ORDERS).toBe("SPECIAL ORDER");
     expect(QB_VINYL).toBe("VINYL");
   });
 
-  it("puts every spring under the one item SPRINGS (6/10/2026)", () => {
-    expect(QB_SPRINGS).toBe("SPRINGS");
-    expect(QB_TORSION).toBe("SPRINGS");
-    expect(QB_EXTENSION).toBe("SPRINGS");
-    expect(categoryItem("EXTENSION KITS")).toBe("SPRINGS");
-    expect(categoryItem("TORSION KITS")).toBe("SPRINGS");
+  it("puts every operator and accessory under OPERATORS", () => {
+    expect(QB_OPERATORS).toBe("OPERATORS");
   });
 
-  it("singularises a part or operator category from the data", () => {
-    // No mapping table to fall out of step when a category is added.
-    expect(categoryItem("DRUMS")).toBe("DRUM");
-    expect(categoryItem("keypads")).toBe("KEYPAD");
-    expect(categoryItem("  Remotes  ")).toBe("REMOTE");
-    expect(categoryItem(null)).toBe("");
+  it("puts every spring on the two spring tabs under TORSION SPRINGS", () => {
+    expect(QB_SPRINGS).toBe("TORSION SPRINGS");
+    expect(QB_TORSION).toBe("TORSION SPRINGS");
+    expect(QB_EXTENSION).toBe("TORSION SPRINGS");
   });
 
-  it("handles the endings that a bare trailing S gets wrong", () => {
-    expect(categoryItem("BATTERIES")).toBe("BATTERY");
-    expect(categoryItem("ACCESSORIES")).toBe("ACCESSORY");
-    expect(categoryItem("PULLEYS")).toBe("PULLEY");
+  it("puts the spring kits under PARTS, with the rest of the Parts tab", () => {
+    expect(categoryItem("EXTENSION KITS")).toBe("PARTS");
+    expect(categoryItem("TORSION KITS")).toBe("PARTS");
   });
 
-  it("leaves a name that is already singular alone", () => {
-    for (const n of ["CHAIN HOIST", "DECORATIVE HARDWARE", "QUICK DISCONNECT",
-                     "TUBE SHAFT", "SPROCKET", "ANGLE", "ARB"]) {
-      expect(categoryItem(n), n).toBe(n);
+  it("puts the Track tab under TRACKS, using the shelf's own category name", () => {
+    expect(categoryItem(TRACK_CATEGORY)).toBe("TRACKS");
+    expect(categoryItem("tracks")).toBe("TRACKS");
+  });
+
+  it("puts everything else on the shelf under PARTS: parts, cables and scanned fasteners", () => {
+    for (const c of ["DRUMS", "TUBE SHAFT", "SPRING BUMPERS", "CABLES", "CABLE HARDWARE", "FASTENERS",
+                     "BRUSH SEAL / RETAINERS", "  Pulleys  "]) {
+      expect(categoryItem(c), c).toBe("PARTS");
     }
-  });
-
-  it("singularises each side of a slashed name", () => {
-    expect(categoryItem("BRUSH SEAL / RETAINERS")).toBe("BRUSH SEAL / RETAINER");
-    expect(categoryItem("CENTER PLATES / BEARINGS")).toBe("CENTER PLATE / BEARING");
+    for (const c of SHELF_PART_CATEGORIES.map((x) => x.name)) {
+      if (c !== TRACK_CATEGORY) expect(categoryItem(c), c).toBe("PARTS");
+    }
+    expect(categoryItem(null)).toBe("");
   });
 });
 
@@ -110,6 +101,4 @@ describe("the rate is per unit, whatever the quantity", () => {
     expect(two[2]).toBe("2");
   });
 })
-
-
 

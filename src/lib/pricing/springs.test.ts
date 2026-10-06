@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { PART_CATEGORIES } from "./data/parts";
 import { priceNotSet } from "./data/part-pricing";
-import { categoryItem, QB_EXTENSION, QB_TORSION } from "./data/quickbooks";
+import { categoryItem } from "./data/quickbooks";
 import {
   EXTENSION_CATEGORY,
   EXTENSION_SPRINGS,
@@ -118,9 +118,9 @@ describe("the kits sell from the Parts tab", () => {
     expect(order.indexOf("TORSION KITS")).toBe(order.indexOf("TOOLS") + 1);
   });
 
-  it("still bills them to QuickBooks as the springs they come with", () => {
-    expect(categoryItem("EXTENSION KITS")).toBe(QB_EXTENSION);
-    expect(categoryItem("TORSION KITS")).toBe(QB_TORSION);
+  it("bills them to QuickBooks as PARTS, like the rest of the Parts tab (6/10/2026)", () => {
+    expect(categoryItem("EXTENSION KITS")).toBe("PARTS");
+    expect(categoryItem("TORSION KITS")).toBe("PARTS");
   });
 });
 

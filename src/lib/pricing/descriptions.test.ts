@@ -74,7 +74,7 @@ describe("commercial section description", () => {
   it("describes a solid intermediate section", () => {
     const q = quoteCommercial({ ...base, manFt: 8, manIn: 2, secKind: "int", windows: 0, stile: "single", color: "White" });
     expect(q.priced).toBe(true);
-    expect(q.description).toBe('Amarr Model 2742, 8\'2" x 24", solid intermediate section, in the color White, single end stiles');
+    expect(q.description).toBe('Amarr Model 2742, 8\'2" x 24", solid intermediate section, in the color White, single end stile');
   });
 
   it("names the window count and size when the section is glazed", () => {

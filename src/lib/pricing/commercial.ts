@@ -269,8 +269,9 @@ export function quoteCommercial(input: CommInput): CommQuote {
       : nWin > 0
         ? `${nWin} 24x12 window section`
         : "solid intermediate section";
+  // One end stile is singular on the invoice; two stay plural (Brandon, 6/10/2026).
   const stilePhrase =
-    input.stile === "double" ? "double end stiles" : input.stile === "single" ? "single end stiles" : null;
+    input.stile === "double" ? "double end stiles" : input.stile === "single" ? "single end stile" : null;
   const color = input.color === "Brown" ? "Brown" : "White";
   const description =
     `${input.mfr || "Clopay"} Model ${model}, ${asciiWidth} x ${input.secHeight}", ` +
