@@ -30,6 +30,7 @@ export const QB_SPECIAL_ORDERS = "SPECIAL ORDER";
  * the one QuickBooks item SPRINGS (Brandon, 6/10/2026). The two names below
  * are kept so the spring tabs and the kit mapping read as before.
  */
+
 export const QB_SPRINGS = "SPRINGS";
 export const QB_OPERATORS = "OPERATORS";
 export const QB_TORSION = QB_SPRINGS;
