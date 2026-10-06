@@ -99,9 +99,10 @@ describe("the Parts buttons (6/10/2026)", () => {
     expect(screen.getByTestId("group-drums")).toBeTruthy();
   });
 
-  it("starts on a prompt, then lists just the page's parts", () => {
+  it("shows no list and no prompt until a page is picked, then just that page's parts", () => {
     show(<PartsTool menu={PARTS_MENU} />);
-    expect(screen.getByTestId("parts-list").textContent).toContain("Pick a category");
+    expect(screen.queryByTestId("parts-list")).toBeNull();
+    expect(document.body.textContent).not.toMatch(/pick a category|choose a category|pick one of the buttons/i);
     expect(screen.queryByTestId("parts-category")).toBeNull();
     open("group-retainers", "page-l-retainers");
     expect(screen.getByTestId("parts-page").textContent).toBe("Retainers › L retainers");
@@ -114,45 +115,51 @@ describe("the Parts buttons (6/10/2026)", () => {
     expect(document.querySelector("aside.quote .qtitle")?.textContent).toBe("CABLE CUTTER");
   });
 
-  it("opens a group with one page directly, and still searches everything", () => {
+  it("opens a group with one page directly", () => {
     show(<PartsTool menu={PARTS_MENU} />);
     open("group-locks");
     expect(screen.getByTestId("parts-page").textContent).toBe("Locks");
     expect(document.querySelector(".pnav-pages")).toBeNull();
-    fireEvent.change(screen.getByTestId("parts-search"), { target: { value: "wood rubber" } });
-    expect(screen.getByTestId("parts-list").textContent).toContain("WOOD RUBBER");
+  });
+
+  it("has no search box of its own — the top bar's is the one (6/10/2026)", () => {
+    show(<PartsTool menu={PARTS_MENU} />);
+    expect(screen.queryByTestId("parts-search")).toBeNull();
   });
 
   it("opens a group tab straight onto its pages", () => {
     const angle = GROUP_TABS.find((t) => t.id === "angle")!;
     show(<PartsTool menu={angle.menu} categories={angle.categories} group="Angle" />);
-    expect(screen.getByTestId("parts-page").textContent).toBe("Angle");
     expect(document.querySelector(".pnav-groups")).toBeNull();
     expect([...document.querySelectorAll(".pnav-page")].map((b) => b.textContent)).toEqual(["Galvanized", "White", '2" x 2" x 10\'']);
+    expect(screen.queryByTestId("parts-list")).toBeNull(); // nothing listed, and no prompt, until a page is picked
+    fireEvent.click(screen.getByTestId("page-white"));
+    expect(screen.getByTestId("parts-page").textContent).toBe("Angle › White");
   });
 });
 
-describe("the Track buttons and drop-downs (6/10/2026)", () => {
-  const track = () => show(<PartsTool menu={TRACK_MENU} chooser="dropdown" categories={TRACK_CATEGORIES} eyebrow="Track quote" finder="Find track" />);
-  const choices = () => [...(screen.getByTestId("parts-pick") as HTMLSelectElement).options].slice(1).map((o) => o.value);
+describe("the Track buttons (6/10/2026)", () => {
+  const track = () => show(<PartsTool menu={TRACK_MENU} categories={TRACK_CATEGORIES} eyebrow="Track quote" finder="Find track" />);
+  const rows = () => [...document.querySelectorAll("ul.partlist .partrow .partname")].map((e) => e.firstChild?.textContent);
 
-  it("asks residential or commercial for a complete track, then drops down its sets", () => {
+  it("asks residential or commercial for a complete track, then lists its sets like the other tabs", () => {
     track();
     fireEvent.click(screen.getByTestId("group-complete-track"));
     expect([...document.querySelectorAll(".pnav-page")].map((b) => b.textContent)).toEqual(["Residential", "Commercial"]);
-    expect(screen.queryByTestId("parts-pick")).toBeNull();
+    expect(screen.queryByTestId("parts-list")).toBeNull();
     fireEvent.click(screen.getByTestId("page-commercial"));
-    expect(choices()).toHaveLength(8);
-    fireEvent.change(screen.getByTestId("parts-pick"), { target: { value: choices()[0] } });
-    expect(document.querySelector("aside.quote .qtitle")?.textContent).toBe(choices()[0]);
+    expect(rows()).toHaveLength(8);
+    expect(document.querySelector("ul.partlist .partsub")).toBeNull(); // the heading already says Commercial
+    fireEvent.click(document.querySelector("ul.partlist .partrow") as HTMLElement);
+    expect(document.querySelector("aside.quote .qtitle")?.textContent).toBe(rows()[0]);
   });
 
-  it("drops down the pieces straight from the other three buttons", () => {
+  it("lists the pieces straight from the other three buttons", () => {
     track();
     fireEvent.click(screen.getByTestId("group-adder-pieces"));
-    expect(choices()).toEqual(['36" ADDER PIECE', '54" ADDER PIECE']);
+    expect(rows()).toEqual(['36" ADDER PIECE', '54" ADDER PIECE']);
     fireEvent.click(screen.getByTestId("group-pierced-track"));
-    expect(choices()).toHaveLength(4);
-    expect(screen.queryByTestId("parts-list")).toBeNull(); // the drop-down replaces the list
+    expect(rows()).toHaveLength(4);
+    expect(screen.queryByTestId("parts-pick")).toBeNull(); // no drop-down any more
   });
 });

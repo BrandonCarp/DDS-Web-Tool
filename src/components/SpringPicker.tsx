@@ -36,20 +36,10 @@ export function SpringPicker({
 }) {
   const groups: SpringGroup[] = useMemo(() => springGroups(category), [category]);
   const [group, setGroup] = useState(ALL);
-  const [query, setQuery] = useState("");
-
-  const searching = query.trim().length > 0;
-
   const rows: Part[] = useMemo(() => {
-    if (searching) {
-      const q = query.trim().toLowerCase();
-      return category.items.filter(
-        (p) => p.name.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q),
-      );
-    }
     if (group === ALL) return category.items;
     return groups.find((g) => g.label === group)?.items ?? [];
-  }, [searching, query, group, groups, category.items]);
+  }, [group, groups, category.items]);
 
   return (
     <div className="step">
@@ -62,11 +52,8 @@ export function SpringPicker({
               <div className="chips">
                 <button
                   type="button"
-                  className={`chip ${group === ALL && !searching ? "sel" : ""}`}
-                  onClick={() => {
-                    setGroup(ALL);
-                    setQuery("");
-                  }}
+                  className={`chip ${group === ALL ? "sel" : ""}`}
+                  onClick={() => setGroup(ALL)}
                 >
                   All ({category.items.length})
                 </button>
@@ -74,11 +61,8 @@ export function SpringPicker({
                   <button
                     key={g.label}
                     type="button"
-                    className={`chip ${group === g.label && !searching ? "sel" : ""}`}
-                    onClick={() => {
-                      setGroup(g.label);
-                      setQuery("");
-                    }}
+                    className={`chip ${group === g.label ? "sel" : ""}`}
+                    onClick={() => setGroup(g.label)}
                   >
                     {g.label} ({g.items.length})
                   </button>
@@ -87,31 +71,11 @@ export function SpringPicker({
             </div>
           </div>
 
-          <div className="grow">
-            <label>Search</label>
-            <div className="ctl">
-              <input
-                data-testid={`${testId}-search`}
-                type="search"
-                placeholder="Colour code or size"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-            </div>
-            <div className="muted-note" style={{ marginTop: 6 }}>
-              {searching
-                ? `${rows.length} match${rows.length === 1 ? "" : "es"} at every height`
-                : "Searches every height at once"}
-            </div>
-          </div>
         </div>
       </div>
 
       <div className="ggroup" style={{ marginTop: 14 }}>
         <ul className="partlist" data-testid={`${testId}-list`}>
-          {rows.length === 0 && (
-            <li className="partempty">Nothing matches that — try fewer letters.</li>
-          )}
           {rows.map((p) => (
             <li key={p.name}>
               <button

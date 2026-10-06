@@ -465,7 +465,7 @@ function Shell({
             <PartsTool key={keyFor(t.id)} openOn={at(t.id)?.pick} menu={t.menu} group={t.group}
               categories={t.categories} eyebrow={`${t.group} quote`} finder={`Find ${t.group.toLowerCase()}`} />
           ))}
-          {mode === "track" && <PartsTool key={keyFor("track")} openOn={at("track")?.pick} menu={TRACK_MENU} chooser="dropdown" categories={TRACK_CATEGORIES} eyebrow="Track quote" finder="Find track" />}
+          {mode === "track" && <PartsTool key={keyFor("track")} openOn={at("track")?.pick} menu={TRACK_MENU} categories={TRACK_CATEGORIES} eyebrow="Track quote" finder="Find track" />}
           {mode === "cables" && <PartsTool key={keyFor("cables")} openOn={at("cables")?.pick} categories={CABLE_CATEGORIES} eyebrow="Cables quote" finder="Find a cable" />}
           {mode === "vinyl" && <VinylTool />}
           {mode === "operators" && <OperatorsTool key={keyFor("operators")} openOn={at("operators")?.pick} />}

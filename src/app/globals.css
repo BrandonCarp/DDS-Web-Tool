@@ -644,7 +644,7 @@ html, body { margin: 0; padding: 0; }
 .tool-shell .pnav-groups { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
 .tool-shell .pnav-btn, .tool-shell .pnav-page {
   padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r-sm);
-  background: var(--surface-2); color: var(--ink-2); font-size: 12.5px; text-align: center; cursor: pointer;
+  background: var(--surface-2); color: var(--ink-2); font-size: 15px; text-align: center; cursor: pointer;
 }
 .tool-shell .pnav-btn:hover, .tool-shell .pnav-page:hover { color: var(--ink); border-color: var(--line-strong); }
 .tool-shell .pnav-btn.on, .tool-shell .pnav-page.on { color: var(--accent-ink); border-color: var(--accent); background: var(--surface-3); }
@@ -893,9 +893,9 @@ html, body { margin: 0; padding: 0; }
 .tool-shell .partrow:focus-visible { outline: 2px solid var(--accent-line); outline-offset: -2px; }
 .tool-shell .partrow.on { background: var(--accent); color: var(--on-accent); }
 .tool-shell .partrow.on :is(.partsub, .partcat, .perft, .partprice) { color: var(--on-accent); }
-.tool-shell .partname { min-width: 0; font-size: 14px; line-height: 1.35; }
+.tool-shell .partname { min-width: 0; font-size: 16px; line-height: 1.35; }
 .tool-shell :is(.partsub, .partcat) { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }
-.tool-shell .partprice { font-size: 14px; font-weight: 700; white-space: nowrap; }
+.tool-shell .partprice { font-size: 16px; font-weight: 700; white-space: nowrap; }
 .tool-shell .perft { margin-left: 2px; font-size: 12px; font-weight: 700; color: var(--muted); }
 .tool-shell .partempty { padding: 16px; font-size: 14px; color: var(--muted); }
 .tool-shell .nopricing { font-size: 14px; font-weight: 700; color: var(--muted); }

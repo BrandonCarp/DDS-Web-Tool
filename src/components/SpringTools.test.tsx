@@ -39,14 +39,10 @@ describe("Extension Springs tab", () => {
     expect(line.rate).toBeCloseTo(first.price, 2);
   });
 
-  it("searches across every door height", () => {
+  it("has no search box of its own — the top bar's is the one (6/10/2026)", () => {
     render(<ExtensionTool />);
-    const target = EXTENSION_SPRINGS.items.find((p) => p.sub?.includes("8FT"));
-    expect(target).toBeTruthy();
-    fireEvent.change(screen.getByTestId("ext-search"), {
-      target: { value: target?.name.slice(0, 9) ?? "" },
-    });
-    expect(within(screen.getByTestId("ext-list")).getAllByRole("button").length).toBeGreaterThan(0);
+    expect(screen.queryByTestId("ext-search")).toBeNull();
+    expect(within(screen.getByTestId("ext-list")).getAllByRole("button").length).toBe(EXTENSION_SPRINGS.items.length);
   });
 });
 

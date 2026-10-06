@@ -26,29 +26,14 @@ export function OperatorsTool({ openOn }: { openOn?: SearchPick } = {}) {
   const start = openOn?.kind === "operator" ? openOn : null;
   const [group, setGroup] = useState<string>(start?.group ?? OPERATOR_GROUPS[0]);
   const [sectionName, setSectionName] = useState(start?.section ?? OPERATOR_CATALOGUE[0].name);
-  const [query, setQuery] = useState("");
   const [picked, setPicked] = useState<string | null>(start?.desc ?? null);
 
-  const searching = query.trim().length > 0;
   const sections = OPERATOR_CATALOGUE.filter((s) => s.group === group);
 
   const results = useMemo(() => {
-    if (!searching) {
-      const s = OPERATOR_CATALOGUE.find((x) => x.name === sectionName);
-      return (s?.items ?? []).map((o) => ({ item: o, section: s?.name ?? sectionName }));
-    }
-    const q = query.trim().toLowerCase();
-    return OPERATOR_CATALOGUE.flatMap((s) =>
-      s.items
-        .filter(
-          (o) =>
-            o.name.toLowerCase().includes(q) ||
-            o.desc.toLowerCase().includes(q) ||
-            s.name.toLowerCase().includes(q),
-        )
-        .map((o) => ({ item: o, section: s.name })),
-    ).slice(0, 60);
-  }, [searching, query, sectionName]);
+    const s = OPERATOR_CATALOGUE.find((x) => x.name === sectionName);
+    return (s?.items ?? []).map((o) => ({ item: o, section: s?.name ?? sectionName }));
+  }, [sectionName]);
 
   // A row is its description, not its model number. The 2240L and 4690L come
   // in several rail lengths, the TDC12X1BMC in five, and some sprockets twice,
@@ -72,7 +57,6 @@ export function OperatorsTool({ openOn }: { openOn?: SearchPick } = {}) {
     const first = OPERATOR_CATALOGUE.find((s) => s.group === g);
     if (first) setSectionName(first.name);
     setPicked(null);
-    setQuery("");
   }
 
   return (
@@ -110,8 +94,7 @@ export function OperatorsTool({ openOn }: { openOn?: SearchPick } = {}) {
                         onChange={(e) => {
                           setSectionName(e.target.value);
                           setPicked(null);
-                          setQuery("");
-                        }}
+                                              }}
                       >
                         {sections.map((s) => (
                           <option key={s.name} value={s.name}>
@@ -122,35 +105,12 @@ export function OperatorsTool({ openOn }: { openOn?: SearchPick } = {}) {
                     </div>
                   </div>
 
-                  <div className="grow">
-                    <label>Search</label>
-                    <div className="ctl">
-                      <input
-                        data-testid="op-search"
-                        type="search"
-                        placeholder="Model number or description"
-                        value={query}
-                        onChange={(e) => {
-                          setQuery(e.target.value);
-                          setPicked(null);
-                        }}
-                      />
-                    </div>
-                    <div className="muted-note" style={{ marginTop: 6 }}>
-                      {searching
-                        ? `${results.length} match${results.length === 1 ? "" : "es"} across operators and accessories`
-                        : "Searches every section at once"}
-                    </div>
-                  </div>
                 </div>
               </div>
 
               <div className="ggroup" style={{ marginTop: 14 }}>
-                <div className="ghdr">{searching ? "Results" : sectionName}</div>
+                <div className="ghdr">{sectionName}</div>
                 <ul className="partlist" data-testid="op-list">
-                  {results.length === 0 && (
-                    <li className="partempty">Nothing matches that — try fewer letters.</li>
-                  )}
                   {results.map(({ item, section }) => (
                     <li key={`${section}-${item.desc}`}>
                       <button
@@ -161,7 +121,6 @@ export function OperatorsTool({ openOn }: { openOn?: SearchPick } = {}) {
                         <span className="partname">
                           {item.name}
                           {repeated.has(item.name) && <span className="partsub">{item.desc}</span>}
-                          {searching && <span className="partcat">{section}</span>}
                         </span>
                       </button>
                     </li>

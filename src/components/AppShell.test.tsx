@@ -225,7 +225,7 @@ describe("switching between the tabs built on the Parts tool", () => {
     };
     fireEvent.click(tab("track"));
     page("group-complete-track", "page-residential");
-    expect(screen.getByTestId("parts-pick").textContent).toContain("20R");
+    expect(list()).toContain("20R");
     fireEvent.click(tab("cables"));
     expect(list()).toContain("CABLE KEEPERS");
     expect(list()).not.toContain("Nothing matches");

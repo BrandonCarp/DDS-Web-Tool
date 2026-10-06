@@ -51,15 +51,12 @@ export function PartsTool({
   openOn,
   menu,
   group,
-  chooser = "list",
 }: {
   /** Groups of pages, shown as buttons (the Parts and Track tabs, 6/10/2026).
       Without one the tab keeps its category list (Cables). */
   menu?: PartsMenu;
   /** Open on this group — a group tab (Tools, Angle…) opens on its own. */
   group?: string;
-  /** How a page offers its parts: the list, or a drop-down (Track). */
-  chooser?: "list" | "dropdown";
   /** A part chosen in the top bar's search: open on it, already picked. */
   openOn?: SearchPick;
   /** What this tab browses and searches. The Track and Cables tabs pass their
@@ -70,7 +67,6 @@ export function PartsTool({
 } = {}) {
   const start = openOn?.kind === "part" && categories.some((c) => c.name === openOn.category) ? openOn : null;
   const [catName, setCatName] = useState(start?.category ?? categories[0]?.name ?? "");
-  const [query, setQuery] = useState("");
   const [pickedName, setPickedName] = useState<string | null>(start?.name ?? null);
   // The open drop-down page, as "Group|Entry". A part found by the top bar's
   // search opens the page it sits on.
@@ -94,31 +90,18 @@ export function PartsTool({
   const [right, setRight] = useState(1);
   const [left, setLeft] = useState(1);
 
-  const searching = query.trim().length > 0;
-  const onCable = catName === "CABLES" && pickedName === CUSTOM_CABLE && !searching;
+  const onCable = catName === "CABLES" && pickedName === CUSTOM_CABLE;
   const cabQ = onCable ? cableQuote(cabGauge, Number(cabFt) || 0, Number(cabIn) || 0) : null;
 
-  // Search spans every category; browsing stays inside the chosen one.
+  // The open page's parts, or (Cables) the chosen category's. Searching is the
+  // top bar's job alone since 6/10/2026.
   const results = useMemo(() => {
-    if (!searching && menu) return (page?.entry.parts ?? []).map((mp) => ({ part: mp.part, category: mp.category }));
-    if (!searching) {
-      const cat = categories.find((c) => c.name === catName);
-      return (cat?.items ?? []).map((p) => ({ part: p, category: cat?.name ?? catName }));
-    }
-    const q = query.trim().toLowerCase();
-    return categories.flatMap((c) =>
-      c.items
-        .filter(
-          (p) =>
-            p.name.toLowerCase().includes(q) ||
-            p.desc.toLowerCase().includes(q) ||
-            c.name.toLowerCase().includes(q),
-        )
-        .map((p) => ({ part: p, category: c.name })),
-    ).slice(0, 60);
-  }, [searching, query, catName, categories, menu, page]);
+    if (menu) return (page?.entry.parts ?? []).map((mp) => ({ part: mp.part, category: mp.category }));
+    const cat = categories.find((c) => c.name === catName);
+    return (cat?.items ?? []).map((p) => ({ part: p, category: cat?.name ?? catName }));
+  }, [catName, categories, menu, page]);
   // A drop-down page already says what it holds, so no headings inside it.
-  const grouped = !menu && !searching && results.length > 0 && results.every((r) => r.part.sub);
+  const grouped = !menu && results.length > 0 && results.every((r) => r.part.sub);
 
   const hit = onCable ? null : results.find((r) => r.part.name === pickedName) ?? null;
   const part: Part | null = hit?.part ?? null;
@@ -158,7 +141,6 @@ export function PartsTool({
     if (!pg) return;
     setPageId(id);
     setGroupLabel(pg.group);
-    setQuery("");
     setCatName(pg.entry.parts[0]?.category ?? catName);
     if (pg.entry.parts.length === 1) pick(pg.entry.parts[0].part.name);
     else setPickedName(null);
@@ -172,7 +154,6 @@ export function PartsTool({
     setGroupLabel(label);
     setPageId(null);
     setPickedName(null);
-    setQuery("");
   }
 
   function clear() {
@@ -198,24 +179,7 @@ export function PartsTool({
                         onGroup={openGroup} onPage={openPage} />
                     </div>
                   )}
-                  {/* Track picks from a drop-down rather than a list (6/10/2026). */}
-                  {menu && chooser === "dropdown" && page && (
-                    <div className="grow">
-                      <label>{page.entry.label}</label>
-                      <div className="ctl selectwrap">
-                        <select data-testid="parts-pick" value={pickedName ?? ""}
-                          onChange={(e) => { if (e.target.value) pick(e.target.value); }}>
-                          <option value="">Choose…</option>
-                          {page.entry.parts.map((mp) => (
-                            <option key={mp.part.name} value={mp.part.name}>
-                              {mp.part.name} — {priceNotSet(mp.part) ? "price not set" : fmt(mp.part.price)}{mp.part.perFoot ? " per ft" : ""}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  )}
-                  {/* One category (Cables): nothing to choose, just search. */}
+                  {/* One category (Cables): nothing to choose. */}
                   {categories.length > 1 && !menu && (
                   <div className="grow">
                     <label>Category</label>
@@ -226,8 +190,7 @@ export function PartsTool({
                         onChange={(e) => {
                           setCatName(e.target.value);
                           setPickedName(null);
-                          setQuery("");
-                        }}
+                                              }}
                       >
                         {categories.map((c) => (
                           <option key={c.name} value={c.name}>
@@ -239,40 +202,19 @@ export function PartsTool({
                   </div>
                   )}
 
-                  <div className="grow">
-                    <label>Search</label>
-                    <div className="ctl">
-                      <input
-                        data-testid="parts-search"
-                        type="search"
-                        placeholder="Part name or description"
-                        value={query}
-                        onChange={(e) => {
-                          setQuery(e.target.value);
-                          setPickedName(null);
-                        }}
-                      />
-                    </div>
-                    <div className="muted-note" style={{ marginTop: 6 }}>
-                      {searching
-                        ? `${results.length} match${results.length === 1 ? "" : "es"}${categories.length > 1 ? " across all categories" : ""}`
-                        : categories.length > 1 ? (menu?.length === 1 ? "Searches this tab" : "Searches every category at once")
-                          : chooser === "dropdown" ? "Searches every piece" : "Searches the list below"}
-                    </div>
-                  </div>
                 </div>
               </div>
 
-              {(chooser !== "dropdown" || searching) && (
+              {/* The list appears once there is something to list — no prompts
+                  before it (6/10/2026). */}
+              {(!menu || page) && (
               <div className="ggroup" style={{ marginTop: 14 }}>
                 <div className="ghdr" data-testid="parts-page">
-                  {searching ? "Results"
-                    : !menu ? catName
-                    : page ? (page.group === page.entry.label ? page.group : `${page.group} › ${page.entry.label}`)
-                    : groupLabel ?? "Choose a category"}
+                  {!menu ? catName
+                    : page!.group === page!.entry.label ? page!.group : `${page!.group} › ${page!.entry.label}`}
                 </div>
                 <ul className="partlist" data-testid="parts-list">
-                  {catName === "CABLES" && !searching && (
+                  {catName === "CABLES" && (
                     <li>
                       <button
                         type="button"
@@ -285,12 +227,6 @@ export function PartsTool({
                         </span>
                       </button>
                     </li>
-                  )}
-                  {menu && !page && !searching && (
-                    <li className="partempty">{groupLabel ? "Pick one of the buttons above." : "Pick a category, or search for a part."}</li>
-                  )}
-                  {results.length === 0 && catName !== "CABLES" && (searching || !menu) && (
-                    <li className="partempty">Nothing matches that — try fewer letters.</li>
                   )}
                   {results.map(({ part: p, category }, i) => (
                     <Fragment key={`${category}-${p.name}`}>
@@ -308,8 +244,8 @@ export function PartsTool({
                       >
                         <span className="partname">
                           {p.name}
-                          {p.sub && !grouped && <span className="partsub">{p.sub}</span>}
-                          {searching && <span className="partcat">{category}</span>}
+                          {/* A page picked from the buttons already says what it holds. */}
+                          {p.sub && !grouped && !menu && <span className="partsub">{p.sub}</span>}
                         </span>
                         <span className="partprice">
                           {priceNotSet(p) ? "Price not set" : fmt(p.price)}
