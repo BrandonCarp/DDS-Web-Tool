@@ -37,15 +37,15 @@ export function PartsNavigator({ menu, group, page, onGroup, onPage }: {
     </div>
   );
   return (
-    <div className="pnav" data-testid="parts-nav">
+    <div className="pnav " data-testid="parts-nav">
       {!alone && (
-        <div className="pnav-groups">
+        <div className="pnav-groups ">
           {menu.map((g) => (
             <button
               key={g.label}
               type="button"
               data-testid={`group-${slugOf(g.label)}`}
-              className={`pnav-btn${g.label === group ? " on" : ""}`}
+              className={`pnav-btn${g.label === group ? " on" : ""} `}
               aria-pressed={g.label === group}
               onClick={() => onGroup(g.label)}
             >

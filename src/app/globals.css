@@ -638,19 +638,23 @@ html, body { margin: 0; padding: 0; }
 .tool-shell .row2.compact .lenrow { grid-template-columns: minmax(0, 1fr) 84px; }
 @media (max-width: 720px) { .tool-shell .row2.compact { grid-template-columns: minmax(0, 1fr); } }
 
-/* The Parts and Track tabs' buttons (6/10/2026): the groups in an even grid,
-   then the chosen group's pages in a row beneath. */
+/* The Parts and Track tabs' buttons (6/10/2026): the groups, then the chosen
+   group's pages, each four to a row. */
 .tool-shell .pnav { display: grid; gap: 10px; }
-.tool-shell .pnav-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; }
+.tool-shell .pnav-groups { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
 .tool-shell .pnav-btn, .tool-shell .pnav-page {
   padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r-sm);
   background: var(--surface-2); color: var(--ink-2); font-size: 12.5px; text-align: center; cursor: pointer;
 }
 .tool-shell .pnav-btn:hover, .tool-shell .pnav-page:hover { color: var(--ink); border-color: var(--line-strong); }
 .tool-shell .pnav-btn.on, .tool-shell .pnav-page.on { color: var(--accent-ink); border-color: var(--accent); background: var(--surface-3); }
-.tool-shell .pnav-pages { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 10px; border-top: 1px solid var(--line-2); }
+.tool-shell .pnav-pages { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; padding-top: 10px; border-top: 1px solid var(--line-2); }
 /* A group tab's pages, with no grid of groups above them. */
 .tool-shell .pnav-pages[data-alone] { padding: 0; border: 0; }
+/* Four across is too tight on a phone; two there. */
+@media (max-width: 720px) {
+  .tool-shell :is(.pnav-groups, .pnav-pages) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 
 /* Add to cart, under the QuickBooks button on every quote (30/9/2026). */
 .tool-shell .addcart { width: 100%; justify-content: center; gap: 8px; }
