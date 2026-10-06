@@ -443,12 +443,7 @@ export function PartsTool({
                           <div className="muted-note" style={{ marginTop: 6 }} data-testid="parts-feet-note">
                             Charged as {billedFeet(part!, ft)} ft
                           </div>
-                        ) : null
-                      ) : (
-                        <div className="muted-note" style={{ marginTop: 6 }}>
-                          Sold by the foot — the total goes on the line, quantity stays 1
-                        </div>
-                      )}
+                        ) : null ): null}
                     </div>
                   </div>
                 )}
