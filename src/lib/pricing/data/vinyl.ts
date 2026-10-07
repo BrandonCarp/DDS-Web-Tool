@@ -215,3 +215,47 @@ export function vinylForDoor(
     description: `${color} VINYL STOP MOLDING,  ${body}`,
   };
 }
+
+/** Vinyl ordered by the piece: the colour, the pieces, and the QuickBooks line. */
+export interface VinylOrder {
+  color: string;
+  /** Each stock length and how many of it, longest first. */
+  pieces: { ft: number; count: number }[];
+  /** Total linear feet — the QuickBooks quantity. */
+  feet: number;
+  pricePerFt: number;
+  /** feet x pricePerFt, rounded to the cent. */
+  total: number;
+  description: string;
+}
+
+/**
+ * Vinyl picked by the piece on the Vinyl tab (Brandon, 7/10/2026): stock
+ * lengths and how many of each, worded and priced the way a door's vinyl is.
+ * Lines of the same length merge into one count, longest first, and the
+ * QuickBooks quantity is the total feet at the colour's price per foot. A
+ * length the colour is not stocked in, or a count under one, is left out;
+ * null when nothing is left.
+ */
+export function vinylForPieces(color: string, lines: { ft: number | null; count: number }[]): VinylOrder | null {
+  const stock = VINYL_STOCK[color];
+  if (!stock) return null;
+  const counts = new Map<number, number>();
+  for (const l of lines) {
+    const n = Math.trunc(l.count);
+    if (l.ft == null || !stock.includes(l.ft) || !(n > 0)) continue;
+    counts.set(l.ft, (counts.get(l.ft) ?? 0) + n);
+  }
+  if (counts.size === 0) return null;
+  const pieces = [...counts].sort((a, b) => b[0] - a[0]).map(([ft, count]) => ({ ft, count }));
+  const feet = pieces.reduce((t, p) => t + p.ft * p.count, 0);
+  const pricePerFt = VINYL_PRICE_PER_FT[color] ?? 0;
+  return {
+    color,
+    pieces,
+    feet,
+    pricePerFt,
+    total: Math.round(feet * pricePerFt * 100) / 100,
+    description: `${color} VINYL STOP MOLDING,  ${pieces.map((p) => `[${p.count}] - ${p.ft}FT`).join(" AND ")}`,
+  };
+}

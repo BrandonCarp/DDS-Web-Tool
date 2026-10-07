@@ -678,6 +678,38 @@ html, body { margin: 0; padding: 0; }
   .tool-shell :is(.pnav-groups, .pnav-pages) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
+/* The Vinyl tab, by the piece (7/10/2026): a size and a quantity per line,
+   the quantity with − and + either side, and the colour's stock lengths below. */
+.tool-shell .vgrow { align-items: start; }
+.tool-shell .vgrow > label { padding-top: 10px; }
+.tool-shell .vlines { display: grid; gap: 8px; max-width: 420px; }
+.tool-shell .vline { display: grid; grid-template-columns: minmax(0, 1fr) auto 34px; gap: 10px; align-items: center; }
+.tool-shell .vline.vhead { font-size: 12px; color: var(--muted); }
+.tool-shell .vline.vhead span:nth-child(2) { text-align: center; }
+.tool-shell .stepper { display: inline-flex; align-items: stretch; border: 1px solid var(--line-strong); }
+.tool-shell .stepper button {
+  width: 38px; border: 0; background: var(--surface-2); color: var(--ink);
+  font-size: 18px; line-height: 1; cursor: pointer;
+}
+.tool-shell .stepper button:hover:not(:disabled) { background: var(--surface-3); }
+.tool-shell .stepper button:disabled { color: var(--muted-2); cursor: not-allowed; }
+.tool-shell .stepper input {
+  width: 64px; min-height: 40px; padding: 6px 4px; border: 0;
+  border-left: 1px solid var(--line); border-right: 1px solid var(--line);
+  text-align: center; font-weight: 700;
+}
+.tool-shell .vline-del {
+  width: 34px; height: 34px; border: 1px solid var(--line-strong); background: none;
+  color: var(--muted); font-size: 18px; line-height: 1; cursor: pointer;
+}
+.tool-shell .vline-del:hover { border-color: var(--bad); color: var(--bad); }
+.tool-shell .vline-add { justify-self: start; min-height: 36px; padding: 6px 14px; font-size: 13.5px; }
+.tool-shell .vstock { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 16px; }
+.tool-shell .vstock-ft {
+  padding: 5px 12px; border: 1px solid var(--line); border-radius: 999px;
+  background: var(--surface-2); font-size: 14px;
+}
+
 /* Add to cart, under the QuickBooks button on every quote (30/9/2026). */
 .tool-shell .addcart { width: 100%; justify-content: center; gap: 8px; }
 .tool-shell .muted-note.err { color: var(--bad); }

@@ -1,41 +1,62 @@
 "use client";
 
 import { useState } from "react";
-import { priceText } from "@/components/CopyButton";
 import { CopyQuickBooks } from "./CopyQuickBooks";
 import { QB_VINYL } from "@/lib/pricing/data/quickbooks";
 import { QbLineDemo } from "@/components/QbLineDemo";
 import { QB_ITEMS } from "@/lib/qb/iif";
-import { vinylForDoor, VINYL_COLORS } from "@/lib/pricing/data/vinyl";
+import { vinylForPieces, VINYL_COLORS, VINYL_STOCK } from "@/lib/pricing/data/vinyl";
 
 const fmt = (n: number) =>
   "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+/** "WALNUT FINISH" -> "Walnut Finish", for the stock heading. */
+const title = (c: string) => c.toLowerCase().replace(/\b\w/g, (m) => m.toUpperCase());
+
+/** A box of vinyl holds 15 pieces (Brandon's wireframe, 7/10/2026). */
+const PIECES_PER_BOX = 15;
+
+type Line = { id: number; ft: number | null; qty: string };
+
 /**
- * Vinyl stop molding.
+ * Vinyl stop molding, picked by the piece — Brandon's wireframe, 7/10/2026.
  *
- * Its own tab rather than a row on the parts shelf, because it is measured off
- * a door opening instead of picked by name: one piece across the header at the
- * door's width, two down the sides at its height, each filled with the smallest
- * stock length that reaches. Stock lengths differ sharply by colour, so a 12ft
- * door is one 12ft piece in white and a 16ft piece in anything else.
+ * The colour (White to start), then a line for each stock length wanted: the
+ * size from the colour's stock lengths and how many, with − and + or typed in.
+ * "Add a size" starts another line. The colour's stock lengths are listed
+ * underneath, so the counter can see what there is.
  *
- * It also bills the opposite way to the per-foot parts — the QuickBooks
- * quantity is the total footage and the rate is the per-foot figure — which is
- * why it carries its own item and its own Copy quantity button.
+ * It bills the way door vinyl always has: the QuickBooks quantity is the total
+ * footage and the rate is the colour's price per foot, under its own VINYL
+ * item. A door measured on the Residential tab still gets its vinyl worked out
+ * from the door size (vinylForDoor); this tab is for ordering pieces outright.
  */
 export function VinylTool() {
-  const [color, setColor] = useState(VINYL_COLORS[0]);
-  const [widthFt, setWidthFt] = useState("");
-  const [heightFt, setHeightFt] = useState("");
-  // How many identical doors: each piece count multiplies (7/10/2026).
-  const [doors, setDoors] = useState("1");
+  const [color, setColor] = useState("WHITE");
+  const [nextId, setNextId] = useState(2);
+  const [lines, setLines] = useState<Line[]>([{ id: 1, ft: null, qty: "1" }]);
 
-  const w = Math.trunc(Number(widthFt) || 0);
-  const h = Math.trunc(Number(heightFt) || 0);
-  const sized = w > 0 && h > 0;
-  const doorCount = Math.max(1, Math.trunc(Number(doors) || 1));
-  const quote = sized ? vinylForDoor(color, w, h, doorCount) : null;
+  const stock = VINYL_STOCK[color] ?? [];
+  const count = (l: Line) => Math.max(0, Math.trunc(Number(l.qty) || 0));
+  const order = vinylForPieces(color, lines.map((l) => ({ ft: l.ft, count: count(l) })));
+
+  const setLine = (id: number, change: Partial<Line>) =>
+    setLines((ls) => ls.map((l) => (l.id === id ? { ...l, ...change } : l)));
+  const step = (l: Line, by: number) => setLine(l.id, { qty: String(Math.max(1, count(l) + by)) });
+  const addLine = () => {
+    setLines((ls) => [...ls, { id: nextId, ft: null, qty: "1" }]);
+    setNextId((n) => n + 1);
+  };
+  const removeLine = (id: number) => setLines((ls) => (ls.length > 1 ? ls.filter((l) => l.id !== id) : ls));
+  // A new colour keeps the lines, but a size it is not stocked in is cleared.
+  const pickColor = (c: string) => {
+    setColor(c);
+    setLines((ls) => ls.map((l) => (l.ft != null && !(VINYL_STOCK[c] ?? []).includes(l.ft) ? { ...l, ft: null } : l)));
+  };
+  const clear = () => {
+    setLines([{ id: nextId, ft: null, qty: "1" }]);
+    setNextId((n) => n + 1);
+  };
 
   return (
     <>
@@ -49,61 +70,73 @@ export function VinylTool() {
                   <div className="grow">
                     <label>Color</label>
                     <div className="ctl selectwrap">
-                      <select
-                        data-testid="vinyl-color"
-                        value={color}
-                        onChange={(e) => setColor(e.target.value)}
-                      >
+                      <select data-testid="vinyl-color" value={color} onChange={(e) => pickColor(e.target.value)}>
                         {VINYL_COLORS.map((c) => (
-                          <option key={c} value={c}>
-                            {c}
-                          </option>
+                          <option key={c} value={c}>{c}</option>
                         ))}
                       </select>
                     </div>
                   </div>
 
-                  <div className="grow">
-                    <label>Door width (ft)</label>
-                    <div className="ctl">
-                      <input
-                        data-testid="vinyl-w"
-                        type="number"
-                        min={1}
-                        value={widthFt}
-                        onChange={(e) => setWidthFt(e.target.value)}
-                        placeholder="e.g. 16"
-                      />
+                  <div className="grow vgrow">
+                    <label>Pieces</label>
+                    <div className="vlines">
+                      <div className="vline vhead" aria-hidden="true">
+                        <span>Size</span>
+                        <span>Qty</span>
+                      </div>
+                      {lines.map((l, i) => (
+                        <div className="vline" key={l.id} data-testid="vinyl-line">
+                          <div className="selectwrap">
+                            <select
+                              data-testid={`vinyl-size-${i}`}
+                              aria-label="Size"
+                              value={l.ft ?? ""}
+                              onChange={(e) => setLine(l.id, { ft: e.target.value ? Number(e.target.value) : null })}
+                            >
+                              <option value="">Size…</option>
+                              {stock.map((ft) => (
+                                <option key={ft} value={ft}>{ft}FT</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="stepper">
+                            <button type="button" data-testid={`vinyl-minus-${i}`} aria-label="One fewer"
+                              disabled={count(l) <= 1} onClick={() => step(l, -1)}>−</button>
+                            <input
+                              data-testid={`vinyl-count-${i}`}
+                              aria-label="Quantity"
+                              type="number"
+                              min={1}
+                              value={l.qty}
+                              onChange={(e) => setLine(l.id, { qty: e.target.value })}
+                            />
+                            <button type="button" data-testid={`vinyl-plus-${i}`} aria-label="One more"
+                              onClick={() => step(l, 1)}>+</button>
+                          </div>
+                          {lines.length > 1 ? (
+                            <button type="button" className="vline-del" data-testid={`vinyl-remove-${i}`}
+                              aria-label="Remove this size" onClick={() => removeLine(l.id)}>×</button>
+                          ) : (
+                            <span className="vline-del-space" />
+                          )}
+                        </div>
+                      ))}
+                      <button type="button" className="btn vline-add" data-testid="vinyl-add-line" onClick={addLine}>
+                        + Add a size
+                      </button>
+                      
                     </div>
                   </div>
+                </div>
+              </div>
 
-                  <div className="grow">
-                    <label>Door height (ft)</label>
-                    <div className="ctl">
-                      <input
-                        data-testid="vinyl-h"
-                        type="number"
-                        min={1}
-                        value={heightFt}
-                        onChange={(e) => setHeightFt(e.target.value)}
-                        placeholder="e.g. 7"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grow">
-                    <label>Number of doors</label>
-                    <div className="ctl">
-                      <input
-                        data-testid="vinyl-doors"
-                        type="number"
-                        min={1}
-                        value={doors}
-                        onChange={(e) => setDoors(e.target.value)}
-                        placeholder="1"
-                      />
-                    </div>
-                  </div>
+              <div className="ggroup" style={{ marginTop: 14 }}>
+                <div className="ghdr">Stock {title(color)} vinyl</div>
+                <div className="vstock" data-testid="vinyl-stock">
+                  {stock.map((ft) => (
+                    <span key={ft} className="vstock-ft">{ft}FT</span>
+                  ))}
                 </div>
               </div>
             </div>
@@ -117,51 +150,39 @@ export function VinylTool() {
               <div className="qtitle">{color}</div>
             </div>
 
-            {quote ? (
+            {order ? (
               <>
                 <div className="total">
                   <span>
-                    Quantity <b data-testid="vinyl-qty">{quote.feet}</b> ft
+                    Quantity <b data-testid="vinyl-qty">{order.feet}</b> ft
                   </span>
-                  <b data-testid="vinyl-total">{fmt(quote.total)}</b>
+                  <b data-testid="vinyl-total">{fmt(order.total)}</b>
                 </div>
                 <div className="qfoot">
-                  <CopyQuickBooks item={QB_VINYL} description={quote.description} rate={quote.pricePerFt} qty={quote.feet} testId="vinyl-copy-qb" />
-                  <button
-                    className="btn"
-                    type="button"
-                    onClick={() => {
-                      setWidthFt("");
-                      setHeightFt("");
-                      setDoors("1");
-                    }}
-                  >
+                  <CopyQuickBooks item={QB_VINYL} description={order.description} rate={order.pricePerFt} qty={order.feet} testId="vinyl-copy-qb" />
+                  <button className="btn" type="button" data-testid="vinyl-clear" onClick={clear}>
                     Clear
                   </button>
                 </div>
               </>
             ) : (
               <div className="empty">
-                <div className="emptymsg">
-                  {sized
-                    ? `${color} is not stocked long enough for a ${w}′ x ${h}′ opening — special order it.`
-                    : "Enter the door size to price the molding"}
-                </div>
+                <div className="emptymsg">Pick a size to price the molding</div>
               </div>
             )}
           </div>
         </aside>
       </div>
 
-      {quote && (
+      {order && (
         <QbLineDemo
           model="Vinyl stop molding"
-          size={`${color} · ${w}′ x ${h}′`}
+          size={order.pieces.map((p) => `${p.count} x ${p.ft}′`).join(" · ")}
           item={QB_ITEMS.vinyl}
           typed="VIN"
-          description={quote.description}
-          qty={String(quote.feet)}
-          rate={quote.pricePerFt.toFixed(2)}
+          description={order.description}
+          qty={String(order.feet)}
+          rate={order.pricePerFt.toFixed(2)}
         />
       )}
     </>

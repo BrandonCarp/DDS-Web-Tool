@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { vinylForDoor, vinylForDoorColor, DOOR_COLOR_TO_VINYL, VINYL_STOCK } from "./data/vinyl";
+import { vinylForDoor, vinylForDoorColor, vinylForPieces, DOOR_COLOR_TO_VINYL, VINYL_STOCK } from "./data/vinyl";
 import { COLORS } from "./data/catalog-meta";
 
 describe("vinyl stop molding", () => {
@@ -112,5 +112,20 @@ describe("vinyl stop molding", () => {
     ] as const) {
       expect(vinylForDoorColor(door)).toBe(want);
     }
+  });
+});
+
+describe("vinyl by the piece (7/10/2026)", () => {
+  it("words and prices the pieces like a door's vinyl, longest first", () => {
+    const o = vinylForPieces("ALMOND", [{ ft: 7, count: 4 }, { ft: 8, count: 2 }])!;
+    expect(o.description).toBe("ALMOND VINYL STOP MOLDING,  [2] - 8FT AND [4] - 7FT");
+    expect([o.feet, o.pricePerFt, o.total]).toEqual([44, 0.95, 41.8]);
+  });
+
+  it("merges a length picked twice, and leaves out what cannot be sold", () => {
+    const o = vinylForPieces("WHITE", [{ ft: 16, count: 1 }, { ft: 16, count: 2 }, { ft: null, count: 3 }, { ft: 9, count: 0 }, { ft: 11, count: 1 }])!;
+    expect(o.description).toBe("WHITE VINYL STOP MOLDING,  [3] - 16FT");
+    expect(vinylForPieces("ALMOND", [{ ft: 12, count: 1 }])).toBeNull(); // not stocked in almond
+    expect(vinylForPieces("PURPLE", [{ ft: 16, count: 1 }])).toBeNull();
   });
 });
