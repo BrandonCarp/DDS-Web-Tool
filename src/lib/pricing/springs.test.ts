@@ -7,6 +7,7 @@ import {
   EXTENSION_SPRINGS,
   KITS_GROUP,
   SHELF_PART_CATEGORIES,
+  HAND_PRICES,
   HAND_ADDED_PARTS,
   PARTS_TAB_CATEGORIES,
   TRACK_CATEGORIES,
@@ -188,5 +189,29 @@ describe("cable rolls (6/10/2026)", () => {
 
   it("leaves no part on the shelf without a price", () => {
     expect(SHELF_PART_CATEGORIES.flatMap((c) => c.items).filter(priceNotSet).map((p) => p.name)).toEqual([]);
+  });
+});
+
+describe("prices set by hand ahead of the sheet (7/10/2026)", () => {
+  const price = (category: string, name: string) =>
+    SHELF_PART_CATEGORIES.find((c) => c.name === category)?.items.find((p) => p.name === name)?.price;
+
+  it("sells the struts and tube shafts at Brandon's prices", () => {
+    expect(price("STRUTS", "10FT STRUT")).toBe(22.95);
+    expect(price("STRUTS", "12FT STRUT")).toBe(25.95);
+    expect(price("STRUTS", "14FT STRUT")).toBe(34.95);
+    expect(price("TUBE SHAFT", "10FT TUBE SHAFT")).toBe(24.95);
+    expect(price("TUBE SHAFT", "14FT TUBE SHAFT")).toBe(34.95);
+    expect(price("STRUTS", "16FT STRUT")).toBe(34.95); // untouched
+  });
+
+  it("is still needed: the sheet has not caught up with any of them", () => {
+    // When this fails, the sheet carries that price now — delete it from HAND_PRICES.
+    for (const [key, hand] of Object.entries(HAND_PRICES)) {
+      const [category, name] = key.split("|");
+      const sheet = PART_CATEGORIES.find((c) => c.name === category)?.items.find((p) => p.name === name);
+      expect(sheet, `${key} is on the sheet`).toBeTruthy();
+      expect(sheet!.price, key).not.toBe(hand);
+    }
   });
 });

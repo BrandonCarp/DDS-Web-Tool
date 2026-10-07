@@ -52,16 +52,9 @@ function commWidthToken(label: string): string {
   return m ? `${m[1]}.${m[2]}` : "";
 }
 /**
- * Ribbed-steel wording, by model.
- *
- * These six read differently from the rest of the commercial range: the
- * material leads the description rather than a grade word, and the insulated
- * variants call out the backer. Anything not listed here keeps the generic
- * wording it always had.
- *
- * V and S differ only by the colour they are usually sold in, not by
- * construction, so they share a phrase — colour stays a separate choice and is
- * never assumed from the model.
+ * Ribbed-steel wording for COMPLETE doors, by model: the material leads the
+ * description rather than a grade word. Sections have their own wording
+ * (RIBBED_SECTION_INSULATION below).
  */
 const RIBBED: Record<string, { material: string; backer: boolean }> = {
   "524": { material: "hollow steel ribbed", backer: false },
@@ -70,6 +63,24 @@ const RIBBED: Record<string, { material: string; backer: boolean }> = {
   "2415V": { material: "steel ribbed", backer: true },
   "524S": { material: "steel ribbed", backer: true },
   "2415S": { material: "steel ribbed", backer: true },
+};
+
+/**
+ * The 524 and 2415 sections, worded as they go on the invoice — Brandon,
+ * 7/10/2026:
+ *   CLOPAY MODEL 524,  12'0" X 24",  STEEL RIBBED BOTTOM SECTION,  NON INSULATED,  IN THE COLOR WHITE,  SINGLE END STILE
+ * A solid intermediate is a SOLID STEEL RIBBED INTERMEDIATE SECTION; one with
+ * glass is a STEEL RIBBED INTERMEDIATE SECTION followed by its windows. The
+ * plain models are non insulated, V has an insulated vinyl backer and S an
+ * insulated steel one. Colour stays a separate choice, never assumed.
+ */
+const RIBBED_SECTION_INSULATION: Record<string, string> = {
+  "524": "NON INSULATED",
+  "2415": "NON INSULATED",
+  "524V": "INSULATED VINYL BACKER",
+  "2415V": "INSULATED VINYL BACKER",
+  "524S": "INSULATED STEEL BACKER",
+  "2415S": "INSULATED STEEL BACKER",
 };
 
 /** Window counts read as words on these lines: "two 24x12 windows". */
@@ -255,28 +266,33 @@ export function quoteCommercial(input: CommInput): CommQuote {
   // be pasted straight onto a QuickBooks estimate line.
   const nWin = input.secKind === "int" ? Math.min(Math.trunc(Number(input.windows)) || 0, maxWindows(rFeet)) : 0;
   const asciiWidth = `${ft}'${inch ? inch + '"' : '0"'}`;
-  const ribbed = RIBBED[model];
-  // Ribbed models: material, then the section, then the backer, then the
-  // windows, then the colour. Everything else keeps its old wording.
-  const kindPhrase = ribbed
-    ? [
-        `${ribbed.material} ${input.secKind === "bt" ? "bottom" : "intermediate"} section`,
-        ribbed.backer ? "insulated steel backer" : null,
-        nWin > 0 ? `${countWord(nWin)} 24x12 windows` : null,
-      ].filter(Boolean).join(", ")
-    : input.secKind === "bt"
-      ? "bottom section"
-      : nWin > 0
-        ? `${nWin} 24x12 window section`
-        : "solid intermediate section";
+  const insulation = RIBBED_SECTION_INSULATION[model];
+  const kindPhrase = input.secKind === "bt"
+    ? "bottom section"
+    : nWin > 0
+      ? `${nWin} 24x12 window section`
+      : "solid intermediate section";
   // One end stile is singular on the invoice; two stay plural (Brandon, 6/10/2026).
   const stilePhrase =
     input.stile === "double" ? "double end stiles" : input.stile === "single" ? "single end stile" : null;
   const color = input.color === "Brown" ? "Brown" : "White";
-  const description =
-    `${input.mfr || "Clopay"} Model ${model}, ${asciiWidth} x ${input.secHeight}", ` +
-    `${kindPhrase}, in the color ${color}` +
-    (stilePhrase ? `, ${stilePhrase}` : "");
+  const description = insulation
+    // The 524 and 2415: Brandon's invoice wording, in capitals, two spaces after
+    // each comma — section, windows, insulation, colour, stiles.
+    ? [
+        `${(input.mfr || "Clopay").toUpperCase()} MODEL ${model}`,
+        `${asciiWidth} X ${input.secHeight}"`,
+        input.secKind === "bt"
+          ? "STEEL RIBBED BOTTOM SECTION"
+          : nWin > 0 ? "STEEL RIBBED INTERMEDIATE SECTION" : "SOLID STEEL RIBBED INTERMEDIATE SECTION",
+        nWin > 0 ? `${countWord(nWin).toUpperCase()} 24X12 ${nWin === 1 ? "WINDOW" : "WINDOWS"}` : null,
+        insulation,
+        `IN THE COLOR ${color.toUpperCase()}`,
+        stilePhrase ? stilePhrase.toUpperCase() : null,
+      ].filter(Boolean).join(",  ")
+    : `${input.mfr || "Clopay"} Model ${model}, ${asciiWidth} x ${input.secHeight}", ` +
+      `${kindPhrase}, in the color ${color}` +
+      (stilePhrase ? `, ${stilePhrase}` : "");
 
   return { priced: true, lines: collapseUpcharges(lines), unitPrice, sub, description };
 }

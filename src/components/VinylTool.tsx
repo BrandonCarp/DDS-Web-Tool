@@ -89,9 +89,6 @@ export function VinylTool() {
                         placeholder="e.g. 7"
                       />
                     </div>
-                    <div className="muted-note" style={{ marginTop: 6 }}>
-                      One piece across the header, two down the sides
-                    </div>
                   </div>
 
                   <div className="grow">

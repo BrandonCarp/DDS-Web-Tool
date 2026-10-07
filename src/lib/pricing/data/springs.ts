@@ -82,6 +82,29 @@ export const HAND_ADDED_PARTS: Record<string, ShelfPart[]> = {
 };
 
 /**
+ * Prices changed ahead of the price sheet — Brandon, 7/10/2026. Keyed
+ * "CATEGORY|NAME". Once NEW_PARTS_LIST.xlsx carries them and gen_parts.py has
+ * been re-run, delete them here: springs.test.ts flags any the sheet already
+ * matches.
+ */
+export const HAND_PRICES: Record<string, number> = {
+  "STRUTS|10FT STRUT": 22.95,
+  "STRUTS|12FT STRUT": 25.95,
+  "STRUTS|14FT STRUT": 34.95,
+  "TUBE SHAFT|10FT TUBE SHAFT": 24.95,
+  "TUBE SHAFT|14FT TUBE SHAFT": 34.95,
+};
+function withHandPrices(c: PartCategory): PartCategory {
+  return {
+    ...c,
+    items: c.items.map((p) => {
+      const price = HAND_PRICES[`${c.name}|${p.name}`];
+      return price === undefined ? p : { ...p, price };
+    }),
+  };
+}
+
+/**
  * The Track tab reads residential sets first, then the adders, commercial sets
  * and raw track, each under its own heading (30/9/2026). The sheet lists raw
  * track with no heading, so it gets one here. Sorting is stable: within a
@@ -100,6 +123,7 @@ function trackCategory(c: PartCategory): PartCategory {
 export const SHELF_PART_CATEGORIES: PartCategory[] = (() => {
   const shelf = PART_CATEGORIES
     .filter((c) => c.name !== EXTENSION_CATEGORY && c.name !== TORSION_CATEGORY)
+    .map(withHandPrices)
     .map((c) => (c.name === "TRACKS" ? trackCategory(c) : { ...c, items: [...c.items, ...(HAND_ADDED_PARTS[c.name] ?? [])] }));
   const kits: PartCategory[] = [
     { name: EXTENSION_KITS_CATEGORY, items: EXTENSION_ALL.items.filter(isKit) },

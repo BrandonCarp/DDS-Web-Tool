@@ -23,38 +23,52 @@ describe("ribbed steel verbiage", () => {
     expect(complete("524")).toMatch(/torsion springs, no lock$/);
   });
 
-  it("words hollow models without a backer", () => {
-    expect(section("524", { secKind: "bt" })).toContain("hollow steel ribbed bottom section, in the color White");
-    expect(section("2415")).toContain("hollow steel ribbed intermediate section, in the color White");
-    expect(section("524")).not.toContain("backer");
+  // Brandon's three lines (7/10/2026), for a 12'0" x 24" section, single end stile.
+  const sec = (model: string, o: Record<string, unknown> = {}) =>
+    section(model, { manFt: 12, secHeight: "24", stile: "single", ...o });
+
+  it("words a 524 bottom section as Brandon wrote it", () => {
+    expect(sec("524", { secKind: "bt" })).toBe(
+      'CLOPAY MODEL 524,  12\'0" X 24",  STEEL RIBBED BOTTOM SECTION,  NON INSULATED,  IN THE COLOR WHITE,  SINGLE END STILE',
+    );
   });
 
-  it("calls out the backer on the insulated variants", () => {
-    for (const m of ["524V", "524S", "2415V", "2415S"]) {
-      expect(section(m), m).toContain("steel ribbed intermediate section, insulated steel backer,");
-      expect(section(m), m).not.toContain("hollow");
+  it("words a solid 524 intermediate section as Brandon wrote it", () => {
+    expect(sec("524")).toBe(
+      'CLOPAY MODEL 524,  12\'0" X 24",  SOLID STEEL RIBBED INTERMEDIATE SECTION,  NON INSULATED,  IN THE COLOR WHITE,  SINGLE END STILE',
+    );
+  });
+
+  it("words a 524 intermediate with glass as Brandon wrote it, windows before the insulation", () => {
+    expect(sec("524", { windows: 2 })).toBe(
+      'CLOPAY MODEL 524,  12\'0" X 24",  STEEL RIBBED INTERMEDIATE SECTION,  TWO 24X12 WINDOWS,  NON INSULATED,  IN THE COLOR WHITE,  SINGLE END STILE',
+    );
+    expect(sec("524", { windows: 1 })).toContain("ONE 24X12 WINDOW,");
+  });
+
+  it("gives the V a vinyl backer and the S a steel one", () => {
+    for (const m of ["524V", "2415V"]) {
+      expect(sec(m), m).toContain("SOLID STEEL RIBBED INTERMEDIATE SECTION,  INSULATED VINYL BACKER,  IN THE COLOR");
+      expect(sec(m), m).not.toContain("NON INSULATED");
+    }
+    for (const m of ["524S", "2415S"]) {
+      expect(sec(m), m).toContain("SOLID STEEL RIBBED INTERMEDIATE SECTION,  INSULATED STEEL BACKER,  IN THE COLOR");
     }
   });
 
-  it("spells the window count and puts it before the colour", () => {
-    expect(section("524V", { windows: 2 })).toContain(
-      "steel ribbed intermediate section, insulated steel backer, two 24x12 windows, in the color White",
+  it("words the 2415 the same way, under its own maker", () => {
+    expect(sec("2415", { secKind: "bt" })).toBe(
+      'WAYNE DALTON MODEL 2415,  12\'0" X 24",  STEEL RIBBED BOTTOM SECTION,  NON INSULATED,  IN THE COLOR WHITE,  SINGLE END STILE',
     );
-    expect(section("524V", { windows: 1 })).toContain("one 24x12 windows");
-    expect(section("524V", { windows: 3 })).toContain("three 24x12 windows");
   });
 
   it("never assumes a colour from the model", () => {
-    // V and S differ by how they usually sell, not by construction. Hardcoding
-    // a colour would put the wrong word on a customer's estimate.
-    expect(section("524S", { color: "White" })).toContain("in the color White");
-    expect(section("524V", { color: "Brown" })).toContain("in the color Brown");
+    expect(section("524S", { color: "White" })).toContain("IN THE COLOR WHITE");
+    expect(section("524V", { color: "Brown" })).toContain("IN THE COLOR BROWN");
   });
 
-  it("gives every ribbed model a colour, hollow ones included", () => {
-    for (const m of ["524", "524V", "524S", "2415", "2415V", "2415S"]) {
-      expect(section(m), m).toMatch(/in the color \w+/);
-    }
+  it("keeps two end stiles plural", () => {
+    expect(section("524", { stile: "double" })).toMatch(/DOUBLE END STILES$/);
   });
 
   it("leaves every other commercial model alone", () => {
