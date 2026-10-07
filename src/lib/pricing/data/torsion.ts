@@ -317,7 +317,7 @@ export function springBase(wire: string, id: string, lengthIn: number): string {
  */
 export function handSuffix(right: number, left: number): string {
   const one = (n: number, hand: "right" | "left") =>
-    `[${n}] - ${hand.toUpperCase()}${n > 1 ? "S" : ""}`;
+    `[${n}] - ${hand.toUpperCase()} WOUND`;
   const parts: string[] = [];
   if (right > 0) parts.push(one(right, "right"));
   if (left > 0) parts.push(one(left, "left"));

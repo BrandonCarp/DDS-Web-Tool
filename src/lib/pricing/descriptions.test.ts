@@ -28,7 +28,7 @@ describe("torsion spring description", () => {
   it("opens with TORSION SPRINGS, matching the stock springs off the shelf", () => {
     // Brandon's example: TORSION SPRINGS, 2" ID, 218 WIRE, 23-1/4" LONG ...
     expect(springDescription("0.218", "2", 23.25, 1, 1)).toBe(
-      'TORSION SPRINGS,  2" ID,  218 WIRE,  23-1/4" LONG [1] - RIGHT AND [1] - LEFT',
+      'TORSION SPRINGS,  2" ID,  218 WIRE,  23-1/4" LONG [1] - RIGHT WOUND AND [1] - LEFT WOUND',
     );
     expect(springBase("0.218", "2", 23.25).startsWith(`${SPRING_LABEL},`)).toBe(true);
   });
@@ -51,19 +51,19 @@ describe("torsion spring description", () => {
 
   it("lists right before left on a mixed pair, with the cone colours", () => {
     expect(springDescription("0.234", "3.75", 52, 1, 1)).toBe(
-      'TORSION SPRINGS,  3-3/4" ID,  234 WIRE,  52" LONG [1] - RIGHT AND [1] - LEFT',
+      'TORSION SPRINGS,  3-3/4" ID,  234 WIRE,  52" LONG [1] - RIGHT WOUND AND [1] - LEFT WOUND',
     );
   });
 
   it("pluralises a same-hand pair", () => {
     expect(springDescription("0.234", "3.75", 52, 0, 2)).toBe(
-      'TORSION SPRINGS,  3-3/4" ID,  234 WIRE,  52" LONG [2] - LEFTS',
+      'TORSION SPRINGS,  3-3/4" ID,  234 WIRE,  52" LONG [2] - LEFT WOUND',
     );
   });
 
   it("handles a single hand on its own", () => {
     expect(springDescription("0.234", "3.75", 52, 1, 0)).toBe(
-      'TORSION SPRINGS,  3-3/4" ID,  234 WIRE,  52" LONG [1] - RIGHT',
+      'TORSION SPRINGS,  3-3/4" ID,  234 WIRE,  52" LONG [1] - RIGHT WOUND',
     );
   });
 });
@@ -338,7 +338,7 @@ describe("cut spring lengths are written as fractions (1/10/2026)", () => {
 
   it("puts the fraction in the QuickBooks description", () => {
     expect(springDescription("0.25", "2", 24.5, 1, 1)).toBe(
-      'TORSION SPRINGS,  2" ID,  250 WIRE,  24-1/2" LONG [1] - RIGHT AND [1] - LEFT',
+      'TORSION SPRINGS,  2" ID,  250 WIRE,  24-1/2" LONG [1] - RIGHT WOUND AND [1] - LEFT WOUND',
     );
   });
 });

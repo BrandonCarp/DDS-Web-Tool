@@ -71,10 +71,10 @@ describe("parts list", () => {
 
   it("rebuilds the hand counts from what the counter enters", () => {
     const spring = find("TORSION SPRINGS", '100LBS,  2 X 218 X 23-1/4"');
-    expect(partDescription(spring, 0, 1, 1)).toMatch(/\[1\] - RIGHT AND \[1\] - LEFT$/);
-    expect(partDescription(spring, 0, 2, 2)).toMatch(/\[2\] - RIGHTS AND \[2\] - LEFTS$/);
-    expect(partDescription(spring, 0, 0, 1)).toMatch(/\[1\] - LEFT$/);
-    expect(partDescription(spring, 0, 2, 0)).toMatch(/\[2\] - RIGHTS$/);
+    expect(partDescription(spring, 0, 1, 1)).toMatch(/\[1\] - RIGHT WOUND AND \[1\] - LEFT WOUND$/);
+    expect(partDescription(spring, 0, 2, 2)).toMatch(/\[2\] - RIGHT WOUND AND \[2\] - LEFT WOUND$/);
+    expect(partDescription(spring, 0, 0, 1)).toMatch(/\[1\] - LEFT WOUND$/);
+    expect(partDescription(spring, 0, 2, 0)).toMatch(/\[2\] - RIGHT WOUND$/);
   });
 
   it("keeps springs at the single price and counts them in the quantity", () => {

@@ -69,7 +69,7 @@ def cell(row, i):
 # The sheet writes a default pair onto every torsion spring
 # ("... 23-1/4\" LONG [1] - RIGHT AND [1] - LEFT"). The counter sets the hands,
 # so the suffix is stripped here and rebuilt from their numbers.
-HANDS_RE = re.compile(r"\s*\[\d+\]\s*-\s*(?:RIGHT|LEFT)S?(?:\s+AND\s+\[\d+\]\s*-\s*(?:RIGHT|LEFT)S?)*\s*$", re.I)
+HANDS_RE = re.compile(r"\s*\[\d+\]\s*-\s*(?:RIGHT WOUND|LEFT WOUND)S?(?:\s+AND\s+\[\d+\]\s*-\s*(?:RIGHT WOUND|LEFT WOUND)S?)*\s*$", re.I)
 
 
 def is_per_foot(name, desc):

@@ -175,14 +175,14 @@ export function TorsionTool({ openOn }: { openOn?: SearchPick } = {}) {
               </div>
               <div className="row2" style={{ margin: "0 20px 16px" }}>
                 <div className="field">
-                  <label className="lbl">Right springs (red)</label>
+                  <label className="lbl">Right Wound</label>
                   <input
                     data-testid="stock-right" type="number" min={0} value={stockRight}
                     onChange={(e) => setStockRight(Math.max(0, Math.trunc(Number(e.target.value)) || 0))}
                   />
                 </div>
                 <div className="field">
-                  <label className="lbl">Left springs (black)</label>
+                  <label className="lbl">Left Wound</label>
                   <input
                     data-testid="stock-left" type="number" min={0} value={stockLeft}
                     onChange={(e) => setStockLeft(Math.max(0, Math.trunc(Number(e.target.value)) || 0))}
@@ -215,14 +215,14 @@ export function TorsionTool({ openOn }: { openOn?: SearchPick } = {}) {
               </div>
               <div className="row2" style={{ margin: "0 20px 16px" }}>
                 <div className="field">
-                  <label className="lbl">RHW</label>
+                  <label className="lbl">RIGHT WOUND</label>
                   <input
                     data-testid="tor-right" type="number" min={0} value={right}
                     onChange={(e) => setRight(Math.max(0, Math.trunc(Number(e.target.value)) || 0))}
                   />
                 </div>
                 <div className="field">
-                  <label className="lbl">LHW</label>
+                  <label className="lbl">LEFT WOUND</label>
                   <input
                     data-testid="tor-left" type="number" min={0} value={left}
                     onChange={(e) => setLeft(Math.max(0, Math.trunc(Number(e.target.value)) || 0))}
@@ -239,7 +239,7 @@ export function TorsionTool({ openOn }: { openOn?: SearchPick } = {}) {
                 </div>
               ) : (
                 <div className="qfoot">
-                  <span className="muted-note">Enter how many RHW and LHW</span>
+                  <span className="muted-note">Enter how many RIGHT WOUND and LEFT WOUND</span>
                   <button className="btn" type="button" onClick={clear}>Clear</button>
                 </div>
               )}

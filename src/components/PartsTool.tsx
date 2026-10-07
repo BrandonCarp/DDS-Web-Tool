@@ -328,7 +328,7 @@ export function PartsTool({
                 {needsHands && (
                   <div className="gbody">
                     <div className="grow">
-                      <label className="lbl">Right springs (red)</label>
+                      <label className="lbl">Right Wound</label>
                       <div className="ctl">
                         <input
                           data-testid="part-right"
@@ -340,7 +340,7 @@ export function PartsTool({
                       </div>
                     </div>
                     <div className="grow">
-                      <label className="lbl">Left springs (black)</label>
+                      <label className="lbl">Left Wound</label>
                       <div className="ctl">
                         <input
                           data-testid="part-left"

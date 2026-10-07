@@ -85,7 +85,7 @@ describe("Torsion Springs tab", () => {
 
     expect(screen.getByTestId("stock-price").textContent).toContain((handed?.price ?? 0).toFixed(2));
     const line = await copiedQbLine(screen.getByTestId("stock-copy-qb"));
-    expect(line.description).toContain("[1] - RIGHT");
+    expect(line.description).toContain("[1] - RIGHT WOUND");
     expect(line.rate).toBeCloseTo(handed?.price ?? 0, 2);
     expect(screen.queryByTestId("tor-copy-qb")).toBeNull();
   });
@@ -170,7 +170,7 @@ describe("stock tab labels", () => {
 });
 
 describe("Torsion Springs tab — cut to size", () => {
-  it("labels the two hand boxes RHW and LHW", () => {
+  it("labels the two hand boxes RIGHT WOUND and LEFT WOUND", () => {
     render(<CustomerJobProvider><TorsionTool /></CustomerJobProvider>);
     // The hand boxes show once a spring is priced: a wire size and a length.
     const wire = screen.getByTestId("tor-wire") as HTMLSelectElement;
@@ -178,8 +178,8 @@ describe("Torsion Springs tab — cut to size", () => {
     fireEvent.change(screen.getByTestId("tor-length"), { target: { value: "24" } });
     fireEvent.change(screen.getByTestId("tor-length-frac"), { target: { value: "0.5" } });
     const label = (id: string) => screen.getByTestId(id).closest(".field")!.querySelector("label")!.textContent;
-    expect(label("tor-right")).toBe("RHW");
-    expect(label("tor-left")).toBe("LHW");
+    expect(label("tor-right")).toBe("RIGHT WOUND");
+    expect(label("tor-left")).toBe("LEFT WOUND");
   });
 });
 
@@ -191,21 +191,21 @@ describe("Torsion Springs tab — the quantity is the springs counted", () => {
     expect(screen.queryByTestId("stock-copy-qb-qty")).toBeNull();
     let line = await copiedQbLine(screen.getByTestId("stock-copy-qb"));
     expect(line.qty).toBe(2);
-    expect(line.description).toContain("[1] - RIGHT AND [1] - LEFT");
+    expect(line.description).toContain("[1] - RIGHT WOUND AND [1] - LEFT WOUND");
     fireEvent.change(screen.getByTestId("stock-right"), { target: { value: "2" } });
     fireEvent.change(screen.getByTestId("stock-left"), { target: { value: "2" } });
     line = await copiedQbLine(screen.getByTestId("stock-copy-qb"));
     expect(line.qty).toBe(4);
   });
 
-  it("waits on a cut spring until RHW or LHW is entered, then pastes their count", async () => {
+  it("waits on a cut spring until RIGHT WOUND or LEFT WOUND is entered, then pastes their count", async () => {
     render(<CustomerJobProvider><TorsionTool /></CustomerJobProvider>);
     const wire = screen.getByTestId("tor-wire") as HTMLSelectElement;
     fireEvent.change(wire, { target: { value: [...wire.options].map((o) => o.value).find(Boolean) } });
     fireEvent.change(screen.getByTestId("tor-length"), { target: { value: "24" } });
     fireEvent.change(screen.getByTestId("tor-length-frac"), { target: { value: "0.5" } });
     expect(screen.queryByTestId("tor-copy-qb")).toBeNull();
-    expect(screen.getByText("Enter how many RHW and LHW")).toBeTruthy();
+    expect(screen.getByText("Enter how many RIGHT WOUND and LEFT WOUND")).toBeTruthy();
     fireEvent.change(screen.getByTestId("tor-right"), { target: { value: "1" } });
     fireEvent.change(screen.getByTestId("tor-left"), { target: { value: "1" } });
     expect(screen.queryByTestId("tor-copy-qb-qty")).toBeNull();
@@ -218,7 +218,7 @@ describe("cut spring length — whole inches and a fraction (1/10/2026)", () => 
     render(<CustomerJobProvider><TorsionTool /></CustomerJobProvider>);
     const wire = screen.getByTestId("tor-wire") as HTMLSelectElement;
     fireEvent.change(wire, { target: { value: "0.218" } });
-    // RHW only shows once the spring is priced, so a length goes in first.
+    // RIGHT WOUND only shows once the spring is priced, so a length goes in first.
     fireEvent.change(screen.getByTestId("tor-length"), { target: { value: "23" } });
     fireEvent.change(screen.getByTestId("tor-right"), { target: { value: "1" } });
   };
