@@ -12,6 +12,9 @@ import { buildIndex, searchIndex, type SearchHit } from "@/lib/search";
 export function TopBar({
   tabs,
   doorModels,
+  cartCount,
+  cartOpen,
+  onCart,
   username,
   role,
   isAdmin,
@@ -21,6 +24,10 @@ export function TopBar({
   tabs: readonly { id: string; label: string }[];
   /** The stocked residential models, so the search can offer them. */
   doorModels: readonly string[];
+  /** Lines in the cart: the Cart button glows red with the count until Clear. */
+  cartCount: number;
+  cartOpen: boolean;
+  onCart: () => void;
   username: string;
   role: string;
   isAdmin: boolean;
@@ -30,6 +37,19 @@ export function TopBar({
   return (
     <header className="topbar">
       <QuickSearch tabs={tabs} doorModels={doorModels} onJump={onJump} />
+      {/* The Cart, left of the signed-in name (Brandon, 7/10/2026). */}
+      <button
+        type="button"
+        data-testid="topbar-cart"
+        className={`tb-cart${cartCount ? " glow" : ""}${cartOpen ? " on" : ""}`}
+        aria-label={cartCount ? `Cart, ${cartCount} ${cartCount === 1 ? "line" : "lines"}` : "Cart"}
+        aria-current={cartOpen ? "page" : undefined}
+        onClick={onCart}
+      >
+        <Icon name="cart" />
+        <span className="tb-cart-label">Cart</span>
+        {cartCount > 0 && <span className="tb-count" data-testid="cart-count">{cartCount}</span>}
+      </button>
       <UserMenu username={username} role={role} isAdmin={isAdmin} onSettings={onSettings} />
     </header>
   );

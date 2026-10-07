@@ -34,7 +34,6 @@ export const QB_SPRINGS = "SPRINGS";
 /** The spring tabs read better by their own names; both are the one item. */
 export const QB_TORSION = QB_SPRINGS;
 export const QB_EXTENSION = QB_SPRINGS;
-export const QB_TRACKS = "TRACKS";
 export const QB_PARTS = "PARTS";
 
 /**
@@ -66,5 +65,6 @@ export function quickBooksRow(
 export function categoryItem(categoryName: string | null | undefined): string {
   const raw = (categoryName ?? "").trim().toUpperCase();
   if (!raw) return "";
-  return raw === "TRACKS" ? QB_TRACKS : QB_PARTS;
+  // Every shelf category, track included, pastes as PARTS (Brandon, 7/10/2026).
+  return QB_PARTS;
 }

@@ -324,7 +324,26 @@ html, body { margin: 0; padding: 0; }
   padding: 1px 7px; border: 1px solid var(--line); border-radius: 999px;
   font-size: 10.5px; line-height: 18px; color: var(--muted);
 }
-.tool-shell .umenu { position: relative; margin-left: auto; }
+/* The Cart, left of the signed-in name (7/10/2026): it glows red, with its
+   count, while anything is in the cart, until Clear. */
+.tool-shell .tb-cart {
+  display: inline-flex; align-items: center; gap: 8px; margin-left: auto;
+  padding: 7px 12px; border: 1px solid var(--line); border-radius: var(--r-sm);
+  background: var(--surface); color: var(--ink-2); cursor: pointer;
+}
+.tool-shell .tb-cart:hover { color: var(--ink); border-color: var(--line-strong); }
+.tool-shell .tb-cart .icon { color: var(--muted); }
+.tool-shell .tb-cart.on { border-color: var(--accent); }
+.tool-shell .tb-cart.glow, .tool-shell .tb-cart.glow .icon { color: var(--accent-ink); }
+.tool-shell .tb-cart.glow .tb-cart-label { animation: cart-glow 1.6s ease-in-out infinite; }
+.tool-shell .tb-count {
+  min-width: 20px; padding: 0 6px; border-radius: 999px;
+  background: var(--accent); color: var(--on-accent);
+  font-size: 11px; line-height: 20px; text-align: center;
+}
+@media (prefers-reduced-motion: reduce) { .tool-shell .tb-cart.glow .tb-cart-label { animation: none; } }
+@media (max-width: 900px) { .tool-shell .tb-cart-label { display: none; } }
+.tool-shell .umenu { position: relative; margin-left: 10px; }
 .tool-shell .umenu-btn {
   display: flex; align-items: center; gap: 10px;
   padding: 4px 8px 4px 4px; border: 1px solid transparent; border-radius: var(--r-sm);

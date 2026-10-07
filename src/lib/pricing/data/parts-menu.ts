@@ -197,6 +197,7 @@ export const PART_GROUP_TABS = [
   { id: "retainers", group: "Retainers", icon: "retainer" },
   { id: "seals", group: "Seals", icon: "seal" },
   { id: "tubeshafts", group: "Tube shafts", icon: "shaft" },
+  { id: "struts", group: "Struts", icon: "strut" },
 ] as const;
 
 const tabbed = new Set<string>(PART_GROUP_TABS.map((t) => t.group));

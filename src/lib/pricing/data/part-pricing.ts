@@ -44,10 +44,10 @@ export function partQuantity(part: Part, right?: number, left?: number): number 
 /**
  * Retainers come off a stick, so past a point you are buying the long one.
  *
- * Brandon, 31/8/2026: a U retainer's longest stick is 16FT and an L retainer's
- * is 18FT. Anything over 8FT of U has to come off a 16FT stick, and anything
- * over 10FT of L off an 18FT one — the offcut is not sellable, so the customer
- * pays for the whole stick.
+ * U retainer (Brandon, 7/10/2026): up to 10FT bills by the foot, over 10FT up
+ * to 16FT bills a 16FT stick, and over 16FT an 18FT stick — DDS stocks both
+ * lengths. L retainer (31/8/2026): over 10FT bills an 18FT stick. The offcut is
+ * not sellable, so the customer pays for the whole stick.
  *
  * Under the threshold it still bills by the foot. Brandon: nobody asks for less
  * than 7 or 8 feet in practice, so there is no minimum charge to worry about.
@@ -59,7 +59,7 @@ export function partQuantity(part: Part, right?: number, left?: number): number 
  */
 const RETAINER_STICKS: { type: RegExp; overFeet: number; billFeet: number }[] = [
   { type: /\bU\s+RETAINER/i, overFeet: 16, billFeet: 18 },
-  { type: /\bU\s+RETAINER/i, overFeet: 8, billFeet: 16 },
+  { type: /\bU\s+RETAINER/i, overFeet: 10, billFeet: 16 },
   { type: /\bL\s+RETAINER/i, overFeet: 10, billFeet: 18 },
 ];
 

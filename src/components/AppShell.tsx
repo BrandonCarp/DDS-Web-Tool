@@ -73,6 +73,15 @@ type Tab = {
   title: string;
 };
 
+// The Parts groups that are tabs of their own (Angle, Retainers…), by id.
+const groupTab = (id: string): Tab => {
+  const t = PART_GROUP_TABS.find((x) => x.id === id)!;
+  return { id: t.id, label: t.group, icon: t.icon, title: t.group };
+};
+
+// In Brandon's order (7/10/2026). Tools and Scanner were not on his list, so
+// they follow Parts until he says where they go. The Cart lives in the top
+// bar now, not here (CART_TAB below).
 const QUOTING_TABS: readonly Tab[] = [
   {
     id: "residential", label: "Residential", over: "Stock", icon: "residential",
@@ -87,30 +96,6 @@ const QUOTING_TABS: readonly Tab[] = [
     title: "Special Order",
   },
   {
-    id: "torsion", label: "Torsion Springs", icon: "torsion",
-    title: "Torsion Springs",
-  },
-  {
-    id: "extension", label: "Extension Springs", icon: "extension",
-    title: "Extension Springs",
-  },
-  {
-    id: "parts", label: "Parts", icon: "parts",
-    title: "Parts",
-  },
-  // Tools, Angle, Retainers, Seals and Tube shafts: tabs of their own, like
-  // Residential and Commercial, rather than buttons inside Parts (6/10/2026).
-  ...PART_GROUP_TABS.map((t) => ({ id: t.id, label: t.group, icon: t.icon, title: t.group })),
-  // Track and cables left Parts for tabs of their own — Brandon, 29/9/2026.
-  {
-    id: "track", label: "Track", icon: "track",
-    title: "Track",
-  },
-  {
-    id: "cables", label: "Cables", icon: "cable",
-    title: "Cables",
-  },
-  {
     id: "vinyl", label: "Vinyl", icon: "vinyl",
     title: "Vinyl",
   },
@@ -118,17 +103,42 @@ const QUOTING_TABS: readonly Tab[] = [
     id: "operators", label: "Operators", icon: "operators",
     title: "Operators",
   },
+  {
+    id: "torsion", label: "Torsion Springs", icon: "torsion",
+    title: "Torsion Springs",
+  },
+  {
+    id: "extension", label: "Extension Springs", icon: "extension",
+    title: "Extension Springs",
+  },
+  groupTab("angle"),
+  groupTab("retainers"),
+  groupTab("seals"),
+  groupTab("tubeshafts"),
+  groupTab("struts"),
+  {
+    id: "cables", label: "Cables", icon: "cable",
+    title: "Cables",
+  },
+  {
+    id: "track", label: "Tracks", icon: "track",
+    title: "Tracks",
+  },
+  {
+    id: "parts", label: "Parts", icon: "parts",
+    title: "Parts",
+  },
+  groupTab("tools"),
   // Scan parts into a cart for QuickBooks — every counter gets it (Brandon, 25/9/2026).
   {
     id: "scanner", label: "Scanner", icon: "barcode",
     title: "Scanner",
   },
-  // Lines from any quote, pasted into QuickBooks together — 30/9/2026.
-  {
-    id: "cart", label: "Cart", icon: "cart",
-    title: "Cart",
-  },
 ];
+
+// Lines from any quote, pasted into QuickBooks together (30/9/2026). Opened
+// from the top bar, beside the signed-in name (7/10/2026).
+const CART_TAB: Tab = { id: "cart", label: "Cart", icon: "cart", title: "Cart" };
 
 // The paste helper install. Its own tab rather than a panel hanging under
 // whichever tab happened to be open — a counter reads it once, follows it,
@@ -299,7 +309,7 @@ function Shell({
     SETTINGS_TAB,
   ];
   const tabs: Tab[] = [...QUOTING_TABS, ...others];
-  const current = tabs.find((t) => t.id === mode) ?? QUOTING_TABS[0];
+  const current = [...tabs, CART_TAB].find((t) => t.id === mode) ?? QUOTING_TABS[0];
   // Customer / P.O. / Job name is SHELVED for now — the bar and the
   // selection gate are removed, so quoting is immediate again. The provider
   // stays mounted so the tools keep compiling and simply save blank
@@ -353,8 +363,7 @@ function Shell({
         <nav className="side-nav">
           <div className="side-label">Quoting</div>
           {QUOTING_TABS.map((t) => (
-            <NavTab key={t.id} tab={t} active={mode === t.id} collapsed={collapsed} onPick={pickTab}
-              count={t.id === "cart" ? cartCount : 0} />
+            <NavTab key={t.id} tab={t} active={mode === t.id} collapsed={collapsed} onPick={pickTab} />
           ))}
 
           <div className="side-spacer" />
@@ -411,9 +420,11 @@ function Shell({
           >
             {tabs.map((t) => (
               <option key={t.id} value={t.id}>
-                {flatLabel(t)}{t.id === "cart" && cartCount ? ` (${cartCount})` : ""}
+                {flatLabel(t)}
               </option>
             ))}
+            {/* The Cart opens from the top bar; while it is open, say so here. */}
+            {mode === "cart" && <option value="cart">Cart</option>}
           </select>
         </div>
         {brochure && (
@@ -438,7 +449,8 @@ function Shell({
       </div>
 
       <main className="main">
-        <TopBar tabs={tabs} doorModels={models} username={user.username} role={role} isAdmin={isMaster}
+        <TopBar tabs={[...tabs, CART_TAB]} doorModels={models} cartCount={cartCount} cartOpen={mode === "cart"}
+          onCart={() => pickTab("cart")} username={user.username} role={role} isAdmin={isMaster}
           onJump={jumpTo} onSettings={() => pickTab(SETTINGS_TAB.id)} />
         <div className="main-inner">
           <header className="pagehead">

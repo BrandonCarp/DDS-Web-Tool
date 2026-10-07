@@ -119,6 +119,13 @@ const PATHS = {
   angle: <path d="M5 4v15h15M9 4v11h11" />,
   retainer: <path d="M5 6v12h14V6M9 6v8h6V6" />,
   seal: <path d="M3 10c3 0 3-3 6-3s3 3 6 3 3-3 6-3M3 17h18" />,
+  // A strut: a bar with its bolt holes (7/10/2026).
+  strut: (
+    <>
+      <rect x="3" y="9" width="18" height="6" rx="1" />
+      <path d="M7 12h.01M12 12h.01M17 12h.01" />
+    </>
+  ),
   shaft: (
     <>
       <path d="M5 9h14M5 15h14" />

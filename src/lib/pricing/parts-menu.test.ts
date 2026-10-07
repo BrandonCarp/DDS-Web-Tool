@@ -64,14 +64,15 @@ describe("the Track buttons", () => {
 });
 
 describe("the Parts group tabs (6/10/2026)", () => {
-  it("are Tools, Angle, Retainers, Seals and Tube shafts, each a real group", () => {
-    expect(GROUP_TABS.map((t) => t.group)).toEqual(["Tools", "Angle", "Retainers", "Seals", "Tube shafts"]);
+  it("are Tools, Angle, Retainers, Seals, Tube shafts and Struts, each a real group", () => {
+    expect(GROUP_TABS.map((t) => t.group)).toEqual(["Tools", "Angle", "Retainers", "Seals", "Tube shafts", "Struts"]);
     for (const t of GROUP_TABS) expect(t.menu.map((g) => g.label), t.group).toEqual([t.group]);
   });
 
   it("leave the Parts tab with every other group", () => {
     expect(PARTS_TAB_MENU.map((g) => g.label)).not.toContain("Tools");
-    expect(PARTS_TAB_MENU).toHaveLength(PARTS_MENU.length - 5);
+    expect(PARTS_TAB_MENU.map((g) => g.label)).not.toContain("Struts");
+    expect(PARTS_TAB_MENU).toHaveLength(PARTS_MENU.length - 6);
   });
 
   it("search only their own parts: no jamb seal on the Retainers tab", () => {

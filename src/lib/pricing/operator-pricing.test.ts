@@ -36,7 +36,8 @@ describe("operator prices join to the catalogue", () => {
     // the commercial tab is what filled in LOGIC 5, MAXUM and the sprockets —
     // sections that had no price at all when the estimates were the only
     // source. What is left unpriced is listed by the generator on every run.
-    expect(pricedCount()).toEqual({ priced: 165, total: ALL.length });
+    // 166 since the LiftMaster extension brackets were priced at $13.95 each (7/10/2026).
+    expect(pricedCount()).toEqual({ priced: 166, total: ALL.length });
   });
 
   it("survives the double-space the OPERATORS sheet writes", () => {
@@ -264,5 +265,13 @@ describe("suppressed items", () => {
       covered.map((s) => s.desc),
       "now on a price sheet — remove from SUPPRESSED_OPERATORS",
     ).toEqual([]);
+  });
+});
+
+describe("LiftMaster extension brackets (7/10/2026)", () => {
+  it("are $13.95 each", () => {
+    const bracket = ALL.find((o) => o.desc === "LIFTMASTER EXTENSION BRACKETS");
+    expect(bracket, "extension brackets in the catalogue").toBeTruthy();
+    expect(operatorPrice(bracket!)).toBe(13.95);
   });
 });

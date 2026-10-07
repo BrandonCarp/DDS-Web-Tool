@@ -18,6 +18,10 @@ export interface ManualPrice {
 }
 
 export const MANUAL_OPERATOR_PRICES: Record<string, ManualPrice> = {
+  "LIFTMASTER EXTENSION BRACKETS": {
+    price: 13.95,
+    source: "Brandon, 2026-10-07 — each; pending a QuickBooks estimate",
+  },
   "LIFTMASTER ELECTRIC OPERATOR MODEL 2420L, 7FT CHAIN RAIL": {
     price: 375.95,
     source: "Brandon, 2026-08-14 — pending a QuickBooks estimate",

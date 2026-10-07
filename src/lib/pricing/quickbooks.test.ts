@@ -72,9 +72,9 @@ describe("item names — one per tab (6/10/2026)", () => {
     expect(categoryItem("TORSION KITS")).toBe("PARTS");
   });
 
-  it("puts the Track tab under TRACKS, using the shelf's own category name", () => {
-    expect(categoryItem(TRACK_CATEGORY)).toBe("TRACKS");
-    expect(categoryItem("tracks")).toBe("TRACKS");
+  it("puts the Tracks tab under PARTS too (7/10/2026)", () => {
+    expect(categoryItem(TRACK_CATEGORY)).toBe("PARTS");
+    expect(categoryItem("tracks")).toBe("PARTS");
   });
 
   it("puts everything else on the shelf under PARTS: parts, cables and scanned fasteners", () => {

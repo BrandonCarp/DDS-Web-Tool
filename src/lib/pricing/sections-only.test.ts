@@ -80,10 +80,11 @@ describe("retainer stick lengths", () => {
   const U = byName('1-3/8" U RETAINER');
   const L = byName('2" L RETAINER');
 
-  it("bills a U retainer over 8FT as a 16FT stick", () => {
+  it("bills a U retainer by the foot to 10FT, then as a 16FT stick (7/10/2026)", () => {
     expect(U, "U retainer not found").toBeTruthy();
     expect(billedFeet(U!, 8)).toBe(8);
-    expect(billedFeet(U!, 9)).toBe(16);
+    expect(billedFeet(U!, 10)).toBe(10);
+    expect(billedFeet(U!, 11)).toBe(16);
     expect(billedFeet(U!, 12)).toBe(16);
     expect(partPrice(U!, 12)).toBeCloseTo(U!.price * 16, 2);
   });

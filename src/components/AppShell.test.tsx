@@ -242,14 +242,18 @@ describe("the Cart tab", () => {
     fireEvent.click(tab("tools"));
     fireEvent.click(screen.getByTestId("page-felco-cutter")); // one part: picked straight away
     fireEvent.click(screen.getByTestId("parts-copy-qb-cart"));
-    expect(tab("cart").classList.contains("glow")).toBe(true);
+    // The Cart sits in the top bar now, left of the signed-in name (7/10/2026).
+    const cart = () => screen.getByTestId("topbar-cart");
+    expect(tab("cart")).toBeNull();
+    expect(cart().classList.contains("glow")).toBe(true);
     expect(screen.getByTestId("cart-count").textContent).toBe("1");
     fireEvent.click(tab("residential")); // still glowing on another tab
-    expect(tab("cart").classList.contains("glow")).toBe(true);
-    fireEvent.click(tab("cart"));
+    expect(cart().classList.contains("glow")).toBe(true);
+    fireEvent.click(cart());
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Cart");
     expect(screen.getAllByTestId("cartline")).toHaveLength(1);
     fireEvent.click(screen.getByTestId("cart-clear"));
-    expect(tab("cart").classList.contains("glow")).toBe(false);
+    expect(cart().classList.contains("glow")).toBe(false);
     expect(screen.queryByTestId("cart-count")).toBeNull();
   });
 });
@@ -269,11 +273,15 @@ describe("the welcome cards", () => {
 describe("the Parts group tabs (6/10/2026)", () => {
   const ids = () => [...document.querySelectorAll(".side [data-tab]")].map((e) => e.getAttribute("data-tab"));
 
-  it("sit in the side nav right after Parts, like Residential and Commercial", () => {
+  it("sit in the side nav in Brandon's order (7/10/2026)", () => {
     shell();
-    const all = ids();
-    const at = all.indexOf("parts");
-    expect(all.slice(at, at + 7)).toEqual(["parts", "tools", "angle", "retainers", "seals", "tubeshafts", "track"]);
+    const quoting = ids().slice(0, ids().indexOf("scanner") + 1);
+    expect(quoting).toEqual([
+      "residential", "commercial", "special", "vinyl", "operators", "torsion", "extension",
+      "angle", "retainers", "seals", "tubeshafts", "struts", "cables", "track", "parts",
+      "tools", "scanner", // not on his list; kept after Parts until he says
+    ]);
+    expect(document.querySelector('.side [data-tab="track"] .tab-main')?.textContent).toBe("Tracks");
   });
 
   it("open straight onto their pages, with no group buttons", () => {
