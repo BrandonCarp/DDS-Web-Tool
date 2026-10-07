@@ -15,7 +15,7 @@ import {
 import { PARTS_TAB_CATEGORIES } from "@/lib/pricing/data/springs";
 import type { PartCategory } from "@/lib/pricing/data/parts";
 import type { SearchPick } from "@/lib/search";
-import { entryId, type PartsMenu } from "@/lib/pricing/data/parts-menu";
+import { entryId, feetAsQuantity, type PartsMenu } from "@/lib/pricing/data/parts-menu";
 import { PartsNavigator } from "./PartsNavigator";
 import { cableQuote, CABLE_GAUGES } from "@/lib/pricing/data/cables";
 import { billedFeet, feetLimits, priceNotSet } from "@/lib/pricing/data/part-pricing";
@@ -124,7 +124,9 @@ export function PartsTool({
   // A part with no price yet has no price here — never its placeholder 0 — so
   // the card says so and offers nothing to paste or add to the cart.
   const price: number | null = onCable ? (cabQ?.total ?? 0) : part ? (priceNotSet(part) ? null : partPrice(part, ft)) : 0;
-  const qtyText = onCable ? "1" : part ? String(partQuantity(part, right, left)) : "1";
+  // Seals paste the feet as the quantity, at the price per foot (7/10/2026).
+  const feetQty = !onCable && !!part?.perFoot && feetAsQuantity(hit?.category ?? catName, part.name);
+  const qtyText = onCable ? "1" : feetQty ? `${ft} ft` : part ? String(partQuantity(part, right, left)) : "1";
   const title = onCable ? CUSTOM_CABLE : (part?.name ?? "");
   const showing = onCable || !!part;
 
@@ -393,12 +395,18 @@ export function PartsTool({
                     )}
                     <div className="total">
                       <span>Quantity {qtyText}</span>
-                      <b data-testid="parts-price">{price == null ? "Price not set" : fmt(price)}</b>
+                      {/* Seals show their price per foot, the rate on the line, not the run's
+                          total (Brandon, 7/10/2026). */}
+                      <b data-testid="parts-price">
+                        {price == null ? "Price not set" : feetQty ? fmt(part!.price) : fmt(price)}
+                        {feetQty && price != null && <span className="perft">/ft</span>}
+                      </b>
                     </div>
                     <div className="qfoot">
                       {price != null && (
                         <CopyQuickBooks item={categoryItem(hit?.category ?? catName)} description={description}
-                          rate={price} testId="parts-copy-qb" />
+                          {...(feetQty ? { qty: ft } : {})}
+                          rate={feetQty ? part!.price : price} testId="parts-copy-qb" />
                       )}
                       <button className="btn" type="button" onClick={clear}>
                         Clear
@@ -429,8 +437,8 @@ export function PartsTool({
           item={QB_ITEMS.parts}
           typed="PAR"
           description={description}
-          qty={qtyText}
-          rate={priceText(price ?? 0)}
+          qty={feetQty ? String(ft) : qtyText}
+          rate={priceText(feetQty ? part!.price : (price ?? 0))}
         />
       )}
     </>

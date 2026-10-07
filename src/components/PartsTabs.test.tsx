@@ -180,3 +180,32 @@ describe("the Track buttons (6/10/2026)", () => {
     expect(screen.queryByTestId("parts-pick")).toBeNull(); // no drop-down any more
   });
 });
+
+describe("seals paste the feet as the quantity (7/10/2026)", () => {
+  const tab = (id: string) => GROUP_TABS.find((t) => t.id === id)!;
+
+  it("pastes 50FT of bottom T rubber as 50, at the per-foot price", async () => {
+    const seals = tab("seals");
+    show(<PartsTool menu={seals.menu} categories={seals.categories} group="Seals" eyebrow="Seals quote" finder="Find seals" />);
+    fireEvent.click(screen.getByTestId("page-bottom-t-rubbers"));
+    fireEvent.click(screen.getByText('4" BOTTOM T RUBBER').closest("button")!);
+    fireEvent.change(screen.getByTestId("parts-feet"), { target: { value: "50" } });
+    expect(screen.queryByTestId("parts-copy-qb-qty")).toBeNull(); // the feet are the quantity
+    expect(screen.getByTestId("parts-price").textContent).toBe("$1.25/ft"); // the price per foot, not the run's total
+    const line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
+    expect([line.qty, line.rate]).toEqual([50, 1.25]);
+    expect(line.description).toContain("BOTTOM T RUBBER");
+    expect(line.description).toContain("50FT"); // the description stays as it was
+  });
+
+  it("leaves retainers as one line at the price of the stick", async () => {
+    const retainers = tab("retainers");
+    show(<PartsTool menu={retainers.menu} categories={retainers.categories} group="Retainers" />);
+    fireEvent.click(screen.getByTestId("page-u-retainers"));
+    fireEvent.click(document.querySelector("ul.partlist .partrow") as HTMLElement);
+    fireEvent.change(screen.getByTestId("parts-feet"), { target: { value: "12" } });
+    const line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
+    expect(line.qty).toBe(1);
+    expect(line.description).toContain("16FT");
+  });
+});

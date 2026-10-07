@@ -28,11 +28,14 @@ export function VinylTool() {
   const [color, setColor] = useState(VINYL_COLORS[0]);
   const [widthFt, setWidthFt] = useState("");
   const [heightFt, setHeightFt] = useState("");
+  // How many identical doors: each piece count multiplies (7/10/2026).
+  const [doors, setDoors] = useState("1");
 
   const w = Math.trunc(Number(widthFt) || 0);
   const h = Math.trunc(Number(heightFt) || 0);
   const sized = w > 0 && h > 0;
-  const quote = sized ? vinylForDoor(color, w, h) : null;
+  const doorCount = Math.max(1, Math.trunc(Number(doors) || 1));
+  const quote = sized ? vinylForDoor(color, w, h, doorCount) : null;
 
   return (
     <>
@@ -90,6 +93,20 @@ export function VinylTool() {
                       One piece across the header, two down the sides
                     </div>
                   </div>
+
+                  <div className="grow">
+                    <label>Number of doors</label>
+                    <div className="ctl">
+                      <input
+                        data-testid="vinyl-doors"
+                        type="number"
+                        min={1}
+                        value={doors}
+                        onChange={(e) => setDoors(e.target.value)}
+                        placeholder="1"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -119,6 +136,7 @@ export function VinylTool() {
                     onClick={() => {
                       setWidthFt("");
                       setHeightFt("");
+                      setDoors("1");
                     }}
                   >
                     Clear

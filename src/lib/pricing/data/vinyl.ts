@@ -170,8 +170,8 @@ function coveringLengths(color: string, need: number): number[] | null {
  * Work out the molding for one door opening.
  *
  * `sets` covers more than one identical opening: it multiplies the footage and
- * the piece counts, never the piece sizes. The tool does not expose it — one
- * opening is one set — but it is kept so a multi-door quote stays a one-liner.
+ * the piece counts, never the piece sizes. The Vinyl tab's Number of doors
+ * feeds it (7/10/2026): two 8x7 doors are "[2] - 8FT AND [4] - 7FT".
  *
  * An opening longer than the colour is stocked in takes the longest length
  * plus extra pieces (coveringLengths). Returns null only for a colour that is

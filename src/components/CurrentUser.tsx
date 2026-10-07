@@ -19,13 +19,24 @@ export function CurrentUserProvider({ user, children }: { user: CurrentUser; chi
 /** The signed-in user, or null outside the shell (a tool rendered on its own). */
 export const useCurrentUser = () => useContext(UserContext);
 
+/** The extra copy buttons an account can have under the QuickBooks button. */
+export type CopyExtra = "description" | "quantity" | "price";
+
 /**
- * Accounts that also get Copy price and Copy description under the QuickBooks
- * button — Aimee's, 6/10/2026. Usernames, lower case; add one to give someone
- * else the buttons.
+ * Accounts that get extra copy buttons under the QuickBooks button, and which:
+ * Aimee's (6/10/2026) and the doorsdirect account (7/10/2026). Usernames in
+ * lower case; add a line to give someone else buttons, or add "quantity" to
+ * Aimee's to give her that one too.
  */
-const COPY_EXTRAS = new Set(["aimee"]);
+const COPY_EXTRAS: Record<string, readonly CopyExtra[]> = {
+  aimee: ["description", "price"],
+  doorsdirect: ["description", "quantity", "price"],
+};
+
+export function copyExtrasFor(user: CurrentUser | null): readonly CopyExtra[] {
+  return user ? COPY_EXTRAS[user.username.trim().toLowerCase()] ?? [] : [];
+}
 
 export function hasCopyExtras(user: CurrentUser | null): boolean {
-  return !!user && COPY_EXTRAS.has(user.username.trim().toLowerCase());
+  return copyExtrasFor(user).length > 0;
 }

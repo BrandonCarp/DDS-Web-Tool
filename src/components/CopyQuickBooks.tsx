@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { CopyButton, CopyPrice } from "./CopyButton";
 import { AddToCart } from "./Cart";
-import { hasCopyExtras, useCurrentUser } from "./CurrentUser";
+import { copyExtrasFor, useCurrentUser } from "./CurrentUser";
 import { quickBooksRow } from "@/lib/pricing/data/quickbooks";
 
 /**
@@ -48,7 +48,7 @@ export function CopyQuickBooks({
   extraLines?: { item: string; description: string; qty: number; rate: number }[];
 }) {
   const [own, setOwn] = useState(defaultQty);
-  const extras = hasCopyExtras(useCurrentUser());
+  const extras = copyExtrasFor(useCurrentUser());
   const controlled = qty !== undefined;
   const n = controlled ? qty : own;
   // One clipboard line per invoice row; an empty line leaves that row blank.
@@ -81,16 +81,15 @@ export function CopyQuickBooks({
         onCopy={onCopy}
       />
     </span>
-    {/* Aimee's account also copies the price and the description on their own
-        (6/10/2026): the price of one, as the card shows it — through CopyPrice,
-        so it goes out as a bare number like every price copy — and the
-        description in capitals, as QuickBooks gets it. */}
-    {extras && (
-      <>
-        <CopyPrice amount={rate} testId={`${testId}-price`} />
-        <CopyButton text={description.replace(/[\t\r\n]+/g, " ").trim().toUpperCase()} label="Copy description" testId={`${testId}-desc`} />
-      </>
+    {/* Some accounts also copy the pieces on their own (Aimee 6/10/2026,
+        doorsdirect 7/10/2026): the description in capitals, as QuickBooks gets
+        it; the quantity on the line; and the rate — through CopyPrice, so it
+        goes out as a bare number like every price copy. */}
+    {extras.includes("description") && (
+      <CopyButton text={description.replace(/[\t\r\n]+/g, " ").trim().toUpperCase()} label="Copy description" testId={`${testId}-desc`} />
     )}
+    {extras.includes("quantity") && <CopyButton text={String(n)} label="Copy quantity" testId={`${testId}-qtycopy`} />}
+    {extras.includes("price") && <CopyPrice amount={rate} testId={`${testId}-price`} />}
     {/* The same lines, kept in the Cart tab for later (30/9/2026). */}
     <AddToCart lines={[{ item, description, qty: n, rate }, ...(extraLines ?? [])]} testId={`${testId}-cart`} />
     </>

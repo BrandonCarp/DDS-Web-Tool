@@ -219,6 +219,20 @@ export function tabForPart(category: string, partName: string): string {
   return t?.id ?? "parts";
 }
 
+/**
+ * Parts whose QuickBooks line carries the feet as the QUANTITY and the price
+ * per foot as the RATE — everything on the Seals tab (Brandon, 7/10/2026): 50FT
+ * of bottom T rubber pastes as 50 at the per-foot price, and QuickBooks
+ * multiplies. Other per-foot parts (retainers, raw track) still paste one line
+ * at the price of the length, because they can bill a whole stick.
+ */
+const FEET_AS_QUANTITY = new Set(
+  PARTS_MENU.filter((g) => g.label === "Seals").flatMap((g) => g.entries.flatMap((e) => e.parts.map((mp) => `${mp.category}|${mp.part.name}`))),
+);
+export function feetAsQuantity(category: string, partName: string): boolean {
+  return FEET_AS_QUANTITY.has(`${category}|${partName}`);
+}
+
 /** The page id the tool keeps: "Group|Entry". */
 export const slugOf = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 export const entryId = (group: MenuGroup, entry: MenuEntry) => `${group.label}|${entry.label}`;

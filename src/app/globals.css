@@ -663,7 +663,9 @@ html, body { margin: 0; padding: 0; }
 .tool-shell .pnav-groups { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
 .tool-shell .pnav-btn, .tool-shell .pnav-page {
   padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r-sm);
-  background: var(--surface-2); color: var(--ink-2); font-size: 15px; text-align: center; cursor: pointer;
+  background: var(--surface-2); color: var(--ink-2); font-size: 13px; line-height: 1.25; text-align: center; cursor: pointer;
+  /* Long names wrap inside the button rather than spilling out (7/10/2026). */
+  min-width: 0; overflow-wrap: anywhere;
 }
 .tool-shell .pnav-btn:hover, .tool-shell .pnav-page:hover { color: var(--ink); border-color: var(--line-strong); }
 .tool-shell .pnav-btn.on, .tool-shell .pnav-page.on { color: var(--accent-ink); border-color: var(--accent); background: var(--surface-3); }

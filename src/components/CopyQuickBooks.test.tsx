@@ -124,3 +124,41 @@ describe("Copy price and Copy description, for Aimee's account only (6/10/2026)"
     expect(screen.queryByTestId("door-price")).toBeNull();
   });
 });
+
+describe("copy buttons for the doorsdirect account (7/10/2026)", () => {
+  const card = (username: string) =>
+    render(
+      <CurrentUserProvider user={{ username, role: "user" }}>
+        <CopyQuickBooks item="VINYL" description="ALMOND VINYL STOP MOLDING,  [2] - 8FT AND [4] - 7FT" rate={0.95} qty={44} testId="vinyl" />
+      </CurrentUserProvider>,
+    );
+  const labels = () => [...document.querySelectorAll("button")].map((b) => b.textContent ?? "");
+
+  it("gives doorsdirect Copy description, quantity and price, in that order, under QuickBooks", () => {
+    card("doorsdirect");
+    const all = labels();
+    const at = (l: string) => all.findIndex((x) => x.toLowerCase().includes(l));
+    expect(at("quickbooks")).toBeLessThan(at("copy description"));
+    expect(at("copy description")).toBeLessThan(at("copy quantity"));
+    expect(at("copy quantity")).toBeLessThan(at("copy price"));
+  });
+
+  it("copies the quantity on the line", async () => {
+    card("DoorsDirect");
+    fireEvent.click(screen.getByTestId("vinyl-qtycopy"));
+    await settle();
+    expect(copied).toBe("44");
+  });
+
+  it("leaves Aimee with her two, and everyone else with none", () => {
+    card("aimee");
+    expect(screen.getByTestId("vinyl-desc")).toBeTruthy();
+    expect(screen.getByTestId("vinyl-price")).toBeTruthy();
+    expect(screen.queryByTestId("vinyl-qtycopy")).toBeNull();
+    cleanup();
+    card("bc");
+    expect(screen.queryByTestId("vinyl-desc")).toBeNull();
+    expect(screen.queryByTestId("vinyl-qtycopy")).toBeNull();
+    expect(screen.queryByTestId("vinyl-price")).toBeNull();
+  });
+});
