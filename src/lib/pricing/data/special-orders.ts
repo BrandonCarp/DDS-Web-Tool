@@ -104,7 +104,7 @@ export const SPECIAL: Record<string, SpecialSeries> = {
     "type": "margin",
     "models": {
       "BD4E/BD4N": {
-        "door": 56,
+        "door": 54,
         "section": 49
       },
       "BD4C": {
