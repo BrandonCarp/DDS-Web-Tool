@@ -34,7 +34,7 @@ export const SPECIAL: Record<string, SpecialSeries> = {
     "type": "margin",
     "models": {
       "GD1LP/GD1SP": {
-        "door": 43,
+        "door": 44,
         "section": 49
       },
       "GD4L/GD4S": {
