@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { OptionButtons, type ButtonOption } from "./OptionButtons";
 import { STOCK_ITEMS, type ScanMode, type StockItem } from "@/lib/inventory";
+import { QtyStepper } from "./QtyStepper";
 
 /**
  * The Inventory tab: scan shelf parts out (pull), in (put away), or count a
@@ -244,8 +245,7 @@ export function InventoryTool() {
               <label className="lbl" htmlFor="inv-qty">
                 {mode === "count" ? "How many are on the shelf" : "How many per scan"}
               </label>
-              <input id="inv-qty" data-testid="inv-qty" className="invqty" type="number"
-                min={mode === "count" ? 0 : 1} value={qty} onChange={(e) => setQty(e.target.value)} />
+              <QtyStepper id="inv-qty" testId="inv-qty" min={mode === "count" ? 0 : 1} value={qty} onChange={setQty} />
             </div>
             <div className="field">
               <label className="lbl" htmlFor="inv-scan">Barcode</label>

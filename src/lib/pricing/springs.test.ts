@@ -215,3 +215,25 @@ describe("prices set by hand ahead of the sheet (7/10/2026)", () => {
     }
   });
 });
+
+describe("stock springs in order (8/10/2026)", () => {
+  const feet = (sub?: string) => Number(/(\d+)\s*FT/.exec(sub ?? "")?.[1]);
+  const weight = (name: string) => Number(/^(\d+)\s*LBS/.exec(name)?.[1] ?? /^\d+-\d+-(\d+)/.exec(name)?.[1]);
+
+  for (const cat of [EXTENSION_SPRINGS, STOCK_TORSION_SPRINGS]) {
+    it(`${cat.name}: door height first, then lightest to heaviest`, () => {
+      for (let i = 1; i < cat.items.length; i++) {
+        const [a, b] = [cat.items[i - 1], cat.items[i]];
+        const ok = feet(a.sub) < feet(b.sub) || (feet(a.sub) === feet(b.sub) && weight(a.name) < weight(b.name));
+        expect(ok, `${a.name} (${a.sub}) before ${b.name} (${b.sub})`).toBe(true);
+      }
+    });
+  }
+
+  it("groups the heights 7FT, 8FT, 9FT, and keeps every spring", () => {
+    expect(springGroups(STOCK_TORSION_SPRINGS).map((g) => g.label)).toEqual(["7FT", "8FT", "9FT"]);
+    expect(springGroups(EXTENSION_SPRINGS).map((g) => g.label)).toEqual(["7FT", "8FT"]);
+    expect(STOCK_TORSION_SPRINGS.items).toHaveLength(29);
+    expect(EXTENSION_SPRINGS.items).toHaveLength(39);
+  });
+});

@@ -121,6 +121,17 @@ export function vinylForDoorColor(doorColor: string): string | null {
 
 export const VINYL_COLORS = Object.keys(VINYL_STOCK).sort();
 
+/**
+ * The pieces as the description reads them (Brandon, 8/10/2026): two sizes
+ * are joined by AND; with more, commas between them and AND only before the
+ * last — "[1] - 16FT,  [1] - 8FT AND [1] - 7FT". Two spaces after each comma,
+ * as everywhere else in the descriptions.
+ */
+export function piecesText(pieces: { ft: number; count: number }[]): string {
+  const each = pieces.map((p) => `[${p.count}] - ${p.ft}FT`);
+  return each.length <= 2 ? each.join(" AND ") : `${each.slice(0, -1).join(",  ")} AND ${each[each.length - 1]}`;
+}
+
 export interface VinylQuote {
   color: string;
   /** Stock length used for the header piece, in feet — the longest, when the
@@ -199,7 +210,7 @@ export function vinylForDoor(
   const counts = new Map<number, number>();
   for (const ft of [...headerPieces, ...legPieces, ...legPieces]) counts.set(ft, (counts.get(ft) ?? 0) + 1);
   const pieces = [...counts].map(([ft, n]) => ({ ft, count: n * sets }));
-  const body = pieces.map((p) => `[${p.count}] - ${p.ft}FT`).join(" AND ");
+  const body = piecesText(pieces);
 
   return {
     color,
@@ -256,6 +267,6 @@ export function vinylForPieces(color: string, lines: { ft: number | null; count:
     feet,
     pricePerFt,
     total: Math.round(feet * pricePerFt * 100) / 100,
-    description: `${color} VINYL STOP MOLDING,  ${pieces.map((p) => `[${p.count}] - ${p.ft}FT`).join(" AND ")}`,
+    description: `${color} VINYL STOP MOLDING,  ${piecesText(pieces)}`,
   };
 }

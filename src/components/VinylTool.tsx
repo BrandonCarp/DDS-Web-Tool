@@ -6,6 +6,7 @@ import { QB_VINYL } from "@/lib/pricing/data/quickbooks";
 import { QbLineDemo } from "@/components/QbLineDemo";
 import { QB_ITEMS } from "@/lib/qb/iif";
 import { vinylForPieces, VINYL_COLORS, VINYL_STOCK } from "@/lib/pricing/data/vinyl";
+import { QtyStepper } from "./QtyStepper";
 
 const fmt = (n: number) =>
   "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -42,7 +43,6 @@ export function VinylTool() {
 
   const setLine = (id: number, change: Partial<Line>) =>
     setLines((ls) => ls.map((l) => (l.id === id ? { ...l, ...change } : l)));
-  const step = (l: Line, by: number) => setLine(l.id, { qty: String(Math.max(1, count(l) + by)) });
   const addLine = () => {
     setLines((ls) => [...ls, { id: nextId, ft: null, qty: "1" }]);
     setNextId((n) => n + 1);
@@ -100,20 +100,8 @@ export function VinylTool() {
                               ))}
                             </select>
                           </div>
-                          <div className="stepper">
-                            <button type="button" data-testid={`vinyl-minus-${i}`} aria-label="One fewer"
-                              disabled={count(l) <= 1} onClick={() => step(l, -1)}>−</button>
-                            <input
-                              data-testid={`vinyl-count-${i}`}
-                              aria-label="Quantity"
-                              type="number"
-                              min={1}
-                              value={l.qty}
-                              onChange={(e) => setLine(l.id, { qty: e.target.value })}
-                            />
-                            <button type="button" data-testid={`vinyl-plus-${i}`} aria-label="One more"
-                              onClick={() => step(l, 1)}>+</button>
-                          </div>
+                          <QtyStepper testId={`vinyl-count-${i}`} value={l.qty}
+                            onChange={(v) => setLine(l.id, { qty: v })} />
                           {lines.length > 1 ? (
                             <button type="button" className="vline-del" data-testid={`vinyl-remove-${i}`}
                               aria-label="Remove this size" onClick={() => removeLine(l.id)}>×</button>

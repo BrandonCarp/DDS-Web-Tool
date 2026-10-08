@@ -31,11 +31,26 @@ const TORSION_ALL = category(TORSION_CATEGORY);
  * 30/9/2026), so the spring tabs list springs only.
  */
 const isKit = (p: Part) => !p.sub;
+/**
+ * Stock springs in order (Brandon, 8/10/2026): door height first — 7FT, then
+ * 8FT, then 9FT — and the lightest spring to the heaviest within each. The
+ * sheet sorts the names as text, which put 80 and 90 after 220.
+ */
+const doorFeet = (p: Part) => Number(/(\d+)\s*FT\b/.exec(p.sub ?? "")?.[1] ?? Infinity);
+// Torsion names lead with the weight ("100LBS,  2 X 218 X 23-1/4\""); extension
+// codes end with it ("25-42-100,  TAN").
+const springWeight = (p: Part) =>
+  Number(/^(\d+)\s*LBS\b/.exec(p.name)?.[1] ?? /^\d+-\d+-(\d+)\b/.exec(p.name)?.[1] ?? Infinity);
+export function inSpringOrder(items: Part[]): Part[] {
+  // Array.sort is stable: a row the rules cannot read keeps its sheet place.
+  return [...items].sort((a, b) => doorFeet(a) - doorFeet(b) || springWeight(a) - springWeight(b));
+}
+
 export const EXTENSION_SPRINGS: PartCategory = {
-  name: EXTENSION_CATEGORY, items: EXTENSION_ALL.items.filter((p) => !isKit(p)),
+  name: EXTENSION_CATEGORY, items: inSpringOrder(EXTENSION_ALL.items.filter((p) => !isKit(p))),
 };
 export const STOCK_TORSION_SPRINGS: PartCategory = {
-  name: TORSION_CATEGORY, items: TORSION_ALL.items.filter((p) => !isKit(p)),
+  name: TORSION_CATEGORY, items: inSpringOrder(TORSION_ALL.items.filter((p) => !isKit(p))),
 };
 export const EXTENSION_KITS_CATEGORY = "EXTENSION KITS";
 export const TORSION_KITS_CATEGORY = "TORSION KITS";

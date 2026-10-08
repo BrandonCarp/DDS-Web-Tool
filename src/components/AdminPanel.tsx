@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "./Icon";
+import { QtyStepper } from "./QtyStepper";
 
 export interface AdminUser {
   id: number;
@@ -552,7 +553,7 @@ export function AdminPanel({
                                     />
                                     <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                                       <label style={{ fontSize: 12 }}>Qty</label>
-                                      <input type="number" min={1} value={eQty} onChange={(ev) => setEQty(ev.target.value)} style={{ width: 70 }} />
+                                      <QtyStepper value={eQty} onChange={setEQty} />
                                       <label style={{ fontSize: 12 }}>Unit price</label>
                                       <input type="number" min={0} step="0.01" value={eUnit} onChange={(ev) => setEUnit(ev.target.value)} style={{ width: 110 }} />
                                       <span style={{ fontSize: 12, color: "var(--muted)" }}>

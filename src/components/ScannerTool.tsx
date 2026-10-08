@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { CopyButton } from "./CopyButton";
 import { quickBooksRow } from "@/lib/pricing/data/quickbooks";
+import { QtyStepper } from "./QtyStepper";
 
 export type CartLine = {
   key: string;
@@ -121,8 +122,8 @@ export function ScannerTool() {
                     <small>{l.desc}</small>
                   </span>
                 </span>
-                <input className="cart-qty" type="number" min={1} value={l.qty} aria-label={`Quantity of ${l.name}`}
-                  data-testid="cart-qty" onChange={(e) => setQty(l.key, e.target.value)} />
+                <QtyStepper value={l.qty} testId="cart-qty" label={`Quantity of ${l.name}`}
+                  onChange={(v) => setQty(l.key, v)} />
                 <span className="cart-price" data-testid="cart-price">{fmt(l.price)}</span>
                 <button type="button" className="cart-del" aria-label={`Remove ${l.name}`} data-testid="cart-del"
                   onClick={() => remove(l.key)}>×</button>

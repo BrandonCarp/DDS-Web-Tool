@@ -27,6 +27,7 @@ import { dataKey } from "@/lib/pricing/model-groups";
 import { homeownerMarkupForBand } from "@/lib/pricing/engine";
 import { windowDesigns } from "@/lib/pricing/data/inserts";
 import { OptionButtons, type ButtonOption } from "./OptionButtons";
+import { QtyStepper } from "./QtyStepper";
 
 const fmt = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -761,7 +762,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
             <>
               <div className="qtyrow">
                 <label htmlFor="soqty">Quantity</label>
-                <input id="soqty" type="number" min={1} value={qty} onChange={(e) => { setQty(Number(e.target.value)); setSaved(false); }} />
+                <QtyStepper id="soqty" value={qty} onChange={(v) => { setQty(Number(v)); setSaved(false); }} />
               </div>
               <div className="total">
                 <span className="tl">Door price (each)</span>

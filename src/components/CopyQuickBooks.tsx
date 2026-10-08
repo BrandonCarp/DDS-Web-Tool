@@ -5,6 +5,7 @@ import { CopyButton, CopyPrice } from "./CopyButton";
 import { AddToCart } from "./Cart";
 import { copyExtrasFor, useCurrentUser } from "./CurrentUser";
 import { quickBooksRow } from "@/lib/pricing/data/quickbooks";
+import { QtyStepper } from "./QtyStepper";
 
 /**
  * Copy a whole QuickBooks invoice line.
@@ -62,16 +63,10 @@ export function CopyQuickBooks({
     <>
     <span className="qbline">
       {!controlled && (
-        <label className="qbqty">
-          Qty
-          <input
-            type="number"
-            min={1}
-            value={own}
-            data-testid={`${testId}-qty`}
-            onChange={(e) => setOwn(Math.max(1, Number(e.target.value) || 1))}
-          />
-        </label>
+        <span className="qbqty">
+          <span>Qty</span>
+          <QtyStepper value={own} testId={`${testId}-qty`} onChange={(v) => setOwn(Math.max(1, Number(v) || 1))} />
+        </span>
       )}
       <CopyButton
         text={text}

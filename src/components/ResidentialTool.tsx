@@ -21,6 +21,7 @@ import { DoorSlideshow } from "./DoorSlideshow";
 import { RESIDENTIAL_PHOTOS } from "@/lib/door-photos";
 import { vinylForDoor, vinylForDoorColor } from "@/lib/pricing/data/vinyl";
 import { VinylPrompt, YES_NO } from "./VinylPrompt";
+import { QtyStepper } from "./QtyStepper";
 
 const GLASS = [
   { value: "solid", label: "Solid (no windows)" },
@@ -791,7 +792,7 @@ export function ResidentialTool({
             <>
               <div className="qtyrow">
                 <label htmlFor="qty">Quantity</label>
-                <input id="qty" type="number" min={1} value={qty} onChange={(e) => setQty(Number(e.target.value))} />
+                <QtyStepper id="qty" value={qty} onChange={(v) => setQty(Number(v))} />
               </div>
               <div className="total">
                 {/* One door's price, whatever the quantity — like the springs (Brandon, 28/9/2026). */}

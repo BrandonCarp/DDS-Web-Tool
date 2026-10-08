@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useMemo, useRef, useState, type
 import { CopyButton } from "./CopyButton";
 import { Icon } from "./Icon";
 import { quickBooksRow } from "@/lib/pricing/data/quickbooks";
+import { QtyStepper } from "./QtyStepper";
 
 /** One QuickBooks invoice line in the cart. The rate is the price of ONE. */
 export type CartLine = { id: number; item: string; description: string; qty: number; rate: number };
@@ -110,8 +111,8 @@ export function CartTool() {
                     <small>{l.item}</small>
                   </span>
                 </span>
-                <input className="cart-qty" type="number" min={1} value={l.qty} data-testid="cartline-qty"
-                  aria-label={`Quantity of ${l.description}`} onChange={(e) => setQty(l.id, Number(e.target.value))} />
+                <QtyStepper value={l.qty} testId="cartline-qty" label={`Quantity of ${l.description}`}
+                  onChange={(v) => setQty(l.id, Number(v))} />
                 <span className="cart-price">{fmt(l.rate)}</span>
                 <button type="button" className="cart-del" data-testid="cartline-del" aria-label={`Remove ${l.description}`}
                   onClick={() => remove(l.id)}>×</button>

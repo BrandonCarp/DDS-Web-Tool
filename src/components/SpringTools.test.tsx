@@ -39,6 +39,13 @@ describe("Extension Springs tab", () => {
     expect(line.rate).toBeCloseTo(first.price, 2);
   });
 
+  it("lists the springs by door height, lightest first (8/10/2026)", () => {
+    render(<ExtensionTool />);
+    const rows = [...screen.getByTestId("ext-list").querySelectorAll(".partrow .partname")].map((e) => e.firstChild?.textContent ?? "");
+    expect(rows.slice(0, 3)).toEqual(["25-42-80,  GOLD", "25-42-90,  LIGHT BLUE", "25-42-100,  TAN"]);
+    expect(rows.indexOf("27-48-80,  GOLD")).toBe(rows.indexOf("25-42-220,  GREEN") + 1); // 7FT ends, 8FT begins
+  });
+
   it("has no search box of its own — the top bar's is the one (6/10/2026)", () => {
     render(<ExtensionTool />);
     expect(screen.queryByTestId("ext-search")).toBeNull();
@@ -60,19 +67,36 @@ describe("Torsion Springs tab", () => {
     expect(screen.queryByTestId("stock-list")).toBeNull();
   });
 
-  it("puts Stock springs left of the configurator", () => {
+  it("puts Stock springs at the bottom of the configurator section (8/10/2026)", () => {
     renderTool();
-    const order = Array.from(document.querySelectorAll(".modeswitch .modebtn")).map((b) =>
-      b.getAttribute("data-testid"),
-    );
-    expect(order).toEqual(["mode-stock", "mode-config"]);
+    const after = (a: Element, b: Element) => !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(after(screen.getByTestId("mode-config"), screen.getByTestId("tor-wire"))).toBe(true);
+    expect(after(screen.getByTestId("tor-wire"), screen.getByTestId("mode-stock"))).toBe(true);
+    expect(screen.getByTestId("mode-stock").getAttribute("aria-expanded")).toBe("false");
   });
 
-  it("swaps the whole column when Stock springs is picked", () => {
+  it("hides the configurator's options when Stock springs is clicked, and brings them back", () => {
     renderTool();
     fireEvent.click(screen.getByTestId("mode-stock"));
     expect(screen.getByTestId("stock-list")).toBeTruthy();
     expect(screen.queryByTestId("tor-wire")).toBeNull();
+    expect(screen.getByTestId("mode-config").getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(screen.getByTestId("mode-stock")); // a second click closes the list
+    expect(screen.queryByTestId("stock-list")).toBeNull();
+    expect(screen.getByTestId("tor-wire")).toBeTruthy();
+    fireEvent.click(screen.getByTestId("mode-stock"));
+    fireEvent.click(screen.getByTestId("mode-config")); // or open the configurator
+    expect(screen.queryByTestId("stock-list")).toBeNull();
+    expect(screen.getByTestId("tor-wire")).toBeTruthy();
+  });
+
+  it("lists the stock springs by door height, lightest first", () => {
+    renderTool();
+    fireEvent.click(screen.getByTestId("mode-stock"));
+    const rows = [...screen.getByTestId("stock-list").querySelectorAll(".partrow .partname")].map((e) => e.firstChild?.textContent ?? "");
+    expect(rows[0]).toMatch(/^80LBS/);
+    expect(rows[1]).toMatch(/^90LBS/);
+    expect(rows[2]).toMatch(/^100LBS/);
   });
 
   it("prices a stock spring as a pair by default", async () => {

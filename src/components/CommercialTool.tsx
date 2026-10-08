@@ -18,6 +18,7 @@ import {
   STOCK_SECTION_WIDTHS, sectionWidthLabel,
 } from "@/lib/pricing/data/commercial-meta";
 import { homeownerMarkup } from "@/lib/pricing/engine";
+import { QtyStepper } from "./QtyStepper";
 
 interface CommQuote {
   priced: boolean; incomplete?: string; warn?: string;
@@ -461,7 +462,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
               </div>
               <div className="qtyrow">
                 <label htmlFor="cqty">Quantity</label>
-                <input id="cqty" type="number" min={1} value={qty} onChange={(e) => setQty(Number(e.target.value))} />
+                <QtyStepper id="cqty" value={qty} onChange={(v) => setQty(Number(v))} />
               </div>
               <div className="total">
                 <span className="tl">Door price (each)</span>

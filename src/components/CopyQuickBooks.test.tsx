@@ -162,3 +162,16 @@ describe("copy buttons for the doorsdirect account (7/10/2026)", () => {
     expect(screen.queryByTestId("vinyl-price")).toBeNull();
   });
 });
+
+describe("typing the quantity on the QuickBooks button (8/10/2026)", () => {
+  it("pastes the number typed, after the box is emptied — 5, not 15", async () => {
+    render(<CopyQuickBooks item="PARTS" description="CABLE CUTTER" rate={74.95} testId="p" />);
+    const qty = screen.getByTestId("p-qty") as HTMLInputElement;
+    fireEvent.change(qty, { target: { value: "" } }); // Backspace
+    expect(qty.value).toBe("");
+    fireEvent.change(qty, { target: { value: "5" } });
+    fireEvent.click(screen.getByTestId("p"));
+    await settle();
+    expect(copied.split("\t")[2]).toBe("5");
+  });
+});

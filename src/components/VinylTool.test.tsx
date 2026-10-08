@@ -29,7 +29,7 @@ describe("Vinyl tab, by the piece (7/10/2026)", () => {
   it("builds the line from the sizes and counts: [2] - 8FT AND [4] - 7FT", async () => {
     render(<VinylTool />);
     size(0, "8");
-    fireEvent.click(screen.getByTestId("vinyl-plus-0")); // 1 -> 2
+    fireEvent.click(screen.getByTestId("vinyl-count-0-plus")); // 1 -> 2
     fireEvent.click(screen.getByTestId("vinyl-add-line"));
     size(1, "7");
     fireEvent.change(screen.getByTestId("vinyl-count-1"), { target: { value: "4" } }); // typed
@@ -39,12 +39,23 @@ describe("Vinyl tab, by the piece (7/10/2026)", () => {
     expect(screen.getByTestId("vinyl-qty").textContent).toBe("44");
   });
 
+  it("puts AND only before the last of three sizes (8/10/2026)", async () => {
+    render(<VinylTool />);
+    size(0, "7");
+    fireEvent.click(screen.getByTestId("vinyl-add-line"));
+    size(1, "8");
+    fireEvent.click(screen.getByTestId("vinyl-add-line"));
+    size(2, "16");
+    const line = await copiedQbLine(screen.getByTestId("vinyl-copy-qb"));
+    expect(line.description).toBe("WHITE VINYL STOP MOLDING,  [1] - 16FT,  [1] - 8FT AND [1] - 7FT");
+  });
+
   it("never steps a count below one", () => {
     render(<VinylTool />);
-    expect((screen.getByTestId("vinyl-minus-0") as HTMLButtonElement).disabled).toBe(true);
-    fireEvent.click(screen.getByTestId("vinyl-plus-0"));
-    fireEvent.click(screen.getByTestId("vinyl-minus-0"));
-    fireEvent.click(screen.getByTestId("vinyl-minus-0"));
+    expect((screen.getByTestId("vinyl-count-0-minus") as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByTestId("vinyl-count-0-plus"));
+    fireEvent.click(screen.getByTestId("vinyl-count-0-minus"));
+    fireEvent.click(screen.getByTestId("vinyl-count-0-minus"));
     expect(count(0)).toBe("1");
   });
 

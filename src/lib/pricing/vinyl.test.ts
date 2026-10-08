@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { vinylForDoor, vinylForDoorColor, vinylForPieces, DOOR_COLOR_TO_VINYL, VINYL_STOCK } from "./data/vinyl";
+import { vinylForDoor, vinylForDoorColor, vinylForPieces, piecesText, DOOR_COLOR_TO_VINYL, VINYL_STOCK } from "./data/vinyl";
 import { COLORS } from "./data/catalog-meta";
 
 describe("vinyl stop molding", () => {
@@ -54,7 +54,7 @@ describe("vinyl stop molding", () => {
     // Almond runs to 16' but stocks short lengths too.
     const almond = vinylForDoor("ALMOND", 18, 8)!;
     expect(almond.headerPieces).toEqual([16, 7]);
-    expect(almond.description).toBe("ALMOND VINYL STOP MOLDING,  [1] - 16FT AND [1] - 7FT AND [2] - 8FT");
+    expect(almond.description).toBe("ALMOND VINYL STOP MOLDING,  [1] - 16FT,  [1] - 7FT AND [2] - 8FT");
     // Bronze is 16' only, so the extra piece is another 16.
     const bronze = vinylForDoor("BRONZE", 18, 7)!;
     expect(bronze.headerPieces).toEqual([16, 16]);
@@ -127,5 +127,15 @@ describe("vinyl by the piece (7/10/2026)", () => {
     expect(o.description).toBe("WHITE VINYL STOP MOLDING,  [3] - 16FT");
     expect(vinylForPieces("ALMOND", [{ ft: 12, count: 1 }])).toBeNull(); // not stocked in almond
     expect(vinylForPieces("PURPLE", [{ ft: 16, count: 1 }])).toBeNull();
+  });
+});
+
+describe("the sizes on a vinyl line (8/10/2026)", () => {
+  const p = (...fts: number[]) => fts.map((ft) => ({ ft, count: 1 }));
+  it("joins two sizes with AND, and uses AND only before the last of more", () => {
+    expect(piecesText(p(16))).toBe("[1] - 16FT");
+    expect(piecesText(p(16, 8))).toBe("[1] - 16FT AND [1] - 8FT");
+    expect(piecesText(p(16, 8, 7))).toBe("[1] - 16FT,  [1] - 8FT AND [1] - 7FT");
+    expect(piecesText(p(18, 16, 8, 7))).toBe("[1] - 18FT,  [1] - 16FT,  [1] - 8FT AND [1] - 7FT");
   });
 });

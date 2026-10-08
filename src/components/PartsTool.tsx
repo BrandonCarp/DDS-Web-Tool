@@ -19,6 +19,7 @@ import { entryId, feetAsQuantity, type PartsMenu } from "@/lib/pricing/data/part
 import { PartsNavigator } from "./PartsNavigator";
 import { cableQuote, CABLE_GAUGES } from "@/lib/pricing/data/cables";
 import { billedFeet, feetLimits, priceNotSet } from "@/lib/pricing/data/part-pricing";
+import { QtyStepper } from "./QtyStepper";
 
 const fmt = (n: number) =>
   "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -330,25 +331,15 @@ export function PartsTool({
                     <div className="grow">
                       <label className="lbl">Right Wound</label>
                       <div className="ctl">
-                        <input
-                          data-testid="part-right"
-                          type="number"
-                          min={0}
-                          value={right}
-                          onChange={(e) => setRight(Math.max(0, Math.trunc(Number(e.target.value)) || 0))}
-                        />
+                        <QtyStepper testId="part-right" min={0} value={right} label="Right wound"
+                          onChange={(v) => setRight(Math.max(0, Math.trunc(Number(v)) || 0))} />
                       </div>
                     </div>
                     <div className="grow">
                       <label className="lbl">Left Wound</label>
                       <div className="ctl">
-                        <input
-                          data-testid="part-left"
-                          type="number"
-                          min={0}
-                          value={left}
-                          onChange={(e) => setLeft(Math.max(0, Math.trunc(Number(e.target.value)) || 0))}
-                        />
+                        <QtyStepper testId="part-left" min={0} value={left} label="Left wound"
+                          onChange={(v) => setLeft(Math.max(0, Math.trunc(Number(v)) || 0))} />
                       </div>
                       <div className="muted-note" style={{ marginTop: 6 }}>
                         Priced each — the quantity carries the count
