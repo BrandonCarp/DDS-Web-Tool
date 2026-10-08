@@ -33,6 +33,10 @@ export const SPECIAL: Record<string, SpecialSeries> = {
   "Gallery Collection": {
     "type": "margin",
     "models": {
+      "GD1LP/GD1SP": {
+        "door": 43,
+        "section": 49
+      },
       "GD4L/GD4S": {
         "door": 56,
         "section": 49
@@ -51,10 +55,6 @@ export const SPECIAL: Record<string, SpecialSeries> = {
       },
       "GD2LP/GD2SP": {
         "door": 45,
-        "section": 49
-      },
-      "GD1LP/GD1SP": {
-        "door": 43,
         "section": 49
       },
       "GD1LU/GD1SU": {

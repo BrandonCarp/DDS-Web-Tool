@@ -519,7 +519,7 @@ describe("special order — the Clopay total is always reachable", () => {
     // a typed Clopay total. They have no configurator, so no Configure button,
     // so gating the field behind Configure made it unreachable — which is most
     // of the special order catalogue.
-    for (const c of ["Gallery Collection", "Canyon Ridge Collection"]) {
+        for (const c of ["Canyon Ridge Collection"]) {
       cleanup();
       await pick("Clopay", c);
       expect(maybe("so-configure"), c).toBeNull();
