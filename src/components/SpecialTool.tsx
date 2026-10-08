@@ -17,8 +17,8 @@ import {
   minWidthFor, excludedWidthsFor,
   parseModelSelection, modelSelectionValue,
 } from "@/lib/pricing/data/special-door-pricing";
-import { COLORS } from "@/lib/pricing/data/catalog-meta";
-import { glassOptionsFor, panelStylesFor, type PanelStyle } from "@/lib/pricing/data/so-glass";
+import { COLORS, specialOrderColors } from "@/lib/pricing/data/catalog-meta";
+import { glassOptionsFor, panelStylesFor, glassTakesInserts, GALLERY_GROUP, type PanelStyle } from "@/lib/pricing/data/so-glass";
 import {
   TRACK_MOUNTS, INCLINE_STYLES, highLiftChoices, highLiftPrice, canTakeHighLift,
   type TrackMount, type InclineStyle,
@@ -200,9 +200,20 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   // The specific glass types DDS has priced for this model and width.
   // Panel style changes the window count, and so the glass price. Long panels
   // start at 8'0", so a narrow door offers short only and the row is hidden.
+  // The Gallery offers the same short-or-long choice as the 4050: long panel
+  // glass prices at the GD1LP figure whichever model is picked (8/10/2026).
+  // Long panels start at 7'8", so a narrower door offers short only.
+  const isGallery = modelGroup === GALLERY_GROUP;
   const soPanels = gridded && gWidth ? panelStylesFor(modelGroup, gWidth) : [];
   const gPanelEff: PanelStyle = soPanels.includes(gPanel) ? gPanel : (soPanels[0] ?? "short");
   const soGlass = gridded && gWidth ? glassOptionsFor(modelGroup, gPanelEff, gWidth) : [];
+  // The Gallery has no single strength: double strength is its base glass, so
+  // the dropdown starts there instead of on a placeholder.
+  const gGlassEff = isGallery ? (soGlass.some((g) => g.id === gGlass) ? gGlass : "dsb") : gGlass;
+  // Inserts are not offered on every Gallery glass (acrylic): the Inserts
+  // style is taken away where its glass cannot take them.
+  const gInsertsOk = !isGallery || !gWidth || glassTakesInserts(modelGroup, gPanelEff, gWidth, gGlassEff);
+  const gStyleEff = gStyle === "inserts" && !gInsertsOk ? "glass" : gStyle;
 
   // High lift is torsion only, and caps at the door height less 3 inches —
   // above that the door is full vertical lift, a different track entirely.
@@ -234,19 +245,18 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   // 12/9/2026.
   // Special order groups are slash-separated ("T50S/T50L"); the colour table is
   // keyed by catalogue group. Resolve through the first member.
-  const gColors =
-    COLORS[dataKey((modelMember || modelGroup).split("/")[0])] ??
-    COLORS[dataKey(modelGroup)] ??
-    ["White"];
+  const gColorKey = COLORS[dataKey((modelMember || modelGroup).split("/")[0])]
+    ? dataKey((modelMember || modelGroup).split("/")[0]) : dataKey(modelGroup);
+  const gColors = COLORS[gColorKey] ? specialOrderColors(gColorKey) : ["White"];
   // The configurator opens in order: size, then color, then everything else.
   const gColorChosen = gColors.includes(gColor);
   const gOpen = gSizeSet && gColorChosen;
 
   const gResult = gridded && gWidth && gHeight && gColorChosen
-    ? specialDoorQuote({ model: modelGroup, width: gWidth, height: gHeight, style: gStyle, color: gColor,
+    ? specialDoorQuote({ model: modelGroup, width: gWidth, height: gHeight, style: gStyleEff, color: gColor,
         windesign: gDesign || undefined, variant: (modelMember || gVariant) || undefined,
         track: gTrack as never, spring: gSpringUsed as never, lock: gLock as never,
-        glassType: gStyle !== "solid" ? gGlass || undefined : undefined, panelStyle: gPanelEff,
+        glassType: gStyleEff !== "solid" ? gGlassEff || undefined : undefined, panelStyle: gPanelEff,
         trackMount: gMount, incline: gIncline, highLiftInches: gIsLift ? gEffLift : 0 })
     : null;
   const widthLabel = (w: string) => {
@@ -256,8 +266,11 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   // The same insert list a residential 4050 offers, filtered the same way — by
   // model, style and door width.
 
-  const gDesigns = gridded && gStyle === "inserts" && gWidth
-    ? windowDesigns(model, "inserts", gWidth.split(".")[0])
+  // The design list the stock tab offers the same door — the Gallery's arches
+  // and grilles when a GD1SP or GD1LP is picked. On the Gallery the price is
+  // one flat inserts adder from its sheet (8/10/2026); the design names the line.
+  const gDesigns = gridded && gStyleEff === "inserts" && gWidth
+    ? windowDesigns(modelMember || model, "inserts", gWidth.split(".")[0])
     : [];
 
   // Grid first when it produced a price and the counter has not typed a total.
@@ -518,21 +531,27 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                   </div>
                   <div className="grow"><label>Windows</label>
                     <div className="ctl selectwrap">
-                      <select disabled={!gOpen} data-testid="so-style" value={gStyle} onChange={(e) => { setGStyle(e.target.value as "solid" | "glass" | "inserts"); setSaved(false); }}>
+                      <select disabled={!gOpen} data-testid="so-style" value={gStyleEff} onChange={(e) => { setGStyle(e.target.value as "solid" | "glass" | "inserts"); setSaved(false); }}>
                         <option value="solid">Solid — no windows</option>
                         <option value="glass">Glass</option>
-                        <option value="inserts">Inserts</option>
+                        {gInsertsOk && <option value="inserts">Inserts</option>}
                       </select>
                     </div>
                   </div>
                   </div>
                   <div className="ggroup">
                   <div className="ghdr">Window options</div>
-                  {gStyle !== "solid" && soPanels.length > 1 && (
+                  {gStyleEff !== "solid" && soPanels.length > 1 && (
                     <div className="grow"><label>Panel style</label>
                       <div className="ctl selectwrap">
                         <select disabled={!gOpen} data-testid="so-panel" value={gPanelEff}
-                          onChange={(e) => { setGPanel(e.target.value as PanelStyle); setGGlass(""); setSaved(false); }}>
+                          onChange={(e) => {
+                            setGPanel(e.target.value as PanelStyle);
+                            // The 4050's glass list differs by panel, so the glass starts over;
+                            // the Gallery prices the same fifteen either way, so the choice holds.
+                            if (!isGallery) setGGlass("");
+                            setSaved(false);
+                          }}>
                           {soPanels.map((p) => (
                             <option key={p} value={p}>{p === "short" ? "Short panel glass" : "Long panel glass"}</option>
                           ))}
@@ -540,12 +559,12 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                       </div>
                     </div>
                   )}
-                  {gStyle !== "solid" && soGlass.length > 0 && (
+                  {gStyleEff !== "solid" && soGlass.length > 0 && (
                     <div className="grow"><label>Glass type</label>
                       <div className="ctl selectwrap">
-                        <select disabled={!gOpen} data-testid="so-glass" value={gGlass}
+                        <select disabled={!gOpen} data-testid="so-glass" value={gGlassEff}
                           onChange={(e) => { setGGlass(e.target.value); setSaved(false); }}>
-                          <option value="">Single strength</option>
+                          {!isGallery && <option value="">Single strength</option>}
                           {soGlass.map((g) => <option key={g.id} value={g.id}>{g.label}</option>)}
                         </select>
                       </div>

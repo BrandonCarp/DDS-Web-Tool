@@ -91,8 +91,7 @@ describe("inserts", () => {
       ...base, width: "9", style: "inserts", glassType: "dsb",
       panelStyle: "short", windesign: "509",
     });
-    expect(q.quote?.description).toContain("double strength glass");
-    expect(q.quote?.description).toContain("inserts");
+    expect(q.quote?.description).toContain("double strength windows in the top section, Colonial 509 inserts");
   });
 });
 

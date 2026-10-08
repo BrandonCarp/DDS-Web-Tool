@@ -127,6 +127,18 @@ export const PREMIUM_COLORS: Record<string, string[]> = {
 };
 
 /** Does this colour carry the Ultra Grain adder on this model? */
+/**
+ * Colours a SPECIAL ORDER of the model offers: the stock list, plus the
+ * finishes that are special order only. The Gallery's Ultra-Grain Oak finishes
+ * came off the stock list on 10/9/2026 for exactly that reason; the Gallery
+ * sheet (8/10/2026) prices them, so the special order tab lists them again.
+ */
+export function specialOrderColors(catalogKey: string): string[] {
+  const stock = COLORS[catalogKey] ?? [];
+  const extra = (PREMIUM_COLORS[catalogKey] ?? []).filter((c) => /Ultra-Grain/.test(c) && !stock.includes(c));
+  return catalogKey === "GD1LP-GD1SP" ? [...stock, ...extra] : stock;
+}
+
 export function colorTakesPremium(catalogKey: string, color: string): boolean {
   return (PREMIUM_COLORS[catalogKey] ?? []).includes(color);
 }

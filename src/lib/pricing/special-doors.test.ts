@@ -61,7 +61,9 @@ describe("special order door grid", () => {
     for (const off of [
       { ...base, height: "10", width: "8", style: "solid" as const },
       { ...base, width: "19", style: "solid" as const },
-      { model: "GD1LP/GD1SP", height: "7", width: "8", style: "solid" as const, color: "White",
+      // The Gallery was the no-grid example until its sheet landed (8/10/2026);
+      // Canyon Ridge still prices from a typed total only.
+      { model: "CD", height: "7", width: "8", style: "solid" as const, color: "White",
         track: "r12" as const, spring: "extension" as const, lock: "none" as const },
     ]) {
       const r = specialDoorQuote(off);
@@ -128,21 +130,22 @@ describe("gridded door verbiage", () => {
     // Both land in the same QuickBooks column and the counter reads both, so a
     // difference in phrasing between them is a difference with no meaning.
     expect(d()).toBe(
-      `Clopay Model 4050/4051/4053, 8'0" x 7'0", in the color White, solid, no windows, ` +
+      `Clopay Model 4050/4051/4053, 8'0" x 7'0", in the color White, solid no windows, ` +
       `12\u2033 radius track, extension springs, no lock`,
     );
   });
 
   it("carries colour, options and the insert design through", () => {
     expect(d({ color: "Black", track: "low_headroom", spring: "torsion", lock: "lockbar_installed" }))
-      .toContain("in the color Black, solid, no windows, low headroom track, torsion springs, lockbar installed");
+      .toContain("in the color Black, solid no windows, low headroom track, torsion springs, lockbar installed");
     expect(d({ width: "9", style: "inserts", windesign: "509" }))
       .toContain("windows in the top section, Colonial 509 inserts");
   });
 
   it("says NO INSERTS rather than trailing off, same as residential", () => {
     expect(d({ width: "9", style: "inserts" })).toContain("windows in the top section, no inserts");
-    expect(d({ width: "9", style: "glass" })).toContain("glass in the top section, no inserts");
+    // Plain glass reads by its grade, as the stock tab writes it (8/10/2026).
+    expect(d({ width: "9", style: "glass" })).toContain("single strength b grade windows in the top section, no inserts");
   });
 
   it("writes ten-inch widths correctly", () => {
@@ -661,5 +664,38 @@ describe("long-panel inserts on the 4050 and 9130 (5/10/2026)", () => {
       for (const long of ["608", "610", "612", "611", "613"]) expect(ids, `${m} ${long}`).toContain(long);
     }
     expect(windowDesigns("T50S", "inserts", "16").map((d) => d.id)).not.toContain("612"); // short windows only
+  });
+});
+
+describe("special order verbiage — Brandon's examples (8/10/2026)", () => {
+  const line = (o: Record<string, unknown>) => {
+    const r = specialDoorQuote({ model: "4050/4051/4053", variant: "4050", width: "8", height: "7", color: "Black", style: "solid",
+      track: "r12", spring: "extension", lock: "none", ...o } as never);
+    if (!r.quote) throw new Error(r.reason);
+    return r.quote.description.toUpperCase();
+  };
+
+  it("2. a 4050 with single strength windows and 32\" track", () => {
+    expect(line({ style: "glass", track: "r32", spring: "torsion" })).toBe(
+      'CLOPAY MODEL 4050, 8\'0" X 7\'0", IN THE COLOR BLACK, SINGLE STRENGTH B GRADE WINDOWS IN THE TOP SECTION, NO INSERTS, 32″ RADIUS TRACK, TORSION SPRINGS, NO LOCK',
+    );
+  });
+
+  it("3. a solid 9200", () => {
+    expect(line({ model: "9200/9203", variant: "9200", width: "18", color: "White", track: "r15" })).toBe(
+      'CLOPAY MODEL 9200, 18\'0" X 7\'0", IN THE COLOR WHITE, SOLID NO WINDOWS, 15″ RADIUS TRACK, EXTENSION SPRINGS, NO LOCK',
+    );
+  });
+
+  it("4. a Gallery door names the collection, the grade and the insert design", () => {
+    expect(line({ model: "GD1LP/GD1SP", variant: "GD1SP", width: "9", color: "White", style: "inserts", track: "r15", spring: "torsion", windesign: "ARCH1GRILLE" })).toBe(
+      'CLOPAY GALLERY COLLECTION, MODEL GD1SP, 9\'0" X 7\'0", IN THE COLOR WHITE, DOUBLE STRENGTH B GRADE WINDOWS IN THE TOP SECTION, ARCH 1 GRILLE INSERTS, 15″ RADIUS TRACK, TORSION SPRINGS, NO LOCK',
+    );
+  });
+
+  it("1. an angle mount reads before the radius, as the stock tab writes it", () => {
+    expect(line({ style: "glass", track: "r32", spring: "torsion", trackMount: "continuous_angle" })).toContain(
+      'NO INSERTS, 2" CONTINUOUS ANGLE MOUNT TRACK TO WOOD, 32″ RADIUS TRACK, TORSION SPRINGS, NO LOCK',
+    );
   });
 });

@@ -21,9 +21,12 @@
 // that reason and points at the manual box; it must never fall through to a
 // guessed price.
 
-import { glassAdderSell, glassLabel, doorMargin } from "./so-glass";
+import { glassAdderSell, glassLabel, doorMargin, GALLERY_GROUP, type PanelStyle } from "./so-glass";
+import { GALLERY_ULTRA_GRAIN } from "./gallery-glass";
+import { colorTakesPremium } from "./catalog-meta";
 import { highLiftPrice, mountPhrase, type TrackMount, type InclineStyle } from "./track-lift";
-import { ADDONS } from "./addons";
+import { ADDONS, GRADE_RES, COLLECTIONS_RES } from "./addons";
+import { dataKey } from "../model-groups";
 import { designName, windowDesigns } from "./inserts";
 import { SPECIAL_DOORS } from "./special-doors";
 import type { LockKey, SpringKey, TrackKey, WindowStyle } from "../types";
@@ -115,6 +118,9 @@ const MODEL_EXCLUDED_WIDTHS: Record<string, string[]> = {
 };
 
 const MODEL_MIN_WIDTH: Record<string, string> = {
+  // The long-panel Gallery door starts at 7'8"; the GD1SP at 6'2" (sheet, 8/10/2026).
+  "GD1LP": "7.8",
+  "GD1SP": "6.2",
   "4053": "8",
   "4310": "8",
   "9133": "8",
@@ -186,7 +192,7 @@ export function compareWidths(a: string, b: string): number {
  * the T50S offers 9'0" and the 4050 does not.
  */
 // 8'3", 8'6" and 8'9" joined on 28/9/2026 (Brandon), pricing off the 9' grid.
-export const OFFERED_HEIGHTS = ["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8", "8.3", "8.6", "8.9", "9"];
+export const OFFERED_HEIGHTS = ["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8", "8.3", "8.6", "8.9", "9", "9.6", "10"];
 
 /**
  * What the chosen springs add. Torsion is $35 unless the height already
@@ -301,7 +307,20 @@ export function specialDoorQuote(
   // at 6'0", six at 18'0"), so the same door priced two ways depending on
   // whether the counter had touched the glass dropdown. The grid wins for
   // single strength; the other types add over the solid door.
-  if (input.style !== "solid" && input.glassType && input.glassType !== "ssb") {
+  // Gallery glass is priced by panel style, whichever model is picked: long
+  // panel glass, and the inserts that go on it, at the GD1LP price; short at
+  // the GD1SP price (Brandon, 8/10/2026). The grid's own glass columns are the
+  // short-panel figures, so every Gallery glass door re-prices here.
+  const gallery = input.model === GALLERY_GROUP;
+  const galleryPanel: PanelStyle = input.panelStyle ?? "short";
+  if (gallery && input.style !== "solid" && typeof triple.solid === "number") {
+    const add = glassAdderSell(input.model, galleryPanel, input.width, input.glassType || "dsb", input.style === "inserts");
+    if (add == null) return { reason: "Inserts are not offered on that glass — pick another glass, or plain glass." };
+    base = triple.solid + add;
+    // Double strength is the Gallery's own grade, so the line keeps the grade
+    // words ("double strength b grade windows"); a special glass is named.
+    glassName = input.glassType && input.glassType !== "dsb" ? glassLabel(input.glassType) : null;
+  } else if (input.style !== "solid" && input.glassType && input.glassType !== "ssb") {
     const panel = input.panelStyle ?? "short";
     const withInserts = input.style === "inserts";
     const add = glassAdderSell(input.model, panel, input.width, input.glassType, withInserts);
@@ -342,7 +361,22 @@ export function specialDoorQuote(
     return { value, label: r.label };
   })();
 
+  // Ultra-Grain and the other premium finishes on a Gallery door: a flat
+  // adder, single or double (10'2" and up), in two height bands — up to 8'0",
+  // and 8'2" and up (Brandon, 8/10/2026). Cost on the sheet, so lifted by the
+  // margin like the glass.
+  const premium = (() => {
+    if (!gallery || !colorTakesPremium("GD1LP-GD1SP", input.color)) return 0;
+    const [hf, hi] = [Number(input.height.split(".")[0]), Number(input.height.split(".")[1] ?? 0)];
+    const [wf, wi] = [Number(input.width.split(".")[0]), Number(input.width.split(".")[1] ?? 0)];
+    const band = hf * 12 + hi > 96 ? GALLERY_ULTRA_GRAIN.over8ft : GALLERY_ULTRA_GRAIN.upTo8ft;
+    const cost = wf * 12 + wi >= 122 ? band.double : band.single;
+    const margin = doorMargin(input.model);
+    return margin == null ? cost : Math.round((cost / (1 - margin / 100)) * 100) / 100;
+  })();
+
   const adders =
+    premium +
     (input.track === "high_lift" ? 0 : ADDONS.track[input.track as keyof typeof ADDONS.track] ?? 0) +
     springAdder(input.spring, torsionOnly, parseInt(input.width, 10) >= 12) +
     (LOCK[input.lock] ?? 0) +
@@ -352,25 +386,29 @@ export function specialDoorQuote(
   // QuickBooks description column and the counter reads both. The one thing
   // deliberately left out is stock status: a special order is never in stock,
   // so saying so would be noise.
+  // Worded exactly as the stock tab words the same door (Brandon, 8/10/2026):
+  //   SOLID NO WINDOWS
+  //   SINGLE STRENGTH B GRADE WINDOWS IN THE TOP SECTION, NO INSERTS
+  //   DOUBLE STRENGTH B GRADE WINDOWS IN THE TOP SECTION, ARCH 1 GRILLE INSERTS
+  // A named glass type takes the grade's place: "insulated windows in the top
+  // section". The design is named where one was chosen, from the same list the
+  // stock tab offers (the Gallery's arches and grilles included).
+  const member = input.variant || input.model.split("/")[0];
+  const grade = GRADE_RES[dataKey(member)] || "";
+  const designId = (() => {
+    if (input.style !== "inserts" || !input.windesign) return null;
+    const valid = windowDesigns(member, "inserts", input.width.split(".")[0]).map((d) => d.id);
+    return valid.includes(input.windesign) ? input.windesign : null;
+  })();
   const winText =
     input.style === "solid"
-      ? "solid, no windows"
-      : input.style === "glass"
-        ? glassName
-          ? `${glassName.toLowerCase()} glass in the top section, no inserts`
-          : "glass in the top section, no inserts"
-        : (() => {
-            const valid = windowDesigns(input.model, "inserts", input.width.split(".")[0]).map((d) => d.id);
-            const name = input.windesign && valid.includes(input.windesign)
-              ? designName(input.windesign)
-              : null;
-            // Inserts sit ON a glass, so the glass is named too when one was
-            // chosen — "double strength glass, Colonial 509 inserts".
-            const g = glassName ? `${glassName.toLowerCase()} glass` : "windows";
-            return name ? `${g} in the top section, ${name} inserts` : `${g} in the top section, no inserts`;
-          })();
+      ? "solid no windows"
+      : `${glassName ? glassName.toLowerCase() : grade || "single strength b grade"} windows in the top section, ` +
+        (input.style === "inserts" && designId ? `${designName(designId)} inserts` : "no inserts");
+  // Gallery doors carry the collection, as the stock tab writes them.
+  const collection = COLLECTIONS_RES[dataKey(member)] === "Gallery Collection" ? "Gallery Collection, " : "";
   const description =
-    `Clopay Model ${input.variant || input.model}, ${feetInches(input.width)} x ${heightLabel(input.height)}, ` +
+    `Clopay ${collection}Model ${input.variant || input.model}, ${feetInches(input.width)} x ${heightLabel(input.height)}, ` +
     `in the color ${input.color}, ${winText}, ` +
     // An angle mount names what it fastens to, exactly as the commercial tool
     // phrases it, so the two read alike on a quote.
