@@ -16,11 +16,18 @@ const complete = (model: string, o: Record<string, unknown> = {}) =>
   } as never).description ?? "";
 
 describe("ribbed steel verbiage", () => {
-  it("leads a 524 complete door with the material", () => {
-    expect(complete("524")).toContain(`Model 524, 9'2" x 14'0", hollow steel ribbed, in the color white,`);
-    // The model prefix and the track/spring/lock tail are unchanged.
-    expect(complete("524")).toMatch(/^Clopay Model 524,/);
-    expect(complete("524")).toMatch(/torsion springs, no lock$/);
+  it("words a 524 complete door as Brandon wrote it (9/10/2026): the insulation, then on like any door", () => {
+    expect(complete("524")).toBe(
+      `Clopay Model 524, 9'2" x 14'0", non insulated, in the color white, solid no windows, 2" angle mount track to wood, 15" radius track, torsion springs, no lock`,
+    );
+    expect(complete("524")).not.toContain("hollow");
+    expect(complete("524")).not.toContain("ribbed"); // that wording is the sections' only
+  });
+
+  it("puts a 524 complete door's windows after the colour, like any other door", () => {
+    expect(complete("524", { glass: "glass", winSection: 3 })).toContain(
+      `non insulated, in the color white, 24x12 windows in the third section, 2" angle`,
+    );
   });
 
   // Brandon's three lines (7/10/2026), for a 12'0" x 24" section, single end stile.
@@ -73,7 +80,7 @@ describe("ribbed steel verbiage", () => {
 
   it("leaves every other commercial model alone", () => {
     expect(section("3150")).toContain("solid intermediate section, in the color White");
-    expect(complete("3200")).toContain("in the color white, solid, no windows,");
+    expect(complete("3200")).toContain("in the color white, solid no windows,");
     expect(section("3150")).not.toContain("ribbed");
   });
 });

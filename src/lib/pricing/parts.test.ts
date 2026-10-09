@@ -105,6 +105,31 @@ describe("QuickBooks item names", () => {
   });
 });
 
+describe("lock bars cut to length (9/10/2026)", () => {
+  const assembly = () => find("LOCKS", "LOCK BAR ASSEMBLY");
+  const bar = () => find("LOCKS", "LOCKBAR");
+
+  it("puts the length on the line in place of the sheet's 8FT, to the inch", () => {
+    expect(partDescription(assembly(), 9.5)).toBe("9'6\" LOCKBAR ASSEMBLY");
+    expect(partDescription(assembly(), 10)).toBe("10FT LOCKBAR ASSEMBLY");
+    expect(partDescription(bar(), 16 + 2 / 12)).toBe("16'2\" LOCKBAR");
+    expect(partDescription(assembly())).toBe("8FT LOCKBAR ASSEMBLY"); // no length given: the sheet's line
+  });
+
+  it("costs the same at any length — not sold by the foot", () => {
+    expect(partPrice(bar(), 1)).toBe(bar().price);
+    expect(partPrice(bar(), 18)).toBe(bar().price);
+    expect(partQuantity(bar())).toBe(1);
+  });
+
+  it("is cut from 1FT to 18FT; the lock bag beside it takes no length", () => {
+    expect(feetLimits(assembly())).toEqual({ min: 1, max: 18 });
+    expect(feetLimits(bar())).toEqual({ min: 1, max: 18 });
+    expect(feetLimits(find("LOCKS", "LOCK BAG"))).toBeNull();
+    expect(partDescription(find("LOCKS", "LOCK BAG"), 9)).toBe("LOCK BAG ASSEMBLY");
+  });
+});
+
 describe("raw track sticks (30/9/2026)", () => {
   const raw2 = () => find("TRACKS", '2" RAW TRACK');
   const raw3 = () => find("TRACKS", '3" RAW TRACK');

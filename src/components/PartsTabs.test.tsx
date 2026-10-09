@@ -243,6 +243,22 @@ describe("retainers measured in feet and inches (9/10/2026)", () => {
     expect(line.rate).toBeCloseTo(3.75 * 16, 2);
   });
 
+  it("gives lock bars the same feet-and-inches box, 1 to 18 ft, and writes the length on the line", async () => {
+    show(<PartsTool menu={PARTS_TAB_MENU} />);
+    fireEvent.click(screen.getByTestId("group-locks"));
+    fireEvent.click(screen.getByText("LOCK BAR ASSEMBLY").closest("button")!);
+    expect(screen.getByTestId("parts-inches")).toBeTruthy();
+    expect(screen.queryByTestId("parts-copy-qb")).toBeNull(); // no length yet, no line
+    fireEvent.change(screen.getByTestId("parts-feet"), { target: { value: "9" } });
+    fireEvent.change(screen.getByTestId("parts-inches"), { target: { value: "6" } });
+    expect(screen.queryByTestId("parts-feet-note")).toBeNull();
+    const line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
+    expect(line).toEqual({ item: "PARTS", description: "9'6\" LOCKBAR ASSEMBLY", qty: 1, rate: 49.95 });
+    fireEvent.change(screen.getByTestId("parts-feet"), { target: { value: "19" } });
+    expect(screen.getByTestId("parts-feet-error").textContent).toContain("1 to 18");
+    expect(screen.queryByTestId("parts-copy-qb")).toBeNull();
+  });
+
   it("gives other per-foot parts whole feet only", () => {
     const seals = GROUP_TABS.find((t) => t.id === "seals")!;
     show(<PartsTool menu={seals.menu} categories={seals.categories} group="Seals" />);

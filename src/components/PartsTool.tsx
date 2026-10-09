@@ -18,7 +18,7 @@ import type { SearchPick } from "@/lib/search";
 import { entryId, feetAsQuantity, type PartsMenu } from "@/lib/pricing/data/parts-menu";
 import { PartsNavigator } from "./PartsNavigator";
 import { cableQuote, CABLE_GAUGES } from "@/lib/pricing/data/cables";
-import { billedFeet, feetLimits, feetText, isRetainer, priceNotSet } from "@/lib/pricing/data/part-pricing";
+import { billedFeet, feetLimits, feetText, isLockbar, measuredToInch, priceNotSet, takesLength } from "@/lib/pricing/data/part-pricing";
 import { QtyStepper } from "./QtyStepper";
 
 const fmt = (n: number) =>
@@ -108,12 +108,15 @@ export function PartsTool({
   const hit = onCable ? null : results.find((r) => r.part.name === pickedName) ?? null;
   const part: Part | null = hit?.part ?? null;
 
-  // U and L retainers take feet and inches (9/10/2026); other per-foot parts whole feet.
-  const retainer = !!part && isRetainer(part);
-  const ft = retainer
+  // U and L retainers, and lock bars, take feet and inches (9/10/2026); other
+  // per-foot parts whole feet. A lock bar's length goes on the line only — the
+  // price is the same at any length.
+  const toInch = !!part && measuredToInch(part);
+  const lockbar = !!part && isLockbar(part);
+  const ft = toInch
     ? Math.max(0, Math.trunc(Number(feet) || 0)) + Math.min(11, Math.max(0, Math.trunc(Number(inches) || 0))) / 12
     : Math.max(0, Math.trunc(Number(feet) || 0));
-  const needsFeet = !!part?.perFoot;
+  const needsFeet = !!part && takesLength(part);
   const needsHands = !!part?.hands;
   // Raw track is sold 1FT to 24FT only (30/9/2026); outside that, no line.
   const limits = part ? feetLimits(part) : null;
@@ -358,18 +361,18 @@ export function PartsTool({
                 {needsFeet && (
                   <div className="gbody">
                     <div className="grow">
-                      <label>{retainer ? "How long?" : "How many feet?"}</label>
-                      <div className={retainer ? "ctl dimrow" : "ctl"}>
+                      <label>{toInch ? "How long?" : "How many feet?"}</label>
+                      <div className={toInch ? "ctl dimrow" : "ctl"}>
                         <input
                           data-testid="parts-feet"
                           type="number"
-                          min={limits?.min ?? (retainer ? 0 : 1)}
+                          min={limits?.min ?? (toInch ? 0 : 1)}
                           max={limits?.max}
                           value={feet}
                           onChange={(e) => setFeet(e.target.value)}
-                          placeholder={limits ? `${limits.min} to ${limits.max}` : retainer ? "ft" : "e.g. 50"}
+                          placeholder={limits ? `${limits.min} to ${limits.max}` : toInch ? "ft" : "e.g. 50"}
                         />
-                        {retainer && (
+                        {toInch && (
                           <>
                             <span className="u">ft</span>
                             <select data-testid="parts-inches" className="insel" aria-label="Inches" value={inches}
@@ -383,9 +386,9 @@ export function PartsTool({
                       {limits ? (
                         ft > 0 && !feetOk ? (
                           <div className="muted-note err" role="alert" style={{ marginTop: 6 }} data-testid="parts-feet-error">
-                            Raw track is sold from {limits.min} to {limits.max} ft.
+                            {lockbar ? "Lock bars are cut" : "Raw track is sold"} from {limits.min} to {limits.max} ft.
                           </div>
-                        ) : ft > 0 ? (
+                        ) : ft > 0 && part!.perFoot ? (
                           <div className="muted-note" style={{ marginTop: 6 }} data-testid="parts-feet-note">
                             Charged as {feetText(billedFeet(part!, ft))}
                           </div>

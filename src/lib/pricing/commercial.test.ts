@@ -247,7 +247,7 @@ describe("complete-door description format", () => {
 
   it("says solid instead of a section when there are no windows", () => {
     const d = door({ glass: "solid" }).description ?? "";
-    expect(d).toContain("solid, no windows");
+    expect(d).toContain("solid no windows");
     expect(d).not.toContain("section");
   });
 

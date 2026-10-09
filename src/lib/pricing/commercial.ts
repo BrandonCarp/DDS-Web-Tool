@@ -52,20 +52,6 @@ function commWidthToken(label: string): string {
   return m ? `${m[1]}.${m[2]}` : "";
 }
 /**
- * Ribbed-steel wording for COMPLETE doors, by model: the material leads the
- * description rather than a grade word. Sections have their own wording
- * (RIBBED_SECTION_INSULATION below).
- */
-const RIBBED: Record<string, { material: string; backer: boolean }> = {
-  "524": { material: "hollow steel ribbed", backer: false },
-  "2415": { material: "hollow steel ribbed", backer: false },
-  "524V": { material: "steel ribbed", backer: true },
-  "2415V": { material: "steel ribbed", backer: true },
-  "524S": { material: "steel ribbed", backer: true },
-  "2415S": { material: "steel ribbed", backer: true },
-};
-
-/**
  * The 524 and 2415 sections, worded as they go on the invoice — Brandon,
  * 7/10/2026:
  *   CLOPAY MODEL 524,  12'0" X 24",  STEEL RIBBED BOTTOM SECTION,  NON INSULATED,  IN THE COLOR WHITE,  SINGLE END STILE
@@ -73,6 +59,10 @@ const RIBBED: Record<string, { material: string; backer: boolean }> = {
  * glass is a STEEL RIBBED INTERMEDIATE SECTION followed by its windows. The
  * plain models are non insulated, V has an insulated vinyl backer and S an
  * insulated steel one. Colour stays a separate choice, never assumed.
+ *
+ * A complete 524 door says just the insulation (9/10/2026 — it had kept an
+ * older "hollow steel ribbed" from September), then runs on like any other door:
+ *   CLOPAY MODEL 524, 8'2" X 8'0", NON INSULATED, IN THE COLOR WHITE, SOLID NO WINDOWS, 2" ANGLE MOUNT TRACK TO WOOD, ...
  */
 const RIBBED_SECTION_INSULATION: Record<string, string> = {
   "524": "NON INSULATED",
@@ -137,18 +127,18 @@ export function quoteCommercial(input: CommInput): CommQuote {
     // Windows are called out by the section they sit in — "in the third
     // section" — because that is what the installer needs off the line. Plain
     // ASCII inch marks throughout: this string is pasted into QuickBooks.
-    const ribbed = RIBBED[model];
+    const insulation = RIBBED_SECTION_INSULATION[model];
+    // "solid no windows" with no comma, as the door lines read everywhere
+    // (Brandon, 9/10/2026).
     const winTxt =
       input.glass === "glass"
-        ? `${model === "3200" ? "insulated 24x12" : cgrade} windows in the ${ordinal(input.winSection)} section`
-        : "solid, no windows";
+        ? `${model === "3200" ? "insulated 24x12" : insulation ? "24x12" : cgrade} windows in the ${ordinal(input.winSection)} section`
+        : "solid no windows";
     const colorTxt = `in the color ${(input.color || "White").toLowerCase()}`;
-    // Ribbed models lead with the material and drop the grade wording; the
-    // model prefix and the track/spring/lock tail are unchanged.
-    const bodyTxt = ribbed
-      ? [ribbed.material, ribbed.backer ? "insulated steel backer" : null,
-         input.glass === "glass" ? winTxt : null].filter(Boolean).join(", ")
-      : `${colorTxt}, ${winTxt}`;
+    // Ribbed models say the insulation and no grade word; then the colour and
+    // the windows (or SOLID NO WINDOWS) like any other door, and the
+    // track/spring/lock tail. "Steel ribbed" is for the section lines only.
+    const leadTxt = insulation ? `${insulation.toLowerCase()}, ` : "";
     const mountTxt = input.mount === "reverse" ? '2" angle mount track to steel' : '2" angle mount track to wood';
     // FV is FULL VERTICAL LIFT. It read "full view" here, which is a different
     // product entirely — a full-view door is aluminium and glass. The dropdown
@@ -164,9 +154,7 @@ export function quoteCommercial(input: CommInput): CommQuote {
       unitPrice: val,
       sub: `${input.size} · ${glassNm} · ${trackNm}`,
       stock: commStockCheck(model, input.size),
-      description: RIBBED[model]
-        ? `${input.mfr || "Clopay"} Model ${model}, ${dimTxt}, ${bodyTxt}, ${colorTxt}, ${mountTxt}, ${radiusTxt}, ${cspringTxt}, ${clockTxt}`
-        : `${input.mfr || "Clopay"} Model ${model}, ${dimTxt}, ${colorTxt}, ${winTxt}, ${mountTxt}, ${radiusTxt}, ${cspringTxt}, ${clockTxt}`,
+      description: `${input.mfr || "Clopay"} Model ${model}, ${dimTxt}, ${leadTxt}${colorTxt}, ${winTxt}, ${mountTxt}, ${radiusTxt}, ${cspringTxt}, ${clockTxt}`,
     };
   }
 

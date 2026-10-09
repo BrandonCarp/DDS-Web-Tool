@@ -27,6 +27,12 @@ export function partDescription(
     const suffix = handSuffix(right ?? 0, left ?? 0);
     return suffix ? `${part.desc} ${suffix}` : part.desc;
   }
+  if (isLockbar(part)) {
+    // The sheet's "8FT LOCKBAR ASSEMBLY" becomes "9'6\" LOCKBAR ASSEMBLY" at
+    // the length it is cut to; with no length given the sheet's line stands.
+    if (!feet) return part.desc;
+    return `${feetText(billedFeet(part, feet))} ${part.desc.replace(/^\d+FT\s+/i, "")}`;
+  }
   if (!part.perFoot || !feet) return part.desc;
   const base = part.desc.replace(/,\s*$/, "");
   // The billed length, not the length asked for: a 12FT U retainer is sold as
@@ -71,18 +77,40 @@ const RETAINER_STICKS: { type: RegExp; overFeet: number; billFeet: number }[] = 
 const RAW_TRACK = /\bRAW TRACK\b/i;
 const isRawTrack = (part: Part) => RAW_TRACK.test(part.name) || RAW_TRACK.test(part.desc);
 
+/**
+ * Lock bars — Brandon, 9/10/2026. The sheet lists them as 8FT, but they are
+ * cut to the door: 1FT to 18FT, to the inch, and the line says the length.
+ * The price is the same whatever the length — they are not sold by the foot.
+ * Catches "LOCKBAR" and "LOCK BAR" (the sheet writes both); the lock bag and
+ * the slide lock on the same page are not lock bars and take no length.
+ */
+const LOCKBAR = /\bLOCK\s?BAR\b/i;
+export function isLockbar(part: Part): boolean {
+  return LOCKBAR.test(part.name) || LOCKBAR.test(part.desc);
+}
+
 /** The footage a part may be sold in, where it is limited; null where it is not. */
 export function feetLimits(part: Part): { min: number; max: number } | null {
+  if (isLockbar(part)) return { min: 1, max: 18 };
   return part.perFoot && isRawTrack(part) ? { min: 1, max: 24 } : null;
+}
+
+/** Parts that take a length at all: anything sold by the foot, and lock bars. */
+export function takesLength(part: Part): boolean {
+  return !!part.perFoot || isLockbar(part);
+}
+
+/** Parts measured in feet and inches rather than whole feet. */
+export function measuredToInch(part: Part): boolean {
+  return isRetainer(part) || isLockbar(part);
 }
 
 /** Feet actually billed for a part, which is not always the feet asked for. */
 export function billedFeet(part: Part, feet?: number): number {
-  // Retainers are measured to the inch (Brandon, 9/10/2026): 10'6" is 10.5
-  // feet, and it is over 10 feet, so it bills the 16FT stick. Everything else
-  // is sold in whole feet.
-  const retainer = isRetainer(part);
-  const ft = Math.max(0, retainer ? Math.round((feet ?? 0) * 12) / 12 : Math.trunc(feet ?? 0));
+  // Retainers and lock bars are measured to the inch (Brandon, 9/10/2026):
+  // 10'6" is 10.5 feet, and for a U retainer that is over 10 feet, so it bills
+  // the 16FT stick. Everything else is sold in whole feet.
+  const ft = Math.max(0, measuredToInch(part) ? Math.round((feet ?? 0) * 12) / 12 : Math.trunc(feet ?? 0));
   if (!part.perFoot) return ft;
   if (isRawTrack(part)) return ft === 0 ? 0 : ft <= 12 ? 12 : 24;
   for (const stick of RETAINER_STICKS) {

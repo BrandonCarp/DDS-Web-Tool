@@ -331,7 +331,7 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
 
   // Door description (matches index.html wording)
   const grade = GRADE_RES[dataKey(model)] || "";
-  let winTxt = "solid, no windows";
+  let winTxt = "solid no windows"; // no comma — Brandon's door lines, 8-9/10/2026
   if (opts.style !== "solid") {
     const validDesigns = windowDesigns(model, opts.style, size.widthCode).map((d) => d.id);
     const dn = opts.windesign && validDesigns.includes(opts.windesign) ? designName(opts.windesign) : null;

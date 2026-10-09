@@ -43,7 +43,7 @@ export function QbLineDemo({
   model = "4300",
   size = "16\u20320\" X 7\u20320\"",
   item = "STOCK DOOR",
-  description = 'CLOPAY MODEL 4300, 16\u20320" X 7\u20320", IN THE COLOR WHITE, SOLID, NO WINDOWS, 12" RADIUS TRACK, TORSION SPRINGS, NO LOCK',
+  description = 'CLOPAY MODEL 4300, 16\u20320" X 7\u20320", IN THE COLOR WHITE, SOLID NO WINDOWS, 12" RADIUS TRACK, TORSION SPRINGS, NO LOCK',
   rate = "1,471.84",
   typed = "STO",
   qty = "1",

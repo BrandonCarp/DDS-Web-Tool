@@ -205,6 +205,11 @@ describe("prices set by hand ahead of the sheet (7/10/2026)", () => {
     expect(price("STRUTS", "16FT STRUT")).toBe(34.95); // untouched
   });
 
+  it("sells the lock bar assembly at 49.95 (9/10/2026), the bare bar as the sheet has it", () => {
+    expect(price("LOCKS", "LOCK BAR ASSEMBLY")).toBe(49.95);
+    expect(price("LOCKS", "LOCKBAR")).toBe(19.95);
+  });
+
   it("is still needed: the sheet has not caught up with any of them", () => {
     // When this fails, the sheet carries that price now — delete it from HAND_PRICES.
     for (const [key, hand] of Object.entries(HAND_PRICES)) {

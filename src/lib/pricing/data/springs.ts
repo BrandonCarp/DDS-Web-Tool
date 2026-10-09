@@ -108,6 +108,9 @@ export const HAND_PRICES: Record<string, number> = {
   "STRUTS|14FT STRUT": 34.95,
   "TUBE SHAFT|10FT TUBE SHAFT": 24.95,
   "TUBE SHAFT|14FT TUBE SHAFT": 34.95,
+  // Lock bar assembly 49.95 — Brandon, 9/10/2026 (the same figure the door
+  // add-on in addons.ts moved to the same day).
+  "LOCKS|LOCK BAR ASSEMBLY": 49.95,
 };
 function withHandPrices(c: PartCategory): PartCategory {
   return {
