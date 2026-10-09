@@ -32,7 +32,7 @@ export function partDescription(
   // The billed length, not the length asked for: a 12FT U retainer is sold as
   // a 16FT stick, 10FT of raw track as a 12FT one, and the QuickBooks line has
   // to say what left the building.
-  return `${base},  ${billedFeet(part, feet)}FT`;
+  return `${base},  ${feetText(billedFeet(part, feet))}`;
 }
 
 /** Springs are priced each — the pair shows up as quantity 2, not a doubled rate. */
@@ -78,13 +78,29 @@ export function feetLimits(part: Part): { min: number; max: number } | null {
 
 /** Feet actually billed for a part, which is not always the feet asked for. */
 export function billedFeet(part: Part, feet?: number): number {
-  const ft = Math.max(0, Math.trunc(feet ?? 0));
+  // Retainers are measured to the inch (Brandon, 9/10/2026): 10'6" is 10.5
+  // feet, and it is over 10 feet, so it bills the 16FT stick. Everything else
+  // is sold in whole feet.
+  const retainer = isRetainer(part);
+  const ft = Math.max(0, retainer ? Math.round((feet ?? 0) * 12) / 12 : Math.trunc(feet ?? 0));
   if (!part.perFoot) return ft;
   if (isRawTrack(part)) return ft === 0 ? 0 : ft <= 12 ? 12 : 24;
   for (const stick of RETAINER_STICKS) {
     if (stick.type.test(part.desc) && ft > stick.overFeet) return stick.billFeet;
   }
   return ft;
+}
+
+/** U and L retainers: the parts measured in feet and inches. */
+export function isRetainer(part: Part): boolean {
+  return RETAINER_STICKS.some((s) => s.type.test(part.desc));
+}
+
+/** 10.5 -> 10'6", 16 -> 16FT: whole feet keep the FT the sheet writes. */
+export function feetText(feet: number): string {
+  const whole = Math.floor(feet + 1e-9);
+  const inches = Math.round((feet - whole) * 12);
+  return inches ? `${whole}'${inches}"` : `${whole}FT`;
 }
 
 /** Extended price: per-foot parts charge rate x billed footage, others each. */

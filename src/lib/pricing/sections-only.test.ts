@@ -38,7 +38,7 @@ describe("SECTIONS ONLY", () => {
     const plain = quoteResidentialSectionsOnly("9133", dim, plainOpts);
     const bar = quoteResidentialSectionsOnly("9133", dim, { ...plainOpts, lock: "lockbar_installed" });
     const slide = quoteResidentialSectionsOnly("9133", dim, { ...plainOpts, lock: "slide" });
-    expect(bar.unitPrice - plain.unitPrice).toBeCloseTo(70, 2);
+    expect(bar.unitPrice - plain.unitPrice).toBeCloseTo(74.95, 2); // lockbar installed, 9/10/2026
     expect(slide.unitPrice - plain.unitPrice).toBeCloseTo(5, 2);
   });
 
@@ -71,7 +71,7 @@ describe("upcharges never itemise", () => {
     });
     expect(q.lines).toHaveLength(1);
     expect(q.lines[0].value).toBeCloseTo(q.unitPrice, 2);
-    expect(q.unitPrice).toBeCloseTo(1001.54, 2);
+    expect(q.unitPrice).toBeCloseTo(1006.49, 2); // 1001.54 before the lockbar went to 74.95
     for (const l of q.lines) expect(l.kind).not.toBe("add");
   });
 });

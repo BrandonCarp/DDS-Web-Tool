@@ -312,18 +312,22 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
                     <div className="ctl selectwrap">
                       <select value={glass} onChange={(e) => setGlass(e.target.value as "solid" | "glass")} disabled={!size}>
                         <option value="solid">Solid (no windows)</option>
-                        <option value="glass">Glass</option>
+                        {/* The 3200 takes insulated 24x12 windows and nothing else, so the
+                            choice says so (Brandon, 9/10/2026), as the line already did. */}
+                        <option value="glass">{model === "3200" ? "Insulated 24x12 windows" : "Glass"}</option>
                       </select>
                     </div>
                   </div>
                 ) : secKind === "int" ? (
                   <div className="grow">
-                    <label>Windows{rFeet ? ` (≤${mx})` : ""}</label>
+                    <label>Windows</label>
                     <div className="ctl selectwrap">
                       <select value={windows} onChange={(e) => setWindows(e.target.value)}>
                         <option value="0">Solid — no windows</option>
                         {Array.from({ length: mx }, (_, i) => i + 1).map((i) => (
-                          <option key={i} value={String(i)}>{i} window{i > 1 ? "s" : ""}</option>
+                          <option key={i} value={String(i)}>
+                            {i} {model === "3200" ? "insulated 24x12 " : ""}window{i > 1 ? "s" : ""}
+                          </option>
                         ))}
                       </select>
                     </div>

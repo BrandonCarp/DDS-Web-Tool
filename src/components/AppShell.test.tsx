@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { AppShell } from "./AppShell";
 import { BOOT_SCRIPT } from "@/lib/sidebar";
 import { EXTENSION_SPRINGS } from "@/lib/pricing/data/springs";
+import { copiedQbLine } from "./test-clipboard";
 
 /**
  * The sidebar shell: who sees the admin panel, the Settings tab, and the
@@ -279,8 +280,10 @@ describe("the Parts group tabs (6/10/2026)", () => {
     expect(quoting).toEqual([
       "residential", "commercial", "special", "vinyl", "operators", "torsion", "extension",
       "angle", "retainers", "seals", "tubeshafts", "struts", "cables", "track", "parts",
-      "tools", "scanner", // not on his list; kept after Parts until he says
+      "tools", "disposals", "scanner", // Disposals and Scanner under their own Services heading (9/10/2026)
     ]);
+    const labels = [...document.querySelectorAll(".side .side-label")].map((e) => e.textContent);
+    expect(labels).toEqual(["Quoting", "Services", "Others"]);
     expect(document.querySelector('.side [data-tab="track"] .tab-main')?.textContent).toBe("Tracks");
   });
 
@@ -313,5 +316,75 @@ describe("the Parts and Track buttons", () => {
     fireEvent.mouseDown(screen.getAllByTestId("qsearch-hit")[0]);
     expect(screen.getByTestId("parts-page").textContent).toBe("Drums › Other drums");
     expect(document.querySelector("aside.quote .qtitle")?.textContent).toBe("1100-18");
+  });
+});
+
+describe("the Disposals window (9/10/2026)", () => {
+  const open = () => {
+    shell();
+    fireEvent.click(document.querySelector('.side [data-tab="disposals"]') as HTMLElement);
+    return screen.getByTestId("disposal-modal");
+  };
+
+  it("opens over the page from the side nav, and asks for both answers before pricing", () => {
+    open();
+    expect(screen.getByTestId("disposal-prompt").textContent).toContain("location");
+    expect(screen.queryByTestId("disposal-price")).toBeNull();
+    fireEvent.click(screen.getByTestId("disposal-loc-south"));
+    expect(screen.getByTestId("disposal-prompt").textContent).toContain("Single or double");
+    fireEvent.click(screen.getByTestId("disposal-size-single"));
+    expect(screen.getByTestId("disposal-price").textContent).toBe("$45.00");
+    expect(screen.getByTestId("disposal-desc").textContent).toBe("SINGLE DOOR DISPOSAL");
+  });
+
+  it("prices each location and door, and pastes under the DISPOSAL item", async () => {
+    open();
+    const price = (loc: string, size: string) => {
+      fireEvent.click(screen.getByTestId(`disposal-loc-${loc}`));
+      fireEvent.click(screen.getByTestId(`disposal-size-${size}`));
+      return screen.getByTestId("disposal-price").textContent;
+    };
+    expect(price("south", "single")).toBe("$45.00");
+    expect(price("south", "double")).toBe("$75.00");
+    expect(price("union", "single")).toBe("$40.00");
+    expect(price("union", "double")).toBe("$80.00");
+    const line = await copiedQbLine(screen.getByTestId("disposal-copy-qb"));
+    expect(line).toEqual({ item: "DISPOSAL", description: "DOUBLE DOOR DISPOSAL", qty: 1, rate: 80 });
+  });
+
+  it("gives every account one Copy description, Copy quantity and Copy price, with no doubles", () => {
+    // The shell signs in as "bc", who has no copy extras of their own; the
+    // Disposals window hands them out regardless, and only once each.
+    open();
+    fireEvent.click(screen.getByTestId("disposal-loc-union"));
+    fireEvent.click(screen.getByTestId("disposal-size-single"));
+    const labels = Array.from(screen.getByTestId("disposal-modal").querySelectorAll(".qfoot button"))
+      .map((b) => b.textContent?.trim());
+    expect(labels).toEqual(["QuickBooks", "Copy description", "Copy quantity", "Copy price", "Add to cart"]);
+  });
+
+  it("takes a quantity on the − n + box, which goes on the QuickBooks line while the price stays per door", async () => {
+    open();
+    fireEvent.click(screen.getByTestId("disposal-loc-south"));
+    fireEvent.click(screen.getByTestId("disposal-size-double"));
+    fireEvent.click(screen.getByTestId("disposal-qty-plus"));
+    fireEvent.click(screen.getByTestId("disposal-qty-plus"));
+    expect((screen.getByTestId("disposal-qty") as HTMLInputElement).value).toBe("3");
+    expect(screen.getByTestId("disposal-price").textContent).toBe("$75.00");
+    const line = await copiedQbLine(screen.getByTestId("disposal-copy-qb"));
+    expect(line).toEqual({ item: "DISPOSAL", description: "DOUBLE DOOR DISPOSAL", qty: 3, rate: 75 });
+    fireEvent.click(screen.getByTestId("disposal-qty-minus"));
+    fireEvent.click(screen.getByTestId("disposal-qty-minus"));
+    fireEvent.click(screen.getByTestId("disposal-qty-minus")); // stops at 1
+    expect((screen.getByTestId("disposal-qty") as HTMLInputElement).value).toBe("1");
+  });
+
+  it("closes on the × and on Escape, leaving the page as it was", () => {
+    open();
+    fireEvent.click(screen.getByTestId("disposal-close"));
+    expect(screen.queryByTestId("disposal-modal")).toBeNull();
+    fireEvent.click(document.querySelector('.side [data-tab="disposals"]') as HTMLElement);
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByTestId("disposal-modal")).toBeNull();
   });
 });

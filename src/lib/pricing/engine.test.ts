@@ -169,10 +169,10 @@ describe("quoteResidential — full quote with add-on upcharges", () => {
     expect(quoteResidential("T50S", dim(16, 0, 9, 0), opts({ spring: "galvanized" })).unitPrice).toBeCloseTo(tall + 10, 2);
   });
 
-  it("adds torsion (+35), lockbar installed (+70) and 32in track (+225)", () => {
+  it("adds torsion (+35), lockbar installed (+74.95 from 9/10/2026) and 32in track (+225)", () => {
     const base = priceResidential("T50S", dim(9, 0, 7, 0), "solid").price!;
     const q = quoteResidential("T50S", dim(9, 0, 7, 0), opts({ track: "r32", spring: "torsion", lock: "lockbar_installed" }));
-    expect(q.unitPrice).toBeCloseTo(base + 225 + 35 + 70, 2);
+    expect(q.unitPrice).toBeCloseTo(base + 225 + 35 + 74.95, 2);
   });
 
   it("15in track and extension spring add nothing", () => {
@@ -514,9 +514,9 @@ describe("residential replacement sections (2026 V2 workbook SECTIONS blocks)", 
       expect(RES_SECTION_WIDTHS[key], key).not.toContain("7.6");
     }
   });
-  it("lockbar installed (+$70) only on SOLID intermediate sections", () => {
+  it("lockbar installed (+$74.95) only on SOLID intermediate sections", () => {
     const q = quoteResidentialSection("T50S", sec({ kind: "int", lockbar: true }));
-    expect(q.unitPrice).toBeCloseTo(131.35 + 70, 2);
+    expect(q.unitPrice).toBeCloseTo(131.35 + 74.95, 2);
     expect(q.description).toContain("lockbar installed");
     // glazed intermediates and bottoms ignore the flag
     expect(quoteResidentialSection("T50S", sec({ kind: "int", glazed: true, lockbar: true })).unitPrice).toBe(281.22);

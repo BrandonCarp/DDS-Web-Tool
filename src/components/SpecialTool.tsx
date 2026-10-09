@@ -15,7 +15,7 @@ import {
   offeredHeights, tierForOfferedHeight, heightLabel,
   groupMembers, groupHasWidthLimits, heightForcesTorsion, shouldSplitGroup,
   minWidthFor, excludedWidthsFor,
-  parseModelSelection, modelSelectionValue,
+  parseModelSelection, modelSelectionValue, windowsOfferedAt,
 } from "@/lib/pricing/data/special-door-pricing";
 import { COLORS, specialOrderColors } from "@/lib/pricing/data/catalog-meta";
 import { glassOptionsFor, panelStylesFor, glassTakesInserts, GALLERY_GROUP, type PanelStyle } from "@/lib/pricing/data/so-glass";
@@ -213,7 +213,10 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   // Inserts are not offered on every Gallery glass (acrylic): the Inserts
   // style is taken away where its glass cannot take them.
   const gInsertsOk = !isGallery || !gWidth || glassTakesInserts(modelGroup, gPanelEff, gWidth, gGlassEff);
-  const gStyleEff = gStyle === "inserts" && !gInsertsOk ? "glass" : gStyle;
+  // Some Gallery widths are built solid only (Clopay's note, 9/10/2026): the
+  // window choices come off and the style falls back to solid there.
+  const gWindowsOk = !gWidth || windowsOfferedAt(modelMember || undefined, gWidth);
+  const gStyleEff = !gWindowsOk ? "solid" : gStyle === "inserts" && !gInsertsOk ? "glass" : gStyle;
 
   // High lift is torsion only, and caps at the door height less 3 inches —
   // above that the door is full vertical lift, a different track entirely.
@@ -533,10 +536,15 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                     <div className="ctl selectwrap">
                       <select disabled={!gOpen} data-testid="so-style" value={gStyleEff} onChange={(e) => { setGStyle(e.target.value as "solid" | "glass" | "inserts"); setSaved(false); }}>
                         <option value="solid">Solid — no windows</option>
-                        <option value="glass">Glass</option>
-                        {gInsertsOk && <option value="inserts">Inserts</option>}
+                        {gWindowsOk && <option value="glass">Glass</option>}
+                        {gWindowsOk && gInsertsOk && <option value="inserts">Inserts</option>}
                       </select>
                     </div>
+                    {!gWindowsOk && (
+                      <div className="muted-note" style={{ marginTop: 6 }} data-testid="so-no-windows">
+                        Not built with windows at this width — solid only.
+                      </div>
+                    )}
                   </div>
                   </div>
                   <div className="ggroup">

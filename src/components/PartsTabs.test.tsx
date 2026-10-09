@@ -69,10 +69,10 @@ describe("raw track on the Track tab", () => {
     pickRaw();
     expect(screen.queryByTestId("parts-feet-note")).toBeNull();
     feet("10");
-    expect(screen.getByTestId("parts-feet-note").textContent).toContain("Charged as 12 ft");
+    expect(screen.getByTestId("parts-feet-note").textContent).toContain("Charged as 12FT");
     expect(screen.getByTestId("parts-copy-qb")).toBeTruthy();
     feet("13");
-    expect(screen.getByTestId("parts-feet-note").textContent).toContain("Charged as 24 ft");
+    expect(screen.getByTestId("parts-feet-note").textContent).toContain("Charged as 24FT");
   });
 });
 
@@ -207,5 +207,47 @@ describe("seals paste the feet as the quantity (7/10/2026)", () => {
     const line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
     expect(line.qty).toBe(1);
     expect(line.description).toContain("16FT");
+  });
+});
+
+describe("retainers measured in feet and inches (9/10/2026)", () => {
+  const uRetainer = () => {
+    const retainers = GROUP_TABS.find((t) => t.id === "retainers")!;
+    show(<PartsTool menu={retainers.menu} categories={retainers.categories} group="Retainers" />);
+    fireEvent.click(screen.getByTestId("page-u-retainers"));
+    fireEvent.click(screen.getByText('2" U RETAINER').closest("button")!);
+  };
+
+  it("offers an inches box, 0 to 11, beside the feet", () => {
+    uRetainer();
+    const inches = screen.getByTestId("parts-inches") as HTMLSelectElement;
+    expect([...inches.options].map((o) => o.value)).toEqual(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"]);
+  });
+
+  it("bills 8'6\" by the foot, to the inch, and names the length on the line", async () => {
+    uRetainer();
+    fireEvent.change(screen.getByTestId("parts-feet"), { target: { value: "8" } });
+    fireEvent.change(screen.getByTestId("parts-inches"), { target: { value: "6" } });
+    const line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
+    expect(line.description).toContain("8'6\"");
+    expect(line.rate).toBeCloseTo(3.75 * 8.5, 2);
+  });
+
+  it("bills 10'1\" as the 16FT stick, since it is over 10 feet, with no note saying so", async () => {
+    uRetainer();
+    fireEvent.change(screen.getByTestId("parts-feet"), { target: { value: "10" } });
+    fireEvent.change(screen.getByTestId("parts-inches"), { target: { value: "1" } });
+    expect(screen.queryByTestId("parts-feet-note")).toBeNull(); // the line says 16FT; nothing else does (9/10/2026)
+    const line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
+    expect(line.description).toContain("16FT");
+    expect(line.rate).toBeCloseTo(3.75 * 16, 2);
+  });
+
+  it("gives other per-foot parts whole feet only", () => {
+    const seals = GROUP_TABS.find((t) => t.id === "seals")!;
+    show(<PartsTool menu={seals.menu} categories={seals.categories} group="Seals" />);
+    fireEvent.click(screen.getByTestId("page-brush-seals"));
+    fireEvent.click(document.querySelector("ul.partlist .partrow") as HTMLElement);
+    expect(screen.queryByTestId("parts-inches")).toBeNull();
   });
 });

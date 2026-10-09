@@ -54,7 +54,7 @@ describe("special order door grid", () => {
     expect(loaded.unitPrice - plain.unitPrice).toBeCloseTo(
       ADDONS.track.low_headroom + ADDONS.torsion + ADDONS.lockbar_installed, 2,
     );
-    expect(loaded.unitPrice).toBeCloseTo(873.25, 2);
+    expect(loaded.unitPrice).toBeCloseTo(878.20, 2); // 873.25 before the lockbar went to 74.95
   });
 
   it("refuses anything off the grid, and says to use the manual total", () => {

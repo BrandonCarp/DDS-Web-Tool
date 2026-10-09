@@ -18,7 +18,7 @@ import type { SearchPick } from "@/lib/search";
 import { entryId, feetAsQuantity, type PartsMenu } from "@/lib/pricing/data/parts-menu";
 import { PartsNavigator } from "./PartsNavigator";
 import { cableQuote, CABLE_GAUGES } from "@/lib/pricing/data/cables";
-import { billedFeet, feetLimits, priceNotSet } from "@/lib/pricing/data/part-pricing";
+import { billedFeet, feetLimits, feetText, isRetainer, priceNotSet } from "@/lib/pricing/data/part-pricing";
 import { QtyStepper } from "./QtyStepper";
 
 const fmt = (n: number) =>
@@ -83,6 +83,7 @@ export function PartsTool({
   const page = pages.find((pg) => pg.id === pageId) ?? null;
   const [groupLabel, setGroupLabel] = useState<string | null>(() => page?.group ?? (menu?.some((g) => g.label === group) ? group! : null));
   const [feet, setFeet] = useState("");
+  const [inches, setInches] = useState("0");
   // Cut-to-length cables: measured feet + inches, priced as a pair.
   const [cabGauge, setCabGauge] = useState(CABLE_GAUGES[0].label);
   const [cabFt, setCabFt] = useState("");
@@ -107,7 +108,11 @@ export function PartsTool({
   const hit = onCable ? null : results.find((r) => r.part.name === pickedName) ?? null;
   const part: Part | null = hit?.part ?? null;
 
-  const ft = Math.max(0, Math.trunc(Number(feet) || 0));
+  // U and L retainers take feet and inches (9/10/2026); other per-foot parts whole feet.
+  const retainer = !!part && isRetainer(part);
+  const ft = retainer
+    ? Math.max(0, Math.trunc(Number(feet) || 0)) + Math.min(11, Math.max(0, Math.trunc(Number(inches) || 0))) / 12
+    : Math.max(0, Math.trunc(Number(feet) || 0));
   const needsFeet = !!part?.perFoot;
   const needsHands = !!part?.hands;
   // Raw track is sold 1FT to 24FT only (30/9/2026); outside that, no line.
@@ -134,6 +139,7 @@ export function PartsTool({
   function pick(name: string) {
     setPickedName(name);
     setFeet("");
+    setInches("0");
     setRight(1);
     setLeft(1);
   }
@@ -162,6 +168,7 @@ export function PartsTool({
   function clear() {
     setPickedName(null);
     setFeet("");
+    setInches("0");
     setCabFt("");
     setCabIn("");
   }
@@ -351,17 +358,27 @@ export function PartsTool({
                 {needsFeet && (
                   <div className="gbody">
                     <div className="grow">
-                      <label>How many feet?</label>
-                      <div className="ctl">
+                      <label>{retainer ? "How long?" : "How many feet?"}</label>
+                      <div className={retainer ? "ctl dimrow" : "ctl"}>
                         <input
                           data-testid="parts-feet"
                           type="number"
-                          min={limits?.min ?? 1}
+                          min={limits?.min ?? (retainer ? 0 : 1)}
                           max={limits?.max}
                           value={feet}
                           onChange={(e) => setFeet(e.target.value)}
-                          placeholder={limits ? `${limits.min} to ${limits.max}` : "e.g. 50"}
+                          placeholder={limits ? `${limits.min} to ${limits.max}` : retainer ? "ft" : "e.g. 50"}
                         />
+                        {retainer && (
+                          <>
+                            <span className="u">ft</span>
+                            <select data-testid="parts-inches" className="insel" aria-label="Inches" value={inches}
+                              onChange={(e) => setInches(e.target.value)}>
+                              {Array.from({ length: 12 }, (_, i) => String(i)).map((v) => <option key={v} value={v}>{v}</option>)}
+                            </select>
+                            <span className="u">in</span>
+                          </>
+                        )}
                       </div>
                       {limits ? (
                         ft > 0 && !feetOk ? (
@@ -370,9 +387,10 @@ export function PartsTool({
                           </div>
                         ) : ft > 0 ? (
                           <div className="muted-note" style={{ marginTop: 6 }} data-testid="parts-feet-note">
-                            Charged as {billedFeet(part!, ft)} ft
+                            Charged as {feetText(billedFeet(part!, ft))}
                           </div>
-                        ) : null ): null}
+                        ) : null
+                      ) : null}
                     </div>
                   </div>
                 )}

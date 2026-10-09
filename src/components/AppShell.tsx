@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, Fragment } from "react";
 import type { ParsedDoor } from "@/lib/pricing/data/parse-request";
 import { IDLE_MS } from "@/lib/session-timeout";
 import { applySidebarCollapsed } from "@/lib/sidebar";
@@ -15,6 +15,7 @@ import { PartsTool } from "./PartsTool";
 import { TopBar } from "./TopBar";
 import { CartProvider, CartTool, useCart } from "./Cart";
 import { CurrentUserProvider } from "./CurrentUser";
+import { DisposalModal } from "./DisposalModal";
 import { PARTS_TAB_MENU, TRACK_MENU, GROUP_TABS, PART_GROUP_TABS } from "@/lib/pricing/data/parts-menu";
 import type { SearchHit, SearchPick } from "@/lib/search";
 import { TRACK_CATEGORIES, CABLE_CATEGORIES } from "@/lib/pricing/data/springs";
@@ -129,12 +130,18 @@ const QUOTING_TABS: readonly Tab[] = [
     title: "Parts",
   },
   groupTab("tools"),
-  // Scan parts into a cart for QuickBooks — every counter gets it (Brandon, 25/9/2026).
+];
+
+// Under their own heading, a little apart from the quoting tabs (Brandon,
+// 9/10/2026): Disposals, which opens a window rather than a page, then the
+// Scanner. Scan parts into a cart for QuickBooks — every counter gets it (25/9/2026).
+const SERVICE_TABS: readonly Tab[] = [
   {
     id: "scanner", label: "Scanner", icon: "barcode",
     title: "Scanner",
   },
 ];
+const DISPOSALS_TAB: Tab = { id: "disposals", label: "Disposals", icon: "trash", title: "Disposals" };
 
 // Lines from any quote, pasted into QuickBooks together (30/9/2026). Opened
 // from the top bar, beside the signed-in name (7/10/2026).
@@ -308,7 +315,10 @@ function Shell({
     ...(isMaster ? [INVENTORY_TAB] : []),
     SETTINGS_TAB,
   ];
-  const tabs: Tab[] = [...QUOTING_TABS, ...others];
+  const tabs: Tab[] = [...QUOTING_TABS, ...SERVICE_TABS, ...others];
+  // The Disposals window, open or not. A button in the side nav, not a tab:
+  // it floats over whatever page is up and closes back to it.
+  const [disposalsOpen, setDisposalsOpen] = useState(false);
   const current = [...tabs, CART_TAB].find((t) => t.id === mode) ?? QUOTING_TABS[0];
   // Customer / P.O. / Job name is SHELVED for now — the bar and the
   // selection gate are removed, so quoting is immediate again. The provider
@@ -366,6 +376,12 @@ function Shell({
             <NavTab key={t.id} tab={t} active={mode === t.id} collapsed={collapsed} onPick={pickTab} />
           ))}
 
+          <div className="side-label side-label-gap">Services</div>
+          <NavTab tab={DISPOSALS_TAB} active={disposalsOpen} collapsed={collapsed} onPick={() => setDisposalsOpen(true)} />
+          {SERVICE_TABS.map((t) => (
+            <NavTab key={t.id} tab={t} active={mode === t.id} collapsed={collapsed} onPick={pickTab} />
+          ))}
+
           <div className="side-spacer" />
 
           <div className="side-label">Others</div>
@@ -416,12 +432,14 @@ function Shell({
             aria-label="Tool"
             data-testid="tabsel"
             value={mode}
-            onChange={(e) => pickTab(e.target.value)}
+            onChange={(e) => (e.target.value === "disposals" ? setDisposalsOpen(true) : pickTab(e.target.value))}
           >
             {tabs.map((t) => (
-              <option key={t.id} value={t.id}>
-                {flatLabel(t)}
-              </option>
+              <Fragment key={t.id}>
+                {/* Disposals sits where the sidebar has it: ahead of the Scanner. */}
+                {t.id === "scanner" && <option value="disposals">Disposals</option>}
+                <option value={t.id}>{flatLabel(t)}</option>
+              </Fragment>
             ))}
             {/* The Cart opens from the top bar; while it is open, say so here. */}
             {mode === "cart" && <option value="cart">Cart</option>}
@@ -472,6 +490,7 @@ function Shell({
           {mode === "torsion" && <TorsionTool key={keyFor("torsion")} openOn={at("torsion")?.pick} />}
           {mode === "extension" && <ExtensionTool key={keyFor("extension")} openOn={at("extension")?.pick} />}
           {mode === "qbsetup" && qbSetup && <QuickBooksSetup />}
+          {disposalsOpen && <DisposalModal onClose={() => setDisposalsOpen(false)} />}
           {mode === "parts" && <PartsTool key={keyFor("parts")} openOn={at("parts")?.pick} menu={PARTS_TAB_MENU} />}
           {GROUP_TABS.map((t) => mode === t.id && (
             <PartsTool key={keyFor(t.id)} openOn={at(t.id)?.pick} menu={t.menu} group={t.group}

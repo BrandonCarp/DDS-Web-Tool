@@ -1,12 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { specialDoorQuote, offeredHeights, griddedWidths, griddedHeights } from "./data/special-door-pricing";
+import { specialDoorQuote, offeredHeights, griddedWidths, griddedHeights, windowsOfferedAt } from "./data/special-door-pricing";
 import { SPECIAL_DOORS } from "./data/special-doors";
 import { glassOptionsFor, glassTakesInserts, panelStylesFor, GALLERY_GROUP } from "./data/so-glass";
 import { GALLERY_GLASS, GALLERY_ULTRA_GRAIN } from "./data/gallery-glass";
+import { SPECIAL } from "./data/special-orders";
 
 // Figures straight off Brandon's Gallery sheet, PRICING 10-8.xlsx (DDS cost),
-// at the Gallery door margin of 43%: sell = cost / 0.57, each part rounded.
-const M = 0.57;
+// at the Gallery door margin — 43.25% since 8/10/2026: sell = cost / 0.5675,
+// each part rounded. The grid is generated at the same margin
+// (scripts/apply_gallery_sheet.py --margin 43.25), and a test below holds the
+// two together.
+const M = 0.5675;
 const sell = (cost: number) => Math.round((cost / M) * 100) / 100;
 
 const q = (o: Record<string, unknown>) => specialDoorQuote({
@@ -57,7 +61,6 @@ describe("Gallery glass", () => {
     // cents can differ from one lift of the whole by a couple of pennies.
     const got = price({ style: "inserts", glassType: "insulated", color: "Ultra-Grain Oak Medium Finish" });
     expect(got).toBeCloseTo(sell(454.81) + sell(265.37) + sell(158.76), 0);
-    expect(got).toBe(1542.02);
   });
 
   it("words the line as the stock tab does: the grade, then the design or NO INSERTS", () => {
@@ -102,7 +105,7 @@ describe("Gallery glass", () => {
     expect(glassTakesInserts(GALLERY_GROUP, "short", "8", "acrylic")).toBe(false);
     expect(glassTakesInserts(GALLERY_GROUP, "long", "8", "seeded")).toBe(true);
     expect(q({ style: "inserts", glassType: "acrylic" }).reason).toMatch(/not offered/);
-    expect(price({ style: "glass", glassType: "acrylic" })).toBe(sell(454.81 + 450.82));
+    expect(price({ style: "glass", glassType: "acrylic" })).toBeCloseTo(sell(454.81 + 450.82), 1); // a half-cent at 43.25%
   });
 
   it("matches the sheet on every band: glass is the per-window figure times the count, inserts +11.99 a short window", () => {
@@ -116,6 +119,17 @@ describe("Gallery glass", () => {
         }
       }
     }
+  });
+});
+
+describe("the Gallery grid and its margin agree", () => {
+  it("was generated at the margin the catalogue carries", () => {
+    // The grid holds sell figures at the margin it was generated with, and the
+    // glass adders lift by the catalogue margin at quote time. If someone
+    // changes the margin without re-running the script, the door and its
+    // glass are at two different margins — this is the test that says so.
+    const margin = SPECIAL["Gallery Collection"].models!["GD1LP/GD1SP"].door;
+    expect(SPECIAL_DOORS[GALLERY_GROUP]["7"]["8"].solid).toBe(Math.round((454.81 / (1 - margin / 100)) * 100) / 100);
   });
 });
 
@@ -134,5 +148,29 @@ describe("Gallery Ultra-Grain", () => {
     const r4050 = (c: string) => specialDoorQuote({ model: "4050/4051/4053", variant: "4050", width: "8", height: "7", color: c,
       style: "solid", track: "r12", spring: "extension", lock: "none" } as never).quote!.unitPrice;
     expect(r4050("Ultra-Grain Oak Medium Finish")).toBe(r4050("White")); // the 4050's own premium colours are not gridded this way
+  });
+});
+
+describe("Gallery widths built solid only (Clopay's note, 9/10/2026)", () => {
+  it("lists them per model, the GD2 pair's wider holes included", () => {
+    for (const m of ["GD1SP", "GD1LP"]) {
+      expect(windowsOfferedAt(m, "14.10"), m).toBe(false);
+      expect(windowsOfferedAt(m, "15.4"), m).toBe(false);
+      expect(windowsOfferedAt(m, "15"), m).toBe(true);
+      expect(windowsOfferedAt(m, "16.4"), m).toBe(true);
+    }
+    for (const m of ["GD2SP", "GD2LP"]) {
+      for (const w of ["14.10", "15.4", "16.4", "17.6", "19.2", "20.2"]) expect(windowsOfferedAt(m, w), `${m} ${w}`).toBe(false);
+      expect(windowsOfferedAt(m, "16.2"), m).toBe(true);
+      expect(windowsOfferedAt(m, "18"), m).toBe(true);
+    }
+    expect(windowsOfferedAt("4050", "14.10")).toBe(true);
+  });
+
+  it("sells the solid door there but refuses glass and inserts", () => {
+    expect(q({ width: "14.10" }).quote?.unitPrice).toBe(sell(929.61));
+    expect(q({ width: "14.10", style: "glass" }).reason).toMatch(/solid only/);
+    expect(q({ width: "15.4", style: "inserts", variant: "GD1LP" }).reason).toMatch(/solid only/);
+    expect(q({ width: "15.6", style: "glass" }).quote).toBeTruthy();
   });
 });

@@ -11,8 +11,11 @@ export const ADDONS = {
   // over, as the colour upcharge counts it) — Brandon, 5/10/2026.
   "galvanized": { "single": 40, "double": 45 },
   "slidelock": 5,
-  "lockbar_assembly": 45,
-  "lockbar_installed": 70,
+  // Lockbar assembly 49.95 and lockbar installed 74.95 — Brandon, 9/10/2026
+  // (were 45 and 70). One figure each: doors, sections and special orders all
+  // read these two lines.
+  "lockbar_assembly": 49.95,
+  "lockbar_installed": 74.95,
   "track": {
     "low_headroom": 45,
     "r20": 200,

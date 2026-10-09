@@ -117,6 +117,25 @@ const MODEL_EXCLUDED_WIDTHS: Record<string, string[]> = {
   "4053": ["15", "15.2", "15.4", "15.6", "15.8", "15.10"],
 };
 
+/**
+ * Widths a Gallery door is built in but cannot take WINDOWS at — short, long
+ * or arch alike (Clopay's note, via Brandon 9/10/2026). The solid door is
+ * still sold there; glass and inserts are not offered. Width keys as the
+ * grids use them: "14.10" is 14'10".
+ */
+const NO_WINDOW_WIDTHS: Record<string, string[]> = {
+  GD1SP: ["14.10", "15.4"],
+  GD1LP: ["14.10", "15.4"],
+  GD2SP: ["14.10", "15.4", "16.4", "16.6", "16.8", "16.10", "17", "17.2", "17.4", "17.6", "19.2", "19.4", "19.6", "19.8", "19.10", "20", "20.2"],
+  GD2LP: ["14.10", "15.4", "16.4", "16.6", "16.8", "16.10", "17", "17.2", "17.4", "17.6", "19.2", "19.4", "19.6", "19.8", "19.10", "20", "20.2"],
+};
+
+/** True when windows (glass or inserts) are offered on this model at this width. */
+export function windowsOfferedAt(model: string | undefined, width: string): boolean {
+  if (!model) return true;
+  return !(NO_WINDOW_WIDTHS[model] ?? []).includes(width);
+}
+
 const MODEL_MIN_WIDTH: Record<string, string> = {
   // The long-panel Gallery door starts at 7'8"; the GD1SP at 6'2" (sheet, 8/10/2026).
   "GD1LP": "7.8",
@@ -290,6 +309,10 @@ export function specialDoorQuote(
 
   const triple = tier[input.width];
   if (!triple) return { reason: "That width is not on the grid — enter the Clopay total below." };
+
+  if (input.style !== "solid" && !windowsOfferedAt(input.variant, input.width)) {
+    return { reason: `Clopay does not build the ${input.variant} with windows at ${heightLabel(input.width)} — solid only at this width.` };
+  }
 
   let base = triple[input.style];
   if (typeof base !== "number") {

@@ -6060,1470 +6060,1470 @@ export const SPECIAL_DOORS: Record<string, Record<string, Record<string, Partial
   "GD1LP/GD1SP": {
     "7": {
       "6": {
-        "solid": 924.12,
-        "glass": 1155.51,
-        "inserts": 1218.61
+        "solid": 928.19,
+        "glass": 1160.6,
+        "inserts": 1223.98
       },
       "6.2": {
-        "solid": 924.12,
-        "glass": 1155.51,
-        "inserts": 1218.61
+        "solid": 928.19,
+        "glass": 1160.6,
+        "inserts": 1223.98
       },
       "6.4": {
-        "solid": 924.12,
-        "glass": 1155.51,
-        "inserts": 1218.61
+        "solid": 928.19,
+        "glass": 1160.6,
+        "inserts": 1223.98
       },
       "6.6": {
-        "solid": 924.12,
-        "glass": 1155.51,
-        "inserts": 1218.61
+        "solid": 928.19,
+        "glass": 1160.6,
+        "inserts": 1223.98
       },
       "6.8": {
-        "solid": 924.12,
-        "glass": 1155.51,
-        "inserts": 1218.61
+        "solid": 928.19,
+        "glass": 1160.6,
+        "inserts": 1223.98
       },
       "6.10": {
-        "solid": 924.12,
-        "glass": 1155.51,
-        "inserts": 1218.61
+        "solid": 928.19,
+        "glass": 1160.6,
+        "inserts": 1223.98
       },
       "7": {
-        "solid": 924.12,
-        "glass": 1155.51,
-        "inserts": 1218.61
+        "solid": 928.19,
+        "glass": 1160.6,
+        "inserts": 1223.98
       },
       "7.2": {
-        "solid": 924.12,
-        "glass": 1155.51,
-        "inserts": 1218.61
+        "solid": 928.19,
+        "glass": 1160.6,
+        "inserts": 1223.98
       },
       "7.4": {
-        "solid": 924.12,
-        "glass": 1155.51,
-        "inserts": 1218.61
+        "solid": 928.19,
+        "glass": 1160.6,
+        "inserts": 1223.98
       },
       "7.6": {
-        "solid": 924.12,
-        "glass": 1155.51,
-        "inserts": 1218.61
+        "solid": 928.19,
+        "glass": 1160.6,
+        "inserts": 1223.98
       },
       "7.8": {
-        "solid": 924.12,
-        "glass": 1232.63,
-        "inserts": 1316.77
+        "solid": 928.19,
+        "glass": 1238.06,
+        "inserts": 1322.57
       },
       "7.10": {
-        "solid": 924.12,
-        "glass": 1232.63,
-        "inserts": 1316.77
+        "solid": 928.19,
+        "glass": 1238.06,
+        "inserts": 1322.57
       },
       "8": {
-        "solid": 797.91,
-        "glass": 1106.42,
-        "inserts": 1190.56
+        "solid": 801.43,
+        "glass": 1111.3,
+        "inserts": 1195.81
       },
       "8.2": {
-        "solid": 998.46,
-        "glass": 1306.96,
-        "inserts": 1391.11
+        "solid": 1002.85,
+        "glass": 1312.72,
+        "inserts": 1397.23
       },
       "8.4": {
-        "solid": 998.46,
-        "glass": 1306.96,
-        "inserts": 1391.11
+        "solid": 1002.85,
+        "glass": 1312.72,
+        "inserts": 1397.23
       },
       "8.6": {
-        "solid": 998.46,
-        "glass": 1306.96,
-        "inserts": 1391.11
+        "solid": 1002.85,
+        "glass": 1312.72,
+        "inserts": 1397.23
       },
       "8.8": {
-        "solid": 998.46,
-        "glass": 1306.96,
-        "inserts": 1391.11
+        "solid": 1002.85,
+        "glass": 1312.72,
+        "inserts": 1397.23
       },
       "8.10": {
-        "solid": 998.46,
-        "glass": 1306.96,
-        "inserts": 1391.11
+        "solid": 1002.85,
+        "glass": 1312.72,
+        "inserts": 1397.23
       },
       "9": {
-        "solid": 862.42,
-        "glass": 1170.93,
-        "inserts": 1255.07
+        "solid": 866.22,
+        "glass": 1176.09,
+        "inserts": 1260.6
       },
       "9.2": {
-        "solid": 1131.6,
-        "glass": 1440.11,
-        "inserts": 1524.25
+        "solid": 1136.58,
+        "glass": 1446.45,
+        "inserts": 1530.96
       },
       "9.4": {
-        "solid": 1131.6,
-        "glass": 1440.11,
-        "inserts": 1524.25
+        "solid": 1136.58,
+        "glass": 1446.45,
+        "inserts": 1530.96
       },
       "9.6": {
-        "solid": 1131.6,
-        "glass": 1440.11,
-        "inserts": 1524.25
+        "solid": 1136.58,
+        "glass": 1446.45,
+        "inserts": 1530.96
       },
       "9.8": {
-        "solid": 1131.6,
-        "glass": 1440.11,
-        "inserts": 1524.25
+        "solid": 1136.58,
+        "glass": 1446.45,
+        "inserts": 1530.96
       },
       "9.10": {
-        "solid": 1131.6,
-        "glass": 1440.11,
-        "inserts": 1524.25
+        "solid": 1136.58,
+        "glass": 1446.45,
+        "inserts": 1530.96
       },
       "10": {
-        "solid": 978.82,
-        "glass": 1287.33,
-        "inserts": 1371.47
+        "solid": 983.14,
+        "glass": 1293.0,
+        "inserts": 1377.52
       },
       "10.2": {
-        "solid": 1323.79,
-        "glass": 1632.3,
-        "inserts": 1716.44
+        "solid": 1329.62,
+        "glass": 1639.49,
+        "inserts": 1724.0
       },
       "10.4": {
-        "solid": 1323.79,
-        "glass": 1632.3,
-        "inserts": 1716.44
+        "solid": 1329.62,
+        "glass": 1639.49,
+        "inserts": 1724.0
       },
       "10.6": {
-        "solid": 1323.79,
-        "glass": 1632.3,
-        "inserts": 1716.44
+        "solid": 1329.62,
+        "glass": 1639.49,
+        "inserts": 1724.0
       },
       "10.8": {
-        "solid": 1323.79,
-        "glass": 1632.3,
-        "inserts": 1716.44
+        "solid": 1329.62,
+        "glass": 1639.49,
+        "inserts": 1724.0
       },
       "10.10": {
-        "solid": 1323.79,
-        "glass": 1632.3,
-        "inserts": 1716.44
+        "solid": 1329.62,
+        "glass": 1639.49,
+        "inserts": 1724.0
       },
       "11": {
-        "solid": 1323.79,
-        "glass": 1632.3,
-        "inserts": 1716.44
+        "solid": 1329.62,
+        "glass": 1639.49,
+        "inserts": 1724.0
       },
       "11.2": {
-        "solid": 1323.79,
-        "glass": 1632.3,
-        "inserts": 1716.44
+        "solid": 1329.62,
+        "glass": 1639.49,
+        "inserts": 1724.0
       },
       "11.4": {
-        "solid": 1323.79,
-        "glass": 1632.3,
-        "inserts": 1716.44
+        "solid": 1329.62,
+        "glass": 1639.49,
+        "inserts": 1724.0
       },
       "11.6": {
-        "solid": 1323.79,
-        "glass": 1786.56,
-        "inserts": 1912.77
+        "solid": 1329.62,
+        "glass": 1794.43,
+        "inserts": 1921.2
       },
       "11.8": {
-        "solid": 1323.79,
-        "glass": 1786.56,
-        "inserts": 1912.77
+        "solid": 1329.62,
+        "glass": 1794.43,
+        "inserts": 1921.2
       },
       "11.10": {
-        "solid": 1323.79,
-        "glass": 1786.56,
-        "inserts": 1912.77
+        "solid": 1329.62,
+        "glass": 1794.43,
+        "inserts": 1921.2
       },
       "12": {
-        "solid": 1144.3,
-        "glass": 1607.07,
-        "inserts": 1733.28
+        "solid": 1149.34,
+        "glass": 1614.15,
+        "inserts": 1740.92
       },
       "12.2": {
-        "solid": 1555.18,
-        "glass": 2017.95,
-        "inserts": 2144.16
+        "solid": 1562.03,
+        "glass": 2026.84,
+        "inserts": 2153.6
       },
       "12.4": {
-        "solid": 1555.18,
-        "glass": 2017.95,
-        "inserts": 2144.16
+        "solid": 1562.03,
+        "glass": 2026.84,
+        "inserts": 2153.6
       },
       "12.6": {
-        "solid": 1555.18,
-        "glass": 2017.95,
-        "inserts": 2144.16
+        "solid": 1562.03,
+        "glass": 2026.84,
+        "inserts": 2153.6
       },
       "12.8": {
-        "solid": 1555.18,
-        "glass": 2017.95,
-        "inserts": 2144.16
+        "solid": 1562.03,
+        "glass": 2026.84,
+        "inserts": 2153.6
       },
       "12.10": {
-        "solid": 1555.18,
-        "glass": 2017.95,
-        "inserts": 2144.16
+        "solid": 1562.03,
+        "glass": 2026.84,
+        "inserts": 2153.6
       },
       "13": {
-        "solid": 1555.18,
-        "glass": 2017.95,
-        "inserts": 2144.16
+        "solid": 1562.03,
+        "glass": 2026.84,
+        "inserts": 2153.6
       },
       "13.2": {
-        "solid": 1555.18,
-        "glass": 2017.95,
-        "inserts": 2144.16
+        "solid": 1562.03,
+        "glass": 2026.84,
+        "inserts": 2153.6
       },
       "13.4": {
-        "solid": 1555.18,
-        "glass": 2017.95,
-        "inserts": 2144.16
+        "solid": 1562.03,
+        "glass": 2026.84,
+        "inserts": 2153.6
       },
       "13.6": {
-        "solid": 1555.18,
-        "glass": 2017.95,
-        "inserts": 2144.16
+        "solid": 1562.03,
+        "glass": 2026.84,
+        "inserts": 2153.6
       },
       "13.8": {
-        "solid": 1555.18,
-        "glass": 2017.95,
-        "inserts": 2144.16
+        "solid": 1562.03,
+        "glass": 2026.84,
+        "inserts": 2153.6
       },
       "13.10": {
-        "solid": 1555.18,
-        "glass": 2017.95,
-        "inserts": 2144.16
+        "solid": 1562.03,
+        "glass": 2026.84,
+        "inserts": 2153.6
       },
       "14": {
-        "solid": 1344.82,
-        "glass": 1807.6,
-        "inserts": 1933.81
+        "solid": 1350.75,
+        "glass": 1815.56,
+        "inserts": 1942.33
       },
       "14.2": {
-        "solid": 1630.89,
-        "glass": 2093.67,
-        "inserts": 2219.88
+        "solid": 1638.08,
+        "glass": 2102.89,
+        "inserts": 2229.66
       },
       "14.4": {
-        "solid": 1630.89,
-        "glass": 2093.67,
-        "inserts": 2219.88
+        "solid": 1638.08,
+        "glass": 2102.89,
+        "inserts": 2229.66
       },
       "14.6": {
-        "solid": 1630.89,
-        "glass": 2093.67,
-        "inserts": 2219.88
+        "solid": 1638.08,
+        "glass": 2102.89,
+        "inserts": 2229.66
       },
       "14.8": {
-        "solid": 1630.89,
-        "glass": 2093.67,
-        "inserts": 2219.88
+        "solid": 1638.08,
+        "glass": 2102.89,
+        "inserts": 2229.66
       },
       "14.10": {
-        "solid": 1630.89,
-        "glass": 2247.91,
-        "inserts": 2416.19
+        "solid": 1638.08,
+        "glass": 2257.81,
+        "inserts": 2426.84
       },
       "15": {
-        "solid": 1410.74,
-        "glass": 2027.75,
-        "inserts": 2196.04
+        "solid": 1416.95,
+        "glass": 2036.69,
+        "inserts": 2205.71
       },
       "15.2": {
-        "solid": 1647.72,
-        "glass": 2264.74,
-        "inserts": 2433.02
+        "solid": 1654.98,
+        "glass": 2274.71,
+        "inserts": 2443.74
       },
       "15.4": {
-        "solid": 1647.72,
-        "glass": 2264.74,
-        "inserts": 2433.02
+        "solid": 1654.98,
+        "glass": 2274.71,
+        "inserts": 2443.74
       },
       "15.6": {
-        "solid": 1426.16,
-        "glass": 2043.18,
-        "inserts": 2211.46
+        "solid": 1432.44,
+        "glass": 2052.18,
+        "inserts": 2221.2
       },
       "15.8": {
-        "solid": 1426.16,
-        "glass": 2043.18,
-        "inserts": 2211.46
+        "solid": 1432.44,
+        "glass": 2052.18,
+        "inserts": 2221.2
       },
       "15.10": {
-        "solid": 1658.95,
-        "glass": 2275.96,
-        "inserts": 2444.25
+        "solid": 1666.26,
+        "glass": 2285.99,
+        "inserts": 2455.01
       },
       "16": {
-        "solid": 1435.98,
-        "glass": 2053.0,
-        "inserts": 2221.28
+        "solid": 1442.31,
+        "glass": 2062.04,
+        "inserts": 2231.07
       },
       "16.2": {
-        "solid": 1914.16,
-        "glass": 2531.18,
-        "inserts": 2699.46
+        "solid": 1922.59,
+        "glass": 2542.33,
+        "inserts": 2711.35
       },
       "16.4": {
-        "solid": 1914.16,
-        "glass": 2531.18,
-        "inserts": 2699.46
+        "solid": 1922.59,
+        "glass": 2542.33,
+        "inserts": 2711.35
       },
       "16.6": {
-        "solid": 1914.16,
-        "glass": 2531.18,
-        "inserts": 2699.46
+        "solid": 1922.59,
+        "glass": 2542.33,
+        "inserts": 2711.35
       },
       "16.8": {
-        "solid": 1914.16,
-        "glass": 2531.18,
-        "inserts": 2699.46
+        "solid": 1922.59,
+        "glass": 2542.33,
+        "inserts": 2711.35
       },
       "16.10": {
-        "solid": 1914.16,
-        "glass": 2531.18,
-        "inserts": 2699.46
+        "solid": 1922.59,
+        "glass": 2542.33,
+        "inserts": 2711.35
       },
       "17": {
-        "solid": 1657.54,
-        "glass": 2274.56,
-        "inserts": 2442.84
+        "solid": 1664.85,
+        "glass": 2284.58,
+        "inserts": 2453.6
       },
       "17.2": {
-        "solid": 2002.51,
-        "glass": 2619.53,
-        "inserts": 2787.81
+        "solid": 2011.33,
+        "glass": 2631.07,
+        "inserts": 2800.09
       },
       "17.4": {
-        "solid": 2002.51,
-        "glass": 2619.53,
-        "inserts": 2787.81
+        "solid": 2011.33,
+        "glass": 2631.07,
+        "inserts": 2800.09
       },
       "17.6": {
-        "solid": 2002.51,
-        "glass": 2619.53,
-        "inserts": 2787.81
+        "solid": 2011.33,
+        "glass": 2631.07,
+        "inserts": 2800.09
       },
       "17.8": {
-        "solid": 2002.51,
-        "glass": 2619.53,
-        "inserts": 2787.81
+        "solid": 2011.33,
+        "glass": 2631.07,
+        "inserts": 2800.09
       },
       "17.10": {
-        "solid": 2002.51,
-        "glass": 2619.53,
-        "inserts": 2787.81
+        "solid": 2011.33,
+        "glass": 2631.07,
+        "inserts": 2800.09
       },
       "18": {
-        "solid": 1734.67,
-        "glass": 2351.68,
-        "inserts": 2519.96
+        "solid": 1742.31,
+        "glass": 2362.04,
+        "inserts": 2531.07
       }
     },
     "8": {
       "6": {
-        "solid": 1116.25,
-        "glass": 1347.63,
-        "inserts": 1410.74
+        "solid": 1121.16,
+        "glass": 1353.57,
+        "inserts": 1416.95
       },
       "6.2": {
-        "solid": 1116.25,
-        "glass": 1347.63,
-        "inserts": 1410.74
+        "solid": 1121.16,
+        "glass": 1353.57,
+        "inserts": 1416.95
       },
       "6.4": {
-        "solid": 1116.25,
-        "glass": 1347.63,
-        "inserts": 1410.74
+        "solid": 1121.16,
+        "glass": 1353.57,
+        "inserts": 1416.95
       },
       "6.6": {
-        "solid": 1116.25,
-        "glass": 1347.63,
-        "inserts": 1410.74
+        "solid": 1121.16,
+        "glass": 1353.57,
+        "inserts": 1416.95
       },
       "6.8": {
-        "solid": 1116.25,
-        "glass": 1347.63,
-        "inserts": 1410.74
+        "solid": 1121.16,
+        "glass": 1353.57,
+        "inserts": 1416.95
       },
       "6.10": {
-        "solid": 1116.25,
-        "glass": 1347.63,
-        "inserts": 1410.74
+        "solid": 1121.16,
+        "glass": 1353.57,
+        "inserts": 1416.95
       },
       "7": {
-        "solid": 1116.25,
-        "glass": 1347.63,
-        "inserts": 1410.74
+        "solid": 1121.16,
+        "glass": 1353.57,
+        "inserts": 1416.95
       },
       "7.2": {
-        "solid": 1116.25,
-        "glass": 1347.63,
-        "inserts": 1410.74
+        "solid": 1121.16,
+        "glass": 1353.57,
+        "inserts": 1416.95
       },
       "7.4": {
-        "solid": 1116.25,
-        "glass": 1347.63,
-        "inserts": 1410.74
+        "solid": 1121.16,
+        "glass": 1353.57,
+        "inserts": 1416.95
       },
       "7.6": {
-        "solid": 1116.25,
-        "glass": 1347.63,
-        "inserts": 1410.74
+        "solid": 1121.16,
+        "glass": 1353.57,
+        "inserts": 1416.95
       },
       "7.8": {
-        "solid": 1116.25,
-        "glass": 1424.75,
-        "inserts": 1508.89
+        "solid": 1121.16,
+        "glass": 1431.03,
+        "inserts": 1515.54
       },
       "7.10": {
-        "solid": 1116.25,
-        "glass": 1424.75,
-        "inserts": 1508.89
+        "solid": 1121.16,
+        "glass": 1431.03,
+        "inserts": 1515.54
       },
       "8": {
-        "solid": 964.79,
-        "glass": 1273.3,
-        "inserts": 1357.44
+        "solid": 969.04,
+        "glass": 1278.91,
+        "inserts": 1363.42
       },
       "8.2": {
-        "solid": 1215.81,
-        "glass": 1524.32,
-        "inserts": 1608.46
+        "solid": 1221.16,
+        "glass": 1531.03,
+        "inserts": 1615.54
       },
       "8.4": {
-        "solid": 1215.81,
-        "glass": 1524.32,
-        "inserts": 1608.46
+        "solid": 1221.16,
+        "glass": 1531.03,
+        "inserts": 1615.54
       },
       "8.6": {
-        "solid": 1215.81,
-        "glass": 1524.32,
-        "inserts": 1608.46
+        "solid": 1221.16,
+        "glass": 1531.03,
+        "inserts": 1615.54
       },
       "8.8": {
-        "solid": 1215.81,
-        "glass": 1524.32,
-        "inserts": 1608.46
+        "solid": 1221.16,
+        "glass": 1531.03,
+        "inserts": 1615.54
       },
       "8.10": {
-        "solid": 1215.81,
-        "glass": 1524.32,
-        "inserts": 1608.46
+        "solid": 1221.16,
+        "glass": 1531.03,
+        "inserts": 1615.54
       },
       "9": {
-        "solid": 1051.74,
-        "glass": 1360.25,
-        "inserts": 1444.39
+        "solid": 1056.37,
+        "glass": 1366.24,
+        "inserts": 1450.75
       },
       "9.2": {
-        "solid": 1398.11,
-        "glass": 1706.61,
-        "inserts": 1790.75
+        "solid": 1404.26,
+        "glass": 1714.13,
+        "inserts": 1798.64
       },
       "9.4": {
-        "solid": 1398.11,
-        "glass": 1706.61,
-        "inserts": 1790.75
+        "solid": 1404.26,
+        "glass": 1714.13,
+        "inserts": 1798.64
       },
       "9.6": {
-        "solid": 1398.11,
-        "glass": 1706.61,
-        "inserts": 1790.75
+        "solid": 1404.26,
+        "glass": 1714.13,
+        "inserts": 1798.64
       },
       "9.8": {
-        "solid": 1398.11,
-        "glass": 1706.61,
-        "inserts": 1790.75
+        "solid": 1404.26,
+        "glass": 1714.13,
+        "inserts": 1798.64
       },
       "9.10": {
-        "solid": 1398.11,
-        "glass": 1706.61,
-        "inserts": 1790.75
+        "solid": 1404.26,
+        "glass": 1714.13,
+        "inserts": 1798.64
       },
       "10": {
-        "solid": 1210.19,
-        "glass": 1518.7,
-        "inserts": 1602.84
+        "solid": 1215.52,
+        "glass": 1525.39,
+        "inserts": 1609.9
       },
       "10.2": {
-        "solid": 1633.68,
-        "glass": 1942.19,
-        "inserts": 2026.33
+        "solid": 1640.88,
+        "glass": 1950.75,
+        "inserts": 2035.26
       },
       "10.4": {
-        "solid": 1633.68,
-        "glass": 1942.19,
-        "inserts": 2026.33
+        "solid": 1640.88,
+        "glass": 1950.75,
+        "inserts": 2035.26
       },
       "10.6": {
-        "solid": 1633.68,
-        "glass": 1942.19,
-        "inserts": 2026.33
+        "solid": 1640.88,
+        "glass": 1950.75,
+        "inserts": 2035.26
       },
       "10.8": {
-        "solid": 1633.68,
-        "glass": 1942.19,
-        "inserts": 2026.33
+        "solid": 1640.88,
+        "glass": 1950.75,
+        "inserts": 2035.26
       },
       "10.10": {
-        "solid": 1633.68,
-        "glass": 1942.19,
-        "inserts": 2026.33
+        "solid": 1640.88,
+        "glass": 1950.75,
+        "inserts": 2035.26
       },
       "11": {
-        "solid": 1633.68,
-        "glass": 1942.19,
-        "inserts": 2026.33
+        "solid": 1640.88,
+        "glass": 1950.75,
+        "inserts": 2035.26
       },
       "11.2": {
-        "solid": 1633.68,
-        "glass": 1942.19,
-        "inserts": 2026.33
+        "solid": 1640.88,
+        "glass": 1950.75,
+        "inserts": 2035.26
       },
       "11.4": {
-        "solid": 1633.68,
-        "glass": 1942.19,
-        "inserts": 2026.33
+        "solid": 1640.88,
+        "glass": 1950.75,
+        "inserts": 2035.26
       },
       "11.6": {
-        "solid": 1633.68,
-        "glass": 2096.46,
-        "inserts": 2222.67
+        "solid": 1640.88,
+        "glass": 2105.69,
+        "inserts": 2232.46
       },
       "11.8": {
-        "solid": 1633.68,
-        "glass": 2096.46,
-        "inserts": 2222.67
+        "solid": 1640.88,
+        "glass": 2105.69,
+        "inserts": 2232.46
       },
       "11.10": {
-        "solid": 1633.68,
-        "glass": 2096.46,
-        "inserts": 2222.67
+        "solid": 1640.88,
+        "glass": 2105.69,
+        "inserts": 2232.46
       },
       "12": {
-        "solid": 1413.54,
-        "glass": 1876.32,
-        "inserts": 2002.53
+        "solid": 1419.77,
+        "glass": 1884.58,
+        "inserts": 2011.35
       },
       "12.2": {
-        "solid": 1873.49,
-        "glass": 2336.26,
-        "inserts": 2462.47
+        "solid": 1881.74,
+        "glass": 2346.56,
+        "inserts": 2473.32
       },
       "12.4": {
-        "solid": 1873.49,
-        "glass": 2336.26,
-        "inserts": 2462.47
+        "solid": 1881.74,
+        "glass": 2346.56,
+        "inserts": 2473.32
       },
       "12.6": {
-        "solid": 1873.49,
-        "glass": 2336.26,
-        "inserts": 2462.47
+        "solid": 1881.74,
+        "glass": 2346.56,
+        "inserts": 2473.32
       },
       "12.8": {
-        "solid": 1873.49,
-        "glass": 2336.26,
-        "inserts": 2462.47
+        "solid": 1881.74,
+        "glass": 2346.56,
+        "inserts": 2473.32
       },
       "12.10": {
-        "solid": 1873.49,
-        "glass": 2336.26,
-        "inserts": 2462.47
+        "solid": 1881.74,
+        "glass": 2346.56,
+        "inserts": 2473.32
       },
       "13": {
-        "solid": 1873.49,
-        "glass": 2336.26,
-        "inserts": 2462.47
+        "solid": 1881.74,
+        "glass": 2346.56,
+        "inserts": 2473.32
       },
       "13.2": {
-        "solid": 1873.49,
-        "glass": 2336.26,
-        "inserts": 2462.47
+        "solid": 1881.74,
+        "glass": 2346.56,
+        "inserts": 2473.32
       },
       "13.4": {
-        "solid": 1873.49,
-        "glass": 2336.26,
-        "inserts": 2462.47
+        "solid": 1881.74,
+        "glass": 2346.56,
+        "inserts": 2473.32
       },
       "13.6": {
-        "solid": 1873.49,
-        "glass": 2336.26,
-        "inserts": 2462.47
+        "solid": 1881.74,
+        "glass": 2346.56,
+        "inserts": 2473.32
       },
       "13.8": {
-        "solid": 1873.49,
-        "glass": 2336.26,
-        "inserts": 2462.47
+        "solid": 1881.74,
+        "glass": 2346.56,
+        "inserts": 2473.32
       },
       "13.10": {
-        "solid": 1873.49,
-        "glass": 2336.26,
-        "inserts": 2462.47
+        "solid": 1881.74,
+        "glass": 2346.56,
+        "inserts": 2473.32
       },
       "14": {
-        "solid": 1622.49,
-        "glass": 2085.26,
-        "inserts": 2211.47
+        "solid": 1629.64,
+        "glass": 2094.45,
+        "inserts": 2221.22
       },
       "14.2": {
-        "solid": 2001.11,
-        "glass": 2463.88,
-        "inserts": 2590.09
+        "solid": 2009.92,
+        "glass": 2474.73,
+        "inserts": 2601.5
       },
       "14.4": {
-        "solid": 2001.11,
-        "glass": 2463.88,
-        "inserts": 2590.09
+        "solid": 2009.92,
+        "glass": 2474.73,
+        "inserts": 2601.5
       },
       "14.6": {
-        "solid": 2001.11,
-        "glass": 2463.88,
-        "inserts": 2590.09
+        "solid": 2009.92,
+        "glass": 2474.73,
+        "inserts": 2601.5
       },
       "14.8": {
-        "solid": 2001.11,
-        "glass": 2463.88,
-        "inserts": 2590.09
+        "solid": 2009.92,
+        "glass": 2474.73,
+        "inserts": 2601.5
       },
       "14.10": {
-        "solid": 2001.11,
-        "glass": 2618.12,
-        "inserts": 2786.4
+        "solid": 2009.92,
+        "glass": 2629.66,
+        "inserts": 2798.68
       },
       "15": {
-        "solid": 1733.26,
-        "glass": 2350.28,
-        "inserts": 2518.56
+        "solid": 1740.9,
+        "glass": 2360.63,
+        "inserts": 2529.66
       },
       "15.2": {
-        "solid": 2030.56,
-        "glass": 2647.58,
-        "inserts": 2815.86
+        "solid": 2039.51,
+        "glass": 2659.24,
+        "inserts": 2828.26
       },
       "15.4": {
-        "solid": 2030.56,
-        "glass": 2647.58,
-        "inserts": 2815.86
+        "solid": 2039.51,
+        "glass": 2659.24,
+        "inserts": 2828.26
       },
       "15.6": {
-        "solid": 1758.51,
-        "glass": 2375.53,
-        "inserts": 2543.81
+        "solid": 1766.26,
+        "glass": 2385.99,
+        "inserts": 2555.01
       },
       "15.8": {
-        "solid": 1758.51,
-        "glass": 2375.53,
-        "inserts": 2543.81
+        "solid": 1766.26,
+        "glass": 2385.99,
+        "inserts": 2555.01
       },
       "15.10": {
-        "solid": 2081.04,
-        "glass": 2698.05,
-        "inserts": 2866.33
+        "solid": 2090.2,
+        "glass": 2709.94,
+        "inserts": 2878.96
       },
       "16": {
-        "solid": 1801.98,
-        "glass": 2419.0,
-        "inserts": 2587.28
+        "solid": 1809.92,
+        "glass": 2429.66,
+        "inserts": 2598.68
       },
       "16.2": {
-        "solid": 2270.35,
-        "glass": 2887.37,
-        "inserts": 3055.65
+        "solid": 2280.35,
+        "glass": 2900.09,
+        "inserts": 3069.11
       },
       "16.4": {
-        "solid": 2270.35,
-        "glass": 2887.37,
-        "inserts": 3055.65
+        "solid": 2280.35,
+        "glass": 2900.09,
+        "inserts": 3069.11
       },
       "16.6": {
-        "solid": 2270.35,
-        "glass": 2887.37,
-        "inserts": 3055.65
+        "solid": 2280.35,
+        "glass": 2900.09,
+        "inserts": 3069.11
       },
       "16.8": {
-        "solid": 2270.35,
-        "glass": 2887.37,
-        "inserts": 3055.65
+        "solid": 2280.35,
+        "glass": 2900.09,
+        "inserts": 3069.11
       },
       "16.10": {
-        "solid": 2270.35,
-        "glass": 2887.37,
-        "inserts": 3055.65
+        "solid": 2280.35,
+        "glass": 2900.09,
+        "inserts": 3069.11
       },
       "17": {
-        "solid": 1967.46,
-        "glass": 2584.47,
-        "inserts": 2752.75
+        "solid": 1976.12,
+        "glass": 2595.86,
+        "inserts": 2764.88
       },
       "17.2": {
-        "solid": 2441.44,
-        "glass": 3058.46,
-        "inserts": 3226.74
+        "solid": 2452.19,
+        "glass": 3071.93,
+        "inserts": 3240.95
       },
       "17.4": {
-        "solid": 2441.44,
-        "glass": 3058.46,
-        "inserts": 3226.74
+        "solid": 2452.19,
+        "glass": 3071.93,
+        "inserts": 3240.95
       },
       "17.6": {
-        "solid": 2441.44,
-        "glass": 3058.46,
-        "inserts": 3226.74
+        "solid": 2452.19,
+        "glass": 3071.93,
+        "inserts": 3240.95
       },
       "17.8": {
-        "solid": 2441.44,
-        "glass": 3058.46,
-        "inserts": 3226.74
+        "solid": 2452.19,
+        "glass": 3071.93,
+        "inserts": 3240.95
       },
       "17.10": {
-        "solid": 2441.44,
-        "glass": 3058.46,
-        "inserts": 3226.74
+        "solid": 2452.19,
+        "glass": 3071.93,
+        "inserts": 3240.95
       },
       "18": {
-        "solid": 2116.11,
-        "glass": 2733.12,
-        "inserts": 2901.4
+        "solid": 2125.43,
+        "glass": 2745.16,
+        "inserts": 2914.19
       }
     },
     "9": {
       "6": {
-        "solid": 1564.98,
-        "glass": 1796.37,
-        "inserts": 1859.47
+        "solid": 1571.88,
+        "glass": 1804.28,
+        "inserts": 1867.67
       },
       "6.2": {
-        "solid": 1564.98,
-        "glass": 1796.37,
-        "inserts": 1859.47
+        "solid": 1571.88,
+        "glass": 1804.28,
+        "inserts": 1867.67
       },
       "6.4": {
-        "solid": 1564.98,
-        "glass": 1796.37,
-        "inserts": 1859.47
+        "solid": 1571.88,
+        "glass": 1804.28,
+        "inserts": 1867.67
       },
       "6.6": {
-        "solid": 1564.98,
-        "glass": 1796.37,
-        "inserts": 1859.47
+        "solid": 1571.88,
+        "glass": 1804.28,
+        "inserts": 1867.67
       },
       "6.8": {
-        "solid": 1564.98,
-        "glass": 1796.37,
-        "inserts": 1859.47
+        "solid": 1571.88,
+        "glass": 1804.28,
+        "inserts": 1867.67
       },
       "6.10": {
-        "solid": 1564.98,
-        "glass": 1796.37,
-        "inserts": 1859.47
+        "solid": 1571.88,
+        "glass": 1804.28,
+        "inserts": 1867.67
       },
       "7": {
-        "solid": 1564.98,
-        "glass": 1796.37,
-        "inserts": 1859.47
+        "solid": 1571.88,
+        "glass": 1804.28,
+        "inserts": 1867.67
       },
       "7.2": {
-        "solid": 1564.98,
-        "glass": 1796.37,
-        "inserts": 1859.47
+        "solid": 1571.88,
+        "glass": 1804.28,
+        "inserts": 1867.67
       },
       "7.4": {
-        "solid": 1564.98,
-        "glass": 1796.37,
-        "inserts": 1859.47
+        "solid": 1571.88,
+        "glass": 1804.28,
+        "inserts": 1867.67
       },
       "7.6": {
-        "solid": 1564.98,
-        "glass": 1796.37,
-        "inserts": 1859.47
+        "solid": 1571.88,
+        "glass": 1804.28,
+        "inserts": 1867.67
       },
       "7.8": {
-        "solid": 1564.98,
-        "glass": 1873.49,
-        "inserts": 1957.63
+        "solid": 1571.88,
+        "glass": 1881.74,
+        "inserts": 1966.26
       },
       "7.10": {
-        "solid": 1564.98,
-        "glass": 1873.49,
-        "inserts": 1957.63
+        "solid": 1571.88,
+        "glass": 1881.74,
+        "inserts": 1966.26
       },
       "8": {
-        "solid": 1360.25,
-        "glass": 1668.75,
-        "inserts": 1752.89
+        "solid": 1366.24,
+        "glass": 1676.11,
+        "inserts": 1760.62
       },
       "8.2": {
-        "solid": 1686.98,
-        "glass": 1995.49,
-        "inserts": 2079.63
+        "solid": 1694.41,
+        "glass": 2004.28,
+        "inserts": 2088.79
       },
       "8.4": {
-        "solid": 1686.98,
-        "glass": 1995.49,
-        "inserts": 2079.63
+        "solid": 1694.41,
+        "glass": 2004.28,
+        "inserts": 2088.79
       },
       "8.6": {
-        "solid": 1686.98,
-        "glass": 1995.49,
-        "inserts": 2079.63
+        "solid": 1694.41,
+        "glass": 2004.28,
+        "inserts": 2088.79
       },
       "8.8": {
-        "solid": 1686.98,
-        "glass": 1995.49,
-        "inserts": 2079.63
+        "solid": 1694.41,
+        "glass": 2004.28,
+        "inserts": 2088.79
       },
       "8.10": {
-        "solid": 1686.98,
-        "glass": 1995.49,
-        "inserts": 2079.63
+        "solid": 1694.41,
+        "glass": 2004.28,
+        "inserts": 2088.79
       },
       "9": {
-        "solid": 1466.82,
-        "glass": 1775.33,
-        "inserts": 1859.47
+        "solid": 1473.29,
+        "glass": 1783.15,
+        "inserts": 1867.67
       },
       "9.2": {
-        "solid": 1952.04,
-        "glass": 2260.54,
-        "inserts": 2344.68
+        "solid": 1960.63,
+        "glass": 2270.5,
+        "inserts": 2355.01
       },
       "9.4": {
-        "solid": 1952.04,
-        "glass": 2260.54,
-        "inserts": 2344.68
+        "solid": 1960.63,
+        "glass": 2270.5,
+        "inserts": 2355.01
       },
       "9.6": {
-        "solid": 1952.04,
-        "glass": 2260.54,
-        "inserts": 2344.68
+        "solid": 1960.63,
+        "glass": 2270.5,
+        "inserts": 2355.01
       },
       "9.8": {
-        "solid": 1952.04,
-        "glass": 2260.54,
-        "inserts": 2344.68
+        "solid": 1960.63,
+        "glass": 2270.5,
+        "inserts": 2355.01
       },
       "9.10": {
-        "solid": 1952.04,
-        "glass": 2260.54,
-        "inserts": 2344.68
+        "solid": 1960.63,
+        "glass": 2270.5,
+        "inserts": 2355.01
       },
       "10": {
-        "solid": 1696.81,
-        "glass": 2005.32,
-        "inserts": 2089.46
+        "solid": 1704.28,
+        "glass": 2014.15,
+        "inserts": 2098.66
       },
       "10.2": {
-        "solid": 2341.88,
-        "glass": 2650.39,
-        "inserts": 2734.53
+        "solid": 2352.19,
+        "glass": 2662.06,
+        "inserts": 2746.57
       },
       "10.4": {
-        "solid": 2341.88,
-        "glass": 2650.39,
-        "inserts": 2734.53
+        "solid": 2352.19,
+        "glass": 2662.06,
+        "inserts": 2746.57
       },
       "10.6": {
-        "solid": 2341.88,
-        "glass": 2650.39,
-        "inserts": 2734.53
+        "solid": 2352.19,
+        "glass": 2662.06,
+        "inserts": 2746.57
       },
       "10.8": {
-        "solid": 2341.88,
-        "glass": 2650.39,
-        "inserts": 2734.53
+        "solid": 2352.19,
+        "glass": 2662.06,
+        "inserts": 2746.57
       },
       "10.10": {
-        "solid": 2341.88,
-        "glass": 2650.39,
-        "inserts": 2734.53
+        "solid": 2352.19,
+        "glass": 2662.06,
+        "inserts": 2746.57
       },
       "11": {
-        "solid": 2341.88,
-        "glass": 2650.39,
-        "inserts": 2734.53
+        "solid": 2352.19,
+        "glass": 2662.06,
+        "inserts": 2746.57
       },
       "11.2": {
-        "solid": 2341.88,
-        "glass": 2650.39,
-        "inserts": 2734.53
+        "solid": 2352.19,
+        "glass": 2662.06,
+        "inserts": 2746.57
       },
       "11.4": {
-        "solid": 2341.88,
-        "glass": 2650.39,
-        "inserts": 2734.53
+        "solid": 2352.19,
+        "glass": 2662.06,
+        "inserts": 2746.57
       },
       "11.6": {
-        "solid": 2341.88,
-        "glass": 2804.65,
-        "inserts": 2930.86
+        "solid": 2352.19,
+        "glass": 2817.0,
+        "inserts": 2943.77
       },
       "11.8": {
-        "solid": 2341.88,
-        "glass": 2804.65,
-        "inserts": 2930.86
+        "solid": 2352.19,
+        "glass": 2817.0,
+        "inserts": 2943.77
       },
       "11.10": {
-        "solid": 2341.88,
-        "glass": 2804.65,
-        "inserts": 2930.86
+        "solid": 2352.19,
+        "glass": 2817.0,
+        "inserts": 2943.77
       },
       "12": {
-        "solid": 2036.18,
-        "glass": 2498.95,
-        "inserts": 2625.16
+        "solid": 2045.15,
+        "glass": 2509.96,
+        "inserts": 2636.72
       },
       "12.2": {
-        "solid": 2622.33,
-        "glass": 3085.11,
-        "inserts": 3211.32
+        "solid": 2633.89,
+        "glass": 3098.7,
+        "inserts": 3225.46
       },
       "12.4": {
-        "solid": 2622.33,
-        "glass": 3085.11,
-        "inserts": 3211.32
+        "solid": 2633.89,
+        "glass": 3098.7,
+        "inserts": 3225.46
       },
       "12.6": {
-        "solid": 2622.33,
-        "glass": 3085.11,
-        "inserts": 3211.32
+        "solid": 2633.89,
+        "glass": 3098.7,
+        "inserts": 3225.46
       },
       "12.8": {
-        "solid": 2622.33,
-        "glass": 3085.11,
-        "inserts": 3211.32
+        "solid": 2633.89,
+        "glass": 3098.7,
+        "inserts": 3225.46
       },
       "12.10": {
-        "solid": 2622.33,
-        "glass": 3085.11,
-        "inserts": 3211.32
+        "solid": 2633.89,
+        "glass": 3098.7,
+        "inserts": 3225.46
       },
       "13": {
-        "solid": 2622.33,
-        "glass": 3085.11,
-        "inserts": 3211.32
+        "solid": 2633.89,
+        "glass": 3098.7,
+        "inserts": 3225.46
       },
       "13.2": {
-        "solid": 2622.33,
-        "glass": 3085.11,
-        "inserts": 3211.32
+        "solid": 2633.89,
+        "glass": 3098.7,
+        "inserts": 3225.46
       },
       "13.4": {
-        "solid": 2622.33,
-        "glass": 3085.11,
-        "inserts": 3211.32
+        "solid": 2633.89,
+        "glass": 3098.7,
+        "inserts": 3225.46
       },
       "13.6": {
-        "solid": 2622.33,
-        "glass": 3085.11,
-        "inserts": 3211.32
+        "solid": 2633.89,
+        "glass": 3098.7,
+        "inserts": 3225.46
       },
       "13.8": {
-        "solid": 2622.33,
-        "glass": 3085.11,
-        "inserts": 3211.32
+        "solid": 2633.89,
+        "glass": 3098.7,
+        "inserts": 3225.46
       },
       "13.10": {
-        "solid": 2622.33,
-        "glass": 3085.11,
-        "inserts": 3211.32
+        "solid": 2633.89,
+        "glass": 3098.7,
+        "inserts": 3225.46
       },
       "14": {
-        "solid": 2280.18,
-        "glass": 2742.95,
-        "inserts": 2869.16
+        "solid": 2290.22,
+        "glass": 2755.03,
+        "inserts": 2881.8
       },
       "14.2": {
-        "solid": 2752.75,
-        "glass": 3215.53,
-        "inserts": 3341.74
+        "solid": 2764.88,
+        "glass": 3229.69,
+        "inserts": 3356.46
       },
       "14.4": {
-        "solid": 2752.75,
-        "glass": 3215.53,
-        "inserts": 3341.74
+        "solid": 2764.88,
+        "glass": 3229.69,
+        "inserts": 3356.46
       },
       "14.6": {
-        "solid": 2752.75,
-        "glass": 3215.53,
-        "inserts": 3341.74
+        "solid": 2764.88,
+        "glass": 3229.69,
+        "inserts": 3356.46
       },
       "14.8": {
-        "solid": 2752.75,
-        "glass": 3215.53,
-        "inserts": 3341.74
+        "solid": 2764.88,
+        "glass": 3229.69,
+        "inserts": 3356.46
       },
       "14.10": {
-        "solid": 2752.75,
-        "glass": 3369.77,
-        "inserts": 3538.05
+        "solid": 2764.88,
+        "glass": 3384.62,
+        "inserts": 3553.64
       },
       "15": {
-        "solid": 2393.75,
-        "glass": 3010.77,
-        "inserts": 3179.05
+        "solid": 2404.3,
+        "glass": 3024.04,
+        "inserts": 3193.06
       },
       "15.2": {
-        "solid": 2904.21,
-        "glass": 3521.23,
-        "inserts": 3689.51
+        "solid": 2917.0,
+        "glass": 3536.74,
+        "inserts": 3705.76
       },
       "15.4": {
-        "solid": 2904.21,
-        "glass": 3521.23,
-        "inserts": 3689.51
+        "solid": 2917.0,
+        "glass": 3536.74,
+        "inserts": 3705.76
       },
       "15.6": {
-        "solid": 2525.58,
-        "glass": 3142.6,
-        "inserts": 3310.88
+        "solid": 2536.7,
+        "glass": 3156.44,
+        "inserts": 3325.46
       },
       "15.8": {
-        "solid": 2525.58,
-        "glass": 3142.6,
-        "inserts": 3310.88
+        "solid": 2536.7,
+        "glass": 3156.44,
+        "inserts": 3325.46
       },
       "15.10": {
-        "solid": 2904.21,
-        "glass": 3521.23,
-        "inserts": 3689.51
+        "solid": 2917.0,
+        "glass": 3536.74,
+        "inserts": 3705.76
       },
       "16": {
-        "solid": 2525.58,
-        "glass": 3142.6,
-        "inserts": 3310.88
+        "solid": 2536.7,
+        "glass": 3156.44,
+        "inserts": 3325.46
       },
       "16.2": {
-        "solid": 3340.33,
-        "glass": 3957.35,
-        "inserts": 4125.63
+        "solid": 3355.05,
+        "glass": 3974.78,
+        "inserts": 4143.81
       },
       "16.4": {
-        "solid": 3340.33,
-        "glass": 3957.35,
-        "inserts": 4125.63
+        "solid": 3355.05,
+        "glass": 3974.78,
+        "inserts": 4143.81
       },
       "16.6": {
-        "solid": 3340.33,
-        "glass": 3957.35,
-        "inserts": 4125.63
+        "solid": 3355.05,
+        "glass": 3974.78,
+        "inserts": 4143.81
       },
       "16.8": {
-        "solid": 3340.33,
-        "glass": 3957.35,
-        "inserts": 4125.63
+        "solid": 3355.05,
+        "glass": 3974.78,
+        "inserts": 4143.81
       },
       "16.10": {
-        "solid": 3340.33,
-        "glass": 3957.35,
-        "inserts": 4125.63
+        "solid": 3355.05,
+        "glass": 3974.78,
+        "inserts": 4143.81
       },
       "17": {
-        "solid": 2904.21,
-        "glass": 3521.23,
-        "inserts": 3689.51
+        "solid": 2917.0,
+        "glass": 3536.74,
+        "inserts": 3705.76
       },
       "17.2": {
-        "solid": 3505.81,
-        "glass": 4122.82,
-        "inserts": 4291.11
+        "solid": 3521.25,
+        "glass": 4140.99,
+        "inserts": 4310.01
       },
       "17.4": {
-        "solid": 3505.81,
-        "glass": 4122.82,
-        "inserts": 4291.11
+        "solid": 3521.25,
+        "glass": 4140.99,
+        "inserts": 4310.01
       },
       "17.6": {
-        "solid": 3505.81,
-        "glass": 4122.82,
-        "inserts": 4291.11
+        "solid": 3521.25,
+        "glass": 4140.99,
+        "inserts": 4310.01
       },
       "17.8": {
-        "solid": 3505.81,
-        "glass": 4122.82,
-        "inserts": 4291.11
+        "solid": 3521.25,
+        "glass": 4140.99,
+        "inserts": 4310.01
       },
       "17.10": {
-        "solid": 3505.81,
-        "glass": 4122.82,
-        "inserts": 4291.11
+        "solid": 3521.25,
+        "glass": 4140.99,
+        "inserts": 4310.01
       },
       "18": {
-        "solid": 3048.65,
-        "glass": 3665.67,
-        "inserts": 3833.95
+        "solid": 3062.08,
+        "glass": 3681.81,
+        "inserts": 3850.84
       }
     },
     "10": {
       "6": {
-        "solid": 1564.98,
-        "glass": 1796.37,
-        "inserts": 1859.47
+        "solid": 1571.88,
+        "glass": 1804.28,
+        "inserts": 1867.67
       },
       "6.2": {
-        "solid": 1564.98,
-        "glass": 1796.37,
-        "inserts": 1859.47
+        "solid": 1571.88,
+        "glass": 1804.28,
+        "inserts": 1867.67
       },
       "6.4": {
-        "solid": 1564.98,
-        "glass": 1796.37,
-        "inserts": 1859.47
+        "solid": 1571.88,
+        "glass": 1804.28,
+        "inserts": 1867.67
       },
       "6.6": {
-        "solid": 1564.98,
-        "glass": 1796.37,
-        "inserts": 1859.47
+        "solid": 1571.88,
+        "glass": 1804.28,
+        "inserts": 1867.67
       },
       "6.8": {
-        "solid": 1564.98,
-        "glass": 1796.37,
-        "inserts": 1859.47
+        "solid": 1571.88,
+        "glass": 1804.28,
+        "inserts": 1867.67
       },
       "6.10": {
-        "solid": 1564.98,
-        "glass": 1796.37,
-        "inserts": 1859.47
+        "solid": 1571.88,
+        "glass": 1804.28,
+        "inserts": 1867.67
       },
       "7": {
-        "solid": 1564.98,
-        "glass": 1796.37,
-        "inserts": 1859.47
+        "solid": 1571.88,
+        "glass": 1804.28,
+        "inserts": 1867.67
       },
       "7.2": {
-        "solid": 1564.98,
-        "glass": 1796.37,
-        "inserts": 1859.47
+        "solid": 1571.88,
+        "glass": 1804.28,
+        "inserts": 1867.67
       },
       "7.4": {
-        "solid": 1564.98,
-        "glass": 1796.37,
-        "inserts": 1859.47
+        "solid": 1571.88,
+        "glass": 1804.28,
+        "inserts": 1867.67
       },
       "7.6": {
-        "solid": 1564.98,
-        "glass": 1796.37,
-        "inserts": 1859.47
+        "solid": 1571.88,
+        "glass": 1804.28,
+        "inserts": 1867.67
       },
       "7.8": {
-        "solid": 1564.98,
-        "glass": 1873.49,
-        "inserts": 1957.63
+        "solid": 1571.88,
+        "glass": 1881.74,
+        "inserts": 1966.26
       },
       "7.10": {
-        "solid": 1564.98,
-        "glass": 1873.49,
-        "inserts": 1957.63
+        "solid": 1571.88,
+        "glass": 1881.74,
+        "inserts": 1966.26
       },
       "8": {
-        "solid": 1360.25,
-        "glass": 1668.75,
-        "inserts": 1752.89
+        "solid": 1366.24,
+        "glass": 1676.11,
+        "inserts": 1760.62
       },
       "8.2": {
-        "solid": 1686.98,
-        "glass": 1995.49,
-        "inserts": 2079.63
+        "solid": 1694.41,
+        "glass": 2004.28,
+        "inserts": 2088.79
       },
       "8.4": {
-        "solid": 1686.98,
-        "glass": 1995.49,
-        "inserts": 2079.63
+        "solid": 1694.41,
+        "glass": 2004.28,
+        "inserts": 2088.79
       },
       "8.6": {
-        "solid": 1686.98,
-        "glass": 1995.49,
-        "inserts": 2079.63
+        "solid": 1694.41,
+        "glass": 2004.28,
+        "inserts": 2088.79
       },
       "8.8": {
-        "solid": 1686.98,
-        "glass": 1995.49,
-        "inserts": 2079.63
+        "solid": 1694.41,
+        "glass": 2004.28,
+        "inserts": 2088.79
       },
       "8.10": {
-        "solid": 1686.98,
-        "glass": 1995.49,
-        "inserts": 2079.63
+        "solid": 1694.41,
+        "glass": 2004.28,
+        "inserts": 2088.79
       },
       "9": {
-        "solid": 1466.82,
-        "glass": 1775.33,
-        "inserts": 1859.47
+        "solid": 1473.29,
+        "glass": 1783.15,
+        "inserts": 1867.67
       },
       "9.2": {
-        "solid": 1952.04,
-        "glass": 2260.54,
-        "inserts": 2344.68
+        "solid": 1960.63,
+        "glass": 2270.5,
+        "inserts": 2355.01
       },
       "9.4": {
-        "solid": 1952.04,
-        "glass": 2260.54,
-        "inserts": 2344.68
+        "solid": 1960.63,
+        "glass": 2270.5,
+        "inserts": 2355.01
       },
       "9.6": {
-        "solid": 1952.04,
-        "glass": 2260.54,
-        "inserts": 2344.68
+        "solid": 1960.63,
+        "glass": 2270.5,
+        "inserts": 2355.01
       },
       "9.8": {
-        "solid": 1952.04,
-        "glass": 2260.54,
-        "inserts": 2344.68
+        "solid": 1960.63,
+        "glass": 2270.5,
+        "inserts": 2355.01
       },
       "9.10": {
-        "solid": 1952.04,
-        "glass": 2260.54,
-        "inserts": 2344.68
+        "solid": 1960.63,
+        "glass": 2270.5,
+        "inserts": 2355.01
       },
       "10": {
-        "solid": 1696.81,
-        "glass": 2005.32,
-        "inserts": 2089.46
+        "solid": 1704.28,
+        "glass": 2014.15,
+        "inserts": 2098.66
       },
       "10.2": {
-        "solid": 2341.88,
-        "glass": 2650.39,
-        "inserts": 2734.53
+        "solid": 2352.19,
+        "glass": 2662.06,
+        "inserts": 2746.57
       },
       "10.4": {
-        "solid": 2341.88,
-        "glass": 2650.39,
-        "inserts": 2734.53
+        "solid": 2352.19,
+        "glass": 2662.06,
+        "inserts": 2746.57
       },
       "10.6": {
-        "solid": 2341.88,
-        "glass": 2650.39,
-        "inserts": 2734.53
+        "solid": 2352.19,
+        "glass": 2662.06,
+        "inserts": 2746.57
       },
       "10.8": {
-        "solid": 2341.88,
-        "glass": 2650.39,
-        "inserts": 2734.53
+        "solid": 2352.19,
+        "glass": 2662.06,
+        "inserts": 2746.57
       },
       "10.10": {
-        "solid": 2341.88,
-        "glass": 2650.39,
-        "inserts": 2734.53
+        "solid": 2352.19,
+        "glass": 2662.06,
+        "inserts": 2746.57
       },
       "11": {
-        "solid": 2341.88,
-        "glass": 2650.39,
-        "inserts": 2734.53
+        "solid": 2352.19,
+        "glass": 2662.06,
+        "inserts": 2746.57
       },
       "11.2": {
-        "solid": 2341.88,
-        "glass": 2650.39,
-        "inserts": 2734.53
+        "solid": 2352.19,
+        "glass": 2662.06,
+        "inserts": 2746.57
       },
       "11.4": {
-        "solid": 2341.88,
-        "glass": 2650.39,
-        "inserts": 2734.53
+        "solid": 2352.19,
+        "glass": 2662.06,
+        "inserts": 2746.57
       },
       "11.6": {
-        "solid": 2341.88,
-        "glass": 2804.65,
-        "inserts": 2930.86
+        "solid": 2352.19,
+        "glass": 2817.0,
+        "inserts": 2943.77
       },
       "11.8": {
-        "solid": 2341.88,
-        "glass": 2804.65,
-        "inserts": 2930.86
+        "solid": 2352.19,
+        "glass": 2817.0,
+        "inserts": 2943.77
       },
       "11.10": {
-        "solid": 2341.88,
-        "glass": 2804.65,
-        "inserts": 2930.86
+        "solid": 2352.19,
+        "glass": 2817.0,
+        "inserts": 2943.77
       },
       "12": {
-        "solid": 2036.18,
-        "glass": 2498.95,
-        "inserts": 2625.16
+        "solid": 2045.15,
+        "glass": 2509.96,
+        "inserts": 2636.72
       },
       "12.2": {
-        "solid": 2622.33,
-        "glass": 3085.11,
-        "inserts": 3211.32
+        "solid": 2633.89,
+        "glass": 3098.7,
+        "inserts": 3225.46
       },
       "12.4": {
-        "solid": 2622.33,
-        "glass": 3085.11,
-        "inserts": 3211.32
+        "solid": 2633.89,
+        "glass": 3098.7,
+        "inserts": 3225.46
       },
       "12.6": {
-        "solid": 2622.33,
-        "glass": 3085.11,
-        "inserts": 3211.32
+        "solid": 2633.89,
+        "glass": 3098.7,
+        "inserts": 3225.46
       },
       "12.8": {
-        "solid": 2622.33,
-        "glass": 3085.11,
-        "inserts": 3211.32
+        "solid": 2633.89,
+        "glass": 3098.7,
+        "inserts": 3225.46
       },
       "12.10": {
-        "solid": 2622.33,
-        "glass": 3085.11,
-        "inserts": 3211.32
+        "solid": 2633.89,
+        "glass": 3098.7,
+        "inserts": 3225.46
       },
       "13": {
-        "solid": 2622.33,
-        "glass": 3085.11,
-        "inserts": 3211.32
+        "solid": 2633.89,
+        "glass": 3098.7,
+        "inserts": 3225.46
       },
       "13.2": {
-        "solid": 2622.33,
-        "glass": 3085.11,
-        "inserts": 3211.32
+        "solid": 2633.89,
+        "glass": 3098.7,
+        "inserts": 3225.46
       },
       "13.4": {
-        "solid": 2622.33,
-        "glass": 3085.11,
-        "inserts": 3211.32
+        "solid": 2633.89,
+        "glass": 3098.7,
+        "inserts": 3225.46
       },
       "13.6": {
-        "solid": 2622.33,
-        "glass": 3085.11,
-        "inserts": 3211.32
+        "solid": 2633.89,
+        "glass": 3098.7,
+        "inserts": 3225.46
       },
       "13.8": {
-        "solid": 2622.33,
-        "glass": 3085.11,
-        "inserts": 3211.32
+        "solid": 2633.89,
+        "glass": 3098.7,
+        "inserts": 3225.46
       },
       "13.10": {
-        "solid": 2622.33,
-        "glass": 3085.11,
-        "inserts": 3211.32
+        "solid": 2633.89,
+        "glass": 3098.7,
+        "inserts": 3225.46
       },
       "14": {
-        "solid": 2280.18,
-        "glass": 2742.95,
-        "inserts": 2869.16
+        "solid": 2290.22,
+        "glass": 2755.03,
+        "inserts": 2881.8
       },
       "14.2": {
-        "solid": 2752.75,
-        "glass": 3215.53,
-        "inserts": 3341.74
+        "solid": 2764.88,
+        "glass": 3229.69,
+        "inserts": 3356.46
       },
       "14.4": {
-        "solid": 2752.75,
-        "glass": 3215.53,
-        "inserts": 3341.74
+        "solid": 2764.88,
+        "glass": 3229.69,
+        "inserts": 3356.46
       },
       "14.6": {
-        "solid": 2752.75,
-        "glass": 3215.53,
-        "inserts": 3341.74
+        "solid": 2764.88,
+        "glass": 3229.69,
+        "inserts": 3356.46
       },
       "14.8": {
-        "solid": 2752.75,
-        "glass": 3215.53,
-        "inserts": 3341.74
+        "solid": 2764.88,
+        "glass": 3229.69,
+        "inserts": 3356.46
       },
       "14.10": {
-        "solid": 2752.75,
-        "glass": 3369.77,
-        "inserts": 3538.05
+        "solid": 2764.88,
+        "glass": 3384.62,
+        "inserts": 3553.64
       },
       "15": {
-        "solid": 2393.75,
-        "glass": 3010.77,
-        "inserts": 3179.05
+        "solid": 2404.3,
+        "glass": 3024.04,
+        "inserts": 3193.06
       },
       "15.2": {
-        "solid": 2904.21,
-        "glass": 3521.23,
-        "inserts": 3689.51
+        "solid": 2917.0,
+        "glass": 3536.74,
+        "inserts": 3705.76
       },
       "15.4": {
-        "solid": 2904.21,
-        "glass": 3521.23,
-        "inserts": 3689.51
+        "solid": 2917.0,
+        "glass": 3536.74,
+        "inserts": 3705.76
       },
       "15.6": {
-        "solid": 2525.58,
-        "glass": 3142.6,
-        "inserts": 3310.88
+        "solid": 2536.7,
+        "glass": 3156.44,
+        "inserts": 3325.46
       },
       "15.8": {
-        "solid": 2525.58,
-        "glass": 3142.6,
-        "inserts": 3310.88
+        "solid": 2536.7,
+        "glass": 3156.44,
+        "inserts": 3325.46
       },
       "15.10": {
-        "solid": 2904.21,
-        "glass": 3521.23,
-        "inserts": 3689.51
+        "solid": 2917.0,
+        "glass": 3536.74,
+        "inserts": 3705.76
       },
       "16": {
-        "solid": 2525.58,
-        "glass": 3142.6,
-        "inserts": 3310.88
+        "solid": 2536.7,
+        "glass": 3156.44,
+        "inserts": 3325.46
       },
       "16.2": {
-        "solid": 3340.33,
-        "glass": 3957.35,
-        "inserts": 4125.63
+        "solid": 3355.05,
+        "glass": 3974.78,
+        "inserts": 4143.81
       },
       "16.4": {
-        "solid": 3340.33,
-        "glass": 3957.35,
-        "inserts": 4125.63
+        "solid": 3355.05,
+        "glass": 3974.78,
+        "inserts": 4143.81
       },
       "16.6": {
-        "solid": 3340.33,
-        "glass": 3957.35,
-        "inserts": 4125.63
+        "solid": 3355.05,
+        "glass": 3974.78,
+        "inserts": 4143.81
       },
       "16.8": {
-        "solid": 3340.33,
-        "glass": 3957.35,
-        "inserts": 4125.63
+        "solid": 3355.05,
+        "glass": 3974.78,
+        "inserts": 4143.81
       },
       "16.10": {
-        "solid": 3340.33,
-        "glass": 3957.35,
-        "inserts": 4125.63
+        "solid": 3355.05,
+        "glass": 3974.78,
+        "inserts": 4143.81
       },
       "17": {
-        "solid": 2904.21,
-        "glass": 3521.23,
-        "inserts": 3689.51
+        "solid": 2917.0,
+        "glass": 3536.74,
+        "inserts": 3705.76
       },
       "17.2": {
-        "solid": 3505.81,
-        "glass": 4122.82,
-        "inserts": 4291.11
+        "solid": 3521.25,
+        "glass": 4140.99,
+        "inserts": 4310.01
       },
       "17.4": {
-        "solid": 3505.81,
-        "glass": 4122.82,
-        "inserts": 4291.11
+        "solid": 3521.25,
+        "glass": 4140.99,
+        "inserts": 4310.01
       },
       "17.6": {
-        "solid": 3505.81,
-        "glass": 4122.82,
-        "inserts": 4291.11
+        "solid": 3521.25,
+        "glass": 4140.99,
+        "inserts": 4310.01
       },
       "17.8": {
-        "solid": 3505.81,
-        "glass": 4122.82,
-        "inserts": 4291.11
+        "solid": 3521.25,
+        "glass": 4140.99,
+        "inserts": 4310.01
       },
       "17.10": {
-        "solid": 3505.81,
-        "glass": 4122.82,
-        "inserts": 4291.11
+        "solid": 3521.25,
+        "glass": 4140.99,
+        "inserts": 4310.01
       },
       "18": {
-        "solid": 3048.65,
-        "glass": 3665.67,
-        "inserts": 3833.95
+        "solid": 3062.08,
+        "glass": 3681.81,
+        "inserts": 3850.84
       }
     }
   }

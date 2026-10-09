@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { CopyButton, CopyPrice } from "./CopyButton";
 import { AddToCart } from "./Cart";
-import { copyExtrasFor, useCurrentUser } from "./CurrentUser";
+import { copyExtrasFor, useCurrentUser, type CopyExtra } from "./CurrentUser";
 import { quickBooksRow } from "@/lib/pricing/data/quickbooks";
 import { QtyStepper } from "./QtyStepper";
 
@@ -32,6 +32,7 @@ export function CopyQuickBooks({
   testId = "copy-qb",
   onCopy,
   extraLines,
+  extras: forcedExtras,
 }: {
   /** Must match an item in the QuickBooks list — see data/quickbooks.ts. */
   item: string;
@@ -47,9 +48,14 @@ export function CopyQuickBooks({
   /** More invoice lines, each pasted two rows below the one before with a
       blank row between — how a door's vinyl rides along (Brandon, 25/9/2026). */
   extraLines?: { item: string; description: string; qty: number; rate: number }[];
+  /** Which copy buttons ride under the QuickBooks one. Left out, the signed-in
+      account decides (CurrentUser.tsx); the Disposals window hands everyone all
+      three (Brandon, 9/10/2026). */
+  extras?: readonly CopyExtra[];
 }) {
   const [own, setOwn] = useState(defaultQty);
-  const extras = copyExtrasFor(useCurrentUser());
+  const accountExtras = copyExtrasFor(useCurrentUser());
+  const extras = forcedExtras ?? accountExtras;
   const controlled = qty !== undefined;
   const n = controlled ? qty : own;
   // One clipboard line per invoice row; an empty line leaves that row blank.

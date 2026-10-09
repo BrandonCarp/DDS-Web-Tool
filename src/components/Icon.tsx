@@ -114,6 +114,8 @@ const PATHS = {
       <circle cx="16.5" cy="19.5" r="1.3" />
     </>
   ),
+  // Disposals (9/10/2026): a bin.
+  trash: <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" />,
   // The Parts group tabs (6/10/2026).
   wrench: <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z" />,
   angle: <path d="M5 4v15h15M9 4v11h11" />,
