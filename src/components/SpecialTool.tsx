@@ -13,12 +13,12 @@ import {
 import {
   specialDoorQuote, hasGrid, griddedWidths, griddedHeights,
   offeredHeights, tierForOfferedHeight, heightLabel,
-  groupMembers, groupHasWidthLimits, heightForcesTorsion, torsionIncluded, shouldSplitGroup,
+  groupMembers, groupHasWidthLimits, heightForcesTorsion, torsionIncluded, galvanizedOnly, shouldSplitGroup,
   minWidthFor, excludedWidthsFor,
   parseModelSelection, modelSelectionValue, windowsOfferedAt,
 } from "@/lib/pricing/data/special-door-pricing";
 import { COLORS, specialOrderColors } from "@/lib/pricing/data/catalog-meta";
-import { designsBuilt, designLabel, designTakesWindows, hasDesigns, secondColorName, secondColors, twoToneUnpriced } from "@/lib/pricing/data/door-designs";
+import { designsBuilt, designLabel, designTakesWindows, hasDesigns, secondColorName, secondColors } from "@/lib/pricing/data/door-designs";
 import { panelStylesFor, isSheetGroup } from "@/lib/pricing/data/so-glass";
 import {
   splitSize, sizeKey, feetOptions, inchOptions, glassTypeOptions, framingOptions, windowChoice, GLAZED_SECTIONS,
@@ -241,8 +241,10 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
 
   // High lift is torsion only, and caps at the door height less 3 inches —
   // above that the door is full vertical lift, a different track entirely.
-  // A tall door locks out extension springs; standard or galvanized torsion stay open.
-  const gSpringUsed = gTorsionOnly && gSpring === "extension" ? "torsion" : gSpring;
+  // A tall door locks out extension springs; standard or galvanized torsion
+  // stay open. The Coachman is sold with galvanized torsion only (12/10/2026).
+  const gGalvOnly = gridded && galvanizedOnly(modelGroup);
+  const gSpringUsed = gGalvOnly ? "galvanized" : gTorsionOnly && gSpring === "extension" ? "torsion" : gSpring;
   const gLiftAllowed = canTakeHighLift(gSpringUsed);
   const gIsLift = gTrack === "high_lift";
   const gHeightFtN = Number(gHeightFt || "0");
@@ -582,11 +584,6 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                           {gSecondColors.map((c) => <option key={c} value={c}>{c}</option>)}
                         </select>
                       </div>
-                      {gColorChosen && twoToneUnpriced(modelGroup, gColor, gOverlayEff) && (
-                        <div className="muted-note" style={{ marginTop: 6 }} data-testid="so-two-tone">
-                          Two-tone — Clopay&apos;s list adder is not on CJ&apos;s sheet, so none is priced here.
-                        </div>
-                      )}
                     </div>
                   )}
                   </div>
@@ -599,11 +596,9 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                         {(gGlassOptions.length ? gGlassOptions : [{ id: "solid", label: "Solid — no windows" }]).map((g) => <option key={g.id} value={g.id}>{g.label}</option>)}
                       </select>
                     </div>
-                    {gWidth && !gWindowsOk && (
+                    {gWidth && !gWindowsOk && (!gDesigned || designTakesWindows(modelGroup, gDesignEff)) && (
                       <div className="muted-note" style={{ marginTop: 6 }} data-testid="so-no-windows">
-                        {gDesigned && gDesignEff && !designTakesWindows(modelGroup, gDesignEff)
-                          ? `Design ${gDesignEff} is solid only — series 3 and 4 are not built with windows.`
-                          : "Not built with windows at this width — solid only."}
+                        Not built with windows at this width — solid only.
                       </div>
                     )}
                   </div>
@@ -641,7 +636,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                           setSaved(false);
                         }}>
                         {!gTorsionOnly && <option value="extension">Extension</option>}
-                        <option value="torsion">Torsion</option>
+                        {!gGalvOnly && <option value="torsion">Torsion</option>}
                         <option value="galvanized">Galvanized torsion</option>
                       </select>
                     </div>
@@ -794,11 +789,6 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
             <label className="lbl">{gridded && kind === "door" && !restricted
               ? "For a configuration the picker above will not take"
               : "Enter total = sub total + energy surcharge — do not apply MPQ"} <span className="req">*</span></label>
-            {restricted && kind === "door" && (
-              <div className="muted-note" style={{ marginBottom: 6 }}>
-                The {modelMember} is not built in every size above — enter the Clopay total for anything the size picker will not take.
-              </div>
-            )}
             <input type="text" inputMode="decimal" value={price} onChange={(e) => { setPrice(e.target.value); setSaved(false); }} placeholder="0.00" />
           </div>
             {/* The configurator carries its own surcharge for a gridded door.

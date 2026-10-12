@@ -168,16 +168,66 @@ describe("the Track buttons (6/10/2026)", () => {
   const track = () => show(<PartsTool menu={TRACK_MENU} categories={TRACK_CATEGORIES} eyebrow="Track quote" finder="Find track" />);
   const rows = () => [...document.querySelectorAll("ul.partlist .partrow .partname")].map((e) => e.firstChild?.textContent);
 
-  it("asks residential or commercial for a complete track, then lists its sets like the other tabs", () => {
+  it("asks residential or commercial for a complete track; commercial shows its options by height (12/10/2026)", async () => {
     track();
     fireEvent.click(screen.getByTestId("group-complete-track"));
     expect([...document.querySelectorAll(".pnav-page")].map((b) => b.textContent)).toEqual(["Residential", "Commercial"]);
     expect(screen.queryByTestId("parts-list")).toBeNull();
     fireEvent.click(screen.getByTestId("page-commercial"));
-    expect(rows()).toHaveLength(8);
-    expect(document.querySelector("ul.partlist .partsub")).toBeNull(); // the heading already says Commercial
-    fireEvent.click(document.querySelector("ul.partlist .partrow") as HTMLElement);
-    expect(document.querySelector("aside.quote .qtitle")?.textContent).toBe(rows()[0]);
+    // Show options: a button a height, no list until one is pressed.
+    expect(screen.getByTestId("track-comm").textContent).toContain("Show options:");
+    expect(["8", "9", "10", "12", "14"].map((h) => screen.getByTestId(`track-height-${h}`).textContent)).toEqual(["8FT", "9FT", "10FT", "12FT", "14FT"]);
+    expect(screen.queryByTestId("parts-list")).toBeNull();
+    fireEvent.click(screen.getByTestId("track-height-9"));
+    expect(rows()).toEqual(['Complete set, 15" radius', "Vertical track only", "Horizontal track only", "Complete set, full vertical lift", "Full vertical top track only"]);
+    expect([...document.querySelectorAll("ul.partlist .partprice")].map((e) => e.textContent)).toEqual(["$399.95", "$249.95", "$249.95", "$699.95", "$549.59"]);
+    fireEvent.click(document.querySelectorAll("ul.partlist .partrow")[3] as HTMLElement);
+    expect(document.querySelector("aside.quote .qtitle")?.textContent).toBe("9FT — Complete set, full vertical lift");
+    const line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
+    expect(line.description).toBe("COMPLETE SET OF ANGLE MOUNT TRACK TO WOOD,  9FT HIGH,  FULL VERTICAL LIFT");
+    expect(line.rate).toBe(699.95);
+    fireEvent.click(screen.getByTestId("track-height-14"));
+    expect(screen.queryByTestId("parts-copy-qb")).toBeNull();   // a new height, nothing picked yet
+    fireEvent.click(document.querySelectorAll("ul.partlist .partrow")[1] as HTMLElement);
+    expect((await copiedQbLine(screen.getByTestId("parts-copy-qb"))).description).toBe("VERTICAL TRACK ONLY,  14FT HIGH");
+  });
+
+  it("picks a residential set from the door size and radius, like the residential configuration (12/10/2026)", async () => {
+    track();
+    fireEvent.click(screen.getByTestId("group-complete-track"));
+    fireEvent.click(screen.getByTestId("page-residential"));
+    expect(screen.queryByTestId("parts-list")).toBeNull();
+    expect(screen.getByTestId("track-res")).toBeTruthy();
+    expect(screen.getByTestId("track-radius")).toHaveProperty("disabled", true);
+    expect(document.querySelector("aside.quote .emptymsg")?.textContent).toBe("Enter the door size and radius");
+    fireEvent.change(screen.getByTestId("track-width-ft"), { target: { value: "16" } });
+    fireEvent.change(screen.getByTestId("track-height-ft"), { target: { value: "7" } });
+    fireEvent.change(screen.getByTestId("track-height-in"), { target: { value: "6" } });
+    // 7'6" takes the 8' set, which stocks every radius.
+    expect([...(screen.getByTestId("track-radius") as HTMLSelectElement).options].map((o) => o.value)).toEqual(["", "10R", "12R", "15R", "LHR", "20R", "32R"]);
+    expect(screen.queryByTestId("parts-copy-qb")).toBeNull();
+    fireEvent.change(screen.getByTestId("track-radius"), { target: { value: "10R" } });
+    expect(document.querySelector("aside.quote .qtitle")?.textContent).toBe("8' set, 10R");
+    let line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
+    expect(line.description).toBe('COMPLETE SET OF BRACKET MOUNTED TRACK,  8FT HIGH,  10" RADIUS');
+    expect(line.rate).toBe(183);                                   // 8', 10/12/15R, 12' and up
+    fireEvent.change(screen.getByTestId("track-radius"), { target: { value: "32R" } });
+    line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
+    expect(line.description).toBe('COMPLETE SET OF BRACKET MOUNTED TRACK,  8FT HIGH,  32" RADIUS');
+    expect(line.rate).toBe(318);
+    // A 9' door stocks 12R, 15R and LHR only; the 32R just chosen falls away.
+    fireEvent.change(screen.getByTestId("track-height-ft"), { target: { value: "9" } });
+    fireEvent.change(screen.getByTestId("track-height-in"), { target: { value: "0" } });
+    expect([...(screen.getByTestId("track-radius") as HTMLSelectElement).options].map((o) => o.value)).toEqual(["", "12R", "15R", "LHR"]);
+    expect(screen.queryByTestId("parts-copy-qb")).toBeNull();
+    fireEvent.change(screen.getByTestId("track-radius"), { target: { value: "LHR" } });
+    line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
+    expect(line.description).toBe("COMPLETE SET OF BRACKET MOUNTED TRACK,  9FT HIGH,  LOW HEADROOM");
+    expect(line.rate).toBe(289.5);
+    // Taller than any set: nothing stocked.
+    fireEvent.change(screen.getByTestId("track-height-ft"), { target: { value: "10" } });
+    expect(screen.queryByTestId("parts-copy-qb")).toBeNull();
+    expect(screen.getByTestId("track-radius")).toHaveProperty("disabled", true);
   });
 
   it("lists the pieces straight from the other three buttons", () => {
@@ -221,11 +271,11 @@ describe("one level at a time, with Back (Brandon's wireframe, 12/10/2026)", () 
     fireEvent.click(screen.getByTestId("page-residential"));
     expect(buttons()).toEqual([]);
     expect(screen.getByTestId("parts-page").textContent).toBe("Complete track › Residential");
-    expect(screen.getByTestId("parts-list")).toBeTruthy();
+    expect(screen.getByTestId("track-res")).toBeTruthy();   // the residential page asks the door size (12/10/2026)
     // Back: to the pages, then to the groups.
     fireEvent.click(screen.getByTestId("pnav-back"));
     expect(buttons()).toEqual(["Residential", "Commercial"]);
-    expect(screen.queryByTestId("parts-list")).toBeNull();
+    expect(screen.queryByTestId("track-res")).toBeNull();
     fireEvent.click(screen.getByTestId("pnav-back"));
     expect(buttons()).toEqual(["Complete track", "Adder pieces", "Raw track", "Pierced track"]);
     expect(screen.queryByTestId("pnav-back")).toBeNull();

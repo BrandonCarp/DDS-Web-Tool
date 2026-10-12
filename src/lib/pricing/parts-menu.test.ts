@@ -61,7 +61,7 @@ describe("the Track buttons", () => {
   it("has complete track by kind, then a button each for adder, raw and pierced pieces", () => {
     expect(TRACK_MENU.map((g) => g.label)).toEqual(["Complete track", "Adder pieces", "Raw track", "Pierced track"]);
     expect(names(TRACK_MENU, "Complete track", "Residential")).toHaveLength(16);
-    expect(names(TRACK_MENU, "Complete track", "Commercial")).toHaveLength(8);
+    expect(names(TRACK_MENU, "Complete track", "Commercial")).toHaveLength(25);   // five options at each of five heights (12/10/2026)
     expect(names(TRACK_MENU, "Pierced track", "Pierced track")).toEqual(['76" PIERCED TRACK', '88" PIERCED TRACK', '100" PIERCED TRACK', '112" PIERCED TRACK']);
   });
 });

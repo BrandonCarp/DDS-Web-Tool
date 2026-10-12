@@ -11,6 +11,7 @@
 // categories still bill to PARTS through partDescription/partPrice/partQuantity.
 
 import { PART_CATEGORIES, type Part, type PartCategory } from "./parts";
+import { COMMERCIAL_TRACK_PARTS, COMMERCIAL_TRACK_SUB } from "./commercial-track";
 
 export const EXTENSION_CATEGORY = "EXTENSION SPRINGS";
 export const TORSION_CATEGORY = "TORSION SPRINGS";
@@ -135,7 +136,10 @@ function withHandPrices(c: PartCategory): PartCategory {
  */
 const TRACK_ORDER = ["RESIDENTIAL TRACKS", "ADDER PIECES", "PIERCED TRACK", "COMMERCIAL TRACKS", "RAW TRACK"];
 function trackCategory(c: PartCategory): PartCategory {
-  const items = [...c.items.map((p) => (p.sub ? p : { ...p, sub: "RAW TRACK" })), ...(HAND_ADDED_PARTS.TRACKS ?? [])];
+  // The commercial sets come from the track sheet of 12/10/2026
+  // (commercial-track.ts), not NEW_PARTS_LIST's older, shorter list.
+  const sheet = c.items.filter((p) => p.sub !== COMMERCIAL_TRACK_SUB);
+  const items = [...sheet.map((p) => (p.sub ? p : { ...p, sub: "RAW TRACK" })), ...(HAND_ADDED_PARTS.TRACKS ?? []), ...COMMERCIAL_TRACK_PARTS];
   const rank = (p: Part) => {
     const i = TRACK_ORDER.indexOf(p.sub ?? "");
     return i < 0 ? TRACK_ORDER.length : i;

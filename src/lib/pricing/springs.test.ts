@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { COMMERCIAL_TRACK_PARTS, COMMERCIAL_TRACK_SUB } from "./data/commercial-track";
 import { PART_CATEGORIES } from "./data/parts";
 import { priceNotSet } from "./data/part-pricing";
 import { categoryItem } from "./data/quickbooks";
@@ -38,7 +39,9 @@ describe("springs split out of the parts shelf", () => {
     const moved = EXTENSION_SPRINGS.items.length + STOCK_TORSION_SPRINGS.items.length;
     const all = PART_CATEGORIES.reduce((n, c) => n + c.items.length, 0);
     const added = Object.values(HAND_ADDED_PARTS).reduce((n, list) => n + list.length, 0);
-    expect(shelfItems + moved).toBe(all + added);
+    // The commercial track sets come from the track sheet (12/10/2026), in place of the parts list's.
+    const sheetCommercial = PART_CATEGORIES.find((c) => c.name === "TRACKS")!.items.filter((p) => p.sub === COMMERCIAL_TRACK_SUB).length;
+    expect(shelfItems + moved).toBe(all + added - sheetCommercial + COMMERCIAL_TRACK_PARTS.length);
   });
 
   it("prices nothing differently — the move is a move, not a repricing", () => {
@@ -133,10 +136,11 @@ describe("the Track tab", () => {
     expect(order).toEqual(["RESIDENTIAL TRACKS", "ADDER PIECES", "PIERCED TRACK", "COMMERCIAL TRACKS", "RAW TRACK"]);
   });
 
-  it("keeps every track from the sheet, and adds the two adder pieces at their prices", () => {
+  it("keeps every track from the sheet but the commercial sets, and adds the two adder pieces at their prices", () => {
     const sheet = PART_CATEGORIES.find((c) => c.name === "TRACKS")!;
-    expect(items()).toHaveLength(sheet.items.length + HAND_ADDED_PARTS.TRACKS.length);
-    for (const p of sheet.items) expect(items().some((q) => q.name === p.name && q.price === p.price)).toBe(true);
+    const kept = sheet.items.filter((p) => p.sub !== COMMERCIAL_TRACK_SUB);
+    expect(items()).toHaveLength(kept.length + HAND_ADDED_PARTS.TRACKS.length + COMMERCIAL_TRACK_PARTS.length);
+    for (const p of kept) expect(items().some((q) => q.name === p.name && q.price === p.price)).toBe(true);
     const adder = (n: string) => items().find((p) => p.name === n)?.price;
     expect(adder('36" ADDER PIECE')).toBe(129.95);
     expect(adder('54" ADDER PIECE')).toBe(149.95);

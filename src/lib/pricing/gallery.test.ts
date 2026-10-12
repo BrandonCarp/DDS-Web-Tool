@@ -48,7 +48,19 @@ describe("Gallery GD1SP/GD1LP special order grid (8/10/2026)", () => {
     const r = q({ width: "9", height: "9", spring: "torsion" });
     expect(r.quote?.torsionIncluded).toBe(true);
     expect(r.quote?.unitPrice).toBe(sell(door(1046)));
-    expect(q({ width: "9", height: "8", spring: "torsion" }).quote?.unitPrice).toBe(sell(door(750)) + 35);
+    expect(q({ width: "9", height: "9", spring: "galvanized" }).quote?.unitPrice).toBe(sell(door(1046)));   // galvanized is the same price
+    expect(q({ width: "9", height: "8", spring: "torsion" }).quote?.unitPrice).toBe(sell(door(750)) + 55);
+  });
+
+  it("adds torsion at 55 on a single door and 75 on a double, galvanized the same (Brandon, 12/10/2026)", () => {
+    const unit = (o: Record<string, unknown>) => q(o).quote!.unitPrice;
+    expect(unit({ spring: "torsion" })).toBe(unit({ spring: "extension" }) + 55);
+    expect(unit({ spring: "galvanized" })).toBe(unit({ spring: "extension" }) + 55);
+    expect(unit({ spring: "torsion", width: "16" })).toBe(unit({ spring: "extension", width: "16" }) + 75);
+    expect(unit({ spring: "galvanized", width: "16" })).toBe(unit({ spring: "extension", width: "16" }) + 75);
+    expect(unit({ spring: "torsion", width: "12" })).toBe(unit({ spring: "extension", width: "12" }) + 75);   // 12' is a double door
+    expect(q({ spring: "galvanized" }).quote?.description).toContain(", galvanized torsion springs");
+    expect(q({ spring: "torsion" }).quote?.description).toContain(", torsion springs");
   });
 
   it("builds the GD1SP from 6'2\" and the GD1LP from 7'8\"", () => {

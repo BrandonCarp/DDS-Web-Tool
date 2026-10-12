@@ -633,7 +633,7 @@ describe("special order — Bridgeport Steel from its own sheets (12/10/2026)", 
     expect([...sel("so-color").options].map((o) => o.value)).toContain("Ultra-Grain Oak Medium Finish");
   });
 
-  it("asks the C designs for their inlay design and inlay colour, and prices torsion as galvanized (Brandon, 12/10/2026)", async () => {
+  it("asks the C designs for their inlay design and inlay colour, and prices torsion at 55 (Brandon, 12/10/2026)", async () => {
     await pickBridgeport("BD2CU");
     expect(maybe("so-design")).toBeNull();                        // step 1 has no configurator yet
     fireEvent.click(maybe("so-configure")!);
@@ -650,21 +650,33 @@ describe("special order — Bridgeport Steel from its own sheets (12/10/2026)", 
     await settle();
     expect(sel("so-overlay").value).toBe("White");
     expect(options("so-overlay").map((o) => o.value)).not.toContain("Ultra-Grain Oak Medium Finish");
-    expect(maybe("so-two-tone")).toBeNull();
     const line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.description).toMatch(/MODEL BD2CU, DESIGN V, 8'0" X 7'0", IN THE COLOR WHITE, WHITE INLAY, SOLID NO WINDOWS/i);
     const extension = line.rate;
     fireEvent.change(sel("so-overlay"), { target: { value: "Charcoal" } });
     await settle();
-    expect(maybe("so-two-tone")!.textContent).toContain("Two-tone");
     expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/IN THE COLOR WHITE, CHARCOAL INLAY/i);
-    expect(await total()).toBe(extension);                        // words only
+    expect(await total()).toBe(extension);                        // a standard inlay colour: words only
+    // A premium inlay prices the door as a premium colour would.
+    fireEvent.change(sel("so-overlay"), { target: { value: "Iron Ore" } });
+    await settle();
+    const premium = await total();
+    expect(premium).toBeGreaterThan(extension);
+    fireEvent.change(sel("so-color"), { target: { value: "Iron Ore" } });
+    await settle();
+    expect(await total()).toBe(premium);
+    fireEvent.change(sel("so-color"), { target: { value: "White" } });
+    fireEvent.change(sel("so-overlay"), { target: { value: "White" } });
+    await settle();
+    expect(await total()).toBe(extension);
     fireEvent.change(sel("so-spring"), { target: { value: "torsion" } });
     await settle();
-    expect(await total()).toBe(Math.round((extension + 40) * 100) / 100);   // the galvanized price, not torsion's 35
+    expect(await total()).toBe(Math.round((extension + 55) * 100) / 100);   // 55 on a single door; galvanized the same
     fireEvent.change(sel("so-spring"), { target: { value: "galvanized" } });
     await settle();
-    expect(await total()).toBe(Math.round((extension + 40) * 100) / 100);
+    expect(await total()).toBe(Math.round((extension + 55) * 100) / 100);
+    // The oak inlays are offered after the paint colours.
+    expect(options("so-overlay").map((o) => o.value).slice(-4)).toEqual(["Medium Oak", "Dark Oak", "Walnut Oak", "Slate Oak"]);
   });
 
   it("asks the N and E designs for no design, as before", async () => {
@@ -730,8 +742,8 @@ describe("special order — the Coachman from CJ's sheet (12/10/2026)", () => {
   const total = async () => (await copiedQbLine(screen.getByTestId("copy-qb"))).rate;
   const K = 0.99 / (1 - 0.0265);
   const sell = (list: number) => Math.round(((list * 1.193 * K + 15) / 0.59) * 100) / 100;
-  // Torsion is priced as galvanized torsion on the Coachman (Brandon,
-  // 12/10/2026): the sheet's torsion price plus 5 on a single door, 10 on a double.
+  // Every Coachman carries galvanized torsion (Brandon, 12/10/2026): the
+  // sheet's torsion price plus 5 on a single door, 10 on a double.
   const at = (list: number, double: boolean, extra = 0) => Math.round((sell(list) + (double ? 10 : 5) + extra) * 100) / 100;
   const design = (d: string) => fireEvent.change(sel("so-design"), { target: { value: d } });
 
@@ -750,11 +762,9 @@ describe("special order — the Coachman from CJ's sheet (12/10/2026)", () => {
     fireEvent.change(sel("so-color"), { target: { value: "White" } });
     await settle();
     expect(await total()).toBe(at(2127, true));
-    expect([...sel("so-spring").options].map((o) => o.value)).toEqual(["torsion", "galvanized"]);
-    // Torsion and galvanized torsion are the same price — the galvanized one.
-    fireEvent.change(sel("so-spring"), { target: { value: "galvanized" } });
-    await settle();
-    expect(await total()).toBe(at(2127, true));
+    // Galvanized torsion is the only spring (Brandon, 12/10/2026).
+    expect([...sel("so-spring").options].map((o) => o.value)).toEqual(["galvanized"]);
+    expect(sel("so-spring").value).toBe("galvanized");
     expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/GALVANIZED TORSION SPRINGS/i);
     expect([...sel("so-color").options].map((o) => o.value)).not.toContain("Ultra-Grain Oak Medium Finish");
   });
@@ -793,7 +803,7 @@ describe("special order — the Coachman from CJ's sheet (12/10/2026)", () => {
     design("31");
     await settle();
     expect(options("so-glass").map((o) => o.value)).toEqual(["solid"]);
-    expect(maybe("so-no-windows")!.textContent).toContain("Design 31 is solid only");
+    expect(maybe("so-no-windows")).toBeNull();                       // no note: the glass list says it
     design("13");
     await settle();
     expect(options("so-glass").map((o) => o.value)).toContain("dsb");

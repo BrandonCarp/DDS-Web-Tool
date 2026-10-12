@@ -7,7 +7,7 @@ import { glassOptionsFor, glassTakesInserts, panelStylesFor, isSheetGroup } from
 import { BRIDGEPORT_GLASS, BRIDGEPORT_GROUPS, BRIDGEPORT_ULTRA_GRAIN } from "./data/bridgeport-glass";
 import { SPECIAL } from "./data/special-orders";
 import { specialOrderColors } from "./data/catalog-meta";
-import { BRIDGEPORT_INLAY_DESIGNS, designsBuilt, designsFor, hasDesigns, secondColorName, secondColors, twoToneUnpriced } from "./data/door-designs";
+import { BRIDGEPORT_INLAY_DESIGNS, designsBuilt, designsFor, hasDesigns, secondColorName, secondColors, secondColorPricedAs } from "./data/door-designs";
 
 // Figures straight off the Bridgeport workbook (BRIDGEPORT_3_LAYER.xlsx,
 // 9/10/2026): DDS cost is Clopay list x the sheet's multiplier x 0.99 / (1 -
@@ -60,7 +60,8 @@ describe("Bridgeport Steel special order grids (workbook of 12/10/2026)", () => 
     const r = q({ width: "9", height: "9", spring: "torsion" });
     expect(r.quote?.torsionIncluded).toBe(true);
     expect(r.quote?.unitPrice).toBe(sellAt("BD1EU/BD1NU", cost(1046, 0.898)));
-    expect(q({ width: "9", height: "8", spring: "torsion" }).quote?.unitPrice).toBe(sellAt("BD1EU/BD1NU", cost(750, 0.898)) + 35);
+    expect(q({ width: "9", height: "9", spring: "galvanized" }).quote?.unitPrice).toBe(sellAt("BD1EU/BD1NU", cost(1046, 0.898)));
+    expect(q({ width: "9", height: "8", spring: "torsion" }).quote?.unitPrice).toBe(sellAt("BD1EU/BD1NU", cost(750, 0.898)) + 55);
   });
 
   it("builds the BD2NU from 6'2\" and everything else from 7'8\", as CJ's sheet has it", () => {
@@ -238,11 +239,20 @@ describe("Bridgeport Inlay designs and inlay colour (Brandon, 12/10/2026)", () =
       expect(hasDesigns(g), g).toBe(false);
       expect(secondColorName(g), g).toBeNull();
     }
-    // The inlay comes in the door's paint colours; an Ultra-Grain finish is the door's own.
-    expect(secondColors("BD1CU", specialOrderColors("BD1CU"))).toEqual(["White", "Almond", "Sandtone", "Desert Tan", "Chocolate Brown", "Bronze", "Mocha Brown", "Charcoal", "Iron Ore", "Black"]);
-    expect(twoToneUnpriced("BD1CU", "White", "White")).toBe(false);
-    expect(twoToneUnpriced("BD1CU", "White", "Charcoal")).toBe(true);
-    expect(twoToneUnpriced("CD", "White", "Sandtone")).toBe(false);
+    // The inlay comes in the door's paint colours, then the four oaks; the door's own Ultra-Grain names are not inlay colours.
+    expect(secondColors("BD1CU", specialOrderColors("BD1CU"))).toEqual([
+      "White", "Almond", "Sandtone", "Desert Tan", "Chocolate Brown", "Bronze", "Mocha Brown", "Charcoal", "Iron Ore", "Black",
+      "Medium Oak", "Dark Oak", "Walnut Oak", "Slate Oak",
+    ]);
+  });
+
+  it("prices the door at the dearer of its two colours: a premium inlay on a standard door carries the adder", () => {
+    const white = cu({ design: "A", overlayColor: "White" }).quote!.unitPrice;
+    const ironOre = cu({ design: "A", color: "Iron Ore", overlayColor: "Iron Ore" }).quote!.unitPrice;
+    expect(ironOre).toBeGreaterThan(white);
+    expect(cu({ design: "A", color: "White", overlayColor: "Iron Ore" }).quote!.unitPrice).toBe(ironOre);
+    expect(cu({ design: "A", color: "Iron Ore", overlayColor: "White" }).quote!.unitPrice).toBe(ironOre);
+    expect(cu({ design: "A", color: "White", overlayColor: "Charcoal" }).quote!.unitPrice).toBe(white);
   });
 
   it("names the design and the inlay on the line, at no adder, and refuses a design it does not have", () => {
@@ -257,15 +267,28 @@ describe("Bridgeport Inlay designs and inlay colour (Brandon, 12/10/2026)", () =
     expect(q({ design: "A", overlayColor: "White" }).quote?.description).not.toContain("Design");
   });
 
-  it("prices torsion at the galvanized torsion price on the BD1CU and BD2CU, and not on the N and E designs", () => {
-    for (const g of ["BD1CU", "BD2CU"]) {
-      const at = (spring: string, o: Record<string, unknown> = {}) => q({ model: g, variant: g, spring, ...o }).quote!.unitPrice;
-      expect(at("torsion"), g).toBe(at("galvanized"));
-      expect(at("torsion"), g).toBe(at("extension") + 40);                                        // a single door: 40, not torsion's 35
-      expect(at("torsion", { width: "16" }), g).toBe(at("extension", { width: "16" }) + 45);     // a double door: 45
-      expect(q({ model: g, variant: g, spring: "torsion" }).quote?.description, g).toContain(", torsion springs");
+  it("adds torsion at 55 on a single door and 75 on a double on every Bridgeport, galvanized the same (Brandon, 12/10/2026)", () => {
+    for (const [g, v] of [["BD1CU", "BD1CU"], ["BD2CU", "BD2CU"], ["BD1EU/BD1NU", "BD1NU"], ["BD2EU/BD2NU", "BD2EU"]]) {
+      const at = (spring: string, o: Record<string, unknown> = {}) => q({ model: g, variant: v, spring, ...o }).quote!.unitPrice;
+      expect(at("torsion"), g).toBe(at("extension") + 55);
+      expect(at("galvanized"), g).toBe(at("extension") + 55);
+      expect(at("torsion", { width: "16" }), g).toBe(at("extension", { width: "16" }) + 75);
+      expect(at("galvanized", { width: "16" }), g).toBe(at("extension", { width: "16" }) + 75);
+      expect(q({ model: g, variant: v, spring: "torsion" }).quote?.description, g).toContain(", torsion springs");
+      expect(q({ model: g, variant: v, spring: "galvanized" }).quote?.description, g).toContain(", galvanized torsion springs");
     }
-    expect(price({ spring: "torsion" })).toBe(price({ spring: "extension" }) + 35);
-    expect(price({ spring: "galvanized" })).toBe(price({ spring: "extension" }) + 40);
+  });
+
+  it("offers the four oak finishes as inlay colours, each priced as the door's Ultra-Grain finish", () => {
+    const colors = secondColors("BD1CU", specialOrderColors("BD1CU"));
+    expect(colors.slice(-4)).toEqual(["Medium Oak", "Dark Oak", "Walnut Oak", "Slate Oak"]);
+    expect(colors).not.toContain("Ultra-Grain Oak Medium Finish");
+    expect(secondColorPricedAs("Medium Oak")).toBe("Ultra-Grain Oak Medium Finish");
+    expect(secondColorPricedAs("Charcoal")).toBe("Charcoal");
+    const white = cu({ design: "A", overlayColor: "White" }).quote!.unitPrice;
+    const ug = cu({ design: "A", color: "Ultra-Grain Oak Medium Finish", overlayColor: "Medium Oak" }).quote!.unitPrice;
+    expect(ug).toBeGreaterThan(white);
+    expect(cu({ design: "A", color: "White", overlayColor: "Medium Oak" }).quote!.unitPrice).toBe(ug);
+    expect(cu({ design: "A", color: "White", overlayColor: "Slate Oak" }).quote?.description).toContain("in the color White, Slate Oak inlay");
   });
 });

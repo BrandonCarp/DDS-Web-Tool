@@ -225,8 +225,9 @@ describe("switching between the tabs built on the Parts tool", () => {
       fireEvent.click(screen.getByTestId(entry));
     };
     fireEvent.click(tab("track"));
-    page("group-complete-track", "page-residential");
-    expect(list()).toContain("20R");
+    page("group-complete-track", "page-commercial");
+    fireEvent.click(screen.getByTestId("track-height-8"));
+    expect(list()).toContain("Vertical track only");
     fireEvent.click(tab("cables"));
     expect(list()).toContain("CABLE KEEPERS");
     expect(list()).not.toContain("Nothing matches");

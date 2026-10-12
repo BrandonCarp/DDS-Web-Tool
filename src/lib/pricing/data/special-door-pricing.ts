@@ -27,7 +27,7 @@ import { highLiftPrice, mountPhrase, type TrackMount, type InclineStyle } from "
 import { ADDONS, GRADE_RES, COLLECTIONS_RES } from "./addons";
 import { dataKey } from "../model-groups";
 import { designName, plainWindowsFor, windowDesigns } from "./inserts";
-import { designBuilt, designLabel, designTakesWindows, hasDesigns, secondColorName } from "./door-designs";
+import { designBuilt, designLabel, designTakesWindows, hasDesigns, secondColorName, secondColorPricedAs } from "./door-designs";
 import { SPECIAL_DOORS } from "./special-doors";
 import type { LockKey, SpringKey, TrackKey, WindowStyle } from "../types";
 
@@ -99,11 +99,38 @@ export function torsionIncluded(group: string): boolean {
 }
 
 /**
- * Groups on which torsion and galvanized torsion are the same price — the
- * galvanized one (Brandon, 12/10/2026: the Coachman, then the Bridgeport
- * Inlay). The line still says which was chosen.
+ * Spring rates by collection — Brandon, 12/10/2026: on a Gallery or Bridgeport
+ * door torsion is $55 on a single door and $75 on a double, and galvanized
+ * torsion is the same price. Every other door keeps the stock adders (torsion
+ * 35; galvanized 40 single, 45 double). Where the sheet already includes
+ * torsion the torsion rate is in the price, and galvanized adds its difference.
  */
-const GALVANIZED_PRICED_TORSION = new Set(["CD", "BD1CU", "BD2CU"]);
+type SpringRates = { torsion: { single: number; double: number }; galvanized: { single: number; double: number } };
+const SPRING_RATES: Record<string, SpringRates> = {
+  "Gallery Collection": { torsion: { single: 55, double: 75 }, galvanized: { single: 55, double: 75 } },
+  "Bridgeport Collection": { torsion: { single: 55, double: 75 }, galvanized: { single: 55, double: 75 } },
+};
+const STOCK_SPRING_RATES: SpringRates = {
+  torsion: { single: ADDONS.torsion, double: ADDONS.torsion },
+  galvanized: { single: ADDONS.galvanized.single, double: ADDONS.galvanized.double },
+};
+
+/** The spring rates a member's collection carries. */
+export function springRatesFor(member: string): SpringRates {
+  return SPRING_RATES[COLLECTIONS_RES[dataKey(member)] ?? ""] ?? STOCK_SPRING_RATES;
+}
+
+/**
+ * Groups sold with galvanized torsion springs only (Brandon, 12/10/2026, the
+ * Coachman): the one spring choice, priced and worded as galvanized whatever
+ * the input says.
+ */
+const GALVANIZED_ONLY = new Set(["CD"]);
+
+/** True when a group's only spring is galvanized torsion. */
+export function galvanizedOnly(group: string): boolean {
+  return GALVANIZED_ONLY.has(group);
+}
 
 /**
  * Groups whose third window choice is an arch window SECTION rather than
@@ -280,16 +307,17 @@ export function compareWidths(a: string, b: string): number {
 export const OFFERED_HEIGHTS = ["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8", "8.3", "8.6", "8.9", "9", "9.6", "10"];
 
 /**
- * What the chosen springs add. Torsion is $35 unless the height already
- * includes it. Galvanized torsion (5/10/2026) is $40 on a single door and $45 on
- * a double, 12' and over; where torsion is already included, the difference.
+ * What the chosen springs add, at the collection's rates (SPRING_RATES).
+ * Torsion is its rate unless the height already includes it. Galvanized
+ * torsion is its rate on a single door or a double, 12' and over; where
+ * torsion is already included, the difference between the two.
  */
-function springAdder(spring: string, torsionIncluded: boolean, doubleDoor: boolean, galvanizedPriced = false): number {
-  if (spring === "galvanized" || (spring === "torsion" && galvanizedPriced)) {
-    const price = doubleDoor ? ADDONS.galvanized.double : ADDONS.galvanized.single;
-    return torsionIncluded ? price - ADDONS.torsion : price;
+function springAdder(spring: string, torsionIncluded: boolean, doubleDoor: boolean, rates: SpringRates): number {
+  const size = doubleDoor ? "double" : "single";
+  if (spring === "galvanized") {
+    return torsionIncluded ? rates.galvanized[size] - rates.torsion[size] : rates.galvanized[size];
   }
-  return !torsionIncluded && spring === "torsion" ? ADDONS.torsion : 0;
+  return !torsionIncluded && spring === "torsion" ? rates.torsion[size] : 0;
 }
 
 /** True when a height's price already includes torsion springs. */
@@ -448,6 +476,8 @@ export function specialDoorQuote(
   // tab's torsionOnly, deliberately worded the same way. A sheet priced with
   // torsion at every height (the Coachman) is torsion at 7' and 8' too.
   const torsionOnly = (tierKey !== "7" && tierKey !== "8") || torsionIncluded(input.model);
+  // The Coachman is sold with galvanized torsion only.
+  const spring = galvanizedOnly(input.model) ? "galvanized" : input.spring;
 
   // High lift is priced from the Clopay track tables, then divided by the
   // group's margin — the grid holds SELL figures, so an adder has to be lifted
@@ -473,8 +503,13 @@ export function specialDoorQuote(
   // the group, keyed the way the colour tables are.
   const member = input.variant || input.model.split("/")[0];
   const ug = sheetUltraGrain(input.model);
+  // A door with a second colour (the Bridgeport Inlay's inlay) is priced at
+  // the dearer of the two: a premium inlay on a standard door carries the
+  // adder (Brandon, 12/10/2026).
+  const premiumColor = colorTakesPremium(dataKey(member), input.color)
+    || (!!secondColorName(input.model) && !!input.overlayColor && colorTakesPremium(dataKey(member), secondColorPricedAs(input.overlayColor)));
   const premium = (() => {
-    if (!ug || !colorTakesPremium(dataKey(member), input.color)) return 0;
+    if (!ug || !premiumColor) return 0;
     const [hf, hi] = [Number(input.height.split(".")[0]), Number(input.height.split(".")[1] ?? 0)];
     const [wf, wi] = [Number(input.width.split(".")[0]), Number(input.width.split(".")[1] ?? 0)];
     const band = hf * 12 + hi > 96 ? ug.over8ft : ug.upTo8ft;
@@ -486,7 +521,7 @@ export function specialDoorQuote(
   const adders =
     premium +
     (input.track === "high_lift" ? 0 : ADDONS.track[input.track as keyof typeof ADDONS.track] ?? 0) +
-    springAdder(input.spring, torsionOnly, parseInt(input.width, 10) >= 12, GALVANIZED_PRICED_TORSION.has(input.model)) +
+    springAdder(spring, torsionOnly, parseInt(input.width, 10) >= 12, springRatesFor(member)) +
     (LOCK[input.lock] ?? 0) +
     lift.value;
 
@@ -552,7 +587,7 @@ export function specialDoorQuote(
     `${input.track === "high_lift" && input.highLiftInches
         ? `${input.highLiftInches}\u2033 high lift track`
         : TRACK_TEXT[input.track] ?? TRACK_TEXT.r12}, ` +
-    `${input.spring === "galvanized" ? "galvanized torsion" : torsionOnly || input.spring === "torsion" ? "torsion" : "extension"} springs, ` +
+    `${spring === "galvanized" ? "galvanized torsion" : torsionOnly || spring === "torsion" ? "torsion" : "extension"} springs, ` +
     `${LOCK_TEXT[input.lock] ?? "no lock"}`;
 
   return {

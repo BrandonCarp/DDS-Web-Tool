@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  specialDoorQuote, offeredHeights, griddedWidths, griddedHeights, torsionIncluded, archSectionGroup,
+  specialDoorQuote, offeredHeights, griddedWidths, griddedHeights, torsionIncluded, galvanizedOnly, archSectionGroup,
 } from "./data/special-door-pricing";
 import { SPECIAL_DOORS } from "./data/special-doors";
 import { glassOptionsFor, glassTakesInserts, panelStylesFor, isSheetGroup, sheetUltraGrain } from "./data/so-glass";
@@ -28,17 +28,19 @@ const door = (list: number) => list * MULT * K + 15;
 const adder = (cost: number) => sell(Math.round(cost * 100) / 100);
 const plus = (a: number, b: number) => Math.round((a + b) * 100) / 100;
 
-// Springs "extension" here: the Coachman's sheet price is a torsion price with
-// nothing added, and the tool's torsion choice carries the galvanized adder
-// (12/10/2026, below), so the bare sheet figure is reached this way.
 const q = (o: Record<string, unknown>) => specialDoorQuote({
   model: "CD", variant: "CD", width: "8", height: "7", color: "White", style: "solid",
-  track: "r12", spring: "extension", lock: "none", ...o,
+  track: "r12", spring: "torsion", lock: "none", ...o,
 } as never);
+// Every Coachman is sold with galvanized torsion springs (Brandon, 12/10/2026):
+// the sheet's torsion price plus 5 on a single door, 10 on a double. `price`
+// takes that off again so the figures below read as the sheet's; the springs
+// have a test of their own.
+const galv = (width: string) => (parseInt(width, 10) >= 12 ? 10 : 5);
 const price = (o: Record<string, unknown>) => {
   const r = q(o);
   if (!r.quote) throw new Error(r.reason);
-  return r.quote.unitPrice;
+  return plus(r.quote.unitPrice, -galv(String(o.width ?? "8")));
 };
 
 describe("Coachman special order grid (workbook of 12/10/2026)", () => {
@@ -156,7 +158,7 @@ describe("Coachman special order grid (workbook of 12/10/2026)", () => {
     expect(q({ style: "inserts", windesign: "ARC1A", width: "8" }).reason).toMatch(/does not grid that style/);
     // Worded as the window it is, not an insert over one.
     expect(q({ style: "inserts", windesign: "ARC1A", width: "16" }).quote?.description)
-      .toBe("Clopay Coachman Collection, Model CD, 16'0\" x 7'0\", in the color White, ARC1A windows in the top section, 12″ radius track, torsion springs, no lock");
+      .toBe("Clopay Coachman Collection, Model CD, 16'0\" x 7'0\", in the color White, ARC1A windows in the top section, 12″ radius track, galvanized torsion springs, no lock");
     expect(q({ style: "inserts", width: "16" }).quote?.description).toContain("arch windows in the top section");
   });
 
@@ -178,27 +180,28 @@ describe("Coachman special order grid (workbook of 12/10/2026)", () => {
   it("includes torsion springs at every height — the sheet's ALL TORSION SPRING PRICES", () => {
     expect(torsionIncluded("CD")).toBe(true);
     expect(torsionIncluded("BD1CU")).toBe(false);
-    const r = q({});
-    expect(r.quote?.torsionIncluded).toBe(true);
-    expect(r.quote?.description).toContain("torsion springs");
-    expect(price({ spring: "extension" })).toBe(sell(door(1135)));          // nothing to take off; the line still says torsion
-    expect(q({ spring: "extension" }).quote?.description).toContain("torsion springs");
-    expect(price({ spring: "galvanized" })).toBe(plus(sell(door(1135)), 5));    // 40 on a single door, less the 35 already in
-    expect(price({ spring: "galvanized", width: "16" })).toBe(plus(sell(door(2127)), 10));
+    expect(q({}).quote?.torsionIncluded).toBe(true);
   });
 
-  it("prices torsion at the galvanized torsion price (Brandon, 12/10/2026), and still says which was chosen", () => {
-    expect(price({ spring: "torsion" })).toBe(price({ spring: "galvanized" }));
-    expect(price({ spring: "torsion", width: "16" })).toBe(price({ spring: "galvanized", width: "16" }));
-    expect(price({ spring: "torsion" })).toBe(plus(sell(door(1135)), 5));
-    expect(q({ spring: "torsion" }).quote?.description).toContain(", torsion springs");
-    expect(q({ spring: "galvanized" }).quote?.description).toContain(", galvanized torsion springs");
-    // Only the Coachman: a Gallery door still prices the two apart.
+  it("is sold with galvanized torsion only (Brandon, 12/10/2026): priced and worded as galvanized whatever is asked", () => {
+    expect(galvanizedOnly("CD")).toBe(true);
+    expect(galvanizedOnly("BD1CU")).toBe(false);
+    expect(galvanizedOnly("GD1LP/GD1SP")).toBe(false);
+    const unit = (o: Record<string, unknown>) => q(o).quote!.unitPrice;
+    expect(unit({ spring: "galvanized" })).toBe(plus(sell(door(1135)), 5));          // 40 on a single door, less the 35 already in
+    expect(unit({ spring: "galvanized", width: "16" })).toBe(plus(sell(door(2127)), 10));
+    for (const spring of ["torsion", "extension"]) {
+      expect(unit({ spring }), spring).toBe(unit({ spring: "galvanized" }));
+      expect(unit({ spring, width: "16" }), spring).toBe(unit({ spring: "galvanized", width: "16" }));
+      expect(q({ spring }).quote?.description, spring).toContain(", galvanized torsion springs");
+    }
+    // Only the Coachman: a Gallery door still offers extension.
     const gd = (spring: string) => specialDoorQuote({
       model: "GD1LP/GD1SP", variant: "GD1SP", width: "8", height: "7", color: "White", style: "solid",
       track: "r12", spring, lock: "none",
-    } as never).quote!.unitPrice;
-    expect(gd("galvanized")).toBeGreaterThan(gd("torsion"));
+    } as never).quote!;
+    expect(gd("extension").description).toContain(", extension springs");
+    expect(gd("torsion").unitPrice).toBeGreaterThan(gd("extension").unitPrice);
   });
 
   it("offers Clopay's fifteen designs, each where its size table builds it (Brandon, 12/10/2026)", () => {
@@ -226,8 +229,8 @@ describe("Coachman special order grid (workbook of 12/10/2026)", () => {
   });
 
   it("names the design and the overlay colour on the line, and refuses a design Clopay does not build that way", () => {
-    expect(q({ design: "12", overlayColor: "Sandtone", spring: "torsion" }).quote?.description)
-      .toBe("Clopay Coachman Collection, Model CD, Design 12, 8'0\" x 7'0\", in the color White, Sandtone overlay, solid no windows, 12″ radius track, torsion springs, no lock");
+    expect(q({ design: "12", overlayColor: "Sandtone" }).quote?.description)
+      .toBe("Clopay Coachman Collection, Model CD, Design 12, 8'0\" x 7'0\", in the color White, Sandtone overlay, solid no windows, 12″ radius track, galvanized torsion springs, no lock");
     expect(price({ design: "12", overlayColor: "Sandtone" })).toBe(price({}));   // the design and overlay change the words only
     expect(q({ design: "22", width: "12" }).reason).toMatch(/does not build design 22 at 12'0" x 7'0"/);
     expect(q({ design: "21", height: "8.3" }).reason).toMatch(/does not build design 21 at 8'0" x 8'3"/);
@@ -238,7 +241,7 @@ describe("Coachman special order grid (workbook of 12/10/2026)", () => {
 
   it("words the line as a Coachman", () => {
     expect(q({}).quote?.description)
-      .toBe("Clopay Coachman Collection, Model CD, 8'0\" x 7'0\", in the color White, solid no windows, 12″ radius track, torsion springs, no lock");
+      .toBe("Clopay Coachman Collection, Model CD, 8'0\" x 7'0\", in the color White, solid no windows, 12″ radius track, galvanized torsion springs, no lock");
     expect(q({ style: "glass" }).quote?.description).toContain("double strength b grade windows in the top section, no inserts");
   });
 });

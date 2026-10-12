@@ -25,9 +25,10 @@
  *   the door's four colours, any pairing, at no adder.
  *
  * Bridgeport Inlay (BD1CU, BD2CU): designs A, V and X, at every size the door
- * is built in. The inlay is colour matched to the door; Clopay's book offers
- * two-tone at a list adder (its page BDS2) that CJ's sheet does not carry, so
- * an inlay in another colour is worded on the line and not priced here.
+ * is built in. The inlay comes in the door's paint colours and the four oak
+ * finishes (Clopay's inlay colour list — Brandon, 12/10/2026); a door is
+ * priced at the dearer of its two colours (a premium inlay carries the adder,
+ * an oak inlay the Ultra-Grain one).
  */
 export const COACHMAN_DESIGNS = ["11", "12", "13", "21", "22", "23", "31", "32", "33", "34", "35", "36", "41", "42", "43"] as const;
 export const BRIDGEPORT_INLAY_DESIGNS = ["A", "V", "X"] as const;
@@ -101,18 +102,26 @@ export function secondColorName(group: string): "overlay" | "inlay" | null {
   return null;
 }
 
+/** The oak inlay finishes, each priced as the door's matching Ultra-Grain finish. */
+export const INLAY_OAKS: Record<string, string> = {
+  "Medium Oak": "Ultra-Grain Oak Medium Finish",
+  "Dark Oak": "Ultra-Grain Oak Dark Finish",
+  "Walnut Oak": "Ultra-Grain Oak Walnut Finish",
+  "Slate Oak": "Ultra-Grain Oak Slate Finish",
+};
+
 /**
  * The colours the second colour is offered in: the Coachman's four; an inlay
- * in any of the door's paint colours (the Ultra-Grain finishes are the door's
- * own, not an inlay colour).
+ * in any of the door's paint colours, then the four oaks (the door's own
+ * Ultra-Grain names are not inlay colours).
  */
 export function secondColors(group: string, doorColors: readonly string[]): string[] {
   if (group === COACHMAN) return [...COACHMAN_OVERLAY_COLORS];
-  if (INLAY.has(group)) return doorColors.filter((c) => !/Ultra-Grain/i.test(c));
+  if (INLAY.has(group)) return [...doorColors.filter((c) => !/Ultra-Grain/i.test(c)), ...Object.keys(INLAY_OAKS)];
   return [];
 }
 
-/** True when an inlay in a colour other than the door's would be two-tone — an adder Clopay's book has and CJ's sheet does not. */
-export function twoToneUnpriced(group: string, color: string, second: string): boolean {
-  return INLAY.has(group) && !!second && second !== color;
+/** The door colour a second colour is priced as: an oak inlay as its Ultra-Grain finish, anything else as itself. */
+export function secondColorPricedAs(color: string): string {
+  return INLAY_OAKS[color] ?? color;
 }

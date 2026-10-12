@@ -20,6 +20,8 @@ import { PartsNavigator } from "./PartsNavigator";
 import { cableQuote, CABLE_GAUGES } from "@/lib/pricing/data/cables";
 import { feetLimits, isLockbar, measuredToInch, priceNotSet, takesLength } from "@/lib/pricing/data/part-pricing";
 import { QtyStepper } from "./QtyStepper";
+import { COMMERCIAL_TRACK, COMMERCIAL_TRACK_HEIGHTS, COMMERCIAL_TRACK_SUB, commercialTrackAt } from "@/lib/pricing/data/commercial-track";
+import { RESIDENTIAL_TRACK_SUB, pickResidentialTrack, radiiFor, residentialTrackSets, trackHeightFor } from "@/lib/pricing/data/residential-track";
 
 const fmt = (n: number) =>
   "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -91,6 +93,15 @@ export function PartsTool({
   // Torsion springs are ordered by hand — a pair is one right and one left.
   const [right, setRight] = useState(1);
   const [left, setLeft] = useState(1);
+  // The Track tab's complete sets (Brandon, 12/10/2026): a residential set is
+  // picked from the door size and a radius, like the residential
+  // configuration; the commercial sets are shown by height.
+  const [trkWFt, setTrkWFt] = useState("");
+  const [trkWIn, setTrkWIn] = useState("0");
+  const [trkHFt, setTrkHFt] = useState("");
+  const [trkHIn, setTrkHIn] = useState("0");
+  const [trkRadius, setTrkRadius] = useState("");
+  const [trkHeight, setTrkHeight] = useState("");
 
   const onCable = catName === "CABLES" && pickedName === CUSTOM_CABLE;
   const cabQ = onCable ? cableQuote(cabGauge, Number(cabFt) || 0, Number(cabIn) || 0) : null;
@@ -105,7 +116,21 @@ export function PartsTool({
   // A drop-down page already says what it holds, so no headings inside it.
   const grouped = !menu && results.length > 0 && results.every((r) => r.part.sub);
 
-  const hit = onCable ? null : results.find((r) => r.part.name === pickedName) ?? null;
+  // The complete-track pages: every part on the page is a residential set, or
+  // every part a commercial one.
+  const trackPage = results.length === 0 ? null
+    : results.every((r) => r.part.sub === RESIDENTIAL_TRACK_SUB) ? "residential"
+    : results.every((r) => r.part.sub === COMMERCIAL_TRACK_SUB) ? "commercial"
+    : null;
+  const resSets = useMemo(() => (trackPage === "residential" ? residentialTrackSets(results.map((r) => r.part)) : []), [trackPage, results]);
+  const trkWidthIn = (Math.max(0, Math.trunc(Number(trkWFt) || 0))) * 12 + (Number(trkWIn) || 0);
+  const trkHeightIn = (Math.max(0, Math.trunc(Number(trkHFt) || 0))) * 12 + (Number(trkHIn) || 0);
+  const trkSetHeight = trackPage === "residential" ? trackHeightFor(resSets, trkHeightIn) : null;
+  const trkRadii = radiiFor(resSets, trkSetHeight);
+  const trkRadiusEff = trkRadii.includes(trkRadius) ? trkRadius : "";
+  const trackPick = trackPage === "residential" ? pickResidentialTrack(resSets, trkWidthIn, trkHeightIn, trkRadiusEff) : null;
+
+  const hit = onCable ? null : trackPick ? { part: trackPick.part, category: results[0].category } : results.find((r) => r.part.name === pickedName) ?? null;
   const part: Part | null = hit?.part ?? null;
 
   // U and L retainers, lock bars and raw track take feet and inches
@@ -127,16 +152,23 @@ export function PartsTool({
     : !!part && (!needsFeet || (ft > 0 && feetOk)) && (!needsHands || right + left > 0);
   const description = onCable
     ? (cabQ?.description ?? "")
-    : part
-      ? partDescription(part, ft, right, left)
-      : "";
+    : trackPick
+      ? trackPick.description
+      : part
+        ? partDescription(part, ft, right, left)
+        : "";
   // A part with no price yet has no price here — never its placeholder 0 — so
   // the card says so and offers nothing to paste or add to the cart.
   const price: number | null = onCable ? (cabQ?.total ?? 0) : part ? (priceNotSet(part) ? null : partPrice(part, ft)) : 0;
   // Seals paste the feet as the quantity, at the price per foot (7/10/2026).
   const feetQty = !onCable && !!part?.perFoot && feetAsQuantity(hit?.category ?? catName, part.name);
   const qtyText = onCable ? "1" : feetQty ? `${ft} ft` : part ? String(partQuantity(part, right, left)) : "1";
-  const title = onCable ? CUSTOM_CABLE : (part?.name ?? "");
+  // The complete-track pages name the set by what was chosen, not the shelf's name.
+  const commPick = trackPage === "commercial" && part ? COMMERCIAL_TRACK.find((x) => x.part.name === part.name) ?? null : null;
+  const title = onCable ? CUSTOM_CABLE
+    : trackPick ? `${trkSetHeight}' set, ${trkRadiusEff}`
+    : commPick ? `${commPick.height}FT — ${commPick.label}`
+    : (part?.name ?? "");
   const showing = onCable || !!part;
 
   function pick(name: string) {
@@ -194,6 +226,7 @@ export function PartsTool({
     setInches("0");
     setCabFt("");
     setCabIn("");
+    setTrkWFt(""); setTrkWIn("0"); setTrkHFt(""); setTrkHIn("0"); setTrkRadius("");
   }
 
   return (
@@ -216,6 +249,66 @@ export function PartsTool({
                   <div className="gbody pnav-body">
                     <PartsNavigator menu={menu} open={openGroupObj} page={pageId} onGroup={openGroup} onPage={openPage} />
                   </div>
+                ) : trackPage === "residential" ? (
+                  <div className="gbody" data-testid="track-res">
+                    <div className="grow"><label>Width</label>
+                      <div className="ctl dimrow">
+                        <input data-testid="track-width-ft" type="number" min={0} placeholder="ft" value={trkWFt}
+                          onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setTrkWFt(v); }} />
+                        <span className="u">ft</span>
+                        <select data-testid="track-width-in" className="insel" aria-label="Width inches" value={trkWIn} onChange={(e) => setTrkWIn(e.target.value)}>
+                          {["0", "2", "4", "6", "8", "10"].map((v) => <option key={v} value={v}>{v}</option>)}
+                        </select>
+                        <span className="u">in</span>
+                      </div>
+                    </div>
+                    <div className="grow"><label>Height</label>
+                      <div className="ctl dimrow">
+                        <input data-testid="track-height-ft" type="number" min={0} placeholder="ft" value={trkHFt}
+                          onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setTrkHFt(v); }} />
+                        <span className="u">ft</span>
+                        <select data-testid="track-height-in" className="insel" aria-label="Height inches" value={trkHIn} onChange={(e) => setTrkHIn(e.target.value)}>
+                          {["0", "3", "6", "9"].map((v) => <option key={v} value={v}>{v}</option>)}
+                        </select>
+                        <span className="u">in</span>
+                      </div>
+                    </div>
+                    <div className="grow"><label>Radius</label>
+                      <div className="ctl selectwrap">
+                        <select data-testid="track-radius" value={trkRadiusEff} disabled={trkRadii.length === 0} onChange={(e) => setTrkRadius(e.target.value)}>
+                          {!trkRadiusEff && <option value="">{trkRadii.length ? "Select radius…" : "Enter the door size"}</option>}
+                          {trkRadii.map((r) => <option key={r} value={r}>{r}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                ) : trackPage === "commercial" ? (
+                  <>
+                    <div className="gbody" data-testid="track-comm">
+                      <div className="grow"><label>Show options:</label>
+                        <div className="pnav-pages" role="group" aria-label="Door height">
+                          {COMMERCIAL_TRACK_HEIGHTS.map((h) => (
+                            <button key={h} type="button" data-testid={`track-height-${h}`} className={`pnav-page${h === trkHeight ? " on" : ""}`}
+                              aria-pressed={h === trkHeight} onClick={() => { setTrkHeight(h); setPickedName(null); }}>
+                              {h}FT
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    {trkHeight && (
+                      <ul className="partlist" data-testid="parts-list">
+                        {commercialTrackAt(trkHeight).map((o) => (
+                          <li key={o.part.name}>
+                            <button type="button" className={`partrow ${pickedName === o.part.name ? "on" : ""}`} onClick={() => pick(o.part.name)}>
+                              <span className="partname">{o.label}</span>
+                              <span className="partprice">{fmt(o.part.price)}</span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
                 ) : (
                   <ul className="partlist" data-testid="parts-list">
                     {results.map(({ part: p, category }) => (
@@ -327,7 +420,11 @@ export function PartsTool({
 
             {!showing ? (
               <div className="empty">
-                <div className="emptymsg">Pick a part from the list</div>
+                <div className="emptymsg">
+                  {trackPage === "residential"
+                    ? trkWidthIn > 0 && trkHeightIn > 0 && trkRadiusEff ? "No set stocked for this size" : "Enter the door size and radius"
+                    : trackPage === "commercial" ? "Pick a height, then a set" : "Pick a part from the list"}
+                </div>
               </div>
             ) : (
               <>
