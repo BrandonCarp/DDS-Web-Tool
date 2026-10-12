@@ -215,11 +215,11 @@ describe("the Track buttons (6/10/2026)", () => {
     line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
     expect(line.description).toBe('COMPLETE SET OF BRACKET MOUNTED TRACK,  8FT HIGH,  32" RADIUS');
     expect(line.rate).toBe(318);
-    // A 9' door stocks 12R, 15R and LHR only; the 32R just chosen falls away.
+    // A 9' door has no 10R set; the 32R just chosen stays, on the set the list carries for any height.
     fireEvent.change(screen.getByTestId("track-height-ft"), { target: { value: "9" } });
     fireEvent.change(screen.getByTestId("track-height-in"), { target: { value: "0" } });
-    expect([...(screen.getByTestId("track-radius") as HTMLSelectElement).options].map((o) => o.value)).toEqual(["", "12R", "15R", "LHR"]);
-    expect(screen.queryByTestId("parts-copy-qb")).toBeNull();
+    expect([...(screen.getByTestId("track-radius") as HTMLSelectElement).options].map((o) => o.value)).toEqual(["12R", "15R", "LHR", "20R", "32R"]);
+    expect((await copiedQbLine(screen.getByTestId("parts-copy-qb"))).rate).toBe(318);
     fireEvent.change(screen.getByTestId("track-radius"), { target: { value: "LHR" } });
     line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
     expect(line.description).toBe("COMPLETE SET OF BRACKET MOUNTED TRACK,  9FT HIGH,  LOW HEADROOM");

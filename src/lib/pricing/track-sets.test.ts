@@ -59,8 +59,9 @@ describe("residential track sets from the door size and radius", () => {
     expect(r).toMatchObject({ height: 7, radii: ["10R", "12R", "15R"], wide: false });
     expect(s.find((x) => x.part.name === "9',  12/15R,  12' AND UP")).toMatchObject({ height: 9, radii: ["12R", "15R"], wide: true });
     expect(s.find((x) => x.part.name === "8',  LHR,  12' WIDE AND UP")).toMatchObject({ height: 8, radii: ["LHR"], wide: true });
-    expect(s.find((x) => x.part.name === "20R,  7' TO 10' WIDE")).toMatchObject({ height: 8, radii: ["20R"], wide: false });
-    expect(s.find((x) => x.part.name === "32R,  12' AND UP")).toMatchObject({ height: 8, radii: ["32R"], wide: true });
+    // The 20R and 32R sets carry no height on the list: one set for any door.
+    expect(s.find((x) => x.part.name === "20R,  7' TO 10' WIDE")).toMatchObject({ height: null, radii: ["20R"], wide: false });
+    expect(s.find((x) => x.part.name === "32R,  12' AND UP")).toMatchObject({ height: null, radii: ["32R"], wide: true });
   });
 
   it("rounds the door height up to the next set, and stops at 9'", () => {
@@ -75,11 +76,11 @@ describe("residential track sets from the door size and radius", () => {
     expect(trackHeightFor(s, 0)).toBeNull();
   });
 
-  it("lists the radii stocked at a height, in order", () => {
+  it("lists every radius stocked at a height, in order — 20R and 32R at every height", () => {
     const s = sets();
-    expect(radiiFor(s, 7)).toEqual(["10R", "12R", "15R", "LHR"]);
+    expect(radiiFor(s, 7)).toEqual(["10R", "12R", "15R", "LHR", "20R", "32R"]);
     expect(radiiFor(s, 8)).toEqual(["10R", "12R", "15R", "LHR", "20R", "32R"]);
-    expect(radiiFor(s, 9)).toEqual(["12R", "15R", "LHR"]);
+    expect(radiiFor(s, 9)).toEqual(["12R", "15R", "LHR", "20R", "32R"]);
     expect(radiiFor(s, null)).toEqual([]);
   });
 
@@ -93,6 +94,10 @@ describe("residential track sets from the door size and radius", () => {
     expect(pickResidentialTrack(s, 16 * 12, 7 * 12 + 6, "12R")!.part.name).toBe("8',  10/12/15R,  12' AND UP");   // 7'6" x 16'
     expect(pickResidentialTrack(s, 16 * 12, 8 * 12, "LHR")!.description).toBe("COMPLETE SET OF BRACKET MOUNTED TRACK,  8FT HIGH,  LOW HEADROOM");
     expect(pickResidentialTrack(s, 10 * 12, 8 * 12, "32R")!.part.name).toBe("32R,  7' TO 10' WIDE");
+    // 20R and 32R on a 7' or 9' door: the one set the list carries, worded as the list has it.
+    expect(pickResidentialTrack(s, 9 * 12, 7 * 12, "20R")!.part.name).toBe("20R,  7' TO 10' WIDE");
+    expect(pickResidentialTrack(s, 9 * 12, 7 * 12, "20R")!.description).toBe('COMPLETE SET OF BRACKET MOUNTED TRACK,  8FT HIGH,  20" RADIUS');
+    expect(pickResidentialTrack(s, 16 * 12, 9 * 12, "32R")!.part.name).toBe("32R,  12' AND UP");
     expect(pickResidentialTrack(s, 12 * 12, 9 * 12, "15R")!.part.name).toBe("9',  12/15R,  12' AND UP");
     // Not stocked: a 9' door at 10" radius, a 10' high door, no radius yet.
     expect(pickResidentialTrack(s, 9 * 12, 9 * 12, "10R")).toBeNull();

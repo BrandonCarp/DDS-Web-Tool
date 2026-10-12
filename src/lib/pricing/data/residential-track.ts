@@ -4,8 +4,10 @@
  * residential configuration and a radius from what is in stock.
  *
  * The sets are the shelf's RESIDENTIAL TRACKS (NEW_PARTS_LIST.xlsx): one per
- * height (7', 8', 9'), radius group (10/12/15R, LHR, and 20R and 32R at 8')
- * and width band (7' to 10' wide; 12' and up). A door's height rounds up to
+ * height (7', 8', 9'), radius group (10/12/15R, LHR) and width band (7' to
+ * 10' wide; 12' and up), plus the 20R and 32R sets, which the list carries
+ * with no height — one set for any door, so they are offered at every height
+ * (Brandon, 12/10/2026: every radius in stock). A door's height rounds up to
  * the next set height — a 7'6" door takes the 8' set — and its width takes
  * the wide set from 12'0". The line names the radius chosen.
  */
@@ -18,8 +20,8 @@ export const RADIUS_ORDER = ["10R", "12R", "15R", "LHR", "20R", "32R"] as const;
 
 export interface ResidentialTrackSet {
   part: Part;
-  /** The set's height in feet. */
-  height: number;
+  /** The set's height in feet, or null for a set the list carries for any height (20R, 32R). */
+  height: number | null;
   /** The radii the set covers: ["10R", "12R", "15R"], ["LHR"], ["20R"]… */
   radii: string[];
   /** True for the 12' and up set, false for 7' to 10' wide. */
@@ -31,11 +33,12 @@ export function residentialTrackSets(parts: readonly Part[]): ResidentialTrackSe
   const out: ResidentialTrackSet[] = [];
   for (const part of parts) {
     if (part.sub !== RESIDENTIAL_TRACK_SUB) continue;
-    const h = /(\d+)FT HIGH/i.exec(part.desc);
+    // The height is the name's ("7',  10/12/15R,  …"); a name without one is a set for any height.
+    const h = /^\s*(\d+)'\s*,/.exec(part.name);
     const r = /(?:^|,\s*)((?:\d+\/)*\d+R|LHR)\s*,/i.exec(part.name);
-    if (!h || !r) continue;
+    if (!r) continue;
     const radii = r[1].toUpperCase() === "LHR" ? ["LHR"] : r[1].replace(/R$/i, "").split("/").map((n) => `${n}R`);
-    out.push({ part, height: Number(h[1]), radii, wide: /\b12'/.test(part.name) });
+    out.push({ part, height: h ? Number(h[1]) : null, radii, wide: /\b12'/.test(part.name) });
   }
   return out;
 }
@@ -43,14 +46,14 @@ export function residentialTrackSets(parts: readonly Part[]): ResidentialTrackSe
 /** The set height a door height takes: the next whole foot up, or null past the tallest set. */
 export function trackHeightFor(sets: readonly ResidentialTrackSet[], heightIn: number): number | null {
   if (heightIn <= 0) return null;
-  const heights = [...new Set(sets.map((s) => s.height))].sort((a, b) => a - b);
+  const heights = [...new Set(sets.flatMap((s) => (s.height === null ? [] : [s.height])))].sort((a, b) => a - b);
   return heights.find((h) => h * 12 >= heightIn) ?? null;
 }
 
 /** The radii stocked at a set height, in drop-down order. */
 export function radiiFor(sets: readonly ResidentialTrackSet[], height: number | null): string[] {
   if (height === null) return [];
-  const have = new Set(sets.filter((s) => s.height === height).flatMap((s) => s.radii));
+  const have = new Set(sets.filter((s) => s.height === height || s.height === null).flatMap((s) => s.radii));
   return RADIUS_ORDER.filter((r) => have.has(r));
 }
 
@@ -67,7 +70,9 @@ export function pickResidentialTrack(
   const height = trackHeightFor(sets, heightIn);
   if (height === null || widthIn <= 0 || !radius) return null;
   const wide = widthIn >= 144;
-  const set = sets.find((s) => s.height === height && s.wide === wide && s.radii.includes(radius));
+  // The set made for the height first, then one the list carries for any height.
+  const set = sets.find((s) => s.height === height && s.wide === wide && s.radii.includes(radius))
+    ?? sets.find((s) => s.height === null && s.wide === wide && s.radii.includes(radius));
   if (!set) return null;
   const n = /^(\d+)R$/.exec(radius);
   const description = n ? set.part.desc.replace(/\d+" RADIUS/, `${n[1]}" RADIUS`) : set.part.desc;
