@@ -65,14 +65,23 @@ describe("raw track on the Track tab", () => {
     expect(screen.queryByTestId("parts-copy-qb")).toBeNull();
   });
 
-  it("says what a length is charged as, and nothing before one is entered", () => {
+  it("takes feet and inches, prices the stick without saying so, and the line says the length asked (12/10/2026)", async () => {
     pickRaw();
+    expect(screen.getByTestId("parts-inches")).toBeTruthy();
+    expect(Array.from(screen.getByTestId("parts-inches").querySelectorAll("option")).map((o) => o.textContent)).toEqual(
+      Array.from({ length: 12 }, (_, i) => String(i)),
+    );
+    feet("16");
+    fireEvent.change(screen.getByTestId("parts-inches"), { target: { value: "6" } });
     expect(screen.queryByTestId("parts-feet-note")).toBeNull();
-    feet("10");
-    expect(screen.getByTestId("parts-feet-note").textContent).toContain("Charged as 12FT");
-    expect(screen.getByTestId("parts-copy-qb")).toBeTruthy();
-    feet("13");
-    expect(screen.getByTestId("parts-feet-note").textContent).toContain("Charged as 24FT");
+    expect(screen.getByTestId("parts-price").textContent).toBe("$90.00"); // the 24FT stick at 3.75
+    const line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
+    expect(line.description).toBe('2" RAW TRACK,  16\'6"');
+    expect(line.rate).toBe(90);
+    // 24'1" is past the longest stick.
+    feet("24");
+    fireEvent.change(screen.getByTestId("parts-inches"), { target: { value: "1" } });
+    expect(screen.getByTestId("parts-feet-error").textContent).toContain("1 to 24 ft");
   });
 });
 

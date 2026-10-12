@@ -7,6 +7,7 @@ import { glassOptionsFor, glassTakesInserts, panelStylesFor, isSheetGroup } from
 import { BRIDGEPORT_GLASS, BRIDGEPORT_GROUPS, BRIDGEPORT_ULTRA_GRAIN } from "./data/bridgeport-glass";
 import { SPECIAL } from "./data/special-orders";
 import { specialOrderColors } from "./data/catalog-meta";
+import { BRIDGEPORT_INLAY_DESIGNS, designsBuilt, designsFor, hasDesigns, secondColorName, secondColors, twoToneUnpriced } from "./data/door-designs";
 
 // Figures straight off the Bridgeport workbook (BRIDGEPORT_3_LAYER.xlsx,
 // 9/10/2026): DDS cost is Clopay list x the sheet's multiplier x 0.99 / (1 -
@@ -219,5 +220,52 @@ describe("Bridgeport wording", () => {
       .toContain("Model BD1EU, 8'0\" x 7'0\", in the color White, double strength b grade windows in the top section, no inserts");
     expect(q({ model: "BD2CU", variant: "BD2CU", style: "inserts", glassType: "insulated", windesign: "ARCH1GRILLE" }).quote?.description)
       .toContain("Model BD2CU, 8'0\" x 7'0\", in the color White, insulated windows in the top section, Arch 1 Grille inserts");
+  });
+});
+
+describe("Bridgeport Inlay designs and inlay colour (Brandon, 12/10/2026)", () => {
+  const cu = (o: Record<string, unknown>) => q({ model: "BD1CU", variant: "BD1CU", ...o });
+
+  it("offers designs A, V and X on the BD1CU and BD2CU at every size, and none on the N and E designs", () => {
+    expect(BRIDGEPORT_INLAY_DESIGNS).toEqual(["A", "V", "X"]);
+    for (const g of ["BD1CU", "BD2CU"]) {
+      expect(hasDesigns(g), g).toBe(true);
+      expect(designsFor(g), g).toEqual(["A", "V", "X"]);
+      expect(designsBuilt(g, "18", "8"), g).toEqual(["A", "V", "X"]);
+      expect(secondColorName(g), g).toBe("inlay");
+    }
+    for (const g of ["BD1EU/BD1NU", "BD2EU/BD2NU", "GD1LP/GD1SP"]) {
+      expect(hasDesigns(g), g).toBe(false);
+      expect(secondColorName(g), g).toBeNull();
+    }
+    // The inlay comes in the door's paint colours; an Ultra-Grain finish is the door's own.
+    expect(secondColors("BD1CU", specialOrderColors("BD1CU"))).toEqual(["White", "Almond", "Sandtone", "Desert Tan", "Chocolate Brown", "Bronze", "Mocha Brown", "Charcoal", "Iron Ore", "Black"]);
+    expect(twoToneUnpriced("BD1CU", "White", "White")).toBe(false);
+    expect(twoToneUnpriced("BD1CU", "White", "Charcoal")).toBe(true);
+    expect(twoToneUnpriced("CD", "White", "Sandtone")).toBe(false);
+  });
+
+  it("names the design and the inlay on the line, at no adder, and refuses a design it does not have", () => {
+    expect(cu({ design: "A", overlayColor: "White" }).quote?.description).toBe(
+      `Clopay Bridgeport Collection, Model BD1CU, Design A, 8'0" x 7'0", in the color White, White inlay, solid no windows, 12″ radius track, extension springs, no lock`,
+    );
+    expect(cu({ design: "X", overlayColor: "Charcoal", style: "glass" }).quote?.description)
+      .toContain("Model BD1CU, Design X, 8'0\" x 7'0\", in the color White, Charcoal inlay, double strength");
+    expect(cu({ design: "A", overlayColor: "Charcoal" }).quote?.unitPrice).toBe(cu({}).quote?.unitPrice);
+    expect(cu({ design: "12" }).reason).toMatch(/does not build design 12/);
+    // A design on a door without them is left off the line.
+    expect(q({ design: "A", overlayColor: "White" }).quote?.description).not.toContain("Design");
+  });
+
+  it("prices torsion at the galvanized torsion price on the BD1CU and BD2CU, and not on the N and E designs", () => {
+    for (const g of ["BD1CU", "BD2CU"]) {
+      const at = (spring: string, o: Record<string, unknown> = {}) => q({ model: g, variant: g, spring, ...o }).quote!.unitPrice;
+      expect(at("torsion"), g).toBe(at("galvanized"));
+      expect(at("torsion"), g).toBe(at("extension") + 40);                                        // a single door: 40, not torsion's 35
+      expect(at("torsion", { width: "16" }), g).toBe(at("extension", { width: "16" }) + 45);     // a double door: 45
+      expect(q({ model: g, variant: g, spring: "torsion" }).quote?.description, g).toContain(", torsion springs");
+    }
+    expect(price({ spring: "torsion" })).toBe(price({ spring: "extension" }) + 35);
+    expect(price({ spring: "galvanized" })).toBe(price({ spring: "extension" }) + 40);
   });
 });

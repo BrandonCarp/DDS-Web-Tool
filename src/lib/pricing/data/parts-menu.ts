@@ -89,7 +89,6 @@ export const PARTS_MENU: PartsMenu = build(
       ["Universal bottom retainer", "RETAINERS", name(/UNIVERSAL BTM/)],
       ["Nail-on bottom wood rubber", "RETAINERS", name(/WOOD RUBBER/)],
       ["Aluminum retainers", "BRUSH SEAL / RETAINERS", name(/^ALUM/)],
-      ["Retainer tek screws", "RETAINERS", name(/RETAINER TEK/)],
     ] },
     { label: "Seals", entries: [
       ["Jamb seals", "RETAINERS", name(/JAMB SEAL/)],

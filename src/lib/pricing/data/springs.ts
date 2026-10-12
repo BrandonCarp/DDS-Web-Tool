@@ -94,8 +94,9 @@ export const HAND_ADDED_PARTS: Record<string, ShelfPart[]> = {
     { name: '5/32" CABLE, 250FT ROLL', desc: '5/32" CABLE,  250FT ROLL', price: 149.95, sub: "CABLE ROLLS" },
     { name: '3/16" CABLE, 250FT ROLL', desc: '3/16" CABLE,  250FT ROLL', price: 199.95, sub: "CABLE ROLLS" },
   ],
-  // Tek screws for retainers, bag of 100 — Brandon, 12/10/2026.
-  RETAINERS: [
+  // Tek screws for retainers, bag of 100 — Brandon, 12/10/2026; sold from the
+  // Parts tab with the other tek screws.
+  FASTENERS: [
     { name: "RETAINER TEK", desc: "RETAINER TEK,  BAG OF 100", price: 10.95 },
   ],
 };

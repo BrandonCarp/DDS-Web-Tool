@@ -18,7 +18,7 @@ import type { SearchPick } from "@/lib/search";
 import { entryId, feetAsQuantity, type PartsMenu } from "@/lib/pricing/data/parts-menu";
 import { PartsNavigator } from "./PartsNavigator";
 import { cableQuote, CABLE_GAUGES } from "@/lib/pricing/data/cables";
-import { billedFeet, feetLimits, feetText, isLockbar, measuredToInch, priceNotSet, takesLength } from "@/lib/pricing/data/part-pricing";
+import { feetLimits, isLockbar, measuredToInch, priceNotSet, takesLength } from "@/lib/pricing/data/part-pricing";
 import { QtyStepper } from "./QtyStepper";
 
 const fmt = (n: number) =>
@@ -108,9 +108,9 @@ export function PartsTool({
   const hit = onCable ? null : results.find((r) => r.part.name === pickedName) ?? null;
   const part: Part | null = hit?.part ?? null;
 
-  // U and L retainers, and lock bars, take feet and inches (9/10/2026); other
-  // per-foot parts whole feet. A lock bar's length goes on the line only — the
-  // price is the same at any length.
+  // U and L retainers, lock bars and raw track take feet and inches
+  // (9/10/2026, raw track 12/10/2026); other per-foot parts whole feet. A lock
+  // bar's length goes on the line only — the price is the same at any length.
   const toInch = !!part && measuredToInch(part);
   const lockbar = !!part && isLockbar(part);
   const ft = toInch
@@ -426,17 +426,11 @@ export function PartsTool({
                           </>
                         )}
                       </div>
-                      {limits ? (
-                        ft > 0 && !feetOk ? (
-                          <div className="muted-note err" role="alert" style={{ marginTop: 6 }} data-testid="parts-feet-error">
-                            {lockbar ? "Lock bars are cut" : "Raw track is sold"} from {limits.min} to {limits.max} ft.
-                          </div>
-                        ) : ft > 0 && part!.perFoot ? (
-                          <div className="muted-note" style={{ marginTop: 6 }} data-testid="parts-feet-note">
-                            Charged as {feetText(billedFeet(part!, ft))}
-                          </div>
-                        ) : null
-                      ) : null}
+                      {limits && ft > 0 && !feetOk && (
+                        <div className="muted-note err" role="alert" style={{ marginTop: 6 }} data-testid="parts-feet-error">
+                          {lockbar ? "Lock bars are cut" : "Raw track is sold"} from {limits.min} to {limits.max} ft.
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

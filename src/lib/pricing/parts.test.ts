@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { PART_CATEGORIES, partDescription, partPrice, partQuantity, billedFeet, feetLimits } from "./data/parts";
+import { measuredToInch } from "./data/part-pricing";
 import { QB_ITEMS } from "../qb/iif";
 
 const find = (cat: string, name: string) => {
@@ -148,6 +149,17 @@ describe("raw track sticks (30/9/2026)", () => {
     expect(partPrice(raw2(), 7)).toBe(12 * 3.75);
     // A retainer still names the stick it bills.
     expect(partDescription(find("RETAINERS", '2" U RETAINER'), 12)).toBe('2"  U  RETAINER,  16FT');
+  });
+
+  it("is asked for in feet and inches, and the line says them", () => {
+    expect(measuredToInch(raw2())).toBe(true);
+    expect(measuredToInch(raw3())).toBe(true);
+    expect(partDescription(raw3(), 16.5)).toBe('3" RAW TRACK,  16\'6"');
+    expect(partDescription(raw2(), 7 + 3 / 12)).toBe('2" RAW TRACK,  7\'3"');
+    // 12'1" is over 12 feet, so the 24FT stick; 12'0" is the 12FT one.
+    expect(billedFeet(raw2(), 12 + 1 / 12)).toBe(24);
+    expect(billedFeet(raw2(), 12)).toBe(12);
+    expect(partPrice(raw3(), 16.5)).toBe(24 * 8.5);
   });
 
   it("is sold from 1FT to 24FT, and nothing else is limited", () => {

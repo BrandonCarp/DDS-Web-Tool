@@ -50,7 +50,10 @@ describe("the Parts drop-downs Brandon set out (6/10/2026)", () => {
     expect(names(PARTS_MENU, "Drums", "400 series")).toHaveLength(3);
     expect(names(PARTS_MENU, "Hinges", "14 gauge")).toHaveLength(7);
     expect(names(PARTS_MENU, "Rollers", "Long stem")).toHaveLength(3);
-    expect(names(PARTS_MENU, "Fasteners", "Tek screws")).toHaveLength(3);
+    // The three on the sheet and the retainer tek added by hand (12/10/2026).
+    expect(names(PARTS_MENU, "Fasteners", "Tek screws")).toHaveLength(4);
+    expect(names(PARTS_MENU, "Fasteners", "Tek screws")).toContain("RETAINER TEK");
+    expect(tabForPart("FASTENERS", "RETAINER TEK")).toBe("parts");
   });
 });
 

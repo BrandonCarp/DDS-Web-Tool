@@ -8,6 +8,10 @@ import { COACHMAN_GLASS, COACHMAN_GROUPS } from "./data/coachman-glass";
 import { COACHMAN_ARCH, COACHMAN_GLASS_DESIGNS, windowDesigns } from "./data/inserts";
 import { SPECIAL } from "./data/special-orders";
 import { specialOrderColors } from "./data/catalog-meta";
+import { COACHMAN_DESIGNS, COACHMAN_OVERLAY_COLORS, designBuilt, designsBuilt, designTakesWindows } from "./data/door-designs";
+const coachmanDesignBuilt = (d: string, w: string, h: string) => designBuilt("CD", d, w, h);
+const coachmanDesigns = (w: string, h: string) => designsBuilt("CD", w, h);
+const coachmanDesignTakesWindows = (d: string) => designTakesWindows("CD", d);
 
 // Figures straight off CJ's Coachman workbook (COACHMAN.xlsx, 12/10/2026):
 // DDS cost is Clopay list x 1.193 x 0.99 / (1 - 0.0265) + 15 on every door
@@ -24,9 +28,12 @@ const door = (list: number) => list * MULT * K + 15;
 const adder = (cost: number) => sell(Math.round(cost * 100) / 100);
 const plus = (a: number, b: number) => Math.round((a + b) * 100) / 100;
 
+// Springs "extension" here: the Coachman's sheet price is a torsion price with
+// nothing added, and the tool's torsion choice carries the galvanized adder
+// (12/10/2026, below), so the bare sheet figure is reached this way.
 const q = (o: Record<string, unknown>) => specialDoorQuote({
   model: "CD", variant: "CD", width: "8", height: "7", color: "White", style: "solid",
-  track: "r12", spring: "torsion", lock: "none", ...o,
+  track: "r12", spring: "extension", lock: "none", ...o,
 } as never);
 const price = (o: Record<string, unknown>) => {
   const r = q(o);
@@ -174,11 +181,59 @@ describe("Coachman special order grid (workbook of 12/10/2026)", () => {
     const r = q({});
     expect(r.quote?.torsionIncluded).toBe(true);
     expect(r.quote?.description).toContain("torsion springs");
-    expect(price({ spring: "torsion" })).toBe(sell(door(1135)));
     expect(price({ spring: "extension" })).toBe(sell(door(1135)));          // nothing to take off; the line still says torsion
     expect(q({ spring: "extension" }).quote?.description).toContain("torsion springs");
     expect(price({ spring: "galvanized" })).toBe(plus(sell(door(1135)), 5));    // 40 on a single door, less the 35 already in
     expect(price({ spring: "galvanized", width: "16" })).toBe(plus(sell(door(2127)), 10));
+  });
+
+  it("prices torsion at the galvanized torsion price (Brandon, 12/10/2026), and still says which was chosen", () => {
+    expect(price({ spring: "torsion" })).toBe(price({ spring: "galvanized" }));
+    expect(price({ spring: "torsion", width: "16" })).toBe(price({ spring: "galvanized", width: "16" }));
+    expect(price({ spring: "torsion" })).toBe(plus(sell(door(1135)), 5));
+    expect(q({ spring: "torsion" }).quote?.description).toContain(", torsion springs");
+    expect(q({ spring: "galvanized" }).quote?.description).toContain(", galvanized torsion springs");
+    // Only the Coachman: a Gallery door still prices the two apart.
+    const gd = (spring: string) => specialDoorQuote({
+      model: "GD1LP/GD1SP", variant: "GD1SP", width: "8", height: "7", color: "White", style: "solid",
+      track: "r12", spring, lock: "none",
+    } as never).quote!.unitPrice;
+    expect(gd("galvanized")).toBeGreaterThan(gd("torsion"));
+  });
+
+  it("offers Clopay's fifteen designs, each where its size table builds it (Brandon, 12/10/2026)", () => {
+    expect(COACHMAN_DESIGNS).toEqual(["11", "12", "13", "21", "22", "23", "31", "32", "33", "34", "35", "36", "41", "42", "43"]);
+    expect(coachmanDesigns("", "")).toEqual(COACHMAN_DESIGNS);
+    // Designs 22, 23, 34 and 35 are not built at 12'0", 12'2", 13'0" or 13'8".
+    for (const w of ["12", "12.2", "13", "13.8"]) {
+      expect(coachmanDesigns(w, "7"), w).toEqual(["11", "12", "13", "21", "31", "32", "33", "36", "41", "42", "43"]);
+    }
+    for (const w of ["6.2", "10", "14", "16", "18"]) expect(coachmanDesigns(w, "7"), w).toEqual(COACHMAN_DESIGNS);
+    // Design 21 is built to 8'0" in 3" steps, then 8'6", 9'0", 9'6" and 10'0" only.
+    expect(coachmanDesignBuilt("21", "8", "8.3")).toBe(false);
+    expect(coachmanDesignBuilt("21", "8", "8.9")).toBe(false);
+    for (const h of ["6", "6.3", "7.9", "8", "8.6", "9", "9.6", "10"]) expect(coachmanDesignBuilt("21", "8", h), h).toBe(true);
+    expect(coachmanDesigns("8", "8.3")).toEqual(COACHMAN_DESIGNS.filter((d) => d !== "21"));
+    // Designs 22 and 23 to 10'0" in 3" steps; the rest to 16'0".
+    expect(coachmanDesignBuilt("22", "8", "10")).toBe(true);
+    expect(coachmanDesignBuilt("22", "8", "10.3")).toBe(false);
+    expect(coachmanDesignBuilt("12", "8", "16")).toBe(true);
+    expect(coachmanDesignBuilt("99", "8", "7")).toBe(false);
+    // Series 3 and 4 are solid only.
+    expect(["11", "12", "13", "21", "22", "23"].every(coachmanDesignTakesWindows)).toBe(true);
+    expect(["31", "36", "41", "43"].some(coachmanDesignTakesWindows)).toBe(false);
+    expect(COACHMAN_OVERLAY_COLORS).toEqual(["White", "Almond", "Desert Tan", "Sandtone"]);
+  });
+
+  it("names the design and the overlay colour on the line, and refuses a design Clopay does not build that way", () => {
+    expect(q({ design: "12", overlayColor: "Sandtone", spring: "torsion" }).quote?.description)
+      .toBe("Clopay Coachman Collection, Model CD, Design 12, 8'0\" x 7'0\", in the color White, Sandtone overlay, solid no windows, 12″ radius track, torsion springs, no lock");
+    expect(price({ design: "12", overlayColor: "Sandtone" })).toBe(price({}));   // the design and overlay change the words only
+    expect(q({ design: "22", width: "12" }).reason).toMatch(/does not build design 22 at 12'0" x 7'0"/);
+    expect(q({ design: "21", height: "8.3" }).reason).toMatch(/does not build design 21 at 8'0" x 8'3"/);
+    expect(q({ design: "31", style: "glass" }).reason).toMatch(/series 3 and 4 designs with windows — design 31 is solid only/);
+    expect(q({ design: "31" }).quote?.description).toContain("Design 31");
+    expect(q({ design: "12", style: "glass" }).quote?.description).toContain("Design 12, 8'0\" x 7'0\", in the color White, double strength");
   });
 
   it("words the line as a Coachman", () => {

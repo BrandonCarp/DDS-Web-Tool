@@ -35,11 +35,11 @@ export function partDescription(
   }
   if (!part.perFoot || !feet) return part.desc;
   const base = part.desc.replace(/,\s*$/, "");
-  // Raw track says the footage asked for — 16FT of 3" raw track is billed at
-  // the 24FT stick but the line reads 16FT (Brandon, 12/10/2026). A retainer
-  // still says the stick it bills: a 12FT U retainer is sold as a 16FT stick,
-  // and the line says what left the building.
-  const said = isRawTrack(part) ? Math.max(0, Math.trunc(feet)) : billedFeet(part, feet);
+  // Raw track says the footage asked for, to the inch — 16'6" of 3" raw track
+  // is billed at the 24FT stick but the line reads 16'6" (Brandon, 12/10/2026).
+  // A retainer still says the stick it bills: a 12FT U retainer is sold as a
+  // 16FT stick, and the line says what left the building.
+  const said = isRawTrack(part) ? Math.max(0, Math.round(feet * 12) / 12) : billedFeet(part, feet);
   return `${base},  ${feetText(said)}`;
 }
 
@@ -75,7 +75,8 @@ const RETAINER_STICKS: { type: RegExp; overFeet: number; billFeet: number }[] = 
  * Raw track comes as 12FT and 24FT sticks — Brandon, 30/9/2026. Up to 12FT
  * bills a 12FT stick, anything longer a 24FT one, and it is sold from 1FT to
  * 24FT only: feetLimits says so, and the Track tab refuses anything outside it.
- * The QuickBooks line says the footage asked for, not the stick (12/10/2026).
+ * It is asked for in feet and inches, and the QuickBooks line says that
+ * footage, not the stick (12/10/2026); the tool does not say the stick either.
  */
 const RAW_TRACK = /\bRAW TRACK\b/i;
 const isRawTrack = (part: Part) => RAW_TRACK.test(part.name) || RAW_TRACK.test(part.desc);
@@ -105,14 +106,15 @@ export function takesLength(part: Part): boolean {
 
 /** Parts measured in feet and inches rather than whole feet. */
 export function measuredToInch(part: Part): boolean {
-  return isRetainer(part) || isLockbar(part);
+  return isRetainer(part) || isLockbar(part) || isRawTrack(part);
 }
 
 /** Feet actually billed for a part, which is not always the feet asked for. */
 export function billedFeet(part: Part, feet?: number): number {
-  // Retainers and lock bars are measured to the inch (Brandon, 9/10/2026):
-  // 10'6" is 10.5 feet, and for a U retainer that is over 10 feet, so it bills
-  // the 16FT stick. Everything else is sold in whole feet.
+  // Retainers, lock bars and raw track are measured to the inch (9/10/2026,
+  // raw track 12/10/2026): 10'6" is 10.5 feet, and for a U retainer that is
+  // over 10 feet, so it bills the 16FT stick; 12'1" of raw track is over 12
+  // feet, so it bills the 24FT stick. Everything else is sold in whole feet.
   const ft = Math.max(0, measuredToInch(part) ? Math.round((feet ?? 0) * 12) / 12 : Math.trunc(feet ?? 0));
   if (!part.perFoot) return ft;
   if (isRawTrack(part)) return ft === 0 ? 0 : ft <= 12 ? 12 : 24;

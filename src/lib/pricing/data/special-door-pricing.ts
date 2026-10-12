@@ -27,6 +27,7 @@ import { highLiftPrice, mountPhrase, type TrackMount, type InclineStyle } from "
 import { ADDONS, GRADE_RES, COLLECTIONS_RES } from "./addons";
 import { dataKey } from "../model-groups";
 import { designName, plainWindowsFor, windowDesigns } from "./inserts";
+import { designBuilt, designLabel, designTakesWindows, hasDesigns, secondColorName } from "./door-designs";
 import { SPECIAL_DOORS } from "./special-doors";
 import type { LockKey, SpringKey, TrackKey, WindowStyle } from "../types";
 
@@ -52,6 +53,10 @@ export interface SpecialDoorInput {
   panelStyle?: "short" | "long";
   /** A plain window by its order name (PLAIN SHORT 19-1/2" X 12"), named on the line as the stock tab does. */
   plainWindow?: string;
+  /** The door's design — the Coachman's 11…43, the Bridgeport Inlay's A, V, X — named on the line after the model. */
+  design?: string;
+  /** The door's second colour — the Coachman's overlay, the Bridgeport Inlay's inlay — named on the line after the door's. */
+  overlayColor?: string;
   /** Track mount, incline and high lift — priced from the track-lift tables. */
   trackMount?: string;
   incline?: string;
@@ -92,6 +97,13 @@ const TORSION_INCLUDED = new Set(["CD"]);
 export function torsionIncluded(group: string): boolean {
   return TORSION_INCLUDED.has(group);
 }
+
+/**
+ * Groups on which torsion and galvanized torsion are the same price — the
+ * galvanized one (Brandon, 12/10/2026: the Coachman, then the Bridgeport
+ * Inlay). The line still says which was chosen.
+ */
+const GALVANIZED_PRICED_TORSION = new Set(["CD", "BD1CU", "BD2CU"]);
 
 /**
  * Groups whose third window choice is an arch window SECTION rather than
@@ -272,8 +284,8 @@ export const OFFERED_HEIGHTS = ["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8"
  * includes it. Galvanized torsion (5/10/2026) is $40 on a single door and $45 on
  * a double, 12' and over; where torsion is already included, the difference.
  */
-function springAdder(spring: string, torsionIncluded: boolean, doubleDoor: boolean): number {
-  if (spring === "galvanized") {
+function springAdder(spring: string, torsionIncluded: boolean, doubleDoor: boolean, galvanizedPriced = false): number {
+  if (spring === "galvanized" || (spring === "torsion" && galvanizedPriced)) {
     const price = doubleDoor ? ADDONS.galvanized.double : ADDONS.galvanized.single;
     return torsionIncluded ? price - ADDONS.torsion : price;
   }
@@ -363,6 +375,16 @@ export function specialDoorQuote(
 
   const triple = tier[input.width];
   if (!triple) return { reason: "That width is not on the grid — enter the Clopay total below." };
+
+  // The door's design, where it has one: built at this size, and on the
+  // Coachman solid only past series 2.
+  const design = hasDesigns(input.model) && input.design ? input.design : "";
+  if (design && !designBuilt(input.model, design, input.width, input.height)) {
+    return { reason: `Clopay does not build design ${design} at ${feetInches(input.width)} x ${heightLabel(input.height)} — pick another design or size.` };
+  }
+  if (design && input.style !== "solid" && !designTakesWindows(input.model, design)) {
+    return { reason: `Clopay does not build series 3 and 4 designs with windows — design ${design} is solid only.` };
+  }
 
   if (input.style !== "solid" && !windowsOfferedAt(input.variant, input.width)) {
     return { reason: `Clopay does not build the ${input.variant} with windows at ${heightLabel(input.width)} — solid only at this width.` };
@@ -464,7 +486,7 @@ export function specialDoorQuote(
   const adders =
     premium +
     (input.track === "high_lift" ? 0 : ADDONS.track[input.track as keyof typeof ADDONS.track] ?? 0) +
-    springAdder(input.spring, torsionOnly, parseInt(input.width, 10) >= 12) +
+    springAdder(input.spring, torsionOnly, parseInt(input.width, 10) >= 12, GALVANIZED_PRICED_TORSION.has(input.model)) +
     (LOCK[input.lock] ?? 0) +
     lift.value;
 
@@ -493,8 +515,14 @@ export function specialDoorQuote(
   // windows in the top section".
   const glassDesign = input.style === "glass" && designId ? `${designName(designId)} ` : "";
   // A plain window named by its order name, as the stock tab words it (its own
-  // clause after "in the top section" — Brandon, 25/9/2026 there, 12/10/2026 here).
-  const plain = input.style === "glass" && input.plainWindow && plainWindowsFor(member).includes(input.plainWindow)
+  // clause after "in the top section" — Brandon, 25/9/2026 there, 12/10/2026
+  // here). The Gallery's and Bridgeport's other plain arch windows (Arch 2
+  // Plain, Arch 3 Plain) are named from the window list the same way.
+  const plainNames = [
+    ...plainWindowsFor(member),
+    ...windowDesigns(member, "inserts", input.width.split(".")[0]).filter((d) => d.cat === "arch" && /\bPLAIN\b/i.test(d.name)).map((d) => d.name),
+  ];
+  const plain = input.style === "glass" && input.plainWindow && plainNames.includes(input.plainWindow)
     ? `${input.plainWindow.toLowerCase()}, ` : "";
   const winText =
     input.style === "solid"
@@ -507,9 +535,16 @@ export function specialDoorQuote(
   // writes the Gallery ("CLOPAY GALLERY COLLECTION, MODEL GD1SU, ..." — Brandon, 8/10/2026).
   const collectionName = COLLECTIONS_RES[dataKey(member)];
   const collection = collectionName && NAMED_COLLECTIONS.has(collectionName) ? `${collectionName}, ` : "";
+  // A door with designs names its design after the model and its second
+  // colour after the door's: "Model CD, Design 12, … in the color White,
+  // Sandtone overlay"; "Model BD1CU, Design A, … in the color White, White
+  // inlay" (Brandon, 12/10/2026).
+  const designText = design ? `${designLabel(design)}, ` : "";
+  const secondName = secondColorName(input.model);
+  const overlay = secondName && input.overlayColor ? `, ${input.overlayColor} ${secondName}` : "";
   const description =
-    `Clopay ${collection}Model ${input.variant || input.model}, ${feetInches(input.width)} x ${heightLabel(input.height)}, ` +
-    `in the color ${input.color}, ${winText}, ` +
+    `Clopay ${collection}Model ${input.variant || input.model}, ${designText}${feetInches(input.width)} x ${heightLabel(input.height)}, ` +
+    `in the color ${input.color}${overlay}, ${winText}, ` +
     // An angle mount names what it fastens to, exactly as the commercial tool
     // phrases it, so the two read alike on a quote.
     (mountPhrase((input.trackMount ?? "bracket") as TrackMount)
