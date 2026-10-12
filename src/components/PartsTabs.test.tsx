@@ -184,12 +184,12 @@ describe("the Track buttons (6/10/2026)", () => {
     fireEvent.click(document.querySelectorAll("ul.partlist .partrow")[3] as HTMLElement);
     expect(document.querySelector("aside.quote .qtitle")?.textContent).toBe("9FT — Complete set, full vertical lift");
     const line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
-    expect(line.description).toBe("COMPLETE SET OF ANGLE MOUNT TRACK TO WOOD,  9FT HIGH,  FULL VERTICAL LIFT");
+    expect(line.description).toBe('COMPLETE SET OF 2" ANGLE MOUNT TRACK TO WOOD,  9FT HIGH,  FULL VERTICAL LIFT');
     expect(line.rate).toBe(699.95);
     fireEvent.click(screen.getByTestId("track-height-14"));
     expect(screen.queryByTestId("parts-copy-qb")).toBeNull();   // a new height, nothing picked yet
     fireEvent.click(document.querySelectorAll("ul.partlist .partrow")[1] as HTMLElement);
-    expect((await copiedQbLine(screen.getByTestId("parts-copy-qb"))).description).toBe("VERTICAL TRACK ONLY,  14FT HIGH");
+    expect((await copiedQbLine(screen.getByTestId("parts-copy-qb"))).description).toBe('2" ANGLE MOUNT TRACK TO WOOD,  14FT HIGH,  VERTICAL TRACK ONLY');
   });
 
   it("picks a residential set from the door size and radius, like the residential configuration (12/10/2026)", async () => {

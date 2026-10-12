@@ -25,13 +25,17 @@ const PRICES: Record<CommercialTrackHeight, [number, number, number, number, num
 
 export const COMMERCIAL_TRACK_SUB = "COMMERCIAL TRACKS";
 
-/** The five options, in the sheet's order; `name` is the shelf part's name and `desc` its QuickBooks line. */
+/**
+ * The five options, in the sheet's order; `name` is the shelf part's name and
+ * `desc` its QuickBooks line, worded as Brandon writes them (12/10/2026):
+ * "2" ANGLE MOUNT TRACK TO WOOD,  10FT HIGH,  VERTICAL TRACK ONLY".
+ */
 export const COMMERCIAL_TRACK_OPTIONS = [
-  { key: "set15", label: 'Complete set, 15" radius', name: (h: string) => `COMMERCIAL TRACKS:${h}FT,  15R`, desc: (h: string) => `COMPLETE SET OF ANGLE MOUNT TRACK TO WOOD,  ${h}FT HIGH,  15" RADIUS` },
-  { key: "vertical", label: "Vertical track only", name: (h: string) => `COMMERCIAL TRACKS:${h}FT,  VERTICAL ONLY`, desc: (h: string) => `VERTICAL TRACK ONLY,  ${h}FT HIGH` },
-  { key: "horizontal", label: "Horizontal track only", name: (h: string) => `COMMERCIAL TRACKS:${h}FT,  HORIZONTAL ONLY`, desc: (h: string) => `HORIZONTAL TRACK ONLY,  ${h}FT HIGH,  15" RADIUS` },
-  { key: "setFV", label: "Complete set, full vertical lift", name: (h: string) => `COMMERCIAL TRACKS:${h}FT,  FV`, desc: (h: string) => `COMPLETE SET OF ANGLE MOUNT TRACK TO WOOD,  ${h}FT HIGH,  FULL VERTICAL LIFT` },
-  { key: "fvTop", label: "Full vertical top track only", name: (h: string) => `COMMERCIAL TRACKS:${h}FT,  FV TOP ONLY`, desc: (h: string) => `FULL VERTICAL TOP TRACK ONLY,  ${h}FT HIGH` },
+  { key: "set15", label: 'Complete set, 15" radius', name: (h: string) => `COMMERCIAL TRACKS:${h}FT,  15R`, desc: (h: string) => `COMPLETE SET OF 2" ANGLE MOUNT TRACK TO WOOD,  ${h}FT HIGH,  15" RADIUS` },
+  { key: "vertical", label: "Vertical track only", name: (h: string) => `COMMERCIAL TRACKS:${h}FT,  VERTICAL ONLY`, desc: (h: string) => `2" ANGLE MOUNT TRACK TO WOOD,  ${h}FT HIGH,  VERTICAL TRACK ONLY` },
+  { key: "horizontal", label: "Horizontal track only", name: (h: string) => `COMMERCIAL TRACKS:${h}FT,  HORIZONTAL ONLY`, desc: (h: string) => `2" ANGLE MOUNT TRACK TO WOOD,  ${h}FT HIGH,  HORIZONTAL TRACK ONLY` },
+  { key: "setFV", label: "Complete set, full vertical lift", name: (h: string) => `COMMERCIAL TRACKS:${h}FT,  FV`, desc: (h: string) => `COMPLETE SET OF 2" ANGLE MOUNT TRACK TO WOOD,  ${h}FT HIGH,  FULL VERTICAL LIFT` },
+  { key: "fvTop", label: "Full vertical top track only", name: (h: string) => `COMMERCIAL TRACKS:${h}FT,  FV TOP ONLY`, desc: (h: string) => `2" ANGLE MOUNT TRACK TO WOOD,  ${h}FT HIGH,  FULL VERTICAL TOP TRACK ONLY` },
 ] as const;
 
 export interface CommercialTrackPart {

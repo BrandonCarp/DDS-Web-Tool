@@ -169,9 +169,9 @@ describe("Coachman special order grid (workbook of 12/10/2026)", () => {
     expect(price({ style: "glass", windesign: "REC13" })).toBe(price({ style: "glass" }));
     expect(price({ style: "glass", glassType: "rain", windesign: "SQ24", width: "16" })).toBe(price({ style: "glass", glassType: "rain", width: "16" }));
     expect(q({ style: "glass", windesign: "REC13" }).quote?.description)
-      .toContain("in the color White, REC13 double strength b grade windows in the top section, no inserts");
+      .toContain("in the color White, double strength b grade windows in the top section, REC13 design, 12″ radius track");
     expect(q({ style: "glass", glassType: "rain", windesign: "ARCH1", width: "16" }).quote?.description)
-      .toContain("ARCH1 rain dsb windows in the top section");
+      .toContain("rain dsb windows in the top section, ARCH1 design, 12″ radius track");
     // An arch SECTION id is not a glass design, and a glass design is not an arch section.
     expect(q({ style: "glass", windesign: "ARC1A" }).quote?.description).not.toContain("ARC1A");
     expect(q({ style: "inserts", windesign: "REC13", width: "16" }).quote?.description).toContain("arch windows in the top section");
@@ -230,13 +230,14 @@ describe("Coachman special order grid (workbook of 12/10/2026)", () => {
 
   it("names the design and the overlay colour on the line, and refuses a design Clopay does not build that way", () => {
     expect(q({ design: "12", overlayColor: "Sandtone" }).quote?.description)
-      .toBe("Clopay Coachman Collection, Model CD, Design 12, 8'0\" x 7'0\", in the color White, Sandtone overlay, solid no windows, 12″ radius track, galvanized torsion springs, no lock");
+      .toBe("Clopay Coachman Collection, Model CD12, 8'0\" x 7'0\", in the color White, overlays in the color Sandtone, solid no windows, 12″ radius track, galvanized torsion springs, no lock");
     expect(price({ design: "12", overlayColor: "Sandtone" })).toBe(price({}));   // the design and overlay change the words only
     expect(q({ design: "22", width: "12" }).reason).toMatch(/does not build design 22 at 12'0" x 7'0"/);
     expect(q({ design: "21", height: "8.3" }).reason).toMatch(/does not build design 21 at 8'0" x 8'3"/);
     expect(q({ design: "31", style: "glass" }).reason).toMatch(/series 3 and 4 designs with windows — design 31 is solid only/);
-    expect(q({ design: "31" }).quote?.description).toContain("Design 31");
-    expect(q({ design: "12", style: "glass" }).quote?.description).toContain("Design 12, 8'0\" x 7'0\", in the color White, double strength");
+    expect(q({ design: "31" }).quote?.description).toContain("Model CD31,");
+    expect(q({ design: "12", style: "glass", windesign: "SQ24", overlayColor: "White" }).quote?.description)
+      .toBe("Clopay Coachman Collection, Model CD12, 8'0\" x 7'0\", in the color White, overlays in the color White, double strength b grade windows in the top section, SQ24 design, 12″ radius track, galvanized torsion springs, no lock");
   });
 
   it("words the line as a Coachman", () => {

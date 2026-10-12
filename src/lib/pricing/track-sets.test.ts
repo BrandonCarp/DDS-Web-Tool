@@ -25,13 +25,13 @@ describe("commercial track sets off the TRACK_PRICING sheet", () => {
     expect(commercialTrackAt("14").map((x) => x.part.price)).toEqual([599.95, 349.95, 349.95, 899.95, 749.95]);
   });
 
-  it("words each line with its height, the sets as the sheet has them", () => {
+  it("words each line as Brandon writes them: the track, the height, then the piece", () => {
     const at14 = commercialTrackAt("14");
-    expect(at14[0].part.desc).toBe('COMPLETE SET OF ANGLE MOUNT TRACK TO WOOD,  14FT HIGH,  15" RADIUS');
-    expect(at14[3].part.desc).toBe("COMPLETE SET OF ANGLE MOUNT TRACK TO WOOD,  14FT HIGH,  FULL VERTICAL LIFT");
-    expect(at14[1].part.desc).toBe("VERTICAL TRACK ONLY,  14FT HIGH");
-    expect(at14[2].part.desc).toBe('HORIZONTAL TRACK ONLY,  14FT HIGH,  15" RADIUS');
-    expect(at14[4].part.desc).toBe("FULL VERTICAL TOP TRACK ONLY,  14FT HIGH");
+    expect(at14[0].part.desc).toBe('COMPLETE SET OF 2" ANGLE MOUNT TRACK TO WOOD,  14FT HIGH,  15" RADIUS');
+    expect(at14[3].part.desc).toBe('COMPLETE SET OF 2" ANGLE MOUNT TRACK TO WOOD,  14FT HIGH,  FULL VERTICAL LIFT');
+    expect(at14[1].part.desc).toBe('2" ANGLE MOUNT TRACK TO WOOD,  14FT HIGH,  VERTICAL TRACK ONLY');
+    expect(at14[2].part.desc).toBe('2" ANGLE MOUNT TRACK TO WOOD,  14FT HIGH,  HORIZONTAL TRACK ONLY');
+    expect(at14[4].part.desc).toBe('2" ANGLE MOUNT TRACK TO WOOD,  14FT HIGH,  FULL VERTICAL TOP TRACK ONLY');
     expect(commercialTrackHeight(at14[4].part)).toBe("14");
     expect(commercialTrackHeight(tracks().find((p) => p.name === '2" RAW TRACK')!)).toBeNull();
   });

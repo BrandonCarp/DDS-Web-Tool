@@ -27,7 +27,7 @@ import { highLiftPrice, mountPhrase, type TrackMount, type InclineStyle } from "
 import { ADDONS, GRADE_RES, COLLECTIONS_RES } from "./addons";
 import { dataKey } from "../model-groups";
 import { designName, plainWindowsFor, windowDesigns } from "./inserts";
-import { designBuilt, designLabel, designTakesWindows, hasDesigns, secondColorName, secondColorPricedAs } from "./door-designs";
+import { designBuilt, designTakesWindows, hasDesigns, modelWithDesign, secondColorName, secondColorPricedAs } from "./door-designs";
 import { SPECIAL_DOORS } from "./special-doors";
 import type { LockKey, SpringKey, TrackKey, WindowStyle } from "../types";
 
@@ -548,7 +548,9 @@ export function specialDoorQuote(
   // it: "ARC1A windows in the top section". A Coachman glass design names the
   // window the same way, ahead of the glass: "REC13 double strength b grade
   // windows in the top section".
-  const glassDesign = input.style === "glass" && designId ? `${designName(designId)} ` : "";
+  // …and on the line it is its own clause after the windows: "double strength
+  // b grade windows in the top section, SQ24 design" (Brandon, 12/10/2026).
+  const glassDesign = input.style === "glass" && designId ? `, ${designName(designId)} design` : "";
   // A plain window named by its order name, as the stock tab words it (its own
   // clause after "in the top section" — Brandon, 25/9/2026 there, 12/10/2026
   // here). The Gallery's and Bridgeport's other plain arch windows (Arch 2
@@ -564,21 +566,23 @@ export function specialDoorQuote(
       ? "solid no windows"
       : input.style === "inserts" && archSectionGroup(input.model)
       ? `${designId ? designName(designId) : "arch"} windows in the top section`
-      : `${glassDesign}${glassName ? glassName.toLowerCase() : grade || "single strength b grade"} windows in the top section, ${plain}` +
+      : glassDesign
+      ? `${glassName ? glassName.toLowerCase() : grade || "single strength b grade"} windows in the top section${glassDesign}`
+      : `${glassName ? glassName.toLowerCase() : grade || "single strength b grade"} windows in the top section, ${plain}` +
         (input.style === "inserts" && designId ? `${designName(designId)} inserts` : "no inserts");
   // Gallery, Bridgeport and Coachman doors carry the collection, as the stock tab
   // writes the Gallery ("CLOPAY GALLERY COLLECTION, MODEL GD1SU, ..." — Brandon, 8/10/2026).
   const collectionName = COLLECTIONS_RES[dataKey(member)];
   const collection = collectionName && NAMED_COLLECTIONS.has(collectionName) ? `${collectionName}, ` : "";
-  // A door with designs names its design after the model and its second
-  // colour after the door's: "Model CD, Design 12, … in the color White,
-  // Sandtone overlay"; "Model BD1CU, Design A, … in the color White, White
-  // inlay" (Brandon, 12/10/2026).
-  const designText = design ? `${designLabel(design)}, ` : "";
+  // A door with designs names its design with the model and its second colour
+  // after the door's, as Brandon words them (12/10/2026): "Model CD12, … in
+  // the color White, overlays in the color Sandtone"; "Model BD1CU, Design A,
+  // … in the color White, inlay in the color Charcoal".
+  const modelText = modelWithDesign(input.model, input.variant || input.model, design);
   const secondName = secondColorName(input.model);
-  const overlay = secondName && input.overlayColor ? `, ${input.overlayColor} ${secondName}` : "";
+  const overlay = secondName && input.overlayColor ? `, ${secondName === "overlay" ? "overlays" : "inlay"} in the color ${input.overlayColor}` : "";
   const description =
-    `Clopay ${collection}Model ${input.variant || input.model}, ${designText}${feetInches(input.width)} x ${heightLabel(input.height)}, ` +
+    `Clopay ${collection}Model ${modelText}, ${feetInches(input.width)} x ${heightLabel(input.height)}, ` +
     `in the color ${input.color}${overlay}, ${winText}, ` +
     // An angle mount names what it fastens to, exactly as the commercial tool
     // phrases it, so the two read alike on a quote.

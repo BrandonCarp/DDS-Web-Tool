@@ -257,10 +257,10 @@ describe("Bridgeport Inlay designs and inlay colour (Brandon, 12/10/2026)", () =
 
   it("names the design and the inlay on the line, at no adder, and refuses a design it does not have", () => {
     expect(cu({ design: "A", overlayColor: "White" }).quote?.description).toBe(
-      `Clopay Bridgeport Collection, Model BD1CU, Design A, 8'0" x 7'0", in the color White, White inlay, solid no windows, 12″ radius track, extension springs, no lock`,
+      `Clopay Bridgeport Collection, Model BD1CU, Design A, 8'0" x 7'0", in the color White, inlay in the color White, solid no windows, 12″ radius track, extension springs, no lock`,
     );
     expect(cu({ design: "X", overlayColor: "Charcoal", style: "glass" }).quote?.description)
-      .toContain("Model BD1CU, Design X, 8'0\" x 7'0\", in the color White, Charcoal inlay, double strength");
+      .toContain("Model BD1CU, Design X, 8'0\" x 7'0\", in the color White, inlay in the color Charcoal, double strength");
     expect(cu({ design: "A", overlayColor: "Charcoal" }).quote?.unitPrice).toBe(cu({}).quote?.unitPrice);
     expect(cu({ design: "12" }).reason).toMatch(/does not build design 12/);
     // A design on a door without them is left off the line.
@@ -289,6 +289,6 @@ describe("Bridgeport Inlay designs and inlay colour (Brandon, 12/10/2026)", () =
     const ug = cu({ design: "A", color: "Ultra-Grain Oak Medium Finish", overlayColor: "Medium Oak" }).quote!.unitPrice;
     expect(ug).toBeGreaterThan(white);
     expect(cu({ design: "A", color: "White", overlayColor: "Medium Oak" }).quote!.unitPrice).toBe(ug);
-    expect(cu({ design: "A", color: "White", overlayColor: "Slate Oak" }).quote?.description).toContain("in the color White, Slate Oak inlay");
+    expect(cu({ design: "A", color: "White", overlayColor: "Slate Oak" }).quote?.description).toContain("in the color White, inlay in the color Slate Oak");
   });
 });

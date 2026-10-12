@@ -89,8 +89,17 @@ export function designTakesWindows(group: string, design: string): boolean {
   return coachmanSeries(design) <= 2;
 }
 
-/** "Design 12", "Design A" — on the drop-down and the line. */
+/** "Design 12", "Design A" — on the drop-down. */
 export const designLabel = (design: string): string => `Design ${design}`;
+
+/**
+ * The model as the line writes it with its design: the Coachman runs them
+ * together, "CD12", as Clopay does; the Bridgeport Inlay is "BD1CU, Design A".
+ */
+export function modelWithDesign(group: string, model: string, design: string): string {
+  if (!design) return model;
+  return group === COACHMAN ? `${model}${design}` : `${model}, ${designLabel(design)}`;
+}
 
 /** The Coachman's overlay colours: the door's four, any pairing. */
 export const COACHMAN_OVERLAY_COLORS = ["White", "Almond", "Desert Tan", "Sandtone"] as const;

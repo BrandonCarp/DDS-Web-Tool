@@ -651,11 +651,11 @@ describe("special order — Bridgeport Steel from its own sheets (12/10/2026)", 
     expect(sel("so-overlay").value).toBe("White");
     expect(options("so-overlay").map((o) => o.value)).not.toContain("Ultra-Grain Oak Medium Finish");
     const line = await copiedQbLine(screen.getByTestId("copy-qb"));
-    expect(line.description).toMatch(/MODEL BD2CU, DESIGN V, 8'0" X 7'0", IN THE COLOR WHITE, WHITE INLAY, SOLID NO WINDOWS/i);
+    expect(line.description).toMatch(/MODEL BD2CU, DESIGN V, 8'0" X 7'0", IN THE COLOR WHITE, INLAY IN THE COLOR WHITE, SOLID NO WINDOWS/i);
     const extension = line.rate;
     fireEvent.change(sel("so-overlay"), { target: { value: "Charcoal" } });
     await settle();
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/IN THE COLOR WHITE, CHARCOAL INLAY/i);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/IN THE COLOR WHITE, INLAY IN THE COLOR CHARCOAL/i);
     expect(await total()).toBe(extension);                        // a standard inlay colour: words only
     // A premium inlay prices the door as a premium colour would.
     fireEvent.change(sel("so-overlay"), { target: { value: "Iron Ore" } });
@@ -787,10 +787,10 @@ describe("special order — the Coachman from CJ's sheet (12/10/2026)", () => {
     expect(options("so-overlay").map((o) => o.value)).toEqual(["White", "Almond", "Desert Tan", "Sandtone"]);
     expect(sel("so-overlay").value).toBe("White");
     expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description)
-      .toMatch(/COACHMAN COLLECTION, MODEL CD, DESIGN 12, 16'0" X 7'0", IN THE COLOR WHITE, WHITE OVERLAY, SOLID NO WINDOWS/i);
+      .toMatch(/COACHMAN COLLECTION, MODEL CD12, 16'0" X 7'0", IN THE COLOR WHITE, OVERLAYS IN THE COLOR WHITE, SOLID NO WINDOWS/i);
     fireEvent.change(sel("so-overlay"), { target: { value: "Sandtone" } });
     await settle();
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/IN THE COLOR WHITE, SANDTONE OVERLAY/i);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/IN THE COLOR WHITE, OVERLAYS IN THE COLOR SANDTONE/i);
     expect(await total()).toBe(at(2127, true));                              // words only
     // Designs 22, 23, 34 and 35 are not built at 12'0"; design 21 is not built at 8'3".
     setWidth("12");
@@ -825,11 +825,11 @@ describe("special order — the Coachman from CJ's sheet (12/10/2026)", () => {
     expect(framing.slice(10)).toEqual(["arch:ARC13A", "arch:ARC14A", "arch:ARC1A", "arch:ARC3A", "arch:ARC4A"]);
     expect(maybe("so-windesign")).toBeNull();                                 // no separate insert list on the Coachman
     expect(await total()).toBe(at(2127, true, Math.round(435 * 1.193 * K * 100) / 100 / 0.59));
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/ARCH1 DOUBLE STRENGTH B GRADE WINDOWS IN THE TOP SECTION/i);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/DOUBLE STRENGTH B GRADE WINDOWS IN THE TOP SECTION, ARCH1 DESIGN, 12″ RADIUS TRACK/i);
     fireEvent.change(sel("so-framing"), { target: { value: "design:REC13" } });
     await settle();
     expect(await total()).toBe(at(2127, true, Math.round(435 * 1.193 * K * 100) / 100 / 0.59));
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/REC13 DOUBLE STRENGTH B GRADE WINDOWS IN THE TOP SECTION/i);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/DOUBLE STRENGTH B GRADE WINDOWS IN THE TOP SECTION, REC13 DESIGN, 12″ RADIUS TRACK/i);
     fireEvent.change(sel("so-glass"), { target: { value: "rain" } });
     await settle();
     // Rain on a 16' door: CJ's 4-window rain figure over the solid door; no arch sections with a special glass.
@@ -841,7 +841,7 @@ describe("special order — the Coachman from CJ's sheet (12/10/2026)", () => {
     fireEvent.change(sel("so-framing"), { target: { value: "arch:ARC1A" } });
     await settle();
     expect(await total()).toBe(at(2127, true, 1055.5 / 0.59));
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/COACHMAN COLLECTION, MODEL CD, DESIGN 12, 16'0" X 7'0", IN THE COLOR WHITE, WHITE OVERLAY, ARC1A WINDOWS IN THE TOP SECTION/i);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/COACHMAN COLLECTION, MODEL CD12, 16'0" X 7'0", IN THE COLOR WHITE, OVERLAYS IN THE COLOR WHITE, ARC1A WINDOWS IN THE TOP SECTION/i);
   });
 
   it("offers no arch section on a 2-window door, and is solid only at 14'0\"", async () => {
