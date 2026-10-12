@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { quoteCommercial, commStockCheck } from "./commercial";
-import { torsionPrice, effPPI, upTo95, ID_ORDER } from "./data/torsion";
+import { torsionPrice, effPPI, upTo95, ID_ORDER, TORSION } from "./data/torsion";
 import { SPECIAL } from "./data/special-orders";
 
 const complete = (over: Record<string, unknown> = {}) => ({
@@ -161,6 +161,21 @@ describe("cut torsion springs, 30/9/2026 rules", () => {
       }
     }
     expect(torsionPrice("0.192", "2", 30)).toBe(54.95); // was $36.02 at .192's own rate
+  });
+
+  it("offers the shop's wire chart, per ID, as Brandon listed it on 12/10/2026", () => {
+    // A 393 wire on the 6" was priced but not offered, so it could not be
+    // quoted; the 3-3/4" was missing 218. These are the four lists, verbatim.
+    const chart = (codes: number[]) => codes.map((c) => String(c / 1000));
+    expect(TORSION.stock_wires).toEqual({
+      "2": chart([192, 207, 218, 225, 234, 243, 250, 262, 273, 283]),
+      "2.625": chart([207, 218, 225, 234, 243, 250, 262, 273, 283, 295, 306, 312, 319]),
+      "3.75": chart([218, 225, 234, 243, 250, 262, 273, 283, 295, 306, 312, 319, 331, 343, 362, 375]),
+      "6": chart([250, 262, 273, 283, 295, 306, 312, 319, 331, 343, 362, 375, 393, 406, 421, 430]),
+    });
+    // Every wire offered has a price for its ID (its own, or the next larger priced one).
+    for (const id of ID_ORDER) for (const w of TORSION.stock_wires[id]) expect(torsionPrice(w, id, 30), `${w} on ${id}`).not.toBeNull();
+    expect(torsionPrice("0.393", "6", 40)).toBe(upTo95(40 * 8.13 + 50.3 + 40 * 0.53));
   });
 });
 

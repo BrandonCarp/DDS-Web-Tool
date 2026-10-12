@@ -2,6 +2,12 @@
 // Price per inch by wire size and inside diameter, plus cone charge per ID and
 // 6-inch-ID filler. If a wire size isn't priced for an ID, the next LARGER
 // priced wire is used ("go up wire size until it works").
+//
+// stock_wires is what the configurator OFFERS for each ID: the shop's wire
+// chart, as Brandon listed it on 12/10/2026 (393 on the 6" had been priced but
+// not offered, and 218 on the 3-3/4" was missing). The price table carries a
+// few rates beyond these lists (295 on the 2", 437 on the 6"); those are not
+// offered. torsion tests pin the four lists to the chart.
 
 export const TORSION: {
   ppi: Record<string, Record<string, number>>;
@@ -114,7 +120,6 @@ export const TORSION: {
   },
   "stock_wires": {
     "2": [
-      "0.187",
       "0.192",
       "0.207",
       "0.218",
@@ -142,7 +147,7 @@ export const TORSION: {
       "0.319"
     ],
     "3.75": [
-      "0.207",
+      "0.218",
       "0.225",
       "0.234",
       "0.243",
@@ -172,6 +177,7 @@ export const TORSION: {
       "0.343",
       "0.362",
       "0.375",
+      "0.393",
       "0.406",
       "0.421",
       "0.43"
