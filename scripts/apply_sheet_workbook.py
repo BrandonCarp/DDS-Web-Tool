@@ -14,8 +14,8 @@ A workbook of this shape (Brandon's coworker, 9/10/2026) carries, per sheet:
 
   A1          the group: "BD1NU/BD1EU", or a single model "BD1CU"
   C1, E1      each member's narrowest width: "BD1NU - 7'8\" MIN"
-  A2          "MULTIPLER .898" — DDS cost is Clopay list x this x 0.99 / (1 - 0.0265),
-              plus the flat $15 every door carries (Brandon, 12/10/2026)
+  A2          "MULTIPLER .898" — DDS cost is Clopay list x this x 0.99 / (1 - 0.0265)
+              (plus the flat $15 every Coachman carries — Brandon, 12/10/2026)
   A3..A7      notes: the two ULTRA GRAIN lines (single / double, up to 8ft and
               8'2" and up), "10'2 AND UP DOUBLE DOOR", "ONLY AVAILABLE UP TO
               8FT" on the C models, and "NOT AVAILABLE IN THE FOLLOWING WIDTHS"
@@ -65,12 +65,12 @@ SPECIAL_DOORS = ROOT / "src/lib/pricing/data/special-doors.ts"
 SPECIAL_ORDERS = ROOT / "src/lib/pricing/data/special-orders.ts"
 
 K = 0.99 / (1 - 0.0265)  # the freight and surcharge factor on every cost formula
-# The flat figure DDS adds to every door on top of list x multiplier x k —
-# Brandon, 12/10/2026: "15 on top of everything". CJ's Coachman sheet carries
-# it in its formulas; the Gallery and Bridgeport sheets do not, so it is added
-# here, and a sheet column that leaves it off is loaded with it. A sheet that
-# carries some other flat figure stops the script.
-DOOR_FLAT = 15.0
+# The flat figure DDS adds to a door on top of list x multiplier x k, per
+# family ("flat" below) — Brandon, 12/10/2026: $15 on the Coachman only. CJ's
+# Coachman sheet carries it in its formulas, and a column that leaves it off
+# is loaded with it; the Gallery and Bridgeport sheets carry none and get
+# none. A sheet that carries some other flat figure stops the script.
+DOOR_FLAT = 0.0   # set per family by main()
 
 FAMILIES = {
     "bridgeport": {
@@ -79,6 +79,7 @@ FAMILIES = {
         "out": ROOT / "src/lib/pricing/data/bridgeport-glass.ts",
         "title": "Bridgeport Steel",
         "layout": "3layer",
+        "flat": 0.0,
     },
     "gallery": {
         "collection": "Gallery Collection",
@@ -86,6 +87,7 @@ FAMILIES = {
         "out": ROOT / "src/lib/pricing/data/gallery-glass.ts",
         "title": "Gallery Steel",
         "layout": "3layer",
+        "flat": 0.0,
     },
     # The Coachman workbook (CJ, 12/10/2026) is laid out differently — see
     # read_coachman_sheet — but lands in the same two places.
@@ -95,6 +97,7 @@ FAMILIES = {
         "out": ROOT / "src/lib/pricing/data/coachman-glass.ts",
         "title": "Coachman",
         "layout": "coachman",
+        "flat": 15.0,
     },
 }
 
@@ -293,9 +296,9 @@ def read_sheet(ws, wsf, margins):
             f = wsf.cell(r, cc).value
             col = get_column_letter(cc)
             # The cost formula: list x multiplier x 0.99 / (1 - 0.0265), plus
-            # the flat figure DDS adds to every door (+15 from 12/10/2026 —
-            # Brandon: "15 on top of everything"). A typed figure is accepted
-            # when it matches (the Gallery sheet from the 8th is all typed).
+            # any flat figure the family carries (DOOR_FLAT). A typed figure is
+            # accepted when it matches (the Gallery sheet from the 8th is all
+            # typed).
             exp = f"={get_column_letter(cc - 1)}{r}*{mult}*0.99/(1-0.0265)"
             if isinstance(f, str) and f.replace(" ", "").startswith(exp):
                 flat = flat_from_formula(f)
@@ -325,7 +328,7 @@ def read_sheet(ws, wsf, margins):
                     print(f"  fixing {ws.title} {get_column_letter(cc - 1)}{r} ({label}, {tier}FT): list {lst} -> {fix}")
                     lst = fix
             # What the app carries: the sheet's list at its multiplier, plus the
-            # flat every door gets, whether the sheet's own formula adds it or not.
+            # family's flat, whether the sheet's own formula adds it or not.
             prices[tier] = float(lst * mult * K + DOOR_FLAT)
         bands.append((lo, hi, label.strip(), prices))
         r += 1
@@ -333,9 +336,9 @@ def read_sheet(ws, wsf, margins):
         sys.exit(f"{ws.title}: no width rows under the heading")
     all_flats = sorted({x for v in flats.values() for x in v})
     if any(x not in (0.0, DOOR_FLAT) for x in all_flats):
-        problems.add(f"{ws.title}: the door cost cells add {all_flats} — every door carries {DOOR_FLAT:g}, or the sheet leaves it off and the script adds it")
-    if 0.0 in all_flats:
-        print(f"  note: {ws.title}: the sheet's cost cells carry no flat figure; every door loaded with the +{DOOR_FLAT:g} DDS adds")
+        problems.add(f"{ws.title}: the door cost cells add {all_flats} — this family carries {DOOR_FLAT:g}, or the sheet leaves it off and the script adds it")
+    if DOOR_FLAT and 0.0 in all_flats:
+        print(f"  note: {ws.title}: the sheet's cost cells carry no flat figure; every door loaded with the +{DOOR_FLAT:g} the family gets")
     flat = DOOR_FLAT
 
     # Solid-only widths: the SHORT / LONG note rows after the grid.
@@ -626,15 +629,15 @@ def read_coachman_sheet(ws, wsf, margins):
     if [w for w, *_ in rows] != sorted(w for w, *_ in rows):
         problems.add(f"{ws.title}: the widths are not in order")
 
-    # Every door carries DOOR_FLAT. A column whose formula leaves it off (the
-    # solid 10FT column on CJ's sheet) is loaded with it; any other flat figure
-    # stops the script.
+    # Every Coachman carries DOOR_FLAT. A column whose formula leaves it off
+    # (the solid 10FT column on CJ's sheet) is loaded with it; any other flat
+    # figure stops the script.
     flat = DOOR_FLAT
     for (block, tier), seen in sorted(flats.items()):
         if any(x not in (0.0, DOOR_FLAT) for x in seen):
-            problems.add(f"{ws.title}: the {block} {tier}FT column adds {sorted(seen)} — every door carries {DOOR_FLAT:g}")
-        elif 0.0 in seen:
-            print(f"  note: {ws.title}: the {block} {tier}FT column carries no flat figure; loaded with the +{DOOR_FLAT:g} every door gets")
+            problems.add(f"{ws.title}: the {block} {tier}FT column adds {sorted(seen)} — every Coachman carries {DOOR_FLAT:g}")
+        elif DOOR_FLAT and 0.0 in seen:
+            print(f"  note: {ws.title}: the {block} {tier}FT column carries no flat figure; loaded with the +{DOOR_FLAT:g} every Coachman gets")
     for w, label, solid, glass in rows:
         for cells in (solid, glass):
             for t, cell in cells.items():
@@ -902,6 +905,8 @@ def main():
     ap.add_argument("--check", action="store_true", help="validate and report, write nothing")
     args = ap.parse_args()
     fam = FAMILIES[args.family]
+    global DOOR_FLAT
+    DOOR_FLAT = fam["flat"]
     margins = margins_for(fam["collection"])
     wb = load_workbook(args.workbook, data_only=True)
     wbf = load_workbook(args.workbook, data_only=False)

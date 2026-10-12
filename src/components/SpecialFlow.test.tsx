@@ -605,7 +605,7 @@ describe("special order — Bridgeport Steel from its own sheets (12/10/2026)", 
     setHeight("7");
     fireEvent.change(sel("so-color"), { target: { value: "White" } });
     await settle();
-    expect(await total()).toBe(937.93);        // (569 list x .898 x k + the flat $15) at 43%
+    expect(await total()).toBe(Math.round((569 * 0.898 * (0.99 / (1 - 0.0265))) / 0.57 * 100) / 100);   // 569 list x .898 x k at 43%, no flat
     const glass = options("so-glass");
     expect(glass).toHaveLength(17);            // Solid, then the Gallery's fifteen plus 1/8" tempered; no single strength
     expect(glass[1].textContent).toBe("Double strength");
@@ -617,7 +617,7 @@ describe("special order — Bridgeport Steel from its own sheets (12/10/2026)", 
       "SQ22 inserts", "REC12 inserts", "SQ24 inserts", "REC14 inserts",
       "Arch 1 Grille inserts", "Arch 1 Vertical Grille inserts", "Arch 2 Grille inserts", "Arch 2 Vertical Grille inserts",
     ]);
-    expect(await total()).toBeCloseTo(937.93 + 200.91 / 0.57, 0);
+    expect(await total()).toBeCloseTo(Math.round((569 * 0.898 * (0.99 / (1 - 0.0265))) / 0.57 * 100) / 100 + 200.91 / 0.57, 0);
     setWidth("14.10");
     await settle();
     expect(maybe("so-no-windows")).toBeTruthy();
@@ -708,7 +708,7 @@ describe("special order — the four Gallery pairs from CJ's workbook (12/10/202
     setHeight("7");
     fireEvent.change(sel("so-color"), { target: { value: "White" } });
     await settle();
-    expect(await total()).toBe(Math.round((704 * 0.823 * (0.99 / (1 - 0.0265)) + 15) / 0.55 * 100) / 100); // the flat $15 on every door
+    expect(await total()).toBe(Math.round((704 * 0.823 * (0.99 / (1 - 0.0265))) / 0.55 * 100) / 100); // no flat: the $15 is the Coachman's
     expect(options("so-glass")).toHaveLength(16);   // Solid, then the Gallery's fifteen
     expect(options("so-color").map((o) => o.value)).toContain("Ultra-Grain Oak Medium Finish");
   });

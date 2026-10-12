@@ -6,18 +6,17 @@ import { GALLERY_GLASS, GALLERY_GLASS_TYPES, GALLERY_GROUPS, GALLERY_ULTRA_GRAIN
 import { SPECIAL } from "./data/special-orders";
 
 // Figures off CJ's GALLERY 3 LAYER workbook (12/10/2026), loaded as he has
-// it: DDS cost is Clopay list x .786 x 0.99 / (1 - 0.0265) + 15 on the door
-// (the $15 every door carries — Brandon), the glass at the same multiplier
-// with no +15, at the Gallery door margin, 43.25% since 8/10/2026: sell =
-// cost / 0.5675, each part rounded.
+// it: DDS cost is Clopay list x .786 x 0.99 / (1 - 0.0265) on the door and
+// the glass alike (the flat $15 is the Coachman's only — Brandon, 12/10/2026),
+// at the Gallery door margin, 43.25% since 8/10/2026: sell = cost / 0.5675,
+// each part rounded.
 // The grid is generated at the margin special-orders.ts carries
 // (scripts/apply_sheet_workbook.py), and a test below holds the two together.
 const M = 0.5675;
 const sell = (cost: number) => Math.round((cost / M) * 100) / 100;
-// A door's DDS cost: Clopay list x .786 x 0.99 / (1 - 0.0265), plus the flat
-// $15 every door carries (Brandon, 12/10/2026). Glass adders carry no $15.
+// A door's DDS cost: Clopay list x .786 x 0.99 / (1 - 0.0265), no flat.
 const K = 0.99 / (1 - 0.0265);
-const door = (list: number) => list * 0.786 * K + 15;
+const door = (list: number) => list * 0.786 * K;
 
 const q = (o: Record<string, unknown>) => specialDoorQuote({
   model: GALLERY_GROUP, variant: "GD1SP", width: "8", height: "7", color: "White", style: "solid",
@@ -202,7 +201,7 @@ describe("the GD2SP/GD2LP, GD1SU/GD1LU and GD2SU/GD2LU pairs (12/10/2026)", () =
   const margin = (group: string) => SPECIAL["Gallery Collection"].models![group].door;
   const sellAt = (group: string, cost: number) => Math.round((cost / (1 - margin(group) / 100)) * 100) / 100;
   const cost = (list: number, mult: number) => list * mult * K;   // a glass adder
-  const door = (list: number, mult: number) => cost(list, mult) + 15;  // a door: the flat $15 on top
+  const door = (list: number, mult: number) => cost(list, mult);       // a door: the same, no flat
   const at = (group: string, variant: string, o: Record<string, unknown> = {}) => specialDoorQuote({
     model: group, variant, width: "8", height: "7", color: "White", style: "solid",
     track: "r12", spring: "extension", lock: "none", ...o,

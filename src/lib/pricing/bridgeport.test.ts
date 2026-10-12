@@ -17,9 +17,9 @@ const K = 0.99 / (1 - 0.0265);
 const margin = (group: string) => SPECIAL["Bridgeport Collection"].models![group].door;
 const sellAt = (group: string, cost: number) => Math.round((cost / (1 - margin(group) / 100)) * 100) / 100;
 // The script lifts the sheet's unrounded cost, so the door figure is exact to
-// the cent; a glass adder is rounded to cents on its own before the lift. A
-// door carries the flat $15 every door does (Brandon, 12/10/2026); glass does not.
-const cost = (list: number, mult: number) => list * mult * K + 15;
+// the cent; a glass adder is rounded to cents on its own before the lift. No
+// flat on a Bridgeport: the $15 is the Coachman's only (Brandon, 12/10/2026).
+const cost = (list: number, mult: number) => list * mult * K;
 const glass = (list: number, mult: number) => list * mult * K;
 const cents = (list: number, mult: number) => Math.round(list * mult * K * 100) / 100;
 
