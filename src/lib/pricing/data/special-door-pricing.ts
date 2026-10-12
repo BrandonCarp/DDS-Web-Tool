@@ -93,6 +93,20 @@ const NAMED_COLLECTIONS = new Set(["Gallery Collection", "Bridgeport Collection"
  */
 const TORSION_INCLUDED = new Set(["CD"]);
 
+/**
+ * Groups whose window options are held back from the configurator for now —
+ * the Coachman (Brandon, 12/10/2026), until Clopay's window pricing is
+ * settled: iStore charges 436 list for an ARCH4 top section at 8', CJ's sheet
+ * 218. The glass tables and their tests stay as they are; the special order
+ * tab offers Solid alone.
+ */
+const GLASS_ON_HOLD = new Set(["CD"]);
+
+/** True when a group's windows are not offered on the special order tab for now. */
+export function glassOnHold(group: string): boolean {
+  return GLASS_ON_HOLD.has(group);
+}
+
 /** True when a group's grid prices include torsion at every height. */
 export function torsionIncluded(group: string): boolean {
   return TORSION_INCLUDED.has(group);

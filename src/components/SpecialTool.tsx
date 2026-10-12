@@ -13,7 +13,7 @@ import {
 import {
   specialDoorQuote, hasGrid, griddedWidths, griddedHeights,
   offeredHeights, tierForOfferedHeight, heightLabel,
-  groupMembers, groupHasWidthLimits, heightForcesTorsion, torsionIncluded, galvanizedOnly, shouldSplitGroup,
+  groupMembers, groupHasWidthLimits, heightForcesTorsion, torsionIncluded, galvanizedOnly, glassOnHold, shouldSplitGroup,
   minWidthFor, excludedWidthsFor,
   parseModelSelection, modelSelectionValue, windowsOfferedAt,
 } from "@/lib/pricing/data/special-door-pricing";
@@ -230,8 +230,10 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   // and a sheet-priced door with no glass band at a width has no window price:
   // the glass list is Solid alone there.
   const isSheet = isSheetGroup(modelGroup);
-  const gWindowsOk = !gWidth || (windowsOfferedAt(modelMember || undefined, gWidth) && (!isSheet || panelStylesFor(modelGroup, gWidth).length > 0)
-    && (!gDesigned || designTakesWindows(modelGroup, gDesignEff)));
+  // The Coachman's windows are held back for now (glassOnHold): Solid alone, no note.
+  const gGlassHeld = gridded && glassOnHold(modelGroup);
+  const gWindowsOk = !gGlassHeld && (!gWidth || (windowsOfferedAt(modelMember || undefined, gWidth) && (!isSheet || panelStylesFor(modelGroup, gWidth).length > 0)
+    && (!gDesigned || designTakesWindows(modelGroup, gDesignEff))));
   const gGlassOptions = gridded && gWidth ? glassTypeOptions(modelGroup, gWidth, gWindowsOk) : [];
   const gGlassEff = gGlassOptions.some((g) => g.id === gGlass) ? gGlass : "solid";
   const gFramings = gridded && gWidth ? framingOptions(modelGroup, member, gWidth, gGlassEff) : [];
@@ -596,7 +598,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                         {(gGlassOptions.length ? gGlassOptions : [{ id: "solid", label: "Solid — no windows" }]).map((g) => <option key={g.id} value={g.id}>{g.label}</option>)}
                       </select>
                     </div>
-                    {gWidth && !gWindowsOk && (!gDesigned || designTakesWindows(modelGroup, gDesignEff)) && (
+                    {gWidth && !gWindowsOk && !gGlassHeld && (!gDesigned || designTakesWindows(modelGroup, gDesignEff)) && (
                       <div className="muted-note" style={{ marginTop: 6 }} data-testid="so-no-windows">
                         Not built with windows at this width — solid only.
                       </div>

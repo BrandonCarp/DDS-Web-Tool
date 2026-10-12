@@ -806,59 +806,24 @@ describe("special order — the Coachman from CJ's sheet (12/10/2026)", () => {
     expect(maybe("so-no-windows")).toBeNull();                       // no note: the glass list says it
     design("13");
     await settle();
-    expect(options("so-glass").map((o) => o.value)).toContain("dsb");
+    expect(options("so-glass").map((o) => o.value)).toEqual(["solid"]);    // windows on hold on every design for now
   });
 
-  it("names the window choices as the sheet does: glass top section, the other glass, arch windows", async () => {
+  it("offers Solid alone while the Coachman's windows are on hold (Brandon, 12/10/2026), with no note", async () => {
     await pickCoachman();
     setWidth("16");
     setHeight("7");
     design("12");
     fireEvent.change(sel("so-color"), { target: { value: "White" } });
     await settle();
-    expect(options("so-glass").map((o) => o.textContent)).toEqual(["Solid — no windows", "Double strength", "Obscure", "Frosted DSB", "Rain DSB", "Seeded DSB"]);
-    fireEvent.change(sel("so-glass"), { target: { value: "dsb" } });
-    await settle();
-    // The framing names the glass design — ten, at no adder — then the arch sections the sheet prices at 16'.
-    const framing = options("so-framing").map((o) => o.value);
-    expect(framing.slice(0, 10)).toEqual(["design:ARCH1", "design:ARCH3", "design:ARCH4", "design:ARCH13", "design:ARCH14", "design:REC11", "design:REC13", "design:REC14", "design:SQ23", "design:SQ24"]);
-    expect(framing.slice(10)).toEqual(["arch:ARC13A", "arch:ARC14A", "arch:ARC1A", "arch:ARC3A", "arch:ARC4A"]);
-    expect(maybe("so-windesign")).toBeNull();                                 // no separate insert list on the Coachman
-    expect(await total()).toBe(at(2127, true, Math.round(435 * 1.193 * K * 100) / 100 / 0.59));
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/DOUBLE STRENGTH B GRADE WINDOWS IN THE TOP SECTION, ARCH1 DESIGN, 12″ RADIUS TRACK/i);
-    fireEvent.change(sel("so-framing"), { target: { value: "design:REC13" } });
-    await settle();
-    expect(await total()).toBe(at(2127, true, Math.round(435 * 1.193 * K * 100) / 100 / 0.59));
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/DOUBLE STRENGTH B GRADE WINDOWS IN THE TOP SECTION, REC13 DESIGN, 12″ RADIUS TRACK/i);
-    fireEvent.change(sel("so-glass"), { target: { value: "rain" } });
-    await settle();
-    // Rain on a 16' door: CJ's 4-window rain figure over the solid door; no arch sections with a special glass.
-    expect(options("so-framing")).toHaveLength(10);
-    expect(await total()).toBe(at(2127, true, 903.85 / 0.59));
-    // An arch section goes with the plain glass top section.
-    fireEvent.change(sel("so-glass"), { target: { value: "dsb" } });
-    await settle();
-    fireEvent.change(sel("so-framing"), { target: { value: "arch:ARC1A" } });
-    await settle();
-    expect(await total()).toBe(at(2127, true, 1055.5 / 0.59));
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/COACHMAN COLLECTION, MODEL CD12, 16'0" X 7'0", IN THE COLOR WHITE, OVERLAYS IN THE COLOR WHITE, ARC1A WINDOWS IN THE TOP SECTION/i);
-  });
-
-  it("offers no arch section on a 2-window door, and is solid only at 14'0\"", async () => {
-    await pickCoachman();
-    setWidth("8");
-    setHeight("7");
-    design("12");
-    fireEvent.change(sel("so-color"), { target: { value: "White" } });
-    await settle();
-    fireEvent.change(sel("so-glass"), { target: { value: "dsb" } });
-    await settle();
-    expect(options("so-framing").map((o) => o.value).filter((v) => v.startsWith("arch:"))).toEqual([]);   // no arch section on a 2-window door
-    expect(await total()).toBe(at(1135, false, Math.round(218 * 1.193 * K * 100) / 100 / 0.59));
+    expect(options("so-glass").map((o) => o.textContent)).toEqual(["Solid — no windows"]);
+    expect(maybe("so-no-windows")).toBeNull();
+    expect(sel("so-framing")).toHaveProperty("disabled", true);
+    expect(await total()).toBe(at(2127, true));
     setWidth("14");
     await settle();
-    expect(maybe("so-no-windows")).toBeTruthy();
     expect(options("so-glass").map((o) => o.value)).toEqual(["solid"]);
+    expect(maybe("so-no-windows")).toBeNull();
     expect(await total()).toBe(at(1861, true));
   });
 });
