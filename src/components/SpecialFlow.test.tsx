@@ -19,14 +19,23 @@ afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 const sel = (id: string) => screen.getByTestId(id) as HTMLSelectElement;
 const maybe = (id: string) => screen.queryByTestId(id);
 const settle = () => new Promise((r) => setTimeout(r, 40));
+/** The size is two boxes each — feet, then inches — like the stock tab (12/10/2026). */
+const setSize = (which: "width" | "height", key: string) => {
+  const [ft, inch] = key.split(".");
+  fireEvent.change(sel(`so-${which}-ft`), { target: { value: ft } });
+  fireEvent.change(sel(`so-${which}-in`), { target: { value: inch ?? "0" } });
+};
+const setWidth = (key: string) => setSize("width", key);
+const setHeight = (key: string) => setSize("height", key);
+const options = (id: string) => [...sel(id).options];
 
 /** Open the configurator and give it a size, so the track group unlocks. */
 async function configured(width = "9", height = "7") {
   await pickDoor();
   fireEvent.click(maybe("so-configure")!);
   await settle();
-  fireEvent.change(sel("so-width"), { target: { value: width } });
-  fireEvent.change(sel("so-height"), { target: { value: height } });
+  setWidth(width);
+  setHeight(height);
   fireEvent.change(sel("so-color"), { target: { value: "White" } });
   await settle();
 }
@@ -49,7 +58,7 @@ describe("special order — two steps", () => {
     render(<SpecialTool />);
     expect(maybe("so-scope")).toBeTruthy();
     expect(maybe("so-mfr")).toBeNull();
-    expect(maybe("so-width")).toBeNull();
+    expect(maybe("so-width-ft")).toBeNull();
     expect(maybe("so-configure")).toBeNull();
   });
 
@@ -57,18 +66,18 @@ describe("special order — two steps", () => {
     await pickDoor();
     expect(maybe("so-configure")).toBeTruthy();
     // The size picker stays hidden until Configure, as on the stock tabs.
-    expect(maybe("so-width")).toBeNull();
+    expect(maybe("so-width-ft")).toBeNull();
   });
 
   it("opens the configurator on Configure", async () => {
     await pickDoor();
     fireEvent.click(maybe("so-configure")!);
     await settle();
-    for (const t of ["so-width", "so-height", "so-style"]) expect(maybe(t), t).toBeTruthy();
+    for (const t of ["so-width-ft", "so-width-in", "so-height-ft", "so-height-in", "so-glass", "so-framing", "so-section"]) expect(maybe(t), t).toBeTruthy();
     // Track waits for a size.
     expect(maybe("so-track")).toBeNull();
-    fireEvent.change(sel("so-width"), { target: { value: "9" } });
-    fireEvent.change(sel("so-height"), { target: { value: "7" } });
+    setWidth("9");
+    setHeight("7");
     fireEvent.change(sel("so-color"), { target: { value: "White" } });
     await settle();
     for (const t of ["so-track", "so-track-mount"]) expect(maybe(t), t).toBeTruthy();
@@ -81,7 +90,7 @@ describe("special order — two steps", () => {
     await settle();
     fireEvent.click(maybe("so-back")!);
     await settle();
-    expect(maybe("so-width")).toBeNull();
+    expect(maybe("so-width-ft")).toBeNull();
     expect(maybe("so-configure")).toBeTruthy();
   });
 
@@ -146,11 +155,11 @@ describe("special order — glass types reach the price", () => {
     await pickDoor();
     fireEvent.click(maybe("so-configure")!);
     await settle();
-    fireEvent.change(sel("so-width"), { target: { value: "8" } });
-    fireEvent.change(sel("so-height"), { target: { value: "7" } });
+    setWidth("8");
+    setHeight("7");
     fireEvent.change(sel("so-color"), { target: { value: "White" } });
     await settle();
-    fireEvent.change(sel("so-style"), { target: { value: "glass" } });
+    fireEvent.change(sel("so-glass"), { target: { value: "ssb" } });
     await settle();
     expect(await total()).toBeCloseTo(897.37, 1);
     fireEvent.change(sel("so-glass"), { target: { value: "insulated_rain" } });
@@ -163,30 +172,29 @@ describe("special order — glass types reach the price", () => {
     await pickDoor();
     fireEvent.click(maybe("so-configure")!);
     await settle();
-    fireEvent.change(sel("so-width"), { target: { value: "9" } });
-    fireEvent.change(sel("so-height"), { target: { value: "7" } });
+    setWidth("9");
+    setHeight("7");
     fireEvent.change(sel("so-color"), { target: { value: "White" } });
     await settle();
-    fireEvent.change(sel("so-style"), { target: { value: "glass" } });
-    await settle();
-    expect([...sel("so-glass").options].filter((o) => o.value)).toHaveLength(9);
+    // Solid, single strength, then the nine named types — one list, like the stock tab's.
+    expect(options("so-glass").map((o) => o.value)).toEqual(["solid", "ssb", "dsb", "acrylic", "obscure", "insulated", "insulated_obscure", "frosted", "insulated_frosted", "rain", "insulated_rain"]);
   });
 
-  it("offers long panel glass only from 8 feet", async () => {
+  it("offers long windows in the framing only from 8 feet", async () => {
     await pickDoor();
     fireEvent.click(maybe("so-configure")!);
     await settle();
-    fireEvent.change(sel("so-width"), { target: { value: "7" } });
-    fireEvent.change(sel("so-height"), { target: { value: "7" } });
+    setWidth("7");
+    setHeight("7");
     fireEvent.change(sel("so-color"), { target: { value: "White" } });
     await settle();
-    fireEvent.change(sel("so-style"), { target: { value: "glass" } });
+    fireEvent.change(sel("so-glass"), { target: { value: "ssb" } });
     await settle();
-    // Only short is available, so the panel row is hidden entirely.
-    expect(maybe("so-panel")).toBeNull();
-    fireEvent.change(sel("so-width"), { target: { value: "12" } });
+    // Only short windows at 7'0": the plain short window and Inserts.
+    expect(options("so-framing").map((o) => o.textContent)).toEqual(['PLAIN SHORT 19-1/2" X 12"', "Inserts"]);
+    setWidth("12");
     await settle();
-    expect(maybe("so-panel")).toBeTruthy();
+    expect(options("so-framing").map((o) => o.textContent)).toEqual(['PLAIN SHORT 19-1/2" X 12"', 'PLAIN LONG 40-1/2" X 12"', "Inserts — short windows", "Inserts — long windows"]);
   });
 });
 
@@ -227,20 +235,20 @@ describe("special order — condensed layout", () => {
     expect(document.querySelectorAll(".row2").length).toBe(0);
   });
 
-  it("calls the default glass single strength", async () => {
+  it("starts solid, and calls the grid's own glass single strength", async () => {
     // It is not "standard" — it is the SSB column in Clopay's own book.
     await pickDoor();
     fireEvent.click(maybe("so-configure")!);
     await settle();
-    fireEvent.change(sel("so-width"), { target: { value: "8" } });
-    fireEvent.change(sel("so-height"), { target: { value: "7" } });
+    setWidth("8");
+    setHeight("7");
     fireEvent.change(sel("so-color"), { target: { value: "White" } });
     await settle();
-    fireEvent.change(sel("so-style"), { target: { value: "glass" } });
-    await settle();
-    const first = [...sel("so-glass").options][0];
-    expect(first.text).toBe("Single strength");
-    expect(first.value).toBe("");
+    expect(sel("so-glass").value).toBe("solid");
+    const [first, second] = options("so-glass");
+    expect(first.text).toBe("Solid — no windows");
+    expect(second.text).toBe("Single strength B grade");
+    expect(second.value).toBe("ssb");
   });
 });
 
@@ -269,16 +277,16 @@ describe("special order — reads like the stock tabs", () => {
     fireEvent.click(maybe("so-configure")!);
     await settle();
     const off = (id: string) => sel(id).disabled;
-    expect(off("so-width")).toBe(false);
+    expect(off("so-width-ft")).toBe(false);
     expect(off("so-color")).toBe(true);
-    expect(off("so-style")).toBe(true);
-    fireEvent.change(sel("so-width"), { target: { value: "9" } });
-    fireEvent.change(sel("so-height"), { target: { value: "7" } });
+    expect(off("so-glass")).toBe(true);
+    setWidth("9");
+    setHeight("7");
     expect(off("so-color")).toBe(false);
     expect(sel("so-color").value).toBe("");
-    expect(off("so-style")).toBe(true);
+    expect(off("so-glass")).toBe(true);
     fireEvent.change(sel("so-color"), { target: { value: "White" } });
-    expect(off("so-style")).toBe(false);
+    expect(off("so-glass")).toBe(false);
     expect(maybe("so-cfg-hint")).toBeNull();
   });
 
@@ -419,10 +427,10 @@ describe("special order — track waits for a size", () => {
     await pickDoor();
     fireEvent.click(maybe("so-configure")!);
     await settle();
-    fireEvent.change(sel("so-width"), { target: { value: "9" } });
+    setWidth("9");
     await settle();
     expect(maybe("so-track")).toBeNull();
-    fireEvent.change(sel("so-height"), { target: { value: "7" } });
+    setHeight("7");
     fireEvent.change(sel("so-color"), { target: { value: "White" } });
     await settle();
     expect(maybe("so-track")).toBeTruthy();
@@ -458,7 +466,7 @@ describe("special order — nothing prices before Configure", () => {
     // typed Clopay total needs one to be a quote for.
     render(<SpecialTool />);
     expect(document.querySelector('input[inputmode="decimal"]')).toBeNull();
-    expect(maybe("so-width")).toBeNull();
+    expect(maybe("so-width-ft")).toBeNull();
   });
 
   it("says what is still missing, step by step", () => {
@@ -480,7 +488,7 @@ describe("special order — nothing prices before Configure", () => {
     await settle();
     // The size picker for the grid, and the Clopay total for anything it
     // cannot build.
-    expect(maybe("so-width")).toBeTruthy();
+    expect(maybe("so-width-ft")).toBeTruthy();
     expect(document.querySelector('input[inputmode="decimal"]')).toBeTruthy();
     expect(maybe("so-not-ready")).toBeNull();
   });
@@ -548,5 +556,191 @@ describe("special order — the Clopay total is always reachable", () => {
     expect(totalField()).toBeNull();
     fireEvent.change(sel("so-scope"), { target: { value: "residential" } });
     expect(totalField()).toBeNull();
+  });
+});
+
+describe("special order — Bridgeport Steel from its own sheets (12/10/2026)", () => {
+  async function pickBridgeport(member = "BD1NU") {
+    render(<SpecialTool />);
+    fireEvent.change(sel("so-scope"), { target: { value: "residential" } });
+    fireEvent.change(sel("so-mfr"), { target: { value: "Clopay" } });
+    fireEvent.change(sel("so-series"), { target: { value: "Bridgeport Collection" } });
+    const m = sel("so-model");
+    const v = [...m.options].map((o) => o.value).find((x) => x.endsWith(`:${member}`));
+    fireEvent.change(m, { target: { value: v } });
+    await settle();
+  }
+  const total = async () => (await copiedQbLine(screen.getByTestId("copy-qb"))).rate;
+
+  it("lists the six gridded designs first, each on its own, the C designs marked new", async () => {
+    await pickBridgeport();
+    const labels = [...sel("so-model").options].map((o) => o.textContent).slice(1, 7);
+    expect(labels).toEqual(["BD1EU", "BD1NU", "BD1CU (new)", "BD2EU", "BD2NU", "BD2CU (new)"]);
+    expect(maybe("so-configure")).toBeTruthy();
+  });
+
+  it("offers the widths Clopay builds, prices the door and its glass, and says where windows are not built", async () => {
+    await pickBridgeport();
+    fireEvent.click(maybe("so-configure")!);
+    await settle();
+    const feet = options("so-width-ft").map((o) => o.value);
+    expect(feet[1]).toBe("7");                // the BD1NU starts at 7'8"…
+    fireEvent.change(sel("so-width-ft"), { target: { value: "7" } });
+    expect(options("so-width-in").map((o) => o.value)).toEqual(["8", "10"]);
+    fireEvent.change(sel("so-width-ft"), { target: { value: "10" } });
+    expect(options("so-width-in").map((o) => o.value)).toEqual(["0"]);   // not built 10'2" to 11'4"
+    expect(feet).toContain("12");             // on the sheet since 12/10/2026
+    expect(feet).toContain("18");
+    setWidth("8");
+    setHeight("7");
+    fireEvent.change(sel("so-color"), { target: { value: "White" } });
+    await settle();
+    expect(await total()).toBe(937.93);        // (569 list x .898 x k + the flat $15) at 43%
+    const glass = options("so-glass");
+    expect(glass).toHaveLength(17);            // Solid, then the Gallery's fifteen plus 1/8" tempered; no single strength
+    expect(glass[1].textContent).toBe("Double strength");
+    fireEvent.change(sel("so-glass"), { target: { value: "dsb" } });
+    await settle();
+    // Short or long windows, a free choice, in the framing.
+    expect(options("so-framing").map((o) => o.textContent)).toEqual(["Plain short windows", "Plain long windows", "Inserts — short windows", "Inserts — long windows"]);
+    expect(await total()).toBeCloseTo(937.93 + 200.91 / 0.57, 0);
+    setWidth("14.10");
+    await settle();
+    expect(maybe("so-no-windows")).toBeTruthy();
+    expect(options("so-glass").map((o) => o.value)).toEqual(["solid"]);
+  });
+
+  it("offers heights to 8'0\" only on the C designs, and lists the Ultra-Grain finishes", async () => {
+    await pickBridgeport("BD2CU");
+    fireEvent.click(maybe("so-configure")!);
+    await settle();
+    const heights = options("so-height-ft").map((o) => o.value).filter(Boolean);
+    expect(heights.slice(-1)[0]).toBe("8");
+    expect([...sel("so-color").options].map((o) => o.value)).toContain("Ultra-Grain Oak Medium Finish");
+  });
+});
+
+describe("special order — the four Gallery pairs from CJ's workbook (12/10/2026)", () => {
+  async function pickGallery(member: string) {
+    render(<SpecialTool />);
+    fireEvent.change(sel("so-scope"), { target: { value: "residential" } });
+    fireEvent.change(sel("so-mfr"), { target: { value: "Clopay" } });
+    fireEvent.change(sel("so-series"), { target: { value: "Gallery Collection" } });
+    const m = sel("so-model");
+    const v = [...m.options].map((o) => o.value).find((x) => x.endsWith(`:${member}`));
+    fireEvent.change(m, { target: { value: v } });
+    await settle();
+  }
+  const total = async () => (await copiedQbLine(screen.getByTestId("copy-qb"))).rate;
+
+  it("lists the eight gridded models first, each on its own", async () => {
+    await pickGallery("GD2SU");
+    const labels = [...sel("so-model").options].map((o) => o.textContent).slice(1, 9);
+    expect(labels).toEqual(["GD1LP", "GD1SP", "GD2LP", "GD2SP", "GD1LU", "GD1SU", "GD2LU", "GD2SU"]);
+    expect(maybe("so-configure")).toBeTruthy();
+  });
+
+  it("configures a GD2SU off its own sheet: list x .823 at 45%, the Gallery's fifteen glass types", async () => {
+    await pickGallery("GD2SU");
+    fireEvent.click(maybe("so-configure")!);
+    await settle();
+    expect(options("so-width-ft").map((o) => o.value)[1]).toBe("6");
+    expect(options("so-width-ft").map((o) => o.value).slice(-1)[0]).toBe("20");
+    fireEvent.change(sel("so-width-ft"), { target: { value: "6" } });
+    expect(options("so-width-in").map((o) => o.value)).toEqual(["2", "4", "6", "8", "10"]);   // the GD2SU starts at 6'2"
+    setWidth("8");
+    setHeight("7");
+    fireEvent.change(sel("so-color"), { target: { value: "White" } });
+    await settle();
+    expect(await total()).toBe(Math.round((704 * 0.823 * (0.99 / (1 - 0.0265)) + 15) / 0.55 * 100) / 100); // the flat $15 on every door
+    expect(options("so-glass")).toHaveLength(16);   // Solid, then the Gallery's fifteen
+    expect(options("so-color").map((o) => o.value)).toContain("Ultra-Grain Oak Medium Finish");
+  });
+});
+
+describe("special order — the Coachman from CJ's sheet (12/10/2026)", () => {
+  async function pickCoachman() {
+    render(<SpecialTool />);
+    fireEvent.change(sel("so-scope"), { target: { value: "residential" } });
+    fireEvent.change(sel("so-mfr"), { target: { value: "Clopay" } });
+    fireEvent.change(sel("so-series"), { target: { value: "Coachman Collection" } });
+    const m = sel("so-model");
+    const v = [...m.options].map((o) => o.value).find((x) => x.endsWith(":CD"));
+    fireEvent.change(m, { target: { value: v } });
+    await settle();
+    fireEvent.click(maybe("so-configure")!);
+    await settle();
+  }
+  const total = async () => (await copiedQbLine(screen.getByTestId("copy-qb"))).rate;
+  const K = 0.99 / (1 - 0.0265);
+  const sell = (list: number) => Math.round(((list * 1.193 * K + 15) / 0.59) * 100) / 100;
+
+  it("offers the 26 Coachman widths, 7' to 10', torsion only, and prices off the sheet", async () => {
+    await pickCoachman();
+    const feet = options("so-width-ft").map((o) => o.value).filter(Boolean);
+    expect(feet).toEqual(["6", "7", "8", "9", "10", "12", "13", "14", "15", "16", "17", "18"]);   // the 26 Coachman widths, by foot
+    fireEvent.change(sel("so-width-ft"), { target: { value: "6" } });
+    expect(options("so-width-in").map((o) => o.value)).toEqual(["2", "4"]);
+    fireEvent.change(sel("so-width-ft"), { target: { value: "15" } });
+    expect(options("so-width-in").map((o) => o.value)).toEqual(["0", "2", "6", "8"]);
+    expect(options("so-height-ft").map((o) => o.value)).toContain("10");
+    setWidth("16");
+    setHeight("7");
+    fireEvent.change(sel("so-color"), { target: { value: "White" } });
+    await settle();
+    expect(await total()).toBe(sell(2127));
+    expect([...sel("so-spring").options].map((o) => o.value)).toEqual(["torsion", "galvanized"]);
+    expect([...sel("so-color").options].map((o) => o.value)).not.toContain("Ultra-Grain Oak Medium Finish");
+  });
+
+  it("names the window choices as the sheet does: glass top section, the other glass, arch windows", async () => {
+    await pickCoachman();
+    setWidth("16");
+    setHeight("7");
+    fireEvent.change(sel("so-color"), { target: { value: "White" } });
+    await settle();
+    expect(options("so-glass").map((o) => o.textContent)).toEqual(["Solid — no windows", "Double strength", "Obscure", "Frosted DSB", "Rain DSB", "Seeded DSB"]);
+    fireEvent.change(sel("so-glass"), { target: { value: "dsb" } });
+    await settle();
+    // The framing names the glass design — ten, at no adder — then the arch sections the sheet prices at 16'.
+    const framing = options("so-framing").map((o) => o.value);
+    expect(framing.slice(0, 10)).toEqual(["design:ARCH1", "design:ARCH3", "design:ARCH4", "design:ARCH13", "design:ARCH14", "design:REC11", "design:REC13", "design:REC14", "design:SQ23", "design:SQ24"]);
+    expect(framing.slice(10)).toEqual(["arch:ARC13A", "arch:ARC14A", "arch:ARC1A", "arch:ARC3A", "arch:ARC4A"]);
+    expect(maybe("so-windesign")).toBeNull();                                 // no separate insert list on the Coachman
+    expect(await total()).toBe(Math.round((sell(2127) + Math.round(435 * 1.193 * K * 100) / 100 / 0.59) * 100) / 100);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/ARCH1 DOUBLE STRENGTH B GRADE WINDOWS IN THE TOP SECTION/i);
+    fireEvent.change(sel("so-framing"), { target: { value: "design:REC13" } });
+    await settle();
+    expect(await total()).toBe(Math.round((sell(2127) + Math.round(435 * 1.193 * K * 100) / 100 / 0.59) * 100) / 100);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/REC13 DOUBLE STRENGTH B GRADE WINDOWS IN THE TOP SECTION/i);
+    fireEvent.change(sel("so-glass"), { target: { value: "rain" } });
+    await settle();
+    // Rain on a 16' door: CJ's 4-window rain figure over the solid door; no arch sections with a special glass.
+    expect(options("so-framing")).toHaveLength(10);
+    expect(await total()).toBe(Math.round((sell(2127) + 903.85 / 0.59) * 100) / 100);
+    // An arch section goes with the plain glass top section.
+    fireEvent.change(sel("so-glass"), { target: { value: "dsb" } });
+    await settle();
+    fireEvent.change(sel("so-framing"), { target: { value: "arch:ARC1A" } });
+    await settle();
+    expect(await total()).toBe(Math.round((sell(2127) + 1055.5 / 0.59) * 100) / 100);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/COACHMAN COLLECTION, MODEL CD, 16'0" X 7'0", IN THE COLOR WHITE, ARC1A WINDOWS IN THE TOP SECTION/i);
+  });
+
+  it("offers no arch section on a 2-window door, and is solid only at 14'0\"", async () => {
+    await pickCoachman();
+    setWidth("8");
+    setHeight("7");
+    fireEvent.change(sel("so-color"), { target: { value: "White" } });
+    await settle();
+    fireEvent.change(sel("so-glass"), { target: { value: "dsb" } });
+    await settle();
+    expect(options("so-framing").map((o) => o.value).filter((v) => v.startsWith("arch:"))).toEqual([]);   // no arch section on a 2-window door
+    expect(await total()).toBe(Math.round((sell(1135) + Math.round(218 * 1.193 * K * 100) / 100 / 0.59) * 100) / 100);
+    setWidth("14");
+    await settle();
+    expect(maybe("so-no-windows")).toBeTruthy();
+    expect(options("so-glass").map((o) => o.value)).toEqual(["solid"]);
+    expect(await total()).toBe(sell(1861));
   });
 });

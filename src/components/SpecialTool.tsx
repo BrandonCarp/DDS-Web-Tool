@@ -13,19 +13,21 @@ import {
 import {
   specialDoorQuote, hasGrid, griddedWidths, griddedHeights,
   offeredHeights, tierForOfferedHeight, heightLabel,
-  groupMembers, groupHasWidthLimits, heightForcesTorsion, shouldSplitGroup,
+  groupMembers, groupHasWidthLimits, heightForcesTorsion, torsionIncluded, shouldSplitGroup,
   minWidthFor, excludedWidthsFor,
   parseModelSelection, modelSelectionValue, windowsOfferedAt,
 } from "@/lib/pricing/data/special-door-pricing";
 import { COLORS, specialOrderColors } from "@/lib/pricing/data/catalog-meta";
-import { glassOptionsFor, panelStylesFor, glassTakesInserts, GALLERY_GROUP, type PanelStyle } from "@/lib/pricing/data/so-glass";
+import { panelStylesFor, isSheetGroup } from "@/lib/pricing/data/so-glass";
+import {
+  splitSize, sizeKey, feetOptions, inchOptions, glassTypeOptions, framingOptions, insertDesigns, windowChoice, GLAZED_SECTIONS,
+} from "@/lib/pricing/data/so-framing";
 import {
   TRACK_MOUNTS, INCLINE_STYLES, highLiftChoices, highLiftPrice, canTakeHighLift,
   type TrackMount, type InclineStyle,
 } from "@/lib/pricing/data/track-lift";
 import { dataKey } from "@/lib/pricing/model-groups";
 import { homeownerMarkupForBand } from "@/lib/pricing/engine";
-import { windowDesigns } from "@/lib/pricing/data/inserts";
 import { OptionButtons, type ButtonOption } from "./OptionButtons";
 import { QtyStepper } from "./QtyStepper";
 
@@ -114,20 +116,27 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const [kind, setKind] = useState<"door" | "section">("door");
   // Gridded configurator (4050/4051/4053 today). Independent of the manual
   // total below, which stays available for anything the grid does not cover.
-  const [gWidth, setGWidth] = useState("");
-  const [gStyle, setGStyle] = useState<"solid" | "glass" | "inserts">("solid");
+  // The size as two boxes each, feet and inches, like the stock tab's (Brandon,
+  // 12/10/2026); the grid key ("8.2") is put together from them.
+  const [gWidthFt, setGWidthFt] = useState("");
+  const [gWidthIn, setGWidthIn] = useState("0");
+  const [gHeightFt, setGHeightFt] = useState("");
+  const [gHeightIn, setGHeightIn] = useState("0");
   // No default: the counter has to choose the color — Brandon, 25/9/2026.
   const [gColor, setGColor] = useState("");
   const [gTrack, setGTrack] = useState("r12");
   const [gSpring, setGSpring] = useState("extension");
   const [gLock, setGLock] = useState("none");
-  const [gDesign, setGDesign] = useState("");
-  const [gHeight, setGHeight] = useState("");
   const [gVariant, setGVariant] = useState("");
   // Two steps, the same shape as the stock tabs: choose the door, then build it.
   const [step, setStep] = useState(1);
-  const [gGlass, setGGlass] = useState("");
-  const [gPanel, setGPanel] = useState<PanelStyle>("short");
+  // The window choices read like the stock tab's: a glass type (Solid first),
+  // the section glazed, the framing (plain windows, then inserts) and the
+  // insert design — so-framing.ts turns them into what the quote needs.
+  const [gGlass, setGGlass] = useState("solid");
+  const [gFraming, setGFraming] = useState("");
+  const [gDesign, setGDesign] = useState("");
+  const [gSection, setGSection] = useState("4");
   // Track mount, high lift and incline. These live on special order rather than
   // residential: a stock door ships on standard track, and anything else is an
   // order Clopay builds to spec.
@@ -156,7 +165,10 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const isPinnedModel = (v: string) => SPECIAL_COMMERCIAL_PINNED.includes(v);
   const commSeriesName = isPinnedModel(cSeries) ? (commercialSeriesOf(cSeries) ?? "") : cSeries;
   const commModels = SPECIAL_COMMERCIAL_SERIES.find((g) => g.name === commSeriesName)?.models ?? [];
-  const resetGrid = () => { setGHeight(""); setGWidth(""); setGColor(""); setGDesign(""); setGVariant(""); };
+  const resetGrid = () => {
+    setGWidthFt(""); setGWidthIn("0"); setGHeightFt(""); setGHeightIn("0"); setGColor("");
+    setGGlass("solid"); setGFraming(""); setGDesign(""); setGVariant("");
+  };
   const pickCommSeries = (v: string) => {
     setCSeries(v);
     // A pinned pick IS the model. A series pick clears it so one must be chosen.
@@ -168,21 +180,13 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   // The configurator appears only for models Clopay has gridded. Everything
   // else keeps the manual total path exactly as it was.
   const gridded = scope === "residential" && !!modelGroup && hasGrid(modelGroup);
-  // Heights come from the grid rather than a constant. Both models carry 7'0"
-  // and 8'0" as of UPDATED_PRICING_9-8; a third arrives by regenerating the
-  // data, with no change needed here.
-  const gHeights = gridded ? offeredHeights(modelGroup) : [];
-  const gTier = gridded && gHeight ? tierForOfferedHeight(gHeight, griddedHeights(modelGroup)) : null;
   // The grid is keyed by margin group; the models inside it are not built in
   // the same range, so the width list narrows once a specific one is chosen.
   const gMembers = gridded ? groupMembers(modelGroup) : [];
   // The top-level dropdown already names the model for a split group, so the
   // old "which model" question is asked only where it is still unanswered.
   const gNeedsVariant = gridded && groupHasWidthLimits(modelGroup) && !modelMember;
-  // Width does not wait on height, and it keys on the GROUP — the dropdown
-  // value for a split group is "4050/4051/4053:4051", which is not a grid key.
-  // The member is the variant, so a 4053 selected up top narrows the widths
-  // without needing the old sub-select.
+  const member = modelMember || gVariant || modelGroup.split("/")[0];
   // A model with size restrictions routes a lot of real orders to the manual
   // box — the 4053 is built in 55 of the group's 73 widths — so for those the
   // total entry is presented as a normal required field rather than an
@@ -190,33 +194,38 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const restricted =
     !!modelMember && (minWidthFor(modelMember) !== null || excludedWidthsFor(modelMember).length > 0);
 
-  const gWidths = gridded
-    ? griddedWidths(modelGroup, gTier ?? undefined, modelMember || gVariant || undefined)
-    : [];
+  // Width and height: every size the grid carries for this model, offered as
+  // feet then inches, like the stock tab. The inches follow the feet chosen.
+  const gWidths = gridded ? griddedWidths(modelGroup, undefined, modelMember || gVariant || undefined) : [];
+  const gHeights = gridded ? offeredHeights(modelGroup) : [];
+  const widthFeet = feetOptions(gWidths);
+  const widthInches = inchOptions(gWidths, gWidthFt);
+  const heightFeet = feetOptions(gHeights);
+  const heightInches = inchOptions(gHeights, gHeightFt);
+  const gWidth = gWidths.includes(sizeKey(gWidthFt, gWidthIn)) ? sizeKey(gWidthFt, gWidthIn) : "";
+  const gHeight = gHeights.includes(sizeKey(gHeightFt, gHeightIn)) ? sizeKey(gHeightFt, gHeightIn) : "";
+  const pickWidthFt = (ft: string) => { setGWidthFt(ft); setGWidthIn(ft ? (inchOptions(gWidths, ft)[0] ?? "0") : "0"); setSaved(false); };
+  const pickHeightFt = (ft: string) => { setGHeightFt(ft); setGHeightIn(ft ? (inchOptions(gHeights, ft)[0] ?? "0") : "0"); setSaved(false); };
+  const gTier = gridded && gHeight ? tierForOfferedHeight(gHeight, griddedHeights(modelGroup)) : null;
   // At 9'0" and above the book prints no extension column — torsion is included
   // in the price, so the dropdown locks to it rather than offering a choice
-  // that would be ignored.
-  const gTorsionOnly = gridded && !!gHeight && heightForcesTorsion(gHeight, griddedHeights(modelGroup));
-  // The specific glass types DDS has priced for this model and width.
-  // Panel style changes the window count, and so the glass price. Long panels
-  // start at 8'0", so a narrow door offers short only and the row is hidden.
-  // The Gallery offers the same short-or-long choice as the 4050: long panel
-  // glass prices at the GD1LP figure whichever model is picked (8/10/2026).
-  // Long panels start at 7'8", so a narrower door offers short only.
-  const isGallery = modelGroup === GALLERY_GROUP;
-  const soPanels = gridded && gWidth ? panelStylesFor(modelGroup, gWidth) : [];
-  const gPanelEff: PanelStyle = soPanels.includes(gPanel) ? gPanel : (soPanels[0] ?? "short");
-  const soGlass = gridded && gWidth ? glassOptionsFor(modelGroup, gPanelEff, gWidth) : [];
-  // The Gallery has no single strength: double strength is its base glass, so
-  // the dropdown starts there instead of on a placeholder.
-  const gGlassEff = isGallery ? (soGlass.some((g) => g.id === gGlass) ? gGlass : "dsb") : gGlass;
-  // Inserts are not offered on every Gallery glass (acrylic): the Inserts
-  // style is taken away where its glass cannot take them.
-  const gInsertsOk = !isGallery || !gWidth || glassTakesInserts(modelGroup, gPanelEff, gWidth, gGlassEff);
-  // Some Gallery widths are built solid only (Clopay's note, 9/10/2026): the
-  // window choices come off and the style falls back to solid there.
-  const gWindowsOk = !gWidth || windowsOfferedAt(modelMember || undefined, gWidth);
-  const gStyleEff = !gWindowsOk ? "solid" : gStyle === "inserts" && !gInsertsOk ? "glass" : gStyle;
+  // that would be ignored. A sheet priced with torsion at every height (the
+  // Coachman) locks it from the start.
+  const gTorsionOnly = gridded && !!gHeight && (heightForcesTorsion(gHeight, griddedHeights(modelGroup)) || torsionIncluded(modelGroup));
+
+  // Window choices. Some widths are built solid only (Clopay's note, 9/10/2026),
+  // and a sheet-priced door with no glass band at a width has no window price:
+  // the glass list is Solid alone there.
+  const isSheet = isSheetGroup(modelGroup);
+  const gWindowsOk = !gWidth || (windowsOfferedAt(modelMember || undefined, gWidth) && (!isSheet || panelStylesFor(modelGroup, gWidth).length > 0));
+  const gGlassOptions = gridded && gWidth ? glassTypeOptions(modelGroup, gWidth, gWindowsOk) : [];
+  const gGlassEff = gGlassOptions.some((g) => g.id === gGlass) ? gGlass : "solid";
+  const gFramings = gridded && gWidth ? framingOptions(modelGroup, member, gWidth, gGlassEff) : [];
+  const gFramingEff = gFramings.find((f) => f.value === gFraming) ?? gFramings[0];
+  const gDesigns = gFramingEff?.kind === "insert" ? insertDesigns(member, gWidth, gFramingEff.panel) : [];
+  const gDesignEff = gDesigns.some((d) => d.id === gDesign) ? gDesign : "";
+  const choice = windowChoice(gGlassEff, gFramingEff, gDesignEff);
+  const gStyleEff = choice.style;
 
   // High lift is torsion only, and caps at the door height less 3 inches —
   // above that the door is full vertical lift, a different track entirely.
@@ -224,12 +233,12 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const gSpringUsed = gTorsionOnly && gSpring === "extension" ? "torsion" : gSpring;
   const gLiftAllowed = canTakeHighLift(gSpringUsed);
   const gIsLift = gTrack === "high_lift";
-  const gHeightFt = Number((gHeight || "0").split(".")[0]);
-  const gHeightIn = Number((gHeight || "0").split(".")[1] ?? 0);
-  const gLiftSteps = highLiftChoices(gHeightFt, gHeightIn);
+  const gHeightFtN = Number(gHeightFt || "0");
+  const gHeightInN = Number(gHeightIn || "0");
+  const gLiftSteps = highLiftChoices(gHeightFtN, gHeightInN);
   const gEffLift = gLiftSteps.length && gLift > gLiftSteps[gLiftSteps.length - 1] ? 0 : gLift;
   const gLiftNote = gIsLift && gEffLift
-    ? highLiftPrice({ mount: gMount, incline: gIncline, heightFt: gHeightFt, heightIn: gHeightIn, inches: gEffLift }).reason ?? ""
+    ? highLiftPrice({ mount: gMount, incline: gIncline, heightFt: gHeightFtN, heightIn: gHeightInN, inches: gEffLift }).reason ?? ""
     : "";
 
   // Track depends on the door size — high lift caps at the height, and the
@@ -256,25 +265,12 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const gOpen = gSizeSet && gColorChosen;
 
   const gResult = gridded && gWidth && gHeight && gColorChosen
-    ? specialDoorQuote({ model: modelGroup, width: gWidth, height: gHeight, style: gStyleEff, color: gColor,
-        windesign: gDesign || undefined, variant: (modelMember || gVariant) || undefined,
+    ? specialDoorQuote({ model: modelGroup, width: gWidth, height: gHeight, color: gColor,
+        style: choice.style, glassType: choice.glassType, panelStyle: choice.panelStyle, windesign: choice.windesign, plainWindow: choice.plainWindow,
+        variant: (modelMember || gVariant) || undefined,
         track: gTrack as never, spring: gSpringUsed as never, lock: gLock as never,
-        glassType: gStyleEff !== "solid" ? gGlassEff || undefined : undefined, panelStyle: gPanelEff,
         trackMount: gMount, incline: gIncline, highLiftInches: gIsLift ? gEffLift : 0 })
     : null;
-  const widthLabel = (w: string) => {
-    const [ft, inch] = w.split(".");
-    return `${ft}'${inch ?? 0}"`;
-  };
-  // The same insert list a residential 4050 offers, filtered the same way — by
-  // model, style and door width.
-
-  // The design list the stock tab offers the same door — the Gallery's arches
-  // and grilles when a GD1SP or GD1LP is picked. On the Gallery the price is
-  // one flat inserts adder from its sheet (8/10/2026); the design names the line.
-  const gDesigns = gridded && gStyleEff === "inserts" && gWidth
-    ? windowDesigns(modelMember || model, "inserts", gWidth.split(".")[0])
-    : [];
 
   // Grid first when it produced a price and the counter has not typed a total.
   // A typed total always wins: it is what someone reaches for precisely when
@@ -463,7 +459,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                       {Object.keys(ser.models).flatMap((g) =>
                         shouldSplitGroup(g)
                           ? groupMembers(g).map((m) => (
-                              <option key={`${g}:${m}`} value={modelSelectionValue(g, m)}>{m}</option>
+                              <option key={`${g}:${m}`} value={modelSelectionValue(g, m)}>{m}{ser.models![g].new ? " (new)" : ""}</option>
                             ))
                           : [<option key={g} value={g}>{g}{ser.models![g].new ? " (new)" : ""}</option>],
                       )}
@@ -500,7 +496,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                   {gNeedsVariant && (
                     <div className="grow"><label>Which model</label>
                       <div className="ctl selectwrap">
-                        <select data-testid="so-variant" value={gVariant} onChange={(e) => { setGVariant(e.target.value); setGWidth(""); setSaved(false); }}>
+                        <select data-testid="so-variant" value={gVariant} onChange={(e) => { setGVariant(e.target.value); setGWidthFt(""); setGWidthIn("0"); setSaved(false); }}>
                           <option value="">Select…</option>
                           {gMembers.map((m) => <option key={m} value={m}>{m}</option>)}
                         </select>
@@ -509,19 +505,37 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                     </div>
                   )}
                   <div className="grow"><label>Width</label>
-                    <div className="ctl selectwrap">
-                      <select data-testid="so-width" value={gWidth} onChange={(e) => { setGWidth(e.target.value); setSaved(false); }}>
-                        <option value="">Select…</option>
-                        {gWidths.map((w) => <option key={w} value={w}>{widthLabel(w)}</option>)}
-                      </select>
+                    <div className="ctl dimrow">
+                      <div className="selectwrap dimsel">
+                        <select data-testid="so-width-ft" value={gWidthFt} onChange={(e) => pickWidthFt(e.target.value)}>
+                          <option value="">ft</option>
+                          {widthFeet.map((f) => <option key={f} value={f}>{f}</option>)}
+                        </select>
+                      </div>
+                      <span className="u">ft</span>
+                      <div className="selectwrap dimsel">
+                        <select data-testid="so-width-in" value={gWidthIn} disabled={!gWidthFt} onChange={(e) => { setGWidthIn(e.target.value); setSaved(false); }}>
+                          {(widthInches.length ? widthInches : ["0"]).map((v) => <option key={v} value={v}>{v}</option>)}
+                        </select>
+                      </div>
+                      <span className="u">in</span>
                     </div>
                   </div>
                   <div className="grow"><label>Height</label>
-                    <div className="ctl selectwrap">
-                      <select data-testid="so-height" value={gHeight} onChange={(e) => { setGHeight(e.target.value); setSaved(false); }}>
-                        <option value="">Select…</option>
-                        {gHeights.map((h) => <option key={h} value={h}>{heightLabel(h)}</option>)}
-                      </select>
+                    <div className="ctl dimrow">
+                      <div className="selectwrap dimsel">
+                        <select data-testid="so-height-ft" value={gHeightFt} onChange={(e) => pickHeightFt(e.target.value)}>
+                          <option value="">ft</option>
+                          {heightFeet.map((f) => <option key={f} value={f}>{f}</option>)}
+                        </select>
+                      </div>
+                      <span className="u">ft</span>
+                      <div className="selectwrap dimsel">
+                        <select data-testid="so-height-in" value={gHeightIn} disabled={!gHeightFt} onChange={(e) => { setGHeightIn(e.target.value); setSaved(false); }}>
+                          {(heightInches.length ? heightInches : ["0"]).map((v) => <option key={v} value={v}>{v}</option>)}
+                        </select>
+                      </div>
+                      <span className="u">in</span>
                     </div>
                   </div>
                   <div className="grow"><label>Color</label>
@@ -532,57 +546,44 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                       </select>
                     </div>
                   </div>
-                  <div className="grow"><label>Windows</label>
+                  </div>
+                  <div className="ggroup">
+                  <div className="ghdr">Window options</div>
+                  <div className="grow"><label>Glass type</label>
                     <div className="ctl selectwrap">
-                      <select disabled={!gOpen} data-testid="so-style" value={gStyleEff} onChange={(e) => { setGStyle(e.target.value as "solid" | "glass" | "inserts"); setSaved(false); }}>
-                        <option value="solid">Solid — no windows</option>
-                        {gWindowsOk && <option value="glass">Glass</option>}
-                        {gWindowsOk && gInsertsOk && <option value="inserts">Inserts</option>}
+                      <select disabled={!gOpen} data-testid="so-glass" value={gGlassEff}
+                        onChange={(e) => { setGGlass(e.target.value); setGFraming(""); setGDesign(""); setSaved(false); }}>
+                        {(gGlassOptions.length ? gGlassOptions : [{ id: "solid", label: "Solid — no windows" }]).map((g) => <option key={g.id} value={g.id}>{g.label}</option>)}
                       </select>
                     </div>
-                    {!gWindowsOk && (
+                    {gWidth && !gWindowsOk && (
                       <div className="muted-note" style={{ marginTop: 6 }} data-testid="so-no-windows">
                         Not built with windows at this width — solid only.
                       </div>
                     )}
                   </div>
+                  <div className="grow"><label>Section glazed</label>
+                    <div className="ctl selectwrap">
+                      <select disabled={!gOpen || gStyleEff === "solid"} data-testid="so-section" value={gSection}
+                        onChange={(e) => { setGSection(e.target.value); setSaved(false); }}>
+                        {GLAZED_SECTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                      </select>
+                    </div>
                   </div>
-                  <div className="ggroup">
-                  <div className="ghdr">Window options</div>
-                  {gStyleEff !== "solid" && soPanels.length > 1 && (
-                    <div className="grow"><label>Panel style</label>
-                      <div className="ctl selectwrap">
-                        <select disabled={!gOpen} data-testid="so-panel" value={gPanelEff}
-                          onChange={(e) => {
-                            setGPanel(e.target.value as PanelStyle);
-                            // The 4050's glass list differs by panel, so the glass starts over;
-                            // the Gallery prices the same fifteen either way, so the choice holds.
-                            if (!isGallery) setGGlass("");
-                            setSaved(false);
-                          }}>
-                          {soPanels.map((p) => (
-                            <option key={p} value={p}>{p === "short" ? "Short panel glass" : "Long panel glass"}</option>
-                          ))}
-                        </select>
-                      </div>
+                  <div className="grow"><label>Framing</label>
+                    <div className="ctl selectwrap">
+                      <select disabled={!gOpen || gStyleEff === "solid"} data-testid="so-framing" value={gFramingEff?.value ?? ""}
+                        onChange={(e) => { setGFraming(e.target.value); setGDesign(""); setSaved(false); }}>
+                        {gFramings.length === 0 && <option value="">Plain (no insert)</option>}
+                        {gFramings.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
+                      </select>
                     </div>
-                  )}
-                  {gStyleEff !== "solid" && soGlass.length > 0 && (
-                    <div className="grow"><label>Glass type</label>
-                      <div className="ctl selectwrap">
-                        <select disabled={!gOpen} data-testid="so-glass" value={gGlassEff}
-                          onChange={(e) => { setGGlass(e.target.value); setSaved(false); }}>
-                          {!isGallery && <option value="">Single strength</option>}
-                          {soGlass.map((g) => <option key={g.id} value={g.id}>{g.label}</option>)}
-                        </select>
-                      </div>
-                    </div>
-                  )}
+                  </div>
                   {gDesigns.length > 0 && (
                     <div className="grow">
                       <label>Inserts</label>
                       <div className="ctl selectwrap">
-                        <select disabled={!gOpen} data-testid="so-windesign" value={gDesign} onChange={(e) => { setGDesign(e.target.value); setSaved(false); }}>
+                        <select disabled={!gOpen} data-testid="so-windesign" value={gDesignEff} onChange={(e) => { setGDesign(e.target.value); setSaved(false); }}>
                           <option value="">Select an insert…</option>
                           {gDesigns.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
                         </select>

@@ -28,8 +28,8 @@ describe("parts list", () => {
 
   it("writes the footage onto a per-foot description", () => {
     // The sheet leaves a trailing comma for exactly this.
-    // Raw track names the stick it bills (below): 10FT asked, 12FT sold.
-    expect(partDescription(find("TRACKS", '2" RAW TRACK'), 10)).toBe('2" RAW TRACK,  12FT');
+    // Raw track says the footage asked for; the stick is billed (below): 10FT asked, 12FT sold, line says 10FT.
+    expect(partDescription(find("TRACKS", '2" RAW TRACK'), 10)).toBe('2" RAW TRACK,  10FT');
     expect(partDescription(find("BRUSH SEAL / RETAINERS", '1" BRUSH SEAL'), 50)).toBe(
       '1" BRUSH SEAL,  50FT',
     );
@@ -139,6 +139,15 @@ describe("raw track sticks (30/9/2026)", () => {
       expect(billedFeet(raw2(), asked), `${asked}FT`).toBe(billed);
     }
     expect(partPrice(raw3(), 13)).toBe(24 * 8.5);
+  });
+
+  it("says the footage asked for on the line, whatever stick it bills (12/10/2026)", () => {
+    expect(partDescription(raw3(), 16)).toBe('3" RAW TRACK,  16FT');
+    expect(partPrice(raw3(), 16)).toBe(24 * 8.5);
+    expect(partDescription(raw2(), 7)).toBe('2" RAW TRACK,  7FT');
+    expect(partPrice(raw2(), 7)).toBe(12 * 3.75);
+    // A retainer still names the stick it bills.
+    expect(partDescription(find("RETAINERS", '2" U RETAINER'), 12)).toBe('2"  U  RETAINER,  16FT');
   });
 
   it("is sold from 1FT to 24FT, and nothing else is limited", () => {

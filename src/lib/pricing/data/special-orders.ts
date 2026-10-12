@@ -33,9 +33,24 @@ export const SPECIAL: Record<string, SpecialSeries> = {
   "Gallery Collection": {
     "type": "margin",
     "models": {
+      // The four pairs on the Gallery workbook (12/10/2026) come first.
       "GD1LP/GD1SP": {
         "door": 43.25,
         "section": 49
+      },
+      "GD2LP/GD2SP": {
+        "door": 45,
+        "section": 49
+      },
+      "GD1LU/GD1SU": {
+        "door": 43,
+        "section": 49,
+        "ug": true
+      },
+      "GD2LU/GD2SU": {
+        "door": 45,
+        "section": 49,
+        "ug": true
       },
       "GD4L/GD4S": {
         "door": 56,
@@ -52,20 +67,6 @@ export const SPECIAL: Record<string, SpecialSeries> = {
       "GD5LV/GD5SV": {
         "door": 52,
         "section": 49
-      },
-      "GD2LP/GD2SP": {
-        "door": 45,
-        "section": 49
-      },
-      "GD1LU/GD1SU": {
-        "door": 43,
-        "section": 49,
-        "ug": true
-      },
-      "GD2LU/GD2SU": {
-        "door": 45,
-        "section": 49,
-        "ug": true
       }
     },
     "ug": {
@@ -103,6 +104,26 @@ export const SPECIAL: Record<string, SpecialSeries> = {
   "Bridgeport Collection": {
     "type": "margin",
     "models": {
+      // The four groups on the Bridgeport workbook (9/10/2026) come first, as
+      // the gridded Gallery pair does in its list.
+      "BD1EU/BD1NU": {
+        "door": 43,
+        "section": 49
+      },
+      "BD1CU": {
+        "door": 40,
+        "section": 49,
+        "new": true
+      },
+      "BD2EU/BD2NU": {
+        "door": 48,
+        "section": 49
+      },
+      "BD2CU": {
+        "door": 40,
+        "section": 49,
+        "new": true
+      },
       "BD4E/BD4N": {
         "door": 54,
         "section": 49
@@ -135,24 +156,6 @@ export const SPECIAL: Record<string, SpecialSeries> = {
         "section": 49
       },
       "BD5CV": {
-        "door": 40,
-        "section": 49,
-        "new": true
-      },
-      "BD1EU/BD1NU": {
-        "door": 43,
-        "section": 49
-      },
-      "BD1CU": {
-        "door": 40,
-        "section": 49,
-        "new": true
-      },
-      "BD2EU/BD2NU": {
-        "door": 48,
-        "section": 49
-      },
-      "BD2CU": {
         "door": 40,
         "section": 49,
         "new": true
@@ -244,6 +247,11 @@ export const SPECIAL: Record<string, SpecialSeries> = {
     "type": "margin",
     "models": {
       "4308": {
+        "door": 45,
+        "section": 49
+      },
+      // Missing from the dropdown until 12/10/2026 (Brandon); the 4308's terms.
+      "4309": {
         "door": 45,
         "section": 49
       },

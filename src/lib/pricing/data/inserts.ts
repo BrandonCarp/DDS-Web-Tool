@@ -51,6 +51,41 @@ export const ARCHITECTURAL: InsertDesign[] = [
   { id: "ARCH3VERT", name: "Arch 3 Vertical Grille", cat: "arch", w: ["16"] },
 ];
 
+/**
+ * Coachman arch window sections — the five named on CJ's Coachman sheet
+ * (12/10/2026): "ARC13A, ARC14A, ARC1A, ARC3A AND ARC4A ADD $793.45 TO SOLID
+ * PRICE (12FT TO 15FT, 3 WINDOW SECTION)", and $1055.50 on a 4-window door.
+ * They are the window, not an insert over one; the price rides in the inserts
+ * slot of the Coachman's sheet bands (coachman-glass.ts), and the special
+ * order tab offers them only where the sheet prices them.
+ */
+export const COACHMAN_ARCH: InsertDesign[] = [
+  { id: "ARC13A", name: "ARC13A", cat: "arch" },
+  { id: "ARC14A", name: "ARC14A", cat: "arch" },
+  { id: "ARC1A", name: "ARC1A", cat: "arch" },
+  { id: "ARC3A", name: "ARC3A", cat: "arch" },
+  { id: "ARC4A", name: "ARC4A", cat: "arch" },
+];
+
+/**
+ * Coachman window designs on the plain glass top section — all at the double
+ * strength top section price, no adder (CJ, 12/10/2026): the design names the
+ * line and changes nothing else. Distinct from COACHMAN_ARCH, the arched
+ * sections that carry their own adder on 3- and 4-window doors.
+ */
+export const COACHMAN_GLASS_DESIGNS: InsertDesign[] = [
+  { id: "ARCH1", name: "ARCH1", cat: "glass" },
+  { id: "ARCH3", name: "ARCH3", cat: "glass" },
+  { id: "ARCH4", name: "ARCH4", cat: "glass" },
+  { id: "ARCH13", name: "ARCH13", cat: "glass" },
+  { id: "ARCH14", name: "ARCH14", cat: "glass" },
+  { id: "REC11", name: "REC11", cat: "glass" },
+  { id: "REC13", name: "REC13", cat: "glass" },
+  { id: "REC14", name: "REC14", cat: "glass" },
+  { id: "SQ23", name: "SQ23", cat: "glass" },
+  { id: "SQ24", name: "SQ24", cat: "glass" },
+];
+
 // Which window designs each specific model can take.
 // short = plain short windows (508/509/510 + Sunsets); shortlong adds long panels; all = everything.
 export const INSERT_RULES: Record<string, "short" | "shortlong" | "all"> = {
@@ -112,13 +147,19 @@ export function excludedDesignsFor(unit: string): string[] {
 /** Window/insert designs available for the current door (specific model + style + width). */
 export function windowDesigns(unit: string, style: string, widthCode: string | null): InsertDesign[] {
   if (style === "solid") return [];
+  // The Coachman names a design on plain glass too — ten of them, all at the
+  // glass top section price (CJ, 12/10/2026) — and its third choice is an
+  // arch window section, every width alike; the special order tab offers
+  // that only where the sheet prices it.
+  if (String(unit) === "CD") return style === "glass" ? COACHMAN_GLASS_DESIGNS : COACHMAN_ARCH;
   // Designs are INSERTS: only offered when the framing/insert selection is
   // "insert" (style === "inserts"). Plain glass gets no design on any model,
   // Gallery included — otherwise an insert could ride along at the glass price.
   if (style !== "inserts") return [];
-  if (String(unit).indexOf("GD") === 0) {
-    // Gallery inserts carry width lists too: Arch 2 is not built at 16'0" and
-    // Arch 3 only is, so the same width filter applies here as below.
+  if (/^(GD|BD)/.test(String(unit))) {
+    // Gallery and Bridgeport Steel take the architectural windows (Clopay's
+    // Bridgeport sheet lists the same SQ, REC and Arch designs). Their width
+    // lists apply too: Arch 2 is not built at 16'0" and Arch 3 only is.
     return ARCHITECTURAL.filter(
       (d) => !d.w || (widthCode !== null && d.w.includes(widthCode)),
     );
@@ -136,7 +177,7 @@ export function windowDesigns(unit: string, style: string, widthCode: string | n
 
 export function designName(id: string | undefined | null): string | null {
   if (!id) return null;
-  const d = [...DECORATIVE, ...ARCHITECTURAL].find((x) => x.id === id);
+  const d = [...DECORATIVE, ...ARCHITECTURAL, ...COACHMAN_ARCH, ...COACHMAN_GLASS_DESIGNS].find((x) => x.id === id);
   return d ? d.name : null;
 }
 

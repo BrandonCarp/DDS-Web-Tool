@@ -77,11 +77,29 @@ export const GRADE_RES: Record<string, string> = {
   "4050-4051-4053": "single strength b grade",
   "9130-9133": "single strength b grade",
   "4300": "single strength b grade",
-  "GD1LP-GD1SP": "double strength b grade"
+  "GD1LP-GD1SP": "double strength b grade",
+  "GD2LP-GD2SP": "double strength b grade",
+  "GD1LU-GD1SU": "double strength b grade",
+  "GD2LU-GD2SU": "double strength b grade",
+  // Bridgeport Steel: double strength is its standard glass, as the Gallery's.
+  "BD1EU-BD1NU": "double strength b grade",
+  "BD1CU": "double strength b grade",
+  "BD2EU-BD2NU": "double strength b grade",
+  "BD2CU": "double strength b grade",
+  // Coachman: the sheet prices a DOUBLE STRENGTH top section (CJ, 12/10/2026).
+  "CD": "double strength b grade"
 };
 
 export const COLLECTIONS_RES: Record<string, string> = {
   "GD1LP-GD1SP": "Gallery Collection",
+  "GD2LP-GD2SP": "Gallery Collection",
+  "GD1LU-GD1SU": "Gallery Collection",
+  "GD2LU-GD2SU": "Gallery Collection",
+  "BD1EU-BD1NU": "Bridgeport Collection",
+  "BD1CU": "Bridgeport Collection",
+  "BD2EU-BD2NU": "Bridgeport Collection",
+  "BD2CU": "Bridgeport Collection",
+  "CD": "Coachman Collection",
   "T50S": "Value Steel Collection",
   "T52S": "Value Steel Collection",
   "4050-4051-4053": "Premium Steel Collection",

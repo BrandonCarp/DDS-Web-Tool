@@ -90,6 +90,102 @@ export const COLORS: Record<string, string[]> = {
     "Charcoal",
     "Iron Ore",
     "Black"
+  ],
+  // The other Gallery Steel pairs (special order only, 12/10/2026): the same colours.
+  "GD2LP-GD2SP": [
+    "White",
+    "Almond",
+    "Sandtone",
+    "Desert Tan",
+    "Chocolate Brown",
+    "Bronze",
+    "Mocha Brown",
+    "Charcoal",
+    "Iron Ore",
+    "Black"
+  ],
+  "GD1LU-GD1SU": [
+    "White",
+    "Almond",
+    "Sandtone",
+    "Desert Tan",
+    "Chocolate Brown",
+    "Bronze",
+    "Mocha Brown",
+    "Charcoal",
+    "Iron Ore",
+    "Black"
+  ],
+  "GD2LU-GD2SU": [
+    "White",
+    "Almond",
+    "Sandtone",
+    "Desert Tan",
+    "Chocolate Brown",
+    "Bronze",
+    "Mocha Brown",
+    "Charcoal",
+    "Iron Ore",
+    "Black"
+  ],
+  // Bridgeport Steel (special order only, 9/10/2026): the Gallery's colours,
+  // pending a list of its own from Clopay.
+  "BD1EU-BD1NU": [
+    "White",
+    "Almond",
+    "Sandtone",
+    "Desert Tan",
+    "Chocolate Brown",
+    "Bronze",
+    "Mocha Brown",
+    "Charcoal",
+    "Iron Ore",
+    "Black"
+  ],
+  "BD1CU": [
+    "White",
+    "Almond",
+    "Sandtone",
+    "Desert Tan",
+    "Chocolate Brown",
+    "Bronze",
+    "Mocha Brown",
+    "Charcoal",
+    "Iron Ore",
+    "Black"
+  ],
+  "BD2EU-BD2NU": [
+    "White",
+    "Almond",
+    "Sandtone",
+    "Desert Tan",
+    "Chocolate Brown",
+    "Bronze",
+    "Mocha Brown",
+    "Charcoal",
+    "Iron Ore",
+    "Black"
+  ],
+  "BD2CU": [
+    "White",
+    "Almond",
+    "Sandtone",
+    "Desert Tan",
+    "Chocolate Brown",
+    "Bronze",
+    "Mocha Brown",
+    "Charcoal",
+    "Iron Ore",
+    "Black"
+  ],
+  // Coachman (special order only, 12/10/2026): the four colours Clopay's
+  // Coachman book lists. Premium finishes are left off until CJ's sheet prices
+  // one — it carries no line for any.
+  "CD": [
+    "White",
+    "Almond",
+    "Desert Tan",
+    "Sandtone"
   ]
 };
 
@@ -117,6 +213,58 @@ export const PREMIUM_COLORS: Record<string, string[]> = {
     "Ultra-Grain Oak Walnut Finish",
     "Ultra-Grain Oak Slate Finish"
   ],
+  // The other Gallery Steel pairs: the same finishes, priced on their sheets.
+  "GD2LP-GD2SP": [
+    "Iron Ore",
+    "Ultra-Grain Oak Medium Finish",
+    "Ultra-Grain Oak Dark Finish",
+    "Ultra-Grain Oak Walnut Finish",
+    "Ultra-Grain Oak Slate Finish"
+  ],
+  "GD1LU-GD1SU": [
+    "Iron Ore",
+    "Ultra-Grain Oak Medium Finish",
+    "Ultra-Grain Oak Dark Finish",
+    "Ultra-Grain Oak Walnut Finish",
+    "Ultra-Grain Oak Slate Finish"
+  ],
+  "GD2LU-GD2SU": [
+    "Iron Ore",
+    "Ultra-Grain Oak Medium Finish",
+    "Ultra-Grain Oak Dark Finish",
+    "Ultra-Grain Oak Walnut Finish",
+    "Ultra-Grain Oak Slate Finish"
+  ],
+  // Bridgeport Steel: the Ultra-Grain lines on its sheets price the same
+  // finishes; Iron Ore rides along as it does on the Gallery.
+  "BD1EU-BD1NU": [
+    "Iron Ore",
+    "Ultra-Grain Oak Medium Finish",
+    "Ultra-Grain Oak Dark Finish",
+    "Ultra-Grain Oak Walnut Finish",
+    "Ultra-Grain Oak Slate Finish"
+  ],
+  "BD1CU": [
+    "Iron Ore",
+    "Ultra-Grain Oak Medium Finish",
+    "Ultra-Grain Oak Dark Finish",
+    "Ultra-Grain Oak Walnut Finish",
+    "Ultra-Grain Oak Slate Finish"
+  ],
+  "BD2EU-BD2NU": [
+    "Iron Ore",
+    "Ultra-Grain Oak Medium Finish",
+    "Ultra-Grain Oak Dark Finish",
+    "Ultra-Grain Oak Walnut Finish",
+    "Ultra-Grain Oak Slate Finish"
+  ],
+  "BD2CU": [
+    "Iron Ore",
+    "Ultra-Grain Oak Medium Finish",
+    "Ultra-Grain Oak Dark Finish",
+    "Ultra-Grain Oak Walnut Finish",
+    "Ultra-Grain Oak Slate Finish"
+  ],
   "4300": [
     "Iron Ore",
     "Charcoal",
@@ -133,10 +281,15 @@ export const PREMIUM_COLORS: Record<string, string[]> = {
  * came off the stock list on 10/9/2026 for exactly that reason; the Gallery
  * sheet (8/10/2026) prices them, so the special order tab lists them again.
  */
+/** Catalogue keys whose special orders list the Ultra-Grain finishes their sheets price. */
+const SHEET_PRICED_KEYS = new Set([
+  "GD1LP-GD1SP", "GD2LP-GD2SP", "GD1LU-GD1SU", "GD2LU-GD2SU",
+  "BD1EU-BD1NU", "BD1CU", "BD2EU-BD2NU", "BD2CU",
+]);
 export function specialOrderColors(catalogKey: string): string[] {
   const stock = COLORS[catalogKey] ?? [];
   const extra = (PREMIUM_COLORS[catalogKey] ?? []).filter((c) => /Ultra-Grain/.test(c) && !stock.includes(c));
-  return catalogKey === "GD1LP-GD1SP" ? [...stock, ...extra] : stock;
+  return SHEET_PRICED_KEYS.has(catalogKey) ? [...stock, ...extra] : stock;
 }
 
 export function colorTakesPremium(catalogKey: string, color: string): boolean {
@@ -145,6 +298,14 @@ export function colorTakesPremium(catalogKey: string, color: string): boolean {
 
 export const COLLECTIONS: Record<string, string> = {
   "GD1LP-GD1SP": "Gallery Collection",
+  "GD2LP-GD2SP": "Gallery Collection",
+  "GD1LU-GD1SU": "Gallery Collection",
+  "GD2LU-GD2SU": "Gallery Collection",
+  "BD1EU-BD1NU": "Bridgeport Collection",
+  "BD1CU": "Bridgeport Collection",
+  "BD2EU-BD2NU": "Bridgeport Collection",
+  "BD2CU": "Bridgeport Collection",
+  "CD": "Coachman Collection",
   "T50S": "Value Steel Collection",
   "T52S": "Value Steel Collection",
   "4050-4051-4053": "Premium Steel Collection",

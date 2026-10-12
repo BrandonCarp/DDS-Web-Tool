@@ -35,10 +35,12 @@ export function partDescription(
   }
   if (!part.perFoot || !feet) return part.desc;
   const base = part.desc.replace(/,\s*$/, "");
-  // The billed length, not the length asked for: a 12FT U retainer is sold as
-  // a 16FT stick, 10FT of raw track as a 12FT one, and the QuickBooks line has
-  // to say what left the building.
-  return `${base},  ${feetText(billedFeet(part, feet))}`;
+  // Raw track says the footage asked for — 16FT of 3" raw track is billed at
+  // the 24FT stick but the line reads 16FT (Brandon, 12/10/2026). A retainer
+  // still says the stick it bills: a 12FT U retainer is sold as a 16FT stick,
+  // and the line says what left the building.
+  const said = isRawTrack(part) ? Math.max(0, Math.trunc(feet)) : billedFeet(part, feet);
+  return `${base},  ${feetText(said)}`;
 }
 
 /** Springs are priced each — the pair shows up as quantity 2, not a doubled rate. */
@@ -73,6 +75,7 @@ const RETAINER_STICKS: { type: RegExp; overFeet: number; billFeet: number }[] = 
  * Raw track comes as 12FT and 24FT sticks — Brandon, 30/9/2026. Up to 12FT
  * bills a 12FT stick, anything longer a 24FT one, and it is sold from 1FT to
  * 24FT only: feetLimits says so, and the Track tab refuses anything outside it.
+ * The QuickBooks line says the footage asked for, not the stick (12/10/2026).
  */
 const RAW_TRACK = /\bRAW TRACK\b/i;
 const isRawTrack = (part: Part) => RAW_TRACK.test(part.name) || RAW_TRACK.test(part.desc);

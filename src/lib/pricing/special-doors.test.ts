@@ -61,9 +61,10 @@ describe("special order door grid", () => {
     for (const off of [
       { ...base, height: "10", width: "8", style: "solid" as const },
       { ...base, width: "19", style: "solid" as const },
-      // The Gallery was the no-grid example until its sheet landed (8/10/2026);
-      // Canyon Ridge still prices from a typed total only.
-      { model: "CD", height: "7", width: "8", style: "solid" as const, color: "White",
+      // The Gallery was the no-grid example until its sheet landed (8/10/2026),
+      // the Coachman until its own did (12/10/2026); the Coachman's CG still
+      // prices from a typed total only.
+      { model: "CG", height: "7", width: "8", style: "solid" as const, color: "White",
         track: "r12" as const, spring: "extension" as const, lock: "none" as const },
     ]) {
       const r = specialDoorQuote(off);
@@ -568,17 +569,36 @@ describe("special order grids, checked against the 9/30 workbook", () => {
   const q = (model: string, width: string, height: string, style: "solid" | "glass" | "inserts") =>
     specialDoorQuote({ model, width, height, style, color: "White", track: "r12", spring: "extension", lock: "none" }).quote;
 
+  // Holes a grid is KNOWN to have, each one a sheet problem waiting on Clopay
+  // or the coworker (scripts/apply_sheet_workbook.py reports them). Listed so
+  // the continuity check below still catches an unexpected one — and so this
+  // list fails when a hole closes, which is when its line comes off.
+  // Cells the loader holds off a grid until a sheet is corrected leave a hole
+  // in its 2-inch run; list them here while they last. Empty since the second
+  // workbook of 12/10/2026 (the BD1 12'0" and the BD2/GD2 9'2"-9'10" rows at
+  // 7FT were corrected, or loaded corrected).
+  const KNOWN_HOLES: { group: string; tiers: string[]; from: number; to: number; why: string }[] = [];
+
   it("runs every grid in unbroken 2-inch steps, with proper width keys", () => {
     const good = /^\d+(\.(2|4|6|8|10))?$/;
     const inches = (k: string) => { const [f, i] = k.split("."); return +f * 12 + +(i ?? 0); };
+    const seen = new Set<string>();
     for (const [group, tiers] of Object.entries(SPECIAL_DOORS)) {
       for (const [tier, widths] of Object.entries(tiers)) {
         const keys = Object.keys(widths);
         expect(keys.filter((k) => !good.test(k)), `${group} ${tier}ft keys`).toEqual([]);
+        // The Coachman is built in 26 set widths, not every two inches; its
+        // own test pins the list.
+        if (group === "CD") continue;
         const run = keys.map(inches).sort((a, b) => a - b);
-        for (let i = 1; i < run.length; i++) expect(run[i] - run[i - 1], `${group} ${tier}ft after ${run[i - 1]}in`).toBe(2);
+        for (let i = 1; i < run.length; i++) {
+          const hole = KNOWN_HOLES.find((h) => h.group === group && h.tiers.includes(tier) && h.from === run[i - 1] && h.to === run[i]);
+          if (hole) { seen.add(`${group} ${tier}`); continue; }
+          expect(run[i] - run[i - 1], `${group} ${tier}ft after ${run[i - 1]}in`).toBe(2);
+        }
       }
     }
+    for (const h of KNOWN_HOLES) for (const t of h.tiers) expect(seen.has(`${h.group} ${t}`), `${h.group} ${t}ft hole closed (${h.why}) — take it off KNOWN_HOLES`).toBe(true);
   });
 
   it("quotes the T52S at 11'0\" to 11'8\", which sat under broken keys", () => {

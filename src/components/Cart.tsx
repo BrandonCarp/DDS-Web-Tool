@@ -1,10 +1,13 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { CopyButton } from "./CopyButton";
 import { Icon } from "./Icon";
 import { quickBooksRow } from "@/lib/pricing/data/quickbooks";
 import { QtyStepper } from "./QtyStepper";
+import { OptionButtons } from "./OptionButtons";
+import { YES_NO } from "./VinylPrompt";
 
 /** One QuickBooks invoice line in the cart. The rate is the price of ONE. */
 export type CartLine = { id: number; item: string; description: string; qty: number; rate: number };
@@ -82,9 +85,37 @@ export function AddToCart({ lines, testId = "add-to-cart" }: { lines: NewCartLin
 
 const fmt = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD" });
 
+/**
+ * Asked once the cart has been copied to QuickBooks: clear it now? The lines
+ * are in QuickBooks, so most of the time the answer is yes and the next job
+ * starts clean — but a no keeps them (Brandon, 12/10/2026). Escape, or a
+ * click outside, is a no. Rendered into the app root, as the vinyl prompt is.
+ */
+function ClearCartPrompt({ count, onAnswer }: { count: number; onAnswer: (yes: boolean) => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onAnswer(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onAnswer]);
+  const dialog = (
+    <div className="modal-scrim" onClick={() => onAnswer(false)}>
+      <div className="modal" role="dialog" aria-modal="true" aria-labelledby="cart-clear-title" data-testid="cart-clear-prompt"
+        onClick={(e) => e.stopPropagation()}>
+        <h3 id="cart-clear-title">Clear the cart now?</h3>
+        <p className="muted-note">{count} {count === 1 ? "line is" : "lines are"} copied for QuickBooks.</p>
+        <OptionButtons label="Clear the cart" testid="cart-clear-ask" options={YES_NO} value={null}
+          onChange={(v) => onAnswer(v === "yes")} />
+      </div>
+    </div>
+  );
+  return createPortal(dialog, document.querySelector(".tool-shell") ?? document.body);
+}
+
 /** The Cart tab: every line added, then QuickBooks and Clear. */
 export function CartTool() {
   const cart = useCart();
+  const [askClear, setAskClear] = useState(false);
+  const answerClear = useCallback((yes: boolean) => { setAskClear(false); if (yes) cart?.clear(); }, [cart]);
   if (!cart) return null;
   const { lines, setQty, remove, clear } = cart;
   // A blank row between every line, as the door and its vinyl paste — the
@@ -129,11 +160,12 @@ export function CartTool() {
             <div className="qmodel">{lines.length} {lines.length === 1 ? "line" : "lines"}</div>
           </div>
           <div className="qfoot">
-            <CopyButton text={qbText} label="QuickBooks" primary testId="cart-qb" />
+            <CopyButton text={qbText} label="QuickBooks" primary testId="cart-qb" onCopy={() => setAskClear(true)} />
             <button type="button" className="btn" data-testid="cart-clear" onClick={clear}>Clear</button>
           </div>
         </div>
       </aside>
+      {askClear && <ClearCartPrompt count={lines.length} onAnswer={answerClear} />}
     </div>
   );
 }

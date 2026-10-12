@@ -17,14 +17,13 @@
  */
 
 import { SPECIAL } from "./special-orders";
-import { GALLERY_GLASS, GALLERY_GLASS_TYPES, type GalleryBand } from "./gallery-glass";
+import { GALLERY_GLASS, GALLERY_GLASS_TYPES, GALLERY_GROUPS, GALLERY_ULTRA_GRAIN } from "./gallery-glass";
+import { BRIDGEPORT_GLASS, BRIDGEPORT_GLASS_TYPES, BRIDGEPORT_GROUPS, BRIDGEPORT_ULTRA_GRAIN } from "./bridgeport-glass";
+import { COACHMAN_GLASS, COACHMAN_GLASS_TYPES, COACHMAN_GROUPS, COACHMAN_ULTRA_GRAIN } from "./coachman-glass";
+import type { GlassOption, SheetBand } from "./sheet-band";
 
 export type PanelStyle = "short" | "long";
-
-export interface GlassOption {
-  id: string;
-  label: string;
-}
+export type { GlassOption } from "./sheet-band";
 
 /** Ordered as the counter reads them. */
 export const SO_GLASS_TYPES: GlassOption[] = [
@@ -92,39 +91,72 @@ const TABLES: Record<PanelStyle, Band[]> = { short: SHORT, long: LONG };
 /** Which model groups these tables cover. */
 const GROUPS = new Set(["4050/4051/4053"]);
 
-/**
- * The Gallery (GD1LP/GD1SP) has its own tables, from the Gallery pricing sheet
- * (8/10/2026): fifteen glass types, banded by width, and the window count set
- * by the model rather than a panel choice — the GD1SP carries short windows,
- * the GD1LP long ones. `member` is which of the two; a group with no member
- * yet prices as the GD1SP, the narrower of the two.
- */
+/** The Gallery pair that was gridded first (8/10/2026); tests and the tool still name it. */
 export const GALLERY_GROUP = "GD1LP/GD1SP";
 const widthIn = (width: string) => {
   const [ft, inch] = width.split(".");
   return Number(ft) * 12 + Number(inch ?? 0);
 };
-function galleryBand(member: string | undefined, width: string, glassId: string): GalleryBand | null {
-  const model = member === "GD1LP" ? "GD1LP" : "GD1SP";
-  const w = widthIn(width);
-  return GALLERY_GLASS[glassId]?.[model]?.find((b) => b.lo <= w && w <= b.hi) ?? null;
+
+/**
+ * Groups priced from a Clopay workbook of their own — the four Gallery Steel
+ * pairs, the four Bridgeport Steel groups and the Coachman (CJ's workbooks,
+ * 12/10/2026), loaded by scripts/apply_sheet_workbook.py. One shape for all of
+ * them: glass id -> short or long windows -> bands by width, in DDS cost,
+ * lifted by the group's door margin at quote time.
+ *
+ * The window style is a plain choice on every one of them: on the Gallery the
+ * long band is the L model's window and the short band the S model's, so long
+ * glass on a GD1SP prices as the GD1LP's (Brandon, 8/10/2026); on a Bridgeport
+ * door the N, E and C designs each take either. The Coachman has one window
+ * layout — a glass top section — so its sheet fills the short band only and
+ * the choice never appears; its "inserts" figure is the arch window section.
+ */
+const SHEET_GLASS: Record<string, Record<string, Record<PanelStyle, SheetBand[]>>> = {
+  ...GALLERY_GLASS,
+  ...BRIDGEPORT_GLASS,
+  ...COACHMAN_GLASS,
+};
+
+/** Ultra-Grain and the other premium finishes, per sheet-priced group: cost, before margin. */
+const SHEET_ULTRA_GRAIN: Record<string, { upTo8ft: { single: number; double: number }; over8ft: { single: number; double: number } }> = {
+  ...GALLERY_ULTRA_GRAIN,
+  ...BRIDGEPORT_ULTRA_GRAIN,
+  ...COACHMAN_ULTRA_GRAIN,
+};
+
+/** The glass types each workbook prices, in the order the counter reads them. */
+const SHEET_GLASS_TYPES: Record<string, GlassOption[]> = Object.fromEntries([
+  ...GALLERY_GROUPS.map((g) => [g, GALLERY_GLASS_TYPES] as const),
+  ...BRIDGEPORT_GROUPS.map((g) => [g, BRIDGEPORT_GLASS_TYPES] as const),
+  ...COACHMAN_GROUPS.map((g) => [g, COACHMAN_GLASS_TYPES] as const),
+]);
+
+/** True for a group whose glass and finishes come off its own Clopay sheet. */
+export function isSheetGroup(group: string): boolean {
+  return group in SHEET_GLASS;
 }
-/** Which Gallery model a panel style stands for: the GD1LP is the long-panel door. */
-export function galleryMemberFor(panel: PanelStyle): string {
-  return panel === "long" ? "GD1LP" : "GD1SP";
+
+/** The premium-finish adder bands for a sheet-priced group, or null. */
+export function sheetUltraGrain(group: string) {
+  return SHEET_ULTRA_GRAIN[group] ?? null;
+}
+
+function sheetBand(group: string, panel: PanelStyle, width: string, glassId: string): SheetBand | null {
+  const w = widthIn(width);
+  return SHEET_GLASS[group]?.[glassId]?.[panel]?.find((b) => b.lo <= w && w <= b.hi) ?? null;
 }
 
 function bandFor(group: string, panel: PanelStyle, width: string): Band | null {
-  if (group === GALLERY_GROUP) {
-    // Lift the Gallery band into the shape the rest of this file reads: the
+  if (isSheetGroup(group)) {
+    // Lift the sheet's band into the shape the rest of this file reads: the
     // insert charge is the gap between the two columns, and a type with no
     // inserts column (acrylic) gets none.
-    const member = galleryMemberFor(panel);
-    const dsb = galleryBand(member, width, "dsb");
+    const dsb = sheetBand(group, panel, width, "dsb");
     if (!dsb) return null;
     const prices: Record<string, number> = {};
-    for (const g of GALLERY_GLASS_TYPES) {
-      const b = galleryBand(member, width, g.id);
+    for (const g of SHEET_GLASS_TYPES[group] ?? []) {
+      const b = sheetBand(group, panel, width, g.id);
       if (b) prices[g.id] = b.glass;
     }
     return { widths: [width], windows: dsb.windows, decor: (dsb.inserts ?? dsb.glass) - dsb.glass, prices };
@@ -147,14 +179,14 @@ export function panelStylesFor(group: string, width: string): PanelStyle[] {
 export function glassOptionsFor(group: string, panel: PanelStyle, width: string): GlassOption[] {
   const b = bandFor(group, panel, width);
   if (!b) return [];
-  const list = group === GALLERY_GROUP ? GALLERY_GLASS_TYPES : SO_GLASS_TYPES;
+  const list = SHEET_GLASS_TYPES[group] ?? SO_GLASS_TYPES;
   return list.filter((g) => b.prices[g.id] != null);
 }
 
-/** True where inserts are not offered on this glass (Gallery acrylic). */
+/** True where inserts are not offered on this glass (acrylic, on every sheet-priced group). */
 export function glassTakesInserts(group: string, panel: PanelStyle, width: string, glassId: string): boolean {
-  if (group !== GALLERY_GROUP) return true;
-  return galleryBand(galleryMemberFor(panel), width, glassId)?.inserts != null;
+  if (!isSheetGroup(group)) return true;
+  return sheetBand(group, panel, width, glassId)?.inserts != null;
 }
 
 /** Window count, for the quote wording. */
@@ -173,7 +205,7 @@ export function glassAdder(
   const b = bandFor(group, panel, width);
   const g = b?.prices[glassId];
   if (b == null || g == null) return null;
-  // A glass with no inserts price (Gallery acrylic) cannot take them.
+  // A glass with no inserts price (acrylic) cannot take them.
   if (inserts && !glassTakesInserts(group, panel, width, glassId)) return null;
   return Math.round((g + (inserts ? b.decor : 0)) * 100) / 100;
 }
@@ -191,7 +223,7 @@ export function glassAdderSell(
 
 /** Label for a glass id. */
 export function glassLabel(glassId: string): string {
-  return (SO_GLASS_TYPES.find((g) => g.id === glassId) ?? GALLERY_GLASS_TYPES.find((g) => g.id === glassId))?.label ?? glassId;
+  return [...SO_GLASS_TYPES, ...GALLERY_GLASS_TYPES, ...BRIDGEPORT_GLASS_TYPES, ...COACHMAN_GLASS_TYPES].find((g) => g.id === glassId)?.label ?? glassId;
 }
 
 /** The door margin for a model group, searched across every collection. */

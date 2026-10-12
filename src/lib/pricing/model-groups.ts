@@ -15,6 +15,14 @@ export const MODEL_SPLIT: Record<string, string[]> = {
   "4300": ["4300", "4301", "4310"],
   "9130-9133": ["9130", "9133"],
   "GD1LP-GD1SP": ["GD1LP", "GD1SP"],
+  // The other Gallery Steel pairs (special order only, 12/10/2026).
+  "GD2LP-GD2SP": ["GD2LP", "GD2SP"],
+  "GD1LU-GD1SU": ["GD1LU", "GD1SU"],
+  "GD2LU-GD2SU": ["GD2LU", "GD2SU"],
+  // Bridgeport Steel pairs (special order only, 9/10/2026): the N and E designs
+  // share a sheet, as the Gallery's S and L do.
+  "BD1EU-BD1NU": ["BD1EU", "BD1NU"],
+  "BD2EU-BD2NU": ["BD2EU", "BD2NU"],
 };
 
 /** Individual model -> the catalog key that holds its data. */

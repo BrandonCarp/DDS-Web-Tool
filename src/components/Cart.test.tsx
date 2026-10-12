@@ -51,6 +51,23 @@ describe("the cart", () => {
     expect(lines()).toHaveLength(0);
   });
 
+  it("asks whether to clear the cart once it is copied to QuickBooks (12/10/2026)", async () => {
+    render(quotes());
+    fireEvent.click(screen.getByTestId("door-cart"));
+    expect(screen.queryByTestId("cart-clear-prompt")).toBeNull();
+    await copyFrom(screen.getByTestId("cart-qb"));
+    expect(screen.getByTestId("cart-clear-prompt")).toBeTruthy();
+    // No keeps the lines; the prompt closes.
+    fireEvent.click(screen.getByTestId("cart-clear-ask-no"));
+    expect(screen.queryByTestId("cart-clear-prompt")).toBeNull();
+    expect(lines()).toHaveLength(2);
+    // Yes empties the cart.
+    await copyFrom(screen.getByTestId("cart-qb"));
+    fireEvent.click(screen.getByTestId("cart-clear-ask-yes"));
+    expect(screen.queryByTestId("cart-clear-prompt")).toBeNull();
+    expect(lines()).toHaveLength(0);
+  });
+
   it("shows no Add to cart on a quote with no cart around it", () => {
     render(<CopyQuickBooks item="PARTS" description="ANGLE IRON" rate={25} testId="alone" />);
     expect(screen.queryByTestId("alone-cart")).toBeNull();
