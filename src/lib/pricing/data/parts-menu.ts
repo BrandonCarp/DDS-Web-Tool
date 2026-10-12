@@ -202,8 +202,9 @@ export const PART_GROUP_TABS = [
 
 const tabbed = new Set<string>(PART_GROUP_TABS.map((t) => t.group));
 
-/** The Parts tab's own groups: all but those with a tab of their own. */
-export const PARTS_TAB_MENU: PartsMenu = PARTS_MENU.filter((g) => !tabbed.has(g.label));
+/** The Parts tab's own groups: all but those with a tab of their own, A to Z (Brandon, 12/10/2026). */
+export const PARTS_TAB_MENU: PartsMenu = PARTS_MENU.filter((g) => !tabbed.has(g.label))
+  .sort((a, b) => a.label.localeCompare(b.label, "en", { sensitivity: "base" }));
 
 /** Each group tab: its one-group menu, and a shelf of only its own parts to search. */
 export const GROUP_TABS = PART_GROUP_TABS.map((t) => {

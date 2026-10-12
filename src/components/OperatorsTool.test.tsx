@@ -24,10 +24,13 @@ const rowsNamed = (name: string) =>
     .getAllByRole("button")
     .filter((b) => b.querySelector(".partname")?.firstChild?.textContent === name);
 
+const slug = (x: string) => x.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+/** Walk the buttons: back to the groups if needed, the group, then the section (12/10/2026). */
 function openSection(name: string) {
   const s = OPERATOR_CATALOGUE.find((x) => x.name === name)!;
-  fireEvent.change(screen.getByTestId("op-group"), { target: { value: s.group } });
-  fireEvent.change(screen.getByTestId("op-section"), { target: { value: name } });
+  while (screen.queryByTestId("op-back")) fireEvent.click(screen.getByTestId("op-back"));
+  fireEvent.click(screen.getByTestId(`op-group-${slug(s.group)}`));
+  fireEvent.click(screen.getByTestId(`op-section-${slug(name)}`));
 }
 
 describe("operators that share a model number", () => {
@@ -71,5 +74,45 @@ describe("operator catalogue", () => {
         seen.set(o.desc, s.name);
       }
     }
+  });
+});
+
+describe("one level at a time, with Back (Brandon's wireframe, 12/10/2026)", () => {
+  const buttons = () => [...document.querySelectorAll(".pnav-btn, .pnav-page")].map((b) => b.textContent);
+
+  it("stacks the two groups first, then a group's sections, then the list", () => {
+    render(<OperatorsTool />);
+    expect(buttons()).toEqual(["Operators", "Accessories"]);
+    expect(screen.queryByTestId("op-list")).toBeNull();
+    expect(screen.queryByTestId("op-back")).toBeNull();
+    fireEvent.click(screen.getByTestId("op-group-accessories"));
+    expect(screen.getByTestId("op-title").textContent).toBe("Accessories");
+    expect(buttons()).toEqual(OPERATOR_CATALOGUE.filter((x) => x.group === "Accessories").map((x) => x.name));
+    expect(screen.queryByTestId("op-group-operators")).toBeNull();
+    fireEvent.click(screen.getByTestId("op-section-remotes"));
+    expect(buttons()).toEqual([]);
+    expect(screen.getByTestId("op-title").textContent).toBe("Accessories › REMOTES");
+    expect(screen.getByTestId("op-list")).toBeTruthy();
+  });
+
+  it("goes back a level at a time and drops the pick on the way", () => {
+    render(<OperatorsTool />);
+    openSection("RESIDENTIAL CHAIN DRIVES");
+    fireEvent.click(rowsNamed("2240L")[0]);
+    expect(document.querySelector("aside.quote .qtitle")?.textContent).toBe("2240L");
+    fireEvent.click(screen.getByTestId("op-back"));
+    expect(screen.queryByTestId("op-list")).toBeNull();
+    expect(document.querySelector("aside.quote .qtitle")?.textContent).toBe("Nothing selected");
+    expect(buttons()).toContain("RESIDENTIAL CHAIN DRIVES");
+    fireEvent.click(screen.getByTestId("op-back"));
+    expect(buttons()).toEqual(["Operators", "Accessories"]);
+    expect(screen.queryByTestId("op-back")).toBeNull();
+  });
+
+  it("opens straight on the section a top-bar search lands on", () => {
+    const s = OPERATOR_CATALOGUE.find((x) => x.name === "REMOTES")!;
+    render(<OperatorsTool openOn={{ kind: "operator", group: s.group, section: s.name, desc: s.items[0].desc } as never} />);
+    expect(screen.getByTestId("op-title").textContent).toBe("Accessories › REMOTES");
+    expect(document.querySelector("aside.quote .qtitle")?.textContent).toBe(s.items[0].name);
   });
 });

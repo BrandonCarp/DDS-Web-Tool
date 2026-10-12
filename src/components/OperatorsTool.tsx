@@ -10,29 +10,35 @@ import { operatorPrice } from "@/lib/pricing/data/operator-pricing";
 import { QB_ITEMS } from "@/lib/qb/iif";
 import { OPERATOR_CATALOGUE } from "@/lib/pricing/data/operator-catalogue";
 import { OPERATOR_GROUPS, type Operator } from "@/lib/pricing/data/operators";
+import { slugOf } from "@/lib/pricing/data/parts-menu";
 
 /**
  * LiftMaster operators and the accessories that hang off them.
  *
- * Same shape as the parts shelf — pick a group and section, or search across
- * everything — with one difference: there is no pricing yet, so the card copies
- * the description and says so instead of showing a rate. Nobody should be able
- * to lift a number off this screen that the company has not set.
+ * Same flow as the parts shelf (Brandon's wireframe, 12/10/2026): the two
+ * groups as stacked buttons, then the chosen group's sections the same way,
+ * then the section's list — one level showing at a time, with Back in the
+ * header. One difference from the shelf: not everything is priced yet, so
+ * where there is no price the card says so instead of showing a rate. Nobody
+ * should be able to lift a number off this screen that the company has not set.
  */
 const fmt = (n: number) =>
   "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export function OperatorsTool({ openOn }: { openOn?: SearchPick } = {}) {
   const start = openOn?.kind === "operator" ? openOn : null;
-  const [group, setGroup] = useState<string>(start?.group ?? OPERATOR_GROUPS[0]);
-  const [sectionName, setSectionName] = useState(start?.section ?? OPERATOR_CATALOGUE[0].name);
+  // The open group and section; null until chosen. A pick from the top bar's
+  // search opens straight on its section.
+  const [group, setGroup] = useState<string | null>(start?.group ?? null);
+  const [sectionName, setSectionName] = useState<string | null>(start?.section ?? null);
   const [picked, setPicked] = useState<string | null>(start?.desc ?? null);
 
   const sections = OPERATOR_CATALOGUE.filter((s) => s.group === group);
+  const level: 0 | 1 | 2 = sectionName ? 2 : group ? 1 : 0;
 
   const results = useMemo(() => {
     const s = OPERATOR_CATALOGUE.find((x) => x.name === sectionName);
-    return (s?.items ?? []).map((o) => ({ item: o, section: s?.name ?? sectionName }));
+    return (s?.items ?? []).map((o) => ({ item: o, section: s?.name ?? sectionName ?? "" }));
   }, [sectionName]);
 
   // A row is its description, not its model number. The 2240L and 4690L come
@@ -54,9 +60,18 @@ export function OperatorsTool({ openOn }: { openOn?: SearchPick } = {}) {
 
   function pickGroup(g: string) {
     setGroup(g);
-    const first = OPERATOR_CATALOGUE.find((s) => s.group === g);
-    if (first) setSectionName(first.name);
+    setSectionName(null);
     setPicked(null);
+  }
+  function openSection(name: string) {
+    setSectionName(name);
+    setPicked(null);
+  }
+  /** Up one level: the section's list back to the sections, those back to the groups. */
+  function back() {
+    setPicked(null);
+    if (sectionName) setSectionName(null);
+    else setGroup(null);
   }
 
   return (
@@ -66,50 +81,42 @@ export function OperatorsTool({ openOn }: { openOn?: SearchPick } = {}) {
           <div className="panel">
             <div className="step">
               <div className="ggroup">
-                <div className="ghdr">Find an operator</div>
-                <div className="gbody">
-                  <div className="grow">
-                    <label>Type</label>
-                    <div className="ctl selectwrap">
-                      <select
-                        data-testid="op-group"
-                        value={group}
-                        onChange={(e) => pickGroup(e.target.value)}
-                      >
-                        {OPERATOR_GROUPS.map((g) => (
-                          <option key={g} value={g}>
-                            {g}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="grow">
-                    <label>Section</label>
-                    <div className="ctl selectwrap">
-                      <select
-                        data-testid="op-section"
-                        value={sectionName}
-                        onChange={(e) => {
-                          setSectionName(e.target.value);
-                          setPicked(null);
-                                              }}
-                      >
-                        {sections.map((s) => (
-                          <option key={s.name} value={s.name}>
-                            {s.name} ({s.items.length})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
+                <div className={`ghdr${level > 0 ? " pnav-head" : ""}`}>
+                  {level > 0 && (
+                    <button type="button" className="btn backbtn" data-testid="op-back" onClick={back}>&lsaquo; Back</button>
+                  )}
+                  {level === 0 ? "Find an operator"
+                    : level === 1 ? <span data-testid="op-title">{group}</span>
+                    : <span data-testid="op-title">{group} › {sectionName}</span>}
                 </div>
-              </div>
-
-              <div className="ggroup" style={{ marginTop: 14 }}>
-                <div className="ghdr">{sectionName}</div>
+                {level === 0 && (
+                  <div className="gbody pnav-body">
+                    <div className="pnav stack">
+                      <div className="pnav-groups">
+                        {OPERATOR_GROUPS.map((g) => (
+                          <button key={g} type="button" className="pnav-btn" data-testid={`op-group-${slugOf(g)}`} onClick={() => pickGroup(g)}>
+                            {g}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {level === 1 && (
+                  <div className="gbody pnav-body">
+                    <div className="pnav stack">
+                      <div className="pnav-pages" role="group" aria-label={group ?? undefined}>
+                        {sections.map((sec) => (
+                          <button key={sec.name} type="button" className="pnav-page" data-testid={`op-section-${slugOf(sec.name)}`}
+                            onClick={() => openSection(sec.name)}>
+                            {sec.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {level === 2 && (
                 <ul className="partlist" data-testid="op-list">
                   {results.map(({ item, section }) => (
                     <li key={`${section}-${item.desc}`}>
@@ -126,6 +133,7 @@ export function OperatorsTool({ openOn }: { openOn?: SearchPick } = {}) {
                     </li>
                   ))}
                 </ul>
+                )}
               </div>
             </div>
           </div>
@@ -177,7 +185,7 @@ export function OperatorsTool({ openOn }: { openOn?: SearchPick } = {}) {
       {chosen && (
         <QbLineDemo
           model={chosen.name}
-          size={hit?.section ?? sectionName}
+          size={hit?.section ?? sectionName ?? ""}
           item={QB_ITEMS.operators}
           typed="OPE"
           description={chosen.desc}

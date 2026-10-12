@@ -680,25 +680,29 @@ html, body { margin: 0; padding: 0; }
 .tool-shell .row2.compact .lenrow { grid-template-columns: minmax(0, 1fr) 84px; }
 @media (max-width: 720px) { .tool-shell .row2.compact { grid-template-columns: minmax(0, 1fr); } }
 
-/* The Parts and Track tabs' buttons (6/10/2026): the groups, then the chosen
-   group's pages, each four to a row. */
+/* The Parts, Track and group tabs' buttons (Brandon's wireframe, 12/10/2026):
+   one level at a time, stacked, full width, a gap between each. The header
+   above them carries the Back button once there is somewhere to go back to. */
 .tool-shell .pnav { display: grid; gap: 10px; }
-.tool-shell .pnav-groups { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.tool-shell .pnav-body { display: block; padding: 12px 14px 14px; }
+.tool-shell :is(.pnav-groups, .pnav-pages) { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
 .tool-shell .pnav-btn, .tool-shell .pnav-page {
-  padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r-sm);
-  background: var(--surface-2); color: var(--ink-2); font-size: 13px; line-height: 1.25; text-align: center; cursor: pointer;
+  min-height: 46px; padding: 11px 16px; border: 1px solid var(--line); border-radius: var(--r-sm);
+  background: var(--surface-2); color: var(--ink); font-size: 15px; font-weight: 700; line-height: 1.25; text-align: left; cursor: pointer;
   /* Long names wrap inside the button rather than spilling out (7/10/2026). */
   min-width: 0; overflow-wrap: anywhere;
 }
-.tool-shell .pnav-btn:hover, .tool-shell .pnav-page:hover { color: var(--ink); border-color: var(--line-strong); }
+.tool-shell .pnav-btn:hover, .tool-shell .pnav-page:hover { border-color: var(--line-strong); background: var(--surface-3); }
 .tool-shell .pnav-btn.on, .tool-shell .pnav-page.on { color: var(--accent-ink); border-color: var(--accent); background: var(--surface-3); }
-.tool-shell .pnav-pages { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; padding-top: 10px; border-top: 1px solid var(--line-2); }
-/* A group tab's pages, with no grid of groups above them. */
-.tool-shell .pnav-pages[data-alone] { padding: 0; border: 0; }
-/* Four across is too tight on a phone; two there. */
+/* The Parts tab's groups, two across and a little shorter, so all seventeen
+   fit the screen without scrolling (12/10/2026). One across on a phone. */
+.tool-shell .pnav-groups.two { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-flow: column; gap: 8px; }
+.tool-shell .pnav-groups.two .pnav-btn { min-height: 40px; padding: 8px 14px; font-size: 14px; }
 @media (max-width: 720px) {
-  .tool-shell :is(.pnav-groups, .pnav-pages) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tool-shell .pnav-groups.two { grid-template-columns: minmax(0, 1fr); grid-template-rows: none !important; grid-auto-flow: row; }
 }
+/* The header with a Back button: the button, then the level's name. */
+.tool-shell .ghdr.pnav-head { display: flex; align-items: center; gap: 12px; }
 
 /* The Vinyl tab, by the piece (7/10/2026): a size and a quantity per line,
    and the colour's stock lengths below. */

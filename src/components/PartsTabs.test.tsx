@@ -175,9 +175,96 @@ describe("the Track buttons (6/10/2026)", () => {
     track();
     fireEvent.click(screen.getByTestId("group-adder-pieces"));
     expect(rows()).toEqual(['36" ADDER PIECE', '54" ADDER PIECE']);
+    // The other buttons are hidden while a list shows (12/10/2026): Back first.
+    expect(screen.queryByTestId("group-pierced-track")).toBeNull();
+    fireEvent.click(screen.getByTestId("pnav-back"));
     fireEvent.click(screen.getByTestId("group-pierced-track"));
     expect(rows()).toHaveLength(4);
     expect(screen.queryByTestId("parts-pick")).toBeNull(); // no drop-down any more
+  });
+});
+
+describe("one level at a time, with Back (Brandon's wireframe, 12/10/2026)", () => {
+  const track = () => show(<PartsTool menu={TRACK_MENU} categories={TRACK_CATEGORIES} eyebrow="Track quote" finder="Find track" />);
+  const buttons = () => [...document.querySelectorAll(".pnav-btn, .pnav-page")].map((b) => b.textContent);
+  const header = () => document.querySelector(".config-col .ghdr")?.textContent;
+
+  it("stacks the groups under the finder, with no Back to begin with", () => {
+    track();
+    expect(buttons()).toEqual(["Complete track", "Adder pieces", "Raw track", "Pierced track"]);
+    expect(header()).toBe("Find track");
+    expect(screen.queryByTestId("pnav-back")).toBeNull();
+    expect(screen.queryByTestId("parts-list")).toBeNull();
+  });
+
+  it("hides the other groups once one is chosen, and names it in the header beside Back", () => {
+    track();
+    fireEvent.click(screen.getByTestId("group-complete-track"));
+    expect(buttons()).toEqual(["Residential", "Commercial"]);
+    expect(screen.getByTestId("pnav-title").textContent).toBe("Complete track");
+    expect(screen.getByTestId("pnav-back")).toBeTruthy();
+    expect(screen.queryByTestId("group-adder-pieces")).toBeNull();
+  });
+
+  it("hides the pages once one is chosen; the list sits under its own header with Back", () => {
+    track();
+    fireEvent.click(screen.getByTestId("group-complete-track"));
+    fireEvent.click(screen.getByTestId("page-residential"));
+    expect(buttons()).toEqual([]);
+    expect(screen.getByTestId("parts-page").textContent).toBe("Complete track › Residential");
+    expect(screen.getByTestId("parts-list")).toBeTruthy();
+    // Back: to the pages, then to the groups.
+    fireEvent.click(screen.getByTestId("pnav-back"));
+    expect(buttons()).toEqual(["Residential", "Commercial"]);
+    expect(screen.queryByTestId("parts-list")).toBeNull();
+    fireEvent.click(screen.getByTestId("pnav-back"));
+    expect(buttons()).toEqual(["Complete track", "Adder pieces", "Raw track", "Pierced track"]);
+    expect(screen.queryByTestId("pnav-back")).toBeNull();
+  });
+
+  it("goes back to the groups from a one-page group's list", () => {
+    track();
+    fireEvent.click(screen.getByTestId("group-raw-track"));
+    expect(screen.getByTestId("parts-page").textContent).toBe("Raw track");
+    fireEvent.click(screen.getByTestId("pnav-back"));
+    expect(buttons()).toEqual(["Complete track", "Adder pieces", "Raw track", "Pierced track"]);
+  });
+
+  it("drops a picked part when going back, so the card does not quote a hidden list", () => {
+    track();
+    fireEvent.click(screen.getByTestId("group-adder-pieces"));
+    fireEvent.click(document.querySelector("ul.partlist .partrow") as HTMLElement);
+    expect(document.querySelector("aside.quote .qtitle")?.textContent).toBe('36" ADDER PIECE');
+    fireEvent.click(screen.getByTestId("pnav-back"));
+    expect(document.querySelector("aside.quote .qtitle")?.textContent).not.toBe('36" ADDER PIECE');
+    expect(screen.queryByTestId("parts-copy-qb")).toBeNull();
+  });
+
+  it("runs the Parts tab's groups two across, and the short lists one under the other", () => {
+    show(<PartsTool menu={PARTS_TAB_MENU} />);
+    expect(document.querySelector(".pnav-groups")?.classList.contains("two")).toBe(true);
+    // A to Z (12/10/2026), read down the first column then the second.
+    const labels = [...document.querySelectorAll(".pnav-btn")].map((b) => b.textContent ?? "");
+    expect(labels).toEqual([...labels].sort((a, b) => a.localeCompare(b, "en", { sensitivity: "base" })));
+    expect(labels[0]).toBe("ARB / ORB");
+    expect((document.querySelector(".pnav-groups") as HTMLElement).style.gridTemplateRows).toBe(`repeat(${Math.ceil(labels.length / 2)}, auto)`);
+    cleanup();
+    track();
+    expect(document.querySelector(".pnav-groups")?.classList.contains("two")).toBe(false);
+  });
+
+  it("starts a one-group tab on its stacked pages, with no Back above them", () => {
+    const seals = GROUP_TABS.find((t) => t.id === "seals")!;
+    show(<PartsTool menu={seals.menu} categories={seals.categories} group="Seals" />);
+    expect(document.querySelector(".pnav-groups")).toBeNull();
+    expect(buttons().length).toBeGreaterThan(1);
+    expect(screen.queryByTestId("pnav-back")).toBeNull();
+    fireEvent.click(screen.getByTestId("page-brush-seals"));
+    expect(buttons()).toEqual([]);
+    expect(screen.getByTestId("parts-page").textContent).toBe("Seals › Brush seals");
+    fireEvent.click(screen.getByTestId("pnav-back"));
+    expect(screen.getByTestId("page-brush-seals")).toBeTruthy();
+    expect(screen.queryByTestId("pnav-back")).toBeNull();
   });
 });
 

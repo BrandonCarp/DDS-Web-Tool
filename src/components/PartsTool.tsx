@@ -168,6 +168,26 @@ export function PartsTool({
     setPickedName(null);
   }
 
+  // One level showing at a time (Brandon's wireframe, 12/10/2026): the groups,
+  // then the chosen group's pages, then the page's parts — each with a Back
+  // button in its header. A one-group tab starts on its pages, so there is
+  // nothing above them to go back to; a group with one page opens straight
+  // onto it, so Back from there is the groups.
+  const alone = !!menu && menu.length === 1;
+  const openGroupObj = menu ? (alone ? menu[0] : menu.find((g) => g.label === groupLabel) ?? null) : null;
+  const level: 0 | 1 | 2 = page ? 2 : openGroupObj ? 1 : 0;
+  const canBack = level === 2 ? !(alone && openGroupObj!.entries.length === 1) : level === 1 && !alone;
+  function back() {
+    if (level === 2) {
+      setPickedName(null);
+      setPageId(null);
+      if (!alone && (openGroupObj?.entries.length ?? 0) === 1) setGroupLabel(null);
+      return;
+    }
+    if (level === 1 && !alone) setGroupLabel(null);
+  }
+  const pageTitle = page ? (page.group === page.entry.label ? page.group : `${page.group} › ${page.entry.label}`) : "";
+
   function clear() {
     setPickedName(null);
     setFeet("");
@@ -182,18 +202,48 @@ export function PartsTool({
         <section className="config-col">
           <div className="panel">
             <div className="step">
+              {menu ? (
+              <div className="ggroup">
+                <div className={`ghdr${canBack ? " pnav-head" : ""}`}>
+                  {canBack && (
+                    <button type="button" className="btn backbtn" data-testid="pnav-back" onClick={back}>&lsaquo; Back</button>
+                  )}
+                  {level === 0 ? finder
+                    : level === 1 ? <span data-testid="pnav-title">{openGroupObj!.label}</span>
+                    : <span data-testid="parts-page">{pageTitle}</span>}
+                </div>
+                {level < 2 ? (
+                  <div className="gbody pnav-body">
+                    <PartsNavigator menu={menu} open={openGroupObj} page={pageId} onGroup={openGroup} onPage={openPage} />
+                  </div>
+                ) : (
+                  <ul className="partlist" data-testid="parts-list">
+                    {results.map(({ part: p, category }) => (
+                      <li key={`${category}-${p.name}`}>
+                        <button
+                          type="button"
+                          className={`partrow ${pickedName === p.name ? "on" : ""}`}
+                          onClick={() => pick(p.name)}
+                        >
+                          {/* A page picked from the buttons already says what it holds. */}
+                          <span className="partname">{p.name}</span>
+                          <span className="partprice">
+                            {priceNotSet(p) ? "Price not set" : fmt(p.price)}
+                            {p.perFoot && !priceNotSet(p) && <span className="perft">/ft</span>}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              ) : (
+              <>
               <div className="ggroup">
                 <div className="ghdr">{finder}</div>
                 <div className="gbody">
-                  {menu && (
-                    <div className="grow">
-                      <label>Browse</label>
-                      <PartsNavigator menu={menu} group={groupLabel} page={pageId}
-                        onGroup={openGroup} onPage={openPage} />
-                    </div>
-                  )}
                   {/* One category (Cables): nothing to choose. */}
-                  {categories.length > 1 && !menu && (
+                  {categories.length > 1 && (
                   <div className="grow">
                     <label>Category</label>
                     <div className="ctl selectwrap">
@@ -203,7 +253,7 @@ export function PartsTool({
                         onChange={(e) => {
                           setCatName(e.target.value);
                           setPickedName(null);
-                                              }}
+                        }}
                       >
                         {categories.map((c) => (
                           <option key={c.name} value={c.name}>
@@ -214,18 +264,11 @@ export function PartsTool({
                     </div>
                   </div>
                   )}
-
                 </div>
               </div>
 
-              {/* The list appears once there is something to list — no prompts
-                  before it (6/10/2026). */}
-              {(!menu || page) && (
               <div className="ggroup" style={{ marginTop: 14 }}>
-                <div className="ghdr" data-testid="parts-page">
-                  {!menu ? catName
-                    : page!.group === page!.entry.label ? page!.group : `${page!.group} › ${page!.entry.label}`}
-                </div>
+                <div className="ghdr" data-testid="parts-page">{catName}</div>
                 <ul className="partlist" data-testid="parts-list">
                   {catName === "CABLES" && (
                     <li>
@@ -257,8 +300,7 @@ export function PartsTool({
                       >
                         <span className="partname">
                           {p.name}
-                          {/* A page picked from the buttons already says what it holds. */}
-                          {p.sub && !grouped && !menu && <span className="partsub">{p.sub}</span>}
+                          {p.sub && !grouped && <span className="partsub">{p.sub}</span>}
                         </span>
                         <span className="partprice">
                           {priceNotSet(p) ? "Price not set" : fmt(p.price)}
@@ -270,6 +312,7 @@ export function PartsTool({
                   ))}
                 </ul>
               </div>
+              </>
               )}
             </div>
           </div>
