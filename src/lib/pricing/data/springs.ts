@@ -118,12 +118,20 @@ export const HAND_PRICES: Record<string, number> = {
   // add-on in addons.ts moved to the same day).
   "LOCKS|LOCK BAR ASSEMBLY": 49.95,
 };
+/**
+ * Parts the sheet lists each but DDS sells by the foot — the solid shafts
+ * (Brandon, 13/10/2026): cut to the inch, billed as the 12'6" or the 24FT
+ * stick (part-pricing.ts). Keyed "CATEGORY|NAME", as HAND_PRICES is.
+ */
+export const HAND_PER_FOOT = new Set<string>(['TUBE SHAFT|1" SOLID SHAFT', 'TUBE SHAFT|1-1/4" SOLID SHAFT']);
 function withHandPrices(c: PartCategory): PartCategory {
   return {
     ...c,
     items: c.items.map((p) => {
-      const price = HAND_PRICES[`${c.name}|${p.name}`];
-      return price === undefined ? p : { ...p, price };
+      const key = `${c.name}|${p.name}`;
+      const price = HAND_PRICES[key];
+      const out = price === undefined ? p : { ...p, price };
+      return HAND_PER_FOOT.has(key) ? { ...out, perFoot: true } : out;
     }),
   };
 }

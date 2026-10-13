@@ -18,7 +18,7 @@ import type { SearchPick } from "@/lib/search";
 import { entryId, feetAsQuantity, type PartsMenu } from "@/lib/pricing/data/parts-menu";
 import { PartsNavigator } from "./PartsNavigator";
 import { cableQuote, CABLE_GAUGES } from "@/lib/pricing/data/cables";
-import { feetLimits, isLockbar, measuredToInch, priceNotSet, takesLength } from "@/lib/pricing/data/part-pricing";
+import { feetLimits, isLockbar, isSolidShaft, measuredToInch, priceNotSet, takesLength } from "@/lib/pricing/data/part-pricing";
 import { QtyStepper } from "./QtyStepper";
 import { COMMERCIAL_TRACK, COMMERCIAL_TRACK_HEIGHTS, COMMERCIAL_TRACK_SUB, commercialTrackAt } from "@/lib/pricing/data/commercial-track";
 import { RESIDENTIAL_TRACK_SUB, pickResidentialTrack, radiiFor, residentialTrackSets, trackHeightFor } from "@/lib/pricing/data/residential-track";
@@ -525,7 +525,7 @@ export function PartsTool({
                       </div>
                       {limits && ft > 0 && !feetOk && (
                         <div className="muted-note err" role="alert" style={{ marginTop: 6 }} data-testid="parts-feet-error">
-                          {lockbar ? "Lock bars are cut" : "Raw track is sold"} from {limits.min} to {limits.max} ft.
+                          {lockbar ? "Lock bars are cut" : isSolidShaft(part!) ? "Solid shaft is sold" : "Raw track is sold"} from {limits.min} to {limits.max} ft.
                         </div>
                       )}
                     </div>

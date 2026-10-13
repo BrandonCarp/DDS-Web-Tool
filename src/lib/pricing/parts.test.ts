@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { PART_CATEGORIES, partDescription, partPrice, partQuantity, billedFeet, feetLimits } from "./data/parts";
 import { measuredToInch } from "./data/part-pricing";
+import { SHELF_PART_CATEGORIES } from "./data/springs";
 import { QB_ITEMS } from "../qb/iif";
 
 const find = (cat: string, name: string) => {
@@ -166,5 +167,40 @@ describe("raw track sticks (30/9/2026)", () => {
     expect(feetLimits(raw2())).toEqual({ min: 1, max: 24 });
     expect(feetLimits(raw3())).toEqual({ min: 1, max: 24 });
     expect(feetLimits(find("BRUSH SEAL / RETAINERS", '1" BRUSH SEAL'))).toBeNull();
+  });
+});
+
+describe("solid shafts (13/10/2026)", () => {
+  // Per foot from the shelf (springs.ts marks them), where the sheet lists them each.
+  const shelf = (name: string) => {
+    const p = SHELF_PART_CATEGORIES.find((c) => c.name === "TUBE SHAFT")?.items.find((i) => i.name === name);
+    if (!p) throw new Error(`${name} not on the shelf`);
+    return p;
+  };
+  const one = () => shelf('1" SOLID SHAFT');
+  const big = () => shelf('1-1/4" SOLID SHAFT');
+
+  it("is sold by the foot, to the inch, 1 to 24 ft", () => {
+    expect(one().perFoot).toBe(true);
+    expect(big().perFoot).toBe(true);
+    expect(measuredToInch(one())).toBe(true);
+    expect(feetLimits(one())).toEqual({ min: 1, max: 24 });
+    expect(find("TUBE SHAFT", "12FT TUBE SHAFT").perFoot).toBeUndefined();   // tube shafts are still each
+  });
+
+  it("bills the 12'6\" stick up to 12'6\" and the 24FT stick past it", () => {
+    for (const [asked, billed] of [[1, 12.5], [10, 12.5], [12, 12.5], [12.5, 12.5], [12 + 7 / 12, 24], [24, 24]]) {
+      expect(billedFeet(one(), asked), `${asked}`).toBe(billed);
+    }
+    expect(partPrice(one(), 10)).toBe(Math.round(8.5 * 12.5 * 100) / 100);        // 106.25
+    expect(partPrice(one(), 12 + 7 / 12)).toBe(8.5 * 24);                           // 204
+    expect(partPrice(big(), 12.5)).toBe(Math.round(11.5 * 12.5 * 100) / 100);      // 143.75
+    expect(partPrice(big(), 20)).toBe(11.5 * 24);                                   // 276
+  });
+
+  it("says the length asked for on the line", () => {
+    expect(partDescription(one(), 10.5)).toBe('1" SOLID SHAFT,  10\'6"');
+    expect(partDescription(one(), 20)).toBe('1" SOLID SHAFT,  20FT');
+    expect(partDescription(big(), 12 + 7 / 12)).toBe('1-1/4" SOLID SHAFT,  12\'7"');
   });
 });

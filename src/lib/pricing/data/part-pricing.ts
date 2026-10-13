@@ -35,11 +35,12 @@ export function partDescription(
   }
   if (!part.perFoot || !feet) return part.desc;
   const base = part.desc.replace(/,\s*$/, "");
-  // Raw track says the footage asked for, to the inch — 16'6" of 3" raw track
-  // is billed at the 24FT stick but the line reads 16'6" (Brandon, 12/10/2026).
-  // A retainer still says the stick it bills: a 12FT U retainer is sold as a
-  // 16FT stick, and the line says what left the building.
-  const said = isRawTrack(part) ? Math.max(0, Math.round(feet * 12) / 12) : billedFeet(part, feet);
+  // Raw track and solid shaft say the length asked for, to the inch — 16'6" of
+  // 3" raw track is billed at the 24FT stick but the line reads 16'6" (Brandon,
+  // 12/10/2026; solid shafts 13/10/2026). A retainer still says the stick it
+  // bills: a 12FT U retainer is sold as a 16FT stick, and the line says what
+  // left the building.
+  const said = isRawTrack(part) || isSolidShaft(part) ? Math.max(0, Math.round(feet * 12) / 12) : billedFeet(part, feet);
   return `${base},  ${feetText(said)}`;
 }
 
@@ -82,6 +83,15 @@ const RAW_TRACK = /\bRAW TRACK\b/i;
 const isRawTrack = (part: Part) => RAW_TRACK.test(part.name) || RAW_TRACK.test(part.desc);
 
 /**
+ * Solid shafts come as 12'6" and 24FT sticks — Brandon, 13/10/2026. Asked for
+ * in feet and inches: up to 12'6" bills the 12'6" stick, anything longer the
+ * 24FT one, at the sheet's per-foot rate (springs.ts marks them per foot).
+ */
+const SOLID_SHAFT = /\bSOLID SHAFT\b/i;
+export const isSolidShaft = (part: Part) => SOLID_SHAFT.test(part.name) || SOLID_SHAFT.test(part.desc);
+const SOLID_SHAFT_SHORT = 12.5;
+
+/**
  * Lock bars — Brandon, 9/10/2026. The sheet lists them as 8FT, but they are
  * cut to the door: 1FT to 18FT, to the inch, and the line says the length.
  * The price is the same whatever the length — they are not sold by the foot.
@@ -96,7 +106,7 @@ export function isLockbar(part: Part): boolean {
 /** The footage a part may be sold in, where it is limited; null where it is not. */
 export function feetLimits(part: Part): { min: number; max: number } | null {
   if (isLockbar(part)) return { min: 1, max: 18 };
-  return part.perFoot && isRawTrack(part) ? { min: 1, max: 24 } : null;
+  return part.perFoot && (isRawTrack(part) || isSolidShaft(part)) ? { min: 1, max: 24 } : null;
 }
 
 /** Parts that take a length at all: anything sold by the foot, and lock bars. */
@@ -106,7 +116,7 @@ export function takesLength(part: Part): boolean {
 
 /** Parts measured in feet and inches rather than whole feet. */
 export function measuredToInch(part: Part): boolean {
-  return isRetainer(part) || isLockbar(part) || isRawTrack(part);
+  return isRetainer(part) || isLockbar(part) || isRawTrack(part) || isSolidShaft(part);
 }
 
 /** Feet actually billed for a part, which is not always the feet asked for. */
@@ -118,6 +128,7 @@ export function billedFeet(part: Part, feet?: number): number {
   const ft = Math.max(0, measuredToInch(part) ? Math.round((feet ?? 0) * 12) / 12 : Math.trunc(feet ?? 0));
   if (!part.perFoot) return ft;
   if (isRawTrack(part)) return ft === 0 ? 0 : ft <= 12 ? 12 : 24;
+  if (isSolidShaft(part)) return ft === 0 ? 0 : ft <= SOLID_SHAFT_SHORT ? SOLID_SHAFT_SHORT : 24;
   for (const stick of RETAINER_STICKS) {
     if (stick.type.test(part.desc) && ft > stick.overFeet) return stick.billFeet;
   }

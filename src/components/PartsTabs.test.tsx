@@ -153,6 +153,27 @@ describe("the Parts buttons (6/10/2026)", () => {
     expect(screen.queryByTestId("parts-search")).toBeNull();
   });
 
+  it("sells a solid shaft to the inch on the Tube shafts tab, as a 12'6\" or 24FT stick (13/10/2026)", async () => {
+    const tube = GROUP_TABS.find((t) => t.id === "tubeshafts")!;
+    show(<PartsTool menu={tube.menu} categories={tube.categories} group="Tube shafts" />);
+    fireEvent.click(screen.getByTestId("page-solid-shafts"));
+    fireEvent.click(screen.getByText('1" SOLID SHAFT').closest("button")!);
+    expect(screen.getByTestId("parts-inches")).toBeTruthy();
+    fireEvent.change(screen.getByTestId("parts-feet"), { target: { value: "12" } });
+    fireEvent.change(screen.getByTestId("parts-inches"), { target: { value: "6" } });
+    expect(screen.getByTestId("parts-price").textContent).toBe("$106.25");          // the 12'6" stick at 8.50
+    let line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
+    expect(line.description).toBe('1" SOLID SHAFT,  12\'6"');
+    expect(line.rate).toBe(106.25);
+    fireEvent.change(screen.getByTestId("parts-inches"), { target: { value: "7" } });
+    expect(screen.getByTestId("parts-price").textContent).toBe("$204.00");          // past 12'6": the 24FT stick
+    line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
+    expect(line.description).toBe('1" SOLID SHAFT,  12\'7"');
+    fireEvent.change(screen.getByTestId("parts-feet"), { target: { value: "25" } });
+    expect(screen.getByTestId("parts-feet-error").textContent).toContain("Solid shaft is sold from 1 to 24 ft");
+    expect(screen.queryByTestId("parts-copy-qb")).toBeNull();
+  });
+
   it("opens a group tab straight onto its pages", () => {
     const angle = GROUP_TABS.find((t) => t.id === "angle")!;
     show(<PartsTool menu={angle.menu} categories={angle.categories} group="Angle" />);
