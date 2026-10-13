@@ -109,8 +109,9 @@ export const HAND_ADDED_PARTS: Record<string, ShelfPart[]> = {
  * matches.
  */
 export const HAND_PRICES: Record<string, number> = {
-  "STRUTS|10FT STRUT": 22.95,
-  "STRUTS|12FT STRUT": 25.95,
+  // 10FT and 12FT struts moved again 13/10/2026 (were 22.95 and 25.95).
+  "STRUTS|10FT STRUT": 24.95,
+  "STRUTS|12FT STRUT": 29.95,
   "STRUTS|14FT STRUT": 34.95,
   "TUBE SHAFT|10FT TUBE SHAFT": 24.95,
   "TUBE SHAFT|14FT TUBE SHAFT": 34.95,
@@ -124,14 +125,24 @@ export const HAND_PRICES: Record<string, number> = {
  * stick (part-pricing.ts). Keyed "CATEGORY|NAME", as HAND_PRICES is.
  */
 export const HAND_PER_FOOT = new Set<string>(['TUBE SHAFT|1" SOLID SHAFT', 'TUBE SHAFT|1-1/4" SOLID SHAFT']);
+/**
+ * Tube shafts are cut 9" over the nominal length, and the line says so
+ * (Brandon, 13/10/2026): the sheet's "10FT TUBE SHAFT" pastes as 10'9" TUBE
+ * SHAFT. The name the counter picks stays the sheet's.
+ */
+export function tubeShaftDesc(desc: string): string {
+  return desc.replace(/^(\d+)FT TUBE SHAFT/, "$1'9\" TUBE SHAFT");
+}
 function withHandPrices(c: PartCategory): PartCategory {
   return {
     ...c,
     items: c.items.map((p) => {
       const key = `${c.name}|${p.name}`;
       const price = HAND_PRICES[key];
-      const out = price === undefined ? p : { ...p, price };
-      return HAND_PER_FOOT.has(key) ? { ...out, perFoot: true } : out;
+      let out = price === undefined ? p : { ...p, price };
+      if (HAND_PER_FOOT.has(key)) out = { ...out, perFoot: true };
+      if (c.name === "TUBE SHAFT") out = { ...out, desc: tubeShaftDesc(out.desc) };
+      return out;
     }),
   };
 }

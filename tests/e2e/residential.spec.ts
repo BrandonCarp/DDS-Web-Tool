@@ -63,8 +63,9 @@ test.describe("authenticated", () => {
     await page.getByTestId("lock").selectOption("lockbar_installed");
     const answer = page.waitForResponse((r) => r.url().includes("/api/price"));
     await page.getByTestId("get-price").click();
-    expect((await (await answer).json()).unitPrice).toBeCloseTo(934.63, 2);
-    await expect(page.locator("aside.quote").getByTestId("total")).toHaveText("$934.63");
+    // 939.58 since the installed lock bar moved to 74.95 (9/10/2026); 934.63 before.
+    expect((await (await answer).json()).unitPrice).toBeCloseTo(939.58, 2);
+    await expect(page.locator("aside.quote").getByTestId("total")).toHaveText("$939.58");
   });
 
   test("shows the in-stock badge and Copy for QuickBooks", async ({ page }) => {

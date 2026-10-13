@@ -8,6 +8,7 @@ import {
   EXTENSION_SPRINGS,
   KITS_GROUP,
   SHELF_PART_CATEGORIES,
+  tubeShaftDesc,
   HAND_PRICES,
   HAND_ADDED_PARTS,
   PARTS_TAB_CATEGORIES,
@@ -201,12 +202,24 @@ describe("prices set by hand ahead of the sheet (7/10/2026)", () => {
     SHELF_PART_CATEGORIES.find((c) => c.name === category)?.items.find((p) => p.name === name)?.price;
 
   it("sells the struts and tube shafts at Brandon's prices", () => {
-    expect(price("STRUTS", "10FT STRUT")).toBe(22.95);
-    expect(price("STRUTS", "12FT STRUT")).toBe(25.95);
+    expect(price("STRUTS", "10FT STRUT")).toBe(24.95);   // 13/10/2026
+    expect(price("STRUTS", "12FT STRUT")).toBe(29.95);   // 13/10/2026
     expect(price("STRUTS", "14FT STRUT")).toBe(34.95);
     expect(price("TUBE SHAFT", "10FT TUBE SHAFT")).toBe(24.95);
     expect(price("TUBE SHAFT", "14FT TUBE SHAFT")).toBe(34.95);
     expect(price("STRUTS", "16FT STRUT")).toBe(34.95); // untouched
+  });
+
+  it("writes every tube shaft 9\" over its nominal length on the line, under the sheet's name (13/10/2026)", () => {
+    const tube = SHELF_PART_CATEGORIES.find((c) => c.name === "TUBE SHAFT")!;
+    const desc = (name: string) => tube.items.find((p) => p.name === name)?.desc;
+    expect(desc("10FT TUBE SHAFT")).toBe("10'9\" TUBE SHAFT");
+    expect(desc("8FT TUBE SHAFT")).toBe("8'9\" TUBE SHAFT");
+    expect(desc("16FT TUBE SHAFT - HEAVY")).toBe("16'9\" TUBE SHAFT - HEAVY");
+    expect(tubeShaftDesc("18FT TUBE SHAFT")).toBe("18'9\" TUBE SHAFT");
+    for (const p of tube.items.filter((x) => /TUBE SHAFT/.test(x.name))) expect(p.desc, p.name).toMatch(/^\d+'9" TUBE SHAFT/);
+    // Solid shafts are not tube shafts.
+    expect(desc('1" SOLID SHAFT')).toBe('1" SOLID SHAFT');
   });
 
   it("sells the lock bar assembly at 49.95 (9/10/2026), the bare bar as the sheet has it", () => {
