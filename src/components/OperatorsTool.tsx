@@ -23,8 +23,10 @@ import {
  * groups as stacked buttons, then — Accessories — the group's sections the
  * same way and the section's list; — Operators (13/10/2026) — Residential or
  * Commercial, then Belt / Chain / Side Mount, then the rail length as buttons
- * and the operators listed under them. One level showing at a time, with Back
- * in the header. One difference from the shelf: not everything is priced yet, so
+ * and the operators listed under them — once a length is pressed the others
+ * collapse, and pressing it again (or Back) opens them back up. One level
+ * showing at a time, with Back in the header. One difference from the shelf:
+ * not everything is priced yet, so
  * where there is no price the card says so instead of showing a rate. Nobody
  * should be able to lift a number off this screen that the company has not set.
  */
@@ -47,12 +49,16 @@ export function OperatorsTool({ openOn }: { openOn?: SearchPick } = {}) {
   const onOperators = group === "Operators";
   const sections = OPERATOR_CATALOGUE.filter((s) => s.group === group);
   // Accessories: groups, sections, list. Operators: groups, use, kind, then
-  // the rail lengths and drop-down (belt and chain) or the drop-down alone.
+  // the rail lengths with the list under the pressed one (belt and chain) or
+  // the list alone (side mount).
   const level = !group ? 0
     : !onOperators ? (sectionName ? 2 : 1)
     : !use ? 1 : !kind ? 2 : 3;
   const kinds = use ? kindsFor(use) : [];
   const rails = use && kind && kind !== "sidemount" ? railLengthsFor(use, kind) : [];
+  // Once a rail is pressed the other lengths collapse: only the chosen one
+  // stays, pressed, and pressing it again opens them back up.
+  const railsShown = rail === null ? rails : rails.filter((r) => r === rail);
   const choices = use && kind && (kind === "sidemount" || rail !== null) ? operatorsFor(use, kind, rail) : [];
 
   const results = useMemo(() => {
@@ -91,8 +97,8 @@ export function OperatorsTool({ openOn }: { openOn?: SearchPick } = {}) {
   }
   function pickUse(u: OperatorUse) { setUse(u); setKind(null); setRail(null); setPicked(null); }
   function pickKind(k: OperatorKind) { setKind(k); setRail(null); setPicked(null); }
-  function pickRail(r: RailLength) { setRail(r); setPicked(null); }
-  /** Up one level: the list back to the sections, those back to the groups; on Operators the kind, the use, the groups. */
+  function pickRail(r: RailLength | null) { setRail(r); setPicked(null); }
+  /** Up one level: the list back to the sections, those back to the groups; on Operators the rail lengths, the kind, the use, the groups. */
   function back() {
     setPicked(null);
     if (!onOperators) {
@@ -100,7 +106,8 @@ export function OperatorsTool({ openOn }: { openOn?: SearchPick } = {}) {
       else setGroup(null);
       return;
     }
-    if (kind) { setKind(null); setRail(null); }
+    if (rail !== null) setRail(null);
+    else if (kind) setKind(null);
     else if (use) setUse(null);
     else setGroup(null);
   }
@@ -179,9 +186,9 @@ export function OperatorsTool({ openOn }: { openOn?: SearchPick } = {}) {
                     {rails.length > 0 && (
                       <div className="grow"><label>Rail</label>
                         <div className="pnav-pages" role="group" aria-label="Rail length">
-                          {rails.map((r) => (
+                          {railsShown.map((r) => (
                             <button key={String(r)} type="button" data-testid={`op-rail-${r}`} className={`pnav-page${r === rail ? " on" : ""}`}
-                              aria-pressed={r === rail} onClick={() => pickRail(r)}>
+                              aria-pressed={r === rail} onClick={() => pickRail(r === rail ? null : r)}>
                               {railLabel(r)}
                             </button>
                           ))}

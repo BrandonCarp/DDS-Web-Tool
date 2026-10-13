@@ -70,10 +70,33 @@ describe("the Operators group: residential or commercial, belt / chain / side mo
     expect(document.querySelector("aside.quote .qtitle")?.textContent).toBe("6690L, 7FT");
     const line = await copiedQbLine(screen.getByTestId("op-copy-qb"));
     expect(line.description).toBe("LIFTMASTER ELECTRIC OPERATOR MODEL 6690L,  7FT BELT RAIL");
-    // Another rail: the list changes and the pick is dropped.
+    // Another rail: open the lengths back up, press it — the list changes and the pick is dropped.
+    fireEvent.click(screen.getByTestId("op-rail-7"));
     fireEvent.click(screen.getByTestId("op-rail-10"));
     expect(pickOptions()).toEqual(["6580L", "6690L"]);
+    expect(buttons()).toEqual(["10FT"]);
     expect(document.querySelector("aside.quote .qtitle")?.textContent).toBe("Nothing selected");
+  });
+
+  it("collapses the other rail lengths once one is pressed, and opens them back up when it is pressed again", () => {
+    render(<OperatorsTool />);
+    openOperators("Residential", "chain");
+    expect(buttons()).toEqual(["7FT", "8FT", "10FT", "12FT", "14FT", "Head only"]);
+    fireEvent.click(screen.getByTestId("op-rail-8"));
+    expect(buttons()).toEqual(["8FT"]);
+    expect(screen.getByTestId("op-rail-8").getAttribute("aria-pressed")).toBe("true");
+    expect(pickOptions()).toEqual(["2220L", "2420L", "87802", "ATSWT", "2240L", "4690L"]);
+    pickRow("LIFTMASTER ELECTRIC OPERATOR MODEL 2420L,  8FT CHAIN RAIL");
+    expect(document.querySelector("aside.quote .qtitle")?.textContent).toBe("2420L, 8FT");
+    fireEvent.click(screen.getByTestId("op-rail-8"));
+    expect(buttons()).toEqual(["7FT", "8FT", "10FT", "12FT", "14FT", "Head only"]);
+    expect(screen.getByTestId("op-rail-8").getAttribute("aria-pressed")).toBe("false");
+    expect(screen.queryByTestId("op-list")).toBeNull();
+    expect(document.querySelector("aside.quote .qtitle")?.textContent).toBe("Nothing selected");
+    // Head only collapses the same way.
+    fireEvent.click(screen.getByTestId("op-rail-head"));
+    expect(buttons()).toEqual(["Head only"]);
+    expect(pickOptions()).toEqual(["2220L, HEAD ONLY", "2420L, HEAD ONLY", "87802, HEAD ONLY", "ATSWT, HEAD ONLY", "2240L, HEAD ONLY", "4690L, HEAD ONLY"]);
   });
 
   it("quotes the rail length that was chosen for a chain drive", async () => {
@@ -93,8 +116,13 @@ describe("the Operators group: residential or commercial, belt / chain / side mo
     openOperators("Commercial", "chain");
     expect([...document.querySelectorAll(".pnav-page")].map((b) => b.textContent)).toEqual(["8FT", "10FT", "12FT", "14FT", "16FT", "Head only"]);
     fireEvent.click(screen.getByTestId("op-rail-12"));
+    expect([...document.querySelectorAll(".pnav-page")].map((b) => b.textContent)).toEqual(["12FT"]);
     expect(pickOptions()).toContain("T101L5");
     expect(pickOptions()).toContain("TDC7S1BMC, STANDARD, 700 LBS, 20 CYCLES");
+    // Back opens the lengths up again, then goes up to the kinds.
+    fireEvent.click(screen.getByTestId("op-back"));
+    expect([...document.querySelectorAll(".pnav-page")].map((b) => b.textContent)).toEqual(["8FT", "10FT", "12FT", "14FT", "16FT", "Head only"]);
+    expect(screen.queryByTestId("op-list")).toBeNull();
     fireEvent.click(screen.getByTestId("op-back"));
     expect([...document.querySelectorAll(".pnav-page")].map((b) => b.textContent)).toEqual(["Chain Operators", "Side Mount Operators"]);
   });
@@ -147,6 +175,8 @@ describe("one level at a time, with Back (Brandon's wireframe, 12/10/2026)", () 
     fireEvent.click(screen.getByTestId("op-back"));
     expect(screen.queryByTestId("op-list")).toBeNull();
     expect(document.querySelector("aside.quote .qtitle")?.textContent).toBe("Nothing selected");
+    expect(buttons()).toEqual(["7FT", "8FT", "10FT", "12FT", "14FT", "Head only"]);   // the collapsed lengths open back up
+    fireEvent.click(screen.getByTestId("op-back"));
     expect(buttons()).toEqual(["Belt Operators", "Chain Operators", "Side Mount Operators"]);
     fireEvent.click(screen.getByTestId("op-back"));
     expect(buttons()).toEqual(["Residential", "Commercial"]);
