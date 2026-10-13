@@ -38,7 +38,7 @@ describe("operator prices join to the catalogue", () => {
     // source. What is left unpriced is listed by the generator on every run.
     // 166 since the LiftMaster extension brackets were priced at $13.95 each
     // (7/10/2026); 167 with the G197LM wire hide at $4.50 each (9/10/2026).
-    expect(pricedCount()).toEqual({ priced: 167, total: ALL.length });
+    expect(pricedCount()).toEqual({ priced: 168, total: ALL.length });   // the 3 button control station, 13/10/2026
   });
 
   it("survives the double-space the OPERATORS sheet writes", () => {

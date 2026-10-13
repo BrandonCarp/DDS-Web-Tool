@@ -130,6 +130,16 @@ export const MANUAL_OPERATORS: ManualOperator[] = [
     source: SHEET,
   },
 
+  // --- the 3-button control station, Brandon, 13/10/2026 --------------------
+  // Open / close / stop station for a commercial operator; priced each in
+  // operator-prices-manual.ts.
+  {
+    name: "3 BUTTON CONTROL STATION",
+    desc: "LIFTMASTER 3 BUTTON CONTROL STATION",
+    section: "LIFTMASTER ACCESSORIES",
+    source: "Brandon, 2026-10-13 — pending an updated NEW_PARTS_LIST.xlsx",
+  },
+
   // --- the extended trolley, under its real model number --------------------
   // operators.ts carries five rows reading "TDC12S1BMC,  EXTENDED,  30 CYCLES".
   // That is contradictory: S means standard. The jackshaft pair in the same
