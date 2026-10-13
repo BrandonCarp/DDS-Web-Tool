@@ -8,7 +8,7 @@ import { STOCK_PRICES } from "./data/stock-prices";
 import { highLiftPrice, mountPhrase } from "./data/track-lift";
 import { ADDONS, ULTRAGRAIN, GRADE_RES, COLLECTIONS_RES } from "./data/addons";
 import { dataKey, expandModels } from "./model-groups";
-import { windowDesigns, designName, plainWindowsFor } from "./data/inserts";
+import { windowDesigns, designName, plainWindowsFor, stockLongAllowed } from "./data/inserts";
 import { RES_SECTIONS } from "./data/res-sections";
 import { SECTION_ONLY_LIST, NO_GLASS_AT_18 } from "./data/res-section-meta";
 import { colorInStock, sectionColorInStock, sizeCode } from "./data/stock-colors";
@@ -411,6 +411,8 @@ export interface ResSectionInput {
   height: "18" | "21";       // label only; both heights share one price
   kind: "bt" | "int";
   glazed?: boolean;          // intermediate sections only
+  /** The glazed section's window, by its order name (PLAIN LONG 40-1/2" X 12"), named on the line. */
+  plainWindow?: string;
   lockbar?: boolean;         // lockbar INSTALLED — solid intermediate sections only
   color?: string;
 }
@@ -452,10 +454,19 @@ export function quoteResidentialSection(model: string, input: ResSectionInput): 
   // commercial sections read in, and the order the counter says it out loud.
   // "Replacement" and the "sections only" tail are dropped: the line already
   // says SECTION, and the trailing dash read as part of the colour.
+  // A glazed section names its window as the door line does (Brandon,
+  // 13/10/2026): "plain long 40-1/2" x 12" intermediate section" — the model's
+  // own window, a long one at the widths a stock door takes it. With no
+  // window named (a model with no list) it is a glazed intermediate section.
+  const window = glazed && input.plainWindow && plainWindowsFor(model).includes(input.plainWindow)
+    && (!/\bLONG\b/i.test(input.plainWindow) || stockLongAllowed(model, Number(wft), Number(win ?? 0)))
+    ? input.plainWindow.toLowerCase() : null;
   const sectionTxt =
-    input.kind === "bt" ? "bottom section" : glazed ? "glazed intermediate section" : "solid intermediate section";
+    input.kind === "bt" ? "bottom section" : glazed ? `${window ?? "glazed"} intermediate section` : "solid intermediate section";
+  // The door's head: a Gallery names its collection.
+  const coll = COLLECTIONS_RES[dataKey(model)] === "Gallery Collection" ? COLLECTIONS_RES[dataKey(model)] : "";
   const desc =
-    `Clopay Model ${model}, ${widthTxt} x ${input.height}", ${sectionTxt}, ` +
+    `Clopay ${coll ? coll + ", " : ""}Model ${model}, ${widthTxt} x ${input.height}", ${sectionTxt}, ` +
     `in the color ${input.color || "White"}` +
     (lockbar ? ", lockbar installed" : "");
   return { model, size: null, priced: true, isStock: secStock, source: "standard", lines: shown, unitPrice, description: desc };

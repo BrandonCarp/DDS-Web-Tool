@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { PART_CATEGORIES, partDescription, partPrice, partQuantity, billedFeet, feetLimits } from "./data/parts";
-import { measuredToInch } from "./data/part-pricing";
+import { JAMB_SEAL_COLORS, measuredToInch, partColors } from "./data/part-pricing";
 import { SHELF_PART_CATEGORIES } from "./data/springs";
 import { QB_ITEMS } from "../qb/iif";
 
@@ -167,6 +167,27 @@ describe("raw track sticks (30/9/2026)", () => {
     expect(feetLimits(raw2())).toEqual({ min: 1, max: 24 });
     expect(feetLimits(raw3())).toEqual({ min: 1, max: 24 });
     expect(feetLimits(find("BRUSH SEAL / RETAINERS", '1" BRUSH SEAL'))).toBeNull();
+  });
+});
+
+describe("jamb seal colours (13/10/2026)", () => {
+  const seal = () => find("RETAINERS", "JAMB SEAL");
+
+  it("is sold in white, black and brown, and nothing else takes a colour", () => {
+    expect(partColors(seal())).toEqual(["White", "Black", "Brown"]);
+    expect(JAMB_SEAL_COLORS).toEqual(["White", "Black", "Brown"]);
+    expect(partColors(find("RETAINERS", "THRESHOLD SEAL"))).toEqual([]);
+    expect(partColors(find("JAMB BRACKETS", "#1 JAMB BRACKET"))).toEqual([]);
+  });
+
+  it("leads the line with the colour chosen, at the sheet's price", () => {
+    expect(partDescription(seal(), 30)).toBe("WHITE JAMB SEAL,  30FT");
+    expect(partDescription(seal(), 30, 0, 0, "White")).toBe("WHITE JAMB SEAL,  30FT");
+    expect(partDescription(seal(), 30, 0, 0, "Black")).toBe("BLACK JAMB SEAL,  30FT");
+    expect(partDescription(seal(), 30, 0, 0, "Brown")).toBe("BROWN JAMB SEAL,  30FT");
+    expect(partDescription(seal(), 30, 0, 0, "Green")).toBe("WHITE JAMB SEAL,  30FT");   // not a colour it comes in
+    expect(partDescription(find("RETAINERS", "THRESHOLD SEAL"), 10, 0, 0, "Brown")).toBe("THRESHOLD SEAL,  10FT");
+    expect(partPrice(seal(), 30)).toBe(37.5);
   });
 });
 

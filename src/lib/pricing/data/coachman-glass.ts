@@ -6,15 +6,16 @@
 // it by the group's door margin at quote time (so-glass.ts). Width bands are
 // in inches. The groups are keyed as special-orders.ts keys them.
 //
-// The Coachman's glass is a top section, not a window count the counter
-// picks: the sheet prices the door solid and with the double strength top
-// section, so DSB here is the gap between the two, and the other glass is
-// the sheet's flat ADD TO PRICE OF SOLID DOOR by window count. The inserts
-// figure on the DSB bands is the arch window section (ARC13A and the rest),
-// which the sheet prices over the solid door on 3- and 4-window doors only.
-// There is one window layout, so every band is 'short' and 'long' is empty.
+// The Coachman's windows are a top section priced by design (CJ's workbook
+// of 13/10/2026): SECTIONS below is each design's adder over the solid
+// door by width band, and a design is not built at a width outside its
+// bands. The glass is an ADD ON TO DOUBLE STRENGTH DOOR PRICE by window
+// count, so the bands here hold that add-on (double strength itself is
+// 0) on the widths some section is priced; a width in no band is solid
+// only. One window layout, so every band is 'short' and 'long' is empty.
+// coachman-windows.ts puts the two together.
 
-import type { GlassOption, SheetBand } from "./sheet-band";
+import type { GlassOption, SectionBand, SheetBand } from "./sheet-band";
 
 /** The groups this workbook prices. */
 export const COACHMAN_GROUPS = ["CD"] as const;
@@ -33,47 +34,74 @@ export const COACHMAN_GLASS: Record<string, Record<string, Record<"short" | "lon
   "CD": {
     "dsb": {
       short: [
-        { lo: 74, hi: 96, windows: 2, glass: 264.48, inserts: null },
-        { lo: 98, hi: 108, windows: 2, glass: 275.40, inserts: null },
-        { lo: 110, hi: 120, windows: 2, glass: 351.83, inserts: null },
-        { lo: 144, hi: 164, windows: 3, glass: 396.72, inserts: 793.45 },
-        { lo: 180, hi: 192, windows: 4, glass: 527.75, inserts: 1055.50 },
-        { lo: 194, hi: 216, windows: 4, glass: 550.80, inserts: 1055.50 },
+        { lo: 74, hi: 120, windows: 2, glass: 0.00, inserts: null },
+        { lo: 144, hi: 164, windows: 3, glass: 0.00, inserts: null },
+        { lo: 170, hi: 170, windows: 3, glass: 0.00, inserts: null },
+        { lo: 180, hi: 216, windows: 4, glass: 0.00, inserts: null },
       ],
       long: [],
     },
     "obscure": {
       short: [
-        { lo: 74, hi: 120, windows: 2, glass: 313.00, inserts: null },
-        { lo: 144, hi: 164, windows: 3, glass: 493.79, inserts: null },
-        { lo: 180, hi: 216, windows: 4, glass: 624.82, inserts: null },
+        { lo: 74, hi: 120, windows: 2, glass: 48.53, inserts: null },
+        { lo: 144, hi: 164, windows: 3, glass: 97.06, inserts: null },
+        { lo: 170, hi: 170, windows: 3, glass: 97.06, inserts: null },
+        { lo: 180, hi: 216, windows: 4, glass: 97.06, inserts: null },
       ],
       long: [],
     },
     "frosted": {
       short: [
-        { lo: 74, hi: 120, windows: 2, glass: 452.53, inserts: null },
-        { lo: 144, hi: 164, windows: 3, glass: 772.82, inserts: null },
-        { lo: 180, hi: 216, windows: 4, glass: 903.85, inserts: null },
+        { lo: 74, hi: 120, windows: 2, glass: 188.05, inserts: null },
+        { lo: 144, hi: 164, windows: 3, glass: 376.10, inserts: null },
+        { lo: 170, hi: 170, windows: 3, glass: 376.10, inserts: null },
+        { lo: 180, hi: 216, windows: 4, glass: 376.10, inserts: null },
       ],
       long: [],
     },
     "rain": {
       short: [
-        { lo: 74, hi: 120, windows: 2, glass: 452.53, inserts: null },
-        { lo: 144, hi: 164, windows: 3, glass: 772.82, inserts: null },
-        { lo: 180, hi: 216, windows: 4, glass: 903.85, inserts: null },
+        { lo: 74, hi: 120, windows: 2, glass: 188.05, inserts: null },
+        { lo: 144, hi: 164, windows: 3, glass: 376.10, inserts: null },
+        { lo: 170, hi: 170, windows: 3, glass: 376.10, inserts: null },
+        { lo: 180, hi: 216, windows: 4, glass: 376.10, inserts: null },
       ],
       long: [],
     },
     "seeded": {
       short: [
-        { lo: 74, hi: 120, windows: 2, glass: 598.12, inserts: null },
-        { lo: 144, hi: 164, windows: 3, glass: 1063.99, inserts: null },
-        { lo: 180, hi: 216, windows: 4, glass: 1195.02, inserts: null },
+        { lo: 74, hi: 120, windows: 2, glass: 333.64, inserts: null },
+        { lo: 144, hi: 164, windows: 3, glass: 667.27, inserts: null },
+        { lo: 170, hi: 170, windows: 3, glass: 667.27, inserts: null },
+        { lo: 180, hi: 216, windows: 4, glass: 667.27, inserts: null },
       ],
       long: [],
     },
+  },
+};
+
+/**
+ * The window sections by design: the cost adder over the solid door, by
+ * width band (inches), in the order the sheet lists the designs. A design
+ * with no band at a width is not built there.
+ */
+export const COACHMAN_SECTIONS: Record<string, Record<string, SectionBand[]>> = {
+  "CD": {
+    "ARCH1": [{ lo: 74, hi: 96, cost: 264.48 }, { lo: 98, hi: 108, cost: 137.70 }, { lo: 110, hi: 120, cost: 175.92 }, { lo: 170, hi: 194, cost: 527.75 }, { lo: 204, hi: 216, cost: 550.80 }],
+    "ARCH3": [{ lo: 74, hi: 96, cost: 528.96 }, { lo: 98, hi: 108, cost: 275.40 }, { lo: 110, hi: 120, cost: 351.83 }, { lo: 170, hi: 194, cost: 1055.50 }, { lo: 204, hi: 216, cost: 1101.60 }],
+    "ARCH4": [{ lo: 74, hi: 96, cost: 528.96 }, { lo: 98, hi: 108, cost: 275.40 }, { lo: 110, hi: 120, cost: 351.83 }, { lo: 170, hi: 194, cost: 1055.50 }, { lo: 204, hi: 216, cost: 1101.60 }],
+    "ARCH13": [{ lo: 74, hi: 96, cost: 264.48 }, { lo: 98, hi: 108, cost: 137.70 }, { lo: 110, hi: 120, cost: 175.92 }, { lo: 170, hi: 194, cost: 527.75 }, { lo: 204, hi: 216, cost: 550.80 }],
+    "ARCH14": [{ lo: 74, hi: 96, cost: 264.48 }, { lo: 98, hi: 108, cost: 137.70 }, { lo: 110, hi: 120, cost: 175.92 }, { lo: 170, hi: 194, cost: 527.75 }, { lo: 204, hi: 216, cost: 550.80 }],
+    "REC11": [{ lo: 74, hi: 96, cost: 264.48 }, { lo: 98, hi: 108, cost: 137.70 }, { lo: 110, hi: 120, cost: 175.92 }, { lo: 144, hi: 164, cost: 396.72 }, { lo: 170, hi: 194, cost: 527.75 }, { lo: 204, hi: 216, cost: 550.80 }],
+    "REC13": [{ lo: 74, hi: 96, cost: 264.48 }, { lo: 98, hi: 108, cost: 137.70 }, { lo: 110, hi: 120, cost: 175.92 }, { lo: 144, hi: 164, cost: 396.72 }, { lo: 170, hi: 194, cost: 527.75 }, { lo: 204, hi: 216, cost: 550.80 }],
+    "REC14": [{ lo: 74, hi: 96, cost: 264.48 }, { lo: 98, hi: 108, cost: 137.70 }, { lo: 110, hi: 120, cost: 175.92 }, { lo: 144, hi: 164, cost: 396.72 }, { lo: 170, hi: 194, cost: 527.75 }, { lo: 204, hi: 216, cost: 550.80 }],
+    "SQ23": [{ lo: 74, hi: 96, cost: 264.48 }, { lo: 98, hi: 108, cost: 137.70 }, { lo: 110, hi: 120, cost: 175.92 }, { lo: 144, hi: 164, cost: 396.72 }, { lo: 170, hi: 194, cost: 527.75 }, { lo: 204, hi: 216, cost: 550.80 }],
+    "SQ24": [{ lo: 74, hi: 96, cost: 264.48 }, { lo: 98, hi: 108, cost: 137.70 }, { lo: 110, hi: 120, cost: 175.92 }, { lo: 144, hi: 164, cost: 396.72 }, { lo: 170, hi: 194, cost: 527.75 }, { lo: 204, hi: 216, cost: 550.80 }],
+    "ARC13A": [{ lo: 144, hi: 164, cost: 793.45 }, { lo: 170, hi: 194, cost: 1055.50 }, { lo: 204, hi: 216, cost: 1101.60 }],
+    "ARC14A": [{ lo: 144, hi: 164, cost: 793.45 }, { lo: 170, hi: 194, cost: 1055.50 }, { lo: 204, hi: 216, cost: 1101.60 }],
+    "ARC1A": [{ lo: 144, hi: 164, cost: 793.45 }, { lo: 170, hi: 194, cost: 1055.50 }, { lo: 204, hi: 216, cost: 1101.60 }],
+    "ARC3A": [{ lo: 144, hi: 164, cost: 793.45 }, { lo: 170, hi: 194, cost: 1055.50 }, { lo: 204, hi: 216, cost: 1101.60 }],
+    "ARC4A": [{ lo: 144, hi: 164, cost: 793.45 }, { lo: 170, hi: 194, cost: 1055.50 }, { lo: 204, hi: 216, cost: 1101.60 }],
   },
 };
 

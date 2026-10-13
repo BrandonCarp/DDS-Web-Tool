@@ -243,6 +243,31 @@ describe("residential tool — replacement sections", () => {
     expect(last.assembly).toBe("sections");
     expect(last.homeowner).toBe(true);
   });
+
+  it("names a glazed section's window like the door does, and sends it (13/10/2026)", async () => {
+    const SHORT = 'PLAIN SHORT 19-1/2" X 12"';
+    const LONG = 'PLAIN LONG 40-1/2" X 12"';
+    const values = (id: string) => [...(screen.getByTestId(id) as HTMLSelectElement).options].map((o) => o.value);
+    const labels = (id: string) => [...(screen.getByTestId(id) as HTMLSelectElement).options].map((o) => o.textContent);
+    await configure("4050", "sections");
+    fireEvent.change(screen.getByTestId("sec-kind"), { target: { value: "int" } });
+    fireEvent.change(screen.getByTestId("sec-height"), { target: { value: "21" } });
+    fireEvent.change(screen.getByTestId("sec-width"), { target: { value: "9" } });
+    expect(values("sec-glass")).toEqual(["solid", `glazed:${SHORT}`, `glazed:${LONG}`]);
+    expect(labels("sec-glass")).toEqual(["Solid — no windows", SHORT, LONG]);
+    fireEvent.change(screen.getByTestId("sec-glass"), { target: { value: `glazed:${LONG}` } });
+    fireEvent.change(screen.getByTestId("color"), { target: { value: "White" } });
+    fireEvent.click(screen.getByTestId("get-price"));
+    await waitFor(() => expect(bodies.length).toBeGreaterThan(0));
+    expect(bodies[bodies.length - 1]).toMatchObject({ assembly: "sections", secKind: "int", glazed: true, plainWindow: LONG, lockbar: false });
+    // The long window is a stock 4050's at 8', 9' and 16' only: at 7'6" the pick falls to the short one.
+    fireEvent.change(screen.getByTestId("sec-width"), { target: { value: "7.6" } });
+    expect(values("sec-glass")).toEqual(["solid", `glazed:${SHORT}`]);
+    expect((screen.getByTestId("sec-glass") as HTMLSelectElement).value).toBe(`glazed:${SHORT}`);
+    fireEvent.click(screen.getByTestId("get-price"));
+    await waitFor(() => expect(bodies.length).toBeGreaterThan(1));
+    expect(bodies[bodies.length - 1]).toMatchObject({ glazed: true, plainWindow: SHORT });
+  });
 });
 
 describe("residential tool — assembly type and the order of step 2", () => {

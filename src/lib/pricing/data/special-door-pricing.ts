@@ -22,6 +22,7 @@
 // guessed price.
 
 import { glassAdderSell, glassLabel, doorMargin, isSheetGroup, sheetUltraGrain, panelStylesFor, type PanelStyle } from "./so-glass";
+import { sectionCost, windowSectionGroup, windowSectionSell } from "./coachman-windows";
 import { colorTakesPremium } from "./catalog-meta";
 import { highLiftPrice, mountPhrase, type TrackMount, type InclineStyle } from "./track-lift";
 import { ADDONS, GRADE_RES, COLLECTIONS_RES } from "./addons";
@@ -94,17 +95,15 @@ const NAMED_COLLECTIONS = new Set(["Gallery Collection", "Bridgeport Collection"
 const TORSION_INCLUDED = new Set(["CD"]);
 
 /**
- * Groups whose window options are held back from the configurator for now —
- * the Coachman (Brandon, 12/10/2026), until Clopay's window pricing is
- * settled: iStore charges 436 list for an ARCH4 top section at 8', CJ's sheet
- * 218. The glass tables and their tests stay as they are; the special order
- * tab offers Solid alone.
+ * Groups offered high lift track on the special order tab — the 4050 family
+ * only (Brandon, 13/10/2026). Every other door takes the radius and low
+ * headroom tracks alone, and a high lift asked for on one is 12" radius.
  */
-const GLASS_ON_HOLD = new Set(["CD"]);
+const HIGH_LIFT_GROUPS = new Set(["4050/4051/4053"]);
 
-/** True when a group's windows are not offered on the special order tab for now. */
-export function glassOnHold(group: string): boolean {
-  return GLASS_ON_HOLD.has(group);
+/** True when a group's special order configurator offers high lift track. */
+export function highLiftOffered(group: string): boolean {
+  return HIGH_LIFT_GROUPS.has(group);
 }
 
 /** True when a group's grid prices include torsion at every height. */
@@ -135,28 +134,16 @@ export function springRatesFor(member: string): SpringRates {
 }
 
 /**
- * Groups sold with galvanized torsion springs only (Brandon, 12/10/2026, the
- * Coachman): the one spring choice, priced and worded as galvanized whatever
- * the input says.
+ * Groups whose torsion and galvanized torsion are one price — the galvanized
+ * rate (Brandon, 13/10/2026, the Coachman; galvanized alone on the 12th). The
+ * choice still names the spring on the line. No extension: the sheet includes
+ * torsion at every height.
  */
-const GALVANIZED_ONLY = new Set(["CD"]);
+const GALVANIZED_PRICED = new Set(["CD"]);
 
-/** True when a group's only spring is galvanized torsion. */
-export function galvanizedOnly(group: string): boolean {
-  return GALVANIZED_ONLY.has(group);
-}
-
-/**
- * Groups whose third window choice is an arch window SECTION rather than
- * decorative inserts over the glass — the Coachman's ARC13A, ARC14A, ARC1A,
- * ARC3A and ARC4A, priced over the solid door on its sheet. The data rides in
- * the sheet's inserts slot; the words on the screen and the line do not.
- */
-const ARCH_SECTION_GROUPS = new Set(["CD"]);
-
-/** True when a group's "inserts" are arch window sections (the Coachman). */
-export function archSectionGroup(group: string): boolean {
-  return ARCH_SECTION_GROUPS.has(group);
+/** True when a group prices torsion at its galvanized rate, the two being its only springs. */
+export function galvanizedPriced(group: string): boolean {
+  return GALVANIZED_PRICED.has(group);
 }
 
 const LOCK_TEXT: Record<string, string> = {
@@ -438,10 +425,23 @@ export function specialDoorQuote(
     return { reason: `Clopay prices no windows on the ${input.variant || input.model} at ${heightLabel(input.width)} — solid only at this width.` };
   }
 
-  let base = triple[input.style];
+  // A door whose windows are a section priced by design (the Coachman) grids
+  // the solid door alone; the section is added below. Its sections are not
+  // inserts, so a window asked for as "inserts" is the same window.
+  const sectioned = windowSectionGroup(input.model);
+  const style: WindowStyle = sectioned && input.style === "inserts" ? "glass" : input.style;
+  let base = triple[sectioned ? "solid" : style];
   if (typeof base !== "number") {
     return { reason: "Clopay does not grid that style at this size — enter the total below." };
   }
+  const member = input.variant || input.model.split("/")[0];
+  // A design is validated against what the model offers for the style: inserts
+  // everywhere, and plain glass on the Coachman (its window sections).
+  const designId = (() => {
+    if (style === "solid" || !input.windesign) return null;
+    const valid = windowDesigns(member, style, input.width.split(".")[0]).map((d) => d.id);
+    return valid.includes(input.windesign) ? input.windesign : null;
+  })();
 
   // A named glass type replaces the grid's plain GLASS column. The grid prices
   // one generic glass door; Clopay sells a dozen types and the spread is over
@@ -459,16 +459,28 @@ export function specialDoorQuote(
   // that go on them, at the long band; short at the short band. The grid's own
   // glass columns are the short figures, so every such glass door re-prices here.
   const sheetPanel: PanelStyle = input.panelStyle ?? "short";
-  if (sheet && input.style !== "solid" && typeof triple.solid === "number") {
-    const add = glassAdderSell(input.model, sheetPanel, input.width, input.glassType || "dsb", input.style === "inserts");
+  if (sectioned && style !== "solid" && typeof triple.solid === "number") {
+    // The Coachman (CJ's workbook of 13/10/2026): the design's section over
+    // the solid door, then the glass over the double strength door, by window
+    // count — both from the sheet, lifted by the margin together.
+    if (!designId) return { reason: "Pick a window design — the Coachman's windows are priced by design." };
+    if (sectionCost(input.model, designId, input.width) == null) {
+      return { reason: `Clopay does not build the ${designName(designId)} window section at ${heightLabel(input.width)} — pick another design.` };
+    }
+    const add = windowSectionSell(input.model, input.width, designId, input.glassType || "dsb");
+    if (add == null) return { reason: "That glass is not priced at this width — pick another glass." };
+    base = triple.solid + add;
+    glassName = input.glassType && input.glassType !== "dsb" ? glassLabel(input.glassType) : null;
+  } else if (sheet && style !== "solid" && typeof triple.solid === "number") {
+    const add = glassAdderSell(input.model, sheetPanel, input.width, input.glassType || "dsb", style === "inserts");
     if (add == null) return { reason: "Inserts are not offered on that glass — pick another glass, or plain glass." };
     base = triple.solid + add;
     // Double strength is these doors' own grade, so the line keeps the grade
     // words ("double strength b grade windows"); a special glass is named.
     glassName = input.glassType && input.glassType !== "dsb" ? glassLabel(input.glassType) : null;
-  } else if (input.style !== "solid" && input.glassType && input.glassType !== "ssb") {
+  } else if (style !== "solid" && input.glassType && input.glassType !== "ssb") {
     const panel = input.panelStyle ?? "short";
-    const withInserts = input.style === "inserts";
+    const withInserts = style === "inserts";
     const add = glassAdderSell(input.model, panel, input.width, input.glassType, withInserts);
     if (add != null && typeof triple.solid === "number") {
       base = triple.solid + add;
@@ -490,19 +502,24 @@ export function specialDoorQuote(
   // tab's torsionOnly, deliberately worded the same way. A sheet priced with
   // torsion at every height (the Coachman) is torsion at 7' and 8' too.
   const torsionOnly = (tierKey !== "7" && tierKey !== "8") || torsionIncluded(input.model);
-  // The Coachman is sold with galvanized torsion only.
-  const spring = galvanizedOnly(input.model) ? "galvanized" : input.spring;
+  // The Coachman: torsion or galvanized torsion, both at the galvanized rate;
+  // extension is not sold, so one asked for is torsion.
+  const spring: SpringKey = galvanizedPriced(input.model) && input.spring === "extension" ? "torsion" : input.spring;
+  const springPriced = galvanizedPriced(input.model) && spring === "torsion" ? "galvanized" : spring;
+  // High lift is the 4050 family's; on any other door it is 12" radius track.
+  const track: TrackKey = input.track === "high_lift" && !highLiftOffered(input.model) ? "r12" : input.track;
+  const liftInches = track === "high_lift" ? input.highLiftInches ?? 0 : 0;
 
   // High lift is priced from the Clopay track tables, then divided by the
   // group's margin — the grid holds SELL figures, so an adder has to be lifted
   // into the same space before it can be added.
   const lift = (() => {
-    if (!input.highLiftInches || input.highLiftInches <= 0) return { value: 0, label: "" };
+    if (liftInches <= 0) return { value: 0, label: "" };
     const [hf, hi] = [Number(input.height.split(".")[0]), Number(input.height.split(".")[1] ?? 0)];
     const r = highLiftPrice({
       mount: (input.trackMount ?? "bracket") as TrackMount,
       incline: (input.incline ?? "straight_incline") as InclineStyle,
-      heightFt: hf, heightIn: hi, inches: input.highLiftInches,
+      heightFt: hf, heightIn: hi, inches: liftInches,
     });
     if (r.price <= 0) return { value: 0, label: "" };
     const margin = doorMargin(input.model);
@@ -515,7 +532,6 @@ export function specialDoorQuote(
   // and 8'2" and up (Brandon, 8/10/2026). Cost on the sheet, so lifted by the
   // margin like the glass. Which colours count is the catalogue's list for
   // the group, keyed the way the colour tables are.
-  const member = input.variant || input.model.split("/")[0];
   const ug = sheetUltraGrain(input.model);
   // A door with a second colour (the Bridgeport Inlay's inlay) is priced at
   // the dearer of the two: a premium inlay on a standard door carries the
@@ -534,8 +550,8 @@ export function specialDoorQuote(
 
   const adders =
     premium +
-    (input.track === "high_lift" ? 0 : ADDONS.track[input.track as keyof typeof ADDONS.track] ?? 0) +
-    springAdder(spring, torsionOnly, parseInt(input.width, 10) >= 12, springRatesFor(member)) +
+    (track === "high_lift" ? 0 : ADDONS.track[track as keyof typeof ADDONS.track] ?? 0) +
+    springAdder(springPriced, torsionOnly, parseInt(input.width, 10) >= 12, springRatesFor(member)) +
     (LOCK[input.lock] ?? 0) +
     lift.value;
 
@@ -551,20 +567,11 @@ export function specialDoorQuote(
   // section". The design is named where one was chosen, from the same list the
   // stock tab offers (the Gallery's arches and grilles included).
   const grade = GRADE_RES[dataKey(member)] || "";
-  // A design is validated against what the model offers for the style: inserts
-  // everywhere, and plain glass too on the Coachman (its ten glass designs).
-  const designId = (() => {
-    if (input.style === "solid" || !input.windesign) return null;
-    const valid = windowDesigns(member, input.style, input.width.split(".")[0]).map((d) => d.id);
-    return valid.includes(input.windesign) ? input.windesign : null;
-  })();
-  // An arch window section (the Coachman) is the window, not an insert over
-  // it: "ARC1A windows in the top section". A Coachman glass design names the
-  // window the same way, ahead of the glass: "REC13 double strength b grade
-  // windows in the top section".
-  // …and on the line it is its own clause after the windows: "double strength
-  // b grade windows in the top section, SQ24 design" (Brandon, 12/10/2026).
-  const glassDesign = input.style === "glass" && designId ? `, ${designName(designId)} design` : "";
+  // A Coachman window design — a window design or an arched section — is its
+  // own clause after the windows, worded as the stock tab words an insert:
+  // "double strength b grade windows in the top section, ARCH4 inserts"
+  // (Brandon, 13/10/2026; "SQ24 design" on the 12th).
+  const glassDesign = style === "glass" && designId ? `, ${designName(designId)} inserts` : "";
   // A plain window named by its order name, as the stock tab words it (its own
   // clause after "in the top section" — Brandon, 25/9/2026 there, 12/10/2026
   // here). The Gallery's and Bridgeport's other plain arch windows (Arch 2
@@ -573,17 +580,15 @@ export function specialDoorQuote(
     ...plainWindowsFor(member),
     ...windowDesigns(member, "inserts", input.width.split(".")[0]).filter((d) => d.cat === "arch" && /\bPLAIN\b/i.test(d.name)).map((d) => d.name),
   ];
-  const plain = input.style === "glass" && input.plainWindow && plainNames.includes(input.plainWindow)
+  const plain = style === "glass" && input.plainWindow && plainNames.includes(input.plainWindow)
     ? `${input.plainWindow.toLowerCase()}, ` : "";
   const winText =
-    input.style === "solid"
+    style === "solid"
       ? "solid no windows"
-      : input.style === "inserts" && archSectionGroup(input.model)
-      ? `${designId ? designName(designId) : "arch"} windows in the top section`
       : glassDesign
       ? `${glassName ? glassName.toLowerCase() : grade || "single strength b grade"} windows in the top section${glassDesign}`
       : `${glassName ? glassName.toLowerCase() : grade || "single strength b grade"} windows in the top section, ${plain}` +
-        (input.style === "inserts" && designId ? `${designName(designId)} inserts` : "no inserts");
+        (style === "inserts" && designId ? `${designName(designId)} inserts` : "no inserts");
   // Gallery, Bridgeport and Coachman doors carry the collection, as the stock tab
   // writes the Gallery ("CLOPAY GALLERY COLLECTION, MODEL GD1SU, ..." — Brandon, 8/10/2026).
   const collectionName = COLLECTIONS_RES[dataKey(member)];
@@ -602,9 +607,9 @@ export function specialDoorQuote(
     // phrases it, so the two read alike on a quote.
     (mountPhrase((input.trackMount ?? "bracket") as TrackMount)
       ? `${mountPhrase((input.trackMount ?? "bracket") as TrackMount)}, ` : "") +
-    `${input.track === "high_lift" && input.highLiftInches
-        ? `${input.highLiftInches}\u2033 high lift track`
-        : TRACK_TEXT[input.track] ?? TRACK_TEXT.r12}, ` +
+    `${track === "high_lift" && liftInches
+        ? `${liftInches}\u2033 high lift track`
+        : TRACK_TEXT[track] ?? TRACK_TEXT.r12}, ` +
     `${spring === "galvanized" ? "galvanized torsion" : torsionOnly || spring === "torsion" ? "torsion" : "extension"} springs, ` +
     `${LOCK_TEXT[input.lock] ?? "no lock"}`;
 

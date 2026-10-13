@@ -671,6 +671,25 @@ describe("replacement section verbiage", () => {
     expect(sec({ kind: "int", glazed: true })).toContain("glazed intermediate section");
   });
 
+  it("names a glazed section's window as the door line does (Brandon, 13/10/2026)", () => {
+    const LONG = 'PLAIN LONG 40-1/2" X 12"';
+    expect(sec({ kind: "int", glazed: true, plainWindow: LONG })).toBe(
+      'Clopay Model 4050, 8\'0" x 21", plain long 40-1/2" x 12" intermediate section, in the color White',
+    );
+    expect(sec({ kind: "int", glazed: true, plainWindow: 'PLAIN SHORT 19-1/2" X 12"', widthKey: "16" }))
+      .toBe('Clopay Model 4050, 16\'0" x 21", plain short 19-1/2" x 12" intermediate section, in the color White');
+    // The window must be the model's own, and a long one only where a stock door takes it (8', 9', 16').
+    expect(sec({ kind: "int", glazed: true, plainWindow: LONG, widthKey: "7.6" })).toContain("glazed intermediate section");
+    expect(sec({ kind: "int", glazed: true, plainWindow: "PLAIN ARCH 1" })).toContain("glazed intermediate section");
+    expect(sec({ kind: "int", glazed: false, plainWindow: LONG })).toContain("solid intermediate section");
+    expect(sec({ kind: "bt", plainWindow: LONG })).toContain(", bottom section,");
+    // A Gallery section carries the collection, as its door line does.
+    const gd = quoteResidentialSection("GD1SP", { widthKey: "16", height: "21", kind: "int", glazed: true, plainWindow: 'PLAIN LONG 42" X 16"', color: "White" }).description;
+    expect(gd).toBe('Clopay Gallery Collection, Model GD1SP, 16\'0" x 21", plain long 42" x 16" intermediate section, in the color White');
+    expect(quoteResidentialSection("GD1SP", { widthKey: "8", height: "21", kind: "bt", color: "White" }).description)
+      .toBe('Clopay Gallery Collection, Model GD1SP, 8\'0" x 21", bottom section, in the color White');
+  });
+
   it("keeps the lockbar note on the end", () => {
     expect(sec({ kind: "int", lockbar: true })).toMatch(/, lockbar installed$/);
   });

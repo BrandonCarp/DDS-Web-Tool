@@ -30,6 +30,8 @@ export async function POST(req: Request) {
       height: body.secHeight === "21" ? "21" : "18",
       kind: body.secKind === "int" ? "int" : "bt",
       glazed: body.glazed === true,
+      // Checked against the model's own window list in the engine.
+      plainWindow: typeof plainWindow === "string" ? plainWindow : undefined,
       lockbar: body.lockbar === true,
       color: typeof color === "string" ? color : "White",
       homeowner: homeowner === true,

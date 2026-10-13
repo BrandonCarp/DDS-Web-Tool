@@ -18,7 +18,7 @@ import type { SearchPick } from "@/lib/search";
 import { entryId, feetAsQuantity, type PartsMenu } from "@/lib/pricing/data/parts-menu";
 import { PartsNavigator } from "./PartsNavigator";
 import { cableQuote, CABLE_GAUGES } from "@/lib/pricing/data/cables";
-import { feetLimits, isLockbar, isSolidShaft, measuredToInch, priceNotSet, takesLength } from "@/lib/pricing/data/part-pricing";
+import { feetLimits, isLockbar, isSolidShaft, measuredToInch, partColors, priceNotSet, takesLength } from "@/lib/pricing/data/part-pricing";
 import { QtyStepper } from "./QtyStepper";
 import { COMMERCIAL_TRACK, COMMERCIAL_TRACK_HEIGHTS, COMMERCIAL_TRACK_SUB, commercialTrackAt } from "@/lib/pricing/data/commercial-track";
 import { RESIDENTIAL_TRACK_SUB, pickResidentialTrack, radiiFor, residentialTrackSets, trackHeightFor } from "@/lib/pricing/data/residential-track";
@@ -86,6 +86,8 @@ export function PartsTool({
   const [groupLabel, setGroupLabel] = useState<string | null>(() => page?.group ?? (menu?.some((g) => g.label === group) ? group! : null));
   const [feet, setFeet] = useState("");
   const [inches, setInches] = useState("0");
+  // The colour of a part sold in several (the jamb seal: white, black, brown — 13/10/2026).
+  const [partColor, setPartColor] = useState("White");
   // Cut-to-length cables: measured feet + inches, priced as a pair.
   const [cabGauge, setCabGauge] = useState(CABLE_GAUGES[0].label);
   const [cabFt, setCabFt] = useState("");
@@ -143,6 +145,8 @@ export function PartsTool({
     : Math.max(0, Math.trunc(Number(feet) || 0));
   const needsFeet = !!part && takesLength(part);
   const needsHands = !!part?.hands;
+  const colors = part ? partColors(part) : [];
+  const colorUsed = colors.includes(partColor) ? partColor : colors[0];
   // Raw track is sold 1FT to 24FT only (30/9/2026); outside that, no line.
   const limits = part ? feetLimits(part) : null;
   const feetOk = !limits || (ft >= limits.min && ft <= limits.max);
@@ -155,7 +159,7 @@ export function PartsTool({
     : trackPick
       ? trackPick.description
       : part
-        ? partDescription(part, ft, right, left)
+        ? partDescription(part, ft, right, left, colorUsed)
         : "";
   // A part with no price yet has no price here — never its placeholder 0 — so
   // the card says so and offers nothing to paste or add to the cart.
@@ -177,6 +181,7 @@ export function PartsTool({
     setInches("0");
     setRight(1);
     setLeft(1);
+    setPartColor("White");
   }
 
   /** Open a drop-down page. A page holding one part picks it straight away. */
@@ -493,6 +498,19 @@ export function PartsTool({
                       </div>
                       <div className="muted-note" style={{ marginTop: 6 }}>
                         Priced each — the quantity carries the count
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {colors.length > 0 && (
+                  <div className="gbody">
+                    <div className="grow">
+                      <label>Color</label>
+                      <div className="ctl selectwrap">
+                        <select data-testid="parts-color" value={colorUsed} onChange={(e) => setPartColor(e.target.value)}>
+                          {colors.map((c) => <option key={c} value={c}>{c}</option>)}
+                        </select>
                       </div>
                     </div>
                   </div>

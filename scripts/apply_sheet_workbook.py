@@ -5,8 +5,9 @@ the app.
 
     python scripts/apply_sheet_workbook.py BRIDGEPORT_3_LAYER.xlsx --family bridgeport
 
-The Coachman workbook is laid out differently (read_coachman_sheet, below)
-but loads the same way:
+The Coachman workbook is laid out differently (read_coachman_sheet, below —
+the solid grid by width, the window sections by design, the glass by window
+count) but loads the same way:
 
     python scripts/apply_sheet_workbook.py COACHMAN.xlsx --family coachman
 
@@ -89,7 +90,7 @@ FAMILIES = {
         "layout": "3layer",
         "flat": 0.0,
     },
-    # The Coachman workbook (CJ, 12/10/2026) is laid out differently — see
+    # The Coachman workbook (CJ, 13/10/2026) is laid out differently — see
     # read_coachman_sheet — but lands in the same two places.
     "coachman": {
         "collection": "Coachman Collection",
@@ -157,6 +158,23 @@ GRID_TYPOS = {
 # Empty since the second workbook of 12/10/2026: the BD1 12'0" row's 7FT list
 # (846) was corrected to 816, as the GD1 row has it.
 HOLD = []
+
+# The Coachman's window designs, as the app names them (inserts.ts:
+# COACHMAN_GLASS_DESIGNS, then COACHMAN_ARCH). A design on the sheet that is
+# not here stops the script — the app would have no name for it.
+COACHMAN_WINDOW_DESIGNS = ["ARCH1", "ARCH3", "ARCH4", "ARCH13", "ARCH14", "REC11", "REC13", "REC14", "SQ23", "SQ24",
+                           "ARC13A", "ARC14A", "ARC1A", "ARC3A", "ARC4A"]
+
+# Door-grid columns whose cost cells add something other than the family's
+# flat, and what they add: (group, block, tier) -> the figures. The column is
+# loaded with the family's flat like every other, and the script says when
+# the sheet no longer adds them. Dated, like the typo lists.
+FLAT_ASIDE = {
+    # CJ's Coachman workbook of 13/10/2026 adds 5 (single door) and 10 (double)
+    # on the solid 7FT column — the galvanized torsion adder, which the app
+    # charges at quote time; the +15 every Coachman carries is Brandon's.
+    ("CD", "solid", "7"): {5.0, 10.0},
+}
 
 
 def inches(label: str) -> int:
@@ -487,33 +505,42 @@ def flat_from_formula(f):
 
 def read_coachman_sheet(ws, wsf, margins):
     """
-    The Coachman workbook (CJ, 12/10/2026): one sheet, one group, and a
+    The Coachman workbook (CJ, 13/10/2026): one sheet, one group, and a
     different shape from the 3-layer workbooks:
 
       A1              the group: "CD"
       A2              "MULTIPLER 1.193"
       E2..E4          the window count by door width: "UP TO 12FT - 2 WINDOWS",
                       "12FT TO 15FT - 3 WINDOWS", "15FT AND UP - 4 WINDOWS"
-      K4, K5          the arch window sections: "ARC13A, ARC14A, ARC1A, ARC3A
-                      AND ARC4A   ADD $793.45 TO SOLID PRICE(12FT TO 15FT, 3
-                      WINDOW SECTION)" — one line per window count priced
       A4              "ALL TORSION SPRING PRICES": torsion is in every figure
-      A6 / K6         SOLID TOP SECTION / DOUBLE STRENGTH TOP SECTION — two
-                      grids side by side, one row per width Clopay builds (not
-                      a band: the Coachman comes in 26 widths), 7FT, 8FT, 9FT
-                      and 10FT each with LIST then COST; "N/A" where the glass
-                      top section is not made
-      below           SPECIAL GLASS: a flat adder on the WITH WINDOWS door,
-                      single (up to 10'0") and double (10'2" and up), one row
-                      per glass — the book's own shape, on the corrected
-                      workbook of 12/10/2026
+      A6              SOLID TOP SECTION: the door grid, one row per width Clopay
+                      builds (not a band: the Coachman comes in 26 widths),
+                      7FT, 8FT, 9FT and 10FT each with LIST then COST
+      K6              DOUBLE STRENGTH TOP SECTION: four tables, one per height
+                      ("7FT HIGH" in column K, then 8FT, 9FT and 10FT), each a
+                      row per window design — ARCH1 to SQ24, then the arched
+                      sections ARC13A to ARC4A — and a column per width group,
+                      the widths named on the heading row and the row under it
+                      (6'2" to 8'0", 8'2" to 9'0", 9'2" to 10'0", 12'0", 12'2"
+                      to 13'8", 14'2" to 16'0", 16'2", 17'0", 18'0"), LIST then
+                      COST. The LIST is the section's adder over the solid
+                      door; the COST is its formula, list x multiplier x k plus
+                      the solid door's own cost cell for a width in the group
+                      at that height. "N/A" where the design is not built.
+      below the grid  ADD ON TO DOUBLE STRENGTH DOOR PRICE: the special glass
+                      (rain, frosted, seeded, obscure), a block each with a row
+                      per window count, LIST then COST (list x multiplier x k)
 
-    Every cost cell is list x multiplier x 0.99 / (1 - 0.0265), plus a flat
-    figure where the formula carries one. The glass top section is written as
-    an adder over the solid door — the difference of the two grids' list
-    figures, which is the same at every height — so it quotes the way every
-    other sheet's glass does; the script checks that solid plus adder lands on
-    the sheet's own glass figure, cell for cell.
+    Every cost cell is checked against its formula, and the four design tables
+    against each other: the section adder does not change with height, so one
+    band table serves every height. What lands in the app: the solid grid as
+    SELL in special-doors.ts; the section adders by design and width band, and
+    the glass by window count, as COST in coachman-glass.ts. A window door is
+    priced solid + section + glass at quote time (coachman-windows.ts).
+
+    (The workbook of 12/10/2026 priced one double strength top section for
+    every design, as a second grid beside the solid one; this one prices each
+    design on its own, as iStore does.)
     """
     problems = Problems()
     title = str(ws["A1"].value or "").strip()
@@ -526,10 +553,8 @@ def read_coachman_sheet(ws, wsf, margins):
         sys.exit(f"{ws.title}: A2 should be the multiplier, got {mult_text!r}")
     mult = float(mm.group(1))
 
-    # The notes: window counts, the arch sections, torsion.
+    # The notes: window counts, torsion.
     count_rules = []   # (lo_in, hi_in, windows)
-    arch = {}          # windows -> cost adder
-    arch_designs = []
     torsion_in = False
     hdr = None
     for r in range(2, 12):
@@ -547,13 +572,6 @@ def read_coachman_sheet(ws, wsf, margins):
             m = re.match(r"(\d+)FT AND UP\s*-\s*(\d+) WINDOWS", up)
             if m:
                 count_rules.append((int(m.group(1)) * 12, 10 ** 6, int(m.group(2))))
-            m = re.search(r"ADD \$\s*([\d,]+\.\d+) TO SOLID PRICE\s*\(.*?(\d+) WINDOW SECTION\)", up)
-            if m:
-                arch[int(m.group(2))] = float(m.group(1).replace(",", ""))
-                names = re.findall(r"\b(ARC\w+)\b", up.split("ADD")[0])
-                if arch_designs and names != arch_designs:
-                    problems.add(f"{ws.title}: the arch lines name different designs: {arch_designs} / {names}")
-                arch_designs = names
             if "ALL TORSION SPRING" in up:
                 torsion_in = True
         if ws.cell(r, 3).value == "7FT":
@@ -568,8 +586,7 @@ def read_coachman_sheet(ws, wsf, margins):
     heads = tuple(ws.cell(hdr, c).value for c in (3, 5, 7, 9))
     if heads != ("7FT", "8FT", "9FT", "10FT"):
         sys.exit(f"{ws.title}: heading row {hdr} reads {heads}")
-    if tuple(ws.cell(hdr, c).value for c in (13, 15, 17, 19)) != heads:
-        sys.exit(f"{ws.title}: the glass top section grid's heading row does not match")
+    solid_cols = {"7": 3, "8": 5, "9": 7, "10": 9}   # the tier's COST column in the solid grid
 
     def windows_at(w):
         for lo, hi, n in count_rules:
@@ -578,8 +595,10 @@ def read_coachman_sheet(ws, wsf, margins):
         problems.add(f"{ws.title}: no window-count rule covers {width_label(w)}")
         return None
 
-    def read_cell(r, lc, cc, block, tier, w):
-        """A (list, cost) pair -> cost, checked against its formula; None for N/A or blank."""
+    flats = {}
+
+    def read_cell(r, lc, cc, tier, w):
+        """A (list, cost) pair of the solid grid -> cost, checked against its formula; None for N/A or blank."""
         lst, cost = ws.cell(r, lc).value, ws.cell(r, cc).value
         if isinstance(lst, str) and lst.strip().lower() == "n/a":
             return None
@@ -598,199 +617,256 @@ def read_coachman_sheet(ws, wsf, margins):
             problems.add(f"{ws.title} {col}{r}: multiplier {fm} differs from A2's {mult}")
         if abs(lst * mult * K + flat - cost) > 0.06:
             problems.add(f"{ws.title} {col}{r}: cost {cost} is not list {lst} x {mult} x k + {flat:g}")
-        flats.setdefault((block, tier), set()).add(flat)
-        if block == "solid":
-            fix = next((v for (g, t, lo, hi), v in GRID_TYPOS.items() if g == group and t == tier and lo <= w <= hi), None)
-            if fix is not None:
-                if lst == fix:
-                    problems.add(f"{ws.title} {get_column_letter(lc)}{r}: the GRID_TYPOS entry is no longer needed — the sheet reads {fix} now")
-                else:
-                    print(f"  fixing {ws.title} {get_column_letter(lc)}{r} ({width_label(w)}, {tier}FT): list {lst} -> {fix}")
-                    lst, cost = fix, fix * mult * K + flat
+        flats.setdefault(tier, set()).add(flat)
+        fix = next((v for (g, t, lo, hi), v in GRID_TYPOS.items() if g == group and t == tier and lo <= w <= hi), None)
+        if fix is not None:
+            if lst == fix:
+                problems.add(f"{ws.title} {get_column_letter(lc)}{r}: the GRID_TYPOS entry is no longer needed — the sheet reads {fix} now")
+            else:
+                print(f"  fixing {ws.title} {get_column_letter(lc)}{r} ({width_label(w)}, {tier}FT): list {lst} -> {fix}")
+                lst, cost = fix, fix * mult * K + flat
         return {"list": float(lst), "cost": float(cost), "flat": flat}
 
-    flats = {}
-    rows = []   # (inches, label, solid {tier: cell}, glass {tier: cell})
+    # The solid grid: one row per width.
+    rows = []   # (inches, label, {tier: cell})
+    row_of = {}   # inches -> sheet row
     r = hdr + 1
     while True:
         label = ws.cell(r, 1).value
         if not (isinstance(label, str) and re.match(r"\s*\d+'", label)):
             break
         w = inches(label)
-        glabel = ws.cell(r, 11).value
-        if not (isinstance(glabel, str) and inches(glabel) == w):
-            problems.add(f"{ws.title} row {r}: the glass grid's width {glabel!r} is not the solid grid's {label!r}")
-        solid = {t: read_cell(r, lc, lc + 1, "solid", t, w) for t, lc in (("7", 2), ("8", 4), ("9", 6), ("10", 8))}
-        glass = {t: read_cell(r, lc, lc + 1, "glass", t, w) for t, lc in (("7", 12), ("8", 14), ("9", 16), ("10", 18))}
-        rows.append((w, label.strip(), solid, glass))
+        rows.append((w, label.strip(), {t: read_cell(r, c - 1, c, t, w) for t, c in solid_cols.items()}))
+        row_of[w] = r
         r += 1
+    grid_end = r
     if not rows:
         sys.exit(f"{ws.title}: no width rows under the heading")
-    if [w for w, *_ in rows] != sorted(w for w, *_ in rows):
+    widths = [w for w, *_ in rows]
+    if widths != sorted(widths):
         problems.add(f"{ws.title}: the widths are not in order")
 
     # Every Coachman carries DOOR_FLAT. A column whose formula leaves it off
-    # (the solid 10FT column on CJ's sheet) is loaded with it; any other flat
-    # figure stops the script.
+    # (the 10FT column) is loaded with it; a column that adds something else is
+    # listed in FLAT_ASIDE with what it adds, or stops the script.
     flat = DOOR_FLAT
-    for (block, tier), seen in sorted(flats.items()):
-        if any(x not in (0.0, DOOR_FLAT) for x in seen):
-            problems.add(f"{ws.title}: the {block} {tier}FT column adds {sorted(seen)} — every Coachman carries {DOOR_FLAT:g}")
-        elif DOOR_FLAT and 0.0 in seen:
-            print(f"  note: {ws.title}: the {block} {tier}FT column carries no flat figure; loaded with the +{DOOR_FLAT:g} every Coachman gets")
-    for w, label, solid, glass in rows:
-        for cells in (solid, glass):
-            for t, cell in cells.items():
-                if cell and cell["flat"] != flat:
-                    cell["cost"] = cell["list"] * mult * K + flat
-
-    # Bands: the glass top section as an adder over the solid door, and the
-    # arch sections over that. The adder is the gap between the two grids'
-    # list figures; it must not change with height.
+    for tier, seen in sorted(flats.items()):
+        aside = FLAT_ASIDE.get((group, "solid", tier), set())
+        odd = {x for x in seen if x not in (0.0, DOOR_FLAT)}
+        if odd - aside:
+            problems.add(f"{ws.title}: the solid {tier}FT column adds {sorted(odd)} — every Coachman carries {DOOR_FLAT:g}")
+        elif odd:
+            print(f"  note: {ws.title}: the solid {tier}FT column adds {sorted(odd)} (FLAT_ASIDE); loaded with the +{DOOR_FLAT:g} every Coachman gets")
+        if aside and not (aside & seen):
+            problems.add(f"{ws.title}: the FLAT_ASIDE entry for the solid {tier}FT column is no longer needed — it adds {sorted(seen)} now")
+        if DOOR_FLAT and 0.0 in seen:
+            print(f"  note: {ws.title}: the solid {tier}FT column carries no flat figure; loaded with the +{DOOR_FLAT:g} every Coachman gets")
+    for w, label, cells in rows:
+        for t, cell in cells.items():
+            if cell and cell["flat"] != flat:
+                cell["cost"] = cell["list"] * mult * K + flat
     bands = []
-    dsb_rows = []   # (inches, windows, adder cost, arch cost | None)
-    for w, label, solid, glass in rows:
-        prices = {t: c["cost"] for t, c in solid.items() if c}
+    for w, label, cells in rows:
+        prices = {t: c["cost"] for t, c in cells.items() if c}
         if len(prices) != 4:
             problems.add(f"{ws.title} {label}: the solid door is not priced at every height ({sorted(prices)})")
         bands.append((w, w, label, prices))
-        n = windows_at(w)
-        gaps = {t: round(glass[t]["list"] - solid[t]["list"], 2) for t in glass if glass[t] and solid[t]}
-        if not gaps:
-            dsb_rows.append((w, n, None, None))
+
+    # The design tables: one per height, headed "<N>FT HIGH" in column K.
+    def widths_in(text):
+        s = str(text or "").upper().replace("FT", "'0\"")
+        return [inches(x) for x in re.findall(r"\d+'\s*\d*", s)]
+
+    tables = {}        # tier -> {design: {column index: list adder | None}}
+    orders = {}        # tier -> designs in sheet order
+    col_widths = None  # column index -> set of widths, from the first table
+    formula_re = re.compile(r"^=([A-Z]+)(\d+)\*([\d.]+)\*0\.99/\(1-0\.0265\)\+([A-Z]+)(\d+)$")
+    for t in range(hdr, ws.max_row + 1):
+        head = ws.cell(t, 11).value
+        m = re.match(r"\s*(\d+)FT HIGH\s*$", str(head or ""), re.I)
+        if not m:
             continue
-        if len(gaps) != len(prices):
-            problems.add(f"{ws.title} {label}: the glass top section is priced at {sorted(gaps)} but the solid door at {sorted(prices)}")
-        if len(set(gaps.values())) != 1:
-            problems.add(f"{ws.title} {label}: the glass top section's list adder changes with height: {gaps}")
-        adder = money(list(gaps.values())[0] * mult * K)
-        for t, g in glass.items():
-            if g and solid[t] and abs(solid[t]["cost"] + adder - g["cost"]) > 0.06:
-                problems.add(f"{ws.title} {label} {t}FT: solid {solid[t]['cost']:.2f} + adder {adder:.2f} is not the sheet's glass figure {g['cost']:.2f}")
-        dsb_rows.append((w, n, adder, arch.get(n)))
+        tier = m.group(1)
+        if tier not in solid_cols:
+            problems.add(f"{ws.title} K{t}: a design table for {tier}FT, which the solid grid has no column for")
+            continue
+        groups = {}
+        for lc in range(12, 30, 2):
+            named = widths_in(ws.cell(t, lc + 1).value) + widths_in(ws.cell(t + 1, lc + 1).value)
+            if named:
+                groups[lc] = set(named)
+        if not groups:
+            problems.add(f"{ws.title} K{t}: the {tier}FT HIGH table names no widths on its heading row")
+            continue
+        for lc, ws_ in groups.items():
+            for w in ws_:
+                if w not in row_of:
+                    problems.add(f"{ws.title} {get_column_letter(lc + 1)}{t}: {width_label(w)} is not a width on the solid grid")
+        seen = [w for ws_ in groups.values() for w in ws_]
+        if len(seen) != len(set(seen)):
+            problems.add(f"{ws.title} K{t}: a width is named in two columns of the {tier}FT HIGH table")
+        if col_widths is None:
+            col_widths = groups
+        elif groups != col_widths:
+            problems.add(f"{ws.title} K{t}: the {tier}FT HIGH table's width groups differ from the 7FT table's")
+        table, order = {}, []
+        r2 = t + 2
+        while r2 <= ws.max_row:
+            name = ws.cell(r2, 11).value
+            if not isinstance(name, str) or not name.strip() or re.match(r"\s*\d+FT HIGH", name, re.I):
+                break
+            name = name.strip().upper()
+            if name in table:
+                problems.add(f"{ws.title} K{r2}: {name} appears twice in the {tier}FT HIGH table")
+            adders = {}
+            for lc in groups:
+                lst, cost = ws.cell(r2, lc).value, ws.cell(r2, lc + 1).value
+                na = lambda v: isinstance(v, str) and v.strip().upper() == "N/A"
+                if na(lst) or na(cost) or (lst is None and cost is None):
+                    if (na(lst) or lst is None) != (na(cost) or cost is None):
+                        problems.add(f"{ws.title} {get_column_letter(lc)}{r2}: {name} has a list or a cost but not both")
+                    adders[lc] = None
+                    continue
+                where = f"{ws.title} {get_column_letter(lc + 1)}{r2} ({name}, {tier}FT)"
+                if not isinstance(lst, (int, float)) or not isinstance(cost, (int, float)):
+                    problems.add(f"{where}: list {lst!r} / cost {cost!r}")
+                    adders[lc] = None
+                    continue
+                f = str(wsf.cell(r2, lc + 1).value or "").replace(" ", "")
+                fm = formula_re.match(f)
+                if not fm:
+                    problems.add(f"{where}: the cost is not list x {mult} x k + a solid door cell ({f!r})")
+                    adders[lc] = float(lst)
+                    continue
+                lcol, lrow, fmult, scol, srow = fm.groups()
+                if (lcol, int(lrow)) != (get_column_letter(lc), r2):
+                    problems.add(f"{where}: the formula reads its list from {lcol}{lrow}, not {get_column_letter(lc)}{r2}")
+                if abs(float(fmult) - mult) > 1e-9:
+                    problems.add(f"{where}: multiplier {fmult} differs from A2's {mult}")
+                # The solid door cell: this height's cost column, at a width of this column's group.
+                if scol != get_column_letter(solid_cols[tier]):
+                    problems.add(f"{where}: adds the solid door at {scol}{srow}, which is not the {tier}FT column")
+                srow_w = next((w for w, rr in row_of.items() if rr == int(srow)), None)
+                if srow_w is None or srow_w not in groups[lc]:
+                    problems.add(f"{where}: adds the solid door at {scol}{srow}, which is not a width of this column's group")
+                solid_cost = ws.cell(int(srow), solid_cols[tier]).value
+                if isinstance(solid_cost, (int, float)) and abs(lst * mult * K + solid_cost - cost) > 0.06:
+                    problems.add(f"{where}: cost {cost} is not list {lst} x {mult} x k + the solid door's {solid_cost}")
+                adders[lc] = float(lst)
+            table[name] = adders
+            order.append(name)
+            r2 += 1
+        if not table:
+            problems.add(f"{ws.title} K{t}: the {tier}FT HIGH table has no design rows")
+        tables[tier] = table
+        orders[tier] = order
+    if set(tables) != set(solid_cols):
+        sys.exit(f"{ws.title}: design tables for {sorted(tables)}, expected one per height {sorted(solid_cols)}")
+    order = orders["7"]
+    for tier, o in orders.items():
+        if o != order:
+            problems.add(f"{ws.title}: the {tier}FT HIGH table lists {o}, the 7FT table {order}")
+    if set(order) != set(COACHMAN_WINDOW_DESIGNS):
+        problems.add(f"{ws.title}: the design tables name {sorted(set(order) ^ set(COACHMAN_WINDOW_DESIGNS))} differently from "
+                     f"COACHMAN_WINDOW_DESIGNS (inserts.ts names the app's)")
+    # The adder is the same at every height.
+    for name in order:
+        for tier, table in tables.items():
+            if table.get(name) != tables["7"].get(name):
+                problems.add(f"{ws.title}: {name}'s adders differ between the 7FT and {tier}FT tables: {tables['7'].get(name)} / {table.get(name)}")
 
-    # The other glass, below the grid, in either shape the sheets have used:
-    #   * the book's: a header saying ADD TO THE "WITH WINDOWS" PRICE, then one
-    #     row per glass — single list | cost | double list | cost;
-    #   * CJ's: ADD TO PRICE OF SOLID DOOR, a glass name heading a column and
-    #     a row under it per width band ("6'2\" TO 8'0\"") or per window count
-    #     ("2 WINDOWS"), each holding the cost adder over the solid door.
-    # Both land in the same place: an adder over the solid door at each width.
-    glass_adders = {}      # gid -> ("flat", single cost, double cost) | ("rows", [(lo, hi | None, count | None, cost)])
-    head = next(((rr, c) for rr in range(r, ws.max_row + 1) for c in range(1, ws.max_column + 1)
-                 if isinstance(ws.cell(rr, c).value, str) and re.search(r"ADD TO THE\s+\W*WITH WINDOWS", ws.cell(rr, c).value.upper())), None)
-    if head is not None:
-        for rr in range(head[0] + 1, head[0] + 12):
-            for c in range(1, ws.max_column + 1):
-                name = ws.cell(rr, c).value
-                if name not in GLASS_BY_NAME:
-                    continue
-                gid = GLASS_BY_NAME[name]
-                vals = [ws.cell(rr, c + i).value for i in (1, 2, 3, 4)]
-                if not all(isinstance(v, (int, float)) for v in vals):
-                    problems.add(f"{ws.title} row {rr}: {name} single / double list and cost are not all numbers: {vals}")
-                    continue
-                sl, sc, dl, dc = vals
-                for lst, cost, which, cc in ((sl, sc, "single", c + 2), (dl, dc, "double", c + 4)):
-                    if abs(lst * mult * K - cost) > 0.06:
-                        problems.add(f"{ws.title} {get_column_letter(cc)}{rr}: {name} {which} cost {cost} is not list {lst} x {mult} x k")
-                glass_adders[gid] = ("flat", money(sl * mult * K), money(dl * mult * K))
-    else:
-        label_re = re.compile(r"^\s*((\d+)\s*WINDOWS|(UP TO|\d+')[^A-Z]*)", re.I)
-        for rr in range(r, ws.max_row + 1):
-            for c in range(1, ws.max_column + 1):
-                name = ws.cell(rr, c).value
-                if name not in GLASS_BY_NAME:
-                    continue
-                gid = GLASS_BY_NAME[name]
-                if gid in glass_adders:
-                    problems.add(f"{ws.title}: {name} appears twice below the grid")
-                rows = []
-                for r2 in range(rr + 1, rr + 12):
-                    val = ws.cell(r2, c).value
-                    if not isinstance(val, (int, float)):
-                        break
-                    lab = next((str(ws.cell(r2, cl).value) for cl in range(c - 1, max(c - 9, 0), -1)
-                                if isinstance(ws.cell(r2, cl).value, str) and label_re.match(ws.cell(r2, cl).value.strip())), None)
-                    if lab is None:
-                        problems.add(f"{ws.title} {get_column_letter(c)}{r2}: {name} figure {val} has no width band or window count label to its left")
-                        break
-                    m = re.match(r"\s*(\d+)\s*WINDOWS", lab, re.I)
-                    if m:
-                        rows.append((None, None, int(m.group(1)), float(val)))
-                    else:
-                        lo, hi = band_range(lab)
-                        rows.append((lo, hi, None, float(val)))
-                    # The corrected workbook writes each cell as (window adder +
-                    # glass adder) x mult x k; check the window adder against the
-                    # two grids where the formula shows it.
-                    f = wsf.cell(r2, c).value
-                    fm = re.match(r"=\((\d+(?:\.\d+)?)\+(\d+(?:\.\d+)?)\)\*", str(f).replace(" ", ""))
-                    if fm and rows[-1][0] is not None:
-                        want = float(fm.group(1))
-                        for w, n, adder, a in dsb_rows:
-                            if rows[-1][0] <= w <= rows[-1][1] and adder is not None and abs(money(want * mult * K) - adder) > 0.06:
-                                problems.add(f"{ws.title} {get_column_letter(c)}{r2}: {name} {lab.strip()} uses a window adder of {want:g}, but the grids give {adder / (mult * K):.0f} at {width_label(w)}")
-                                break
-                if not rows:
-                    problems.add(f"{ws.title}: {name} at {get_column_letter(c)}{rr} has no figures under it")
-                    continue
-                glass_adders[gid] = ("rows", rows)
-                if any(n is not None for _, _, n, _ in rows):
-                    print(f"  note: {ws.title} {name} goes by window count, one figure per count — the book's window adder changes "
-                          f"with the width inside a count (218 at 8', 227 at 9', 290 at 10'); loaded as the sheet says")
-    if not glass_adders:
-        problems.add(f"{ws.title}: no special glass block below the grid (ADD TO PRICE OF SOLID DOOR, or ADD TO THE \"WITH WINDOWS\" PRICE)")
+    # Width -> its column group, and the section adder (cost) of each design there.
+    col_of = {w: lc for lc, ws_ in (col_widths or {}).items() for w in ws_}
+    section_at = {}   # design -> {width: cost | None}
+    for name in order:
+        section_at[name] = {}
+        for w in widths:
+            lc = col_of.get(w)
+            lst = tables["7"][name].get(lc) if lc is not None else None
+            section_at[name][w] = None if lst is None else money(lst * mult * K)
+    has_section = {w: any(section_at[n][w] is not None for n in order) for w in widths}
 
-    for n, cost in arch.items():
-        lst = cost / (mult * K)
-        if abs(lst - round(lst)) > 0.02:
-            print(f"  note: {ws.title}: the {n}-window arch adder {cost} is list {lst:.2f} x {mult} x k — not a whole-dollar list")
+    # The special glass: ADD ON TO DOUBLE STRENGTH DOOR PRICE, a block per glass
+    # with a row per window count — list under the name, cost beside it.
+    header = next(((rr, c) for rr in range(grid_end, ws.max_row + 1) for c in range(1, 12)
+                   if isinstance(ws.cell(rr, c).value, str) and "ADD ON TO DOUBLE STRENGTH DOOR PRICE" in ws.cell(rr, c).value.upper()), None)
+    if header is None:
+        problems.add(f"{ws.title}: no 'ADD ON TO DOUBLE STRENGTH DOOR PRICE' line under the grid — the glass is loaded as an add-on over the "
+                     "double strength door, and the sheet should say so")
+    glass_up = {}   # gid -> {windows: cost}
+    for rr in range(grid_end, ws.max_row + 1):
+        for c in range(1, 11):
+            name = ws.cell(rr, c).value
+            if name not in GLASS_BY_NAME:
+                continue
+            gid = GLASS_BY_NAME[name]
+            if gid in glass_up:
+                problems.add(f"{ws.title}: {name} appears twice below the grid")
+            by_count = {}
+            for r2 in range(rr + 1, rr + 6):
+                lst = ws.cell(r2, c).value
+                if not isinstance(lst, (int, float)):
+                    break
+                cost = ws.cell(r2, c + 1).value
+                where = f"{ws.title} {get_column_letter(c + 1)}{r2} ({name})"
+                lab = next((str(ws.cell(r2, cl).value) for cl in range(c - 1, 0, -1)
+                            if isinstance(ws.cell(r2, cl).value, str) and re.match(r"\s*\d+\s*WINDOWS", ws.cell(r2, cl).value, re.I)), None)
+                if lab is None:
+                    problems.add(f"{where}: no window-count label to the left")
+                    continue
+                n = int(re.match(r"\s*(\d+)", lab).group(1))
+                f = str(wsf.cell(r2, c + 1).value or "").replace(" ", "")
+                exp = f"={get_column_letter(c)}{r2}*{mult}*0.99/(1-0.0265)"
+                if f != exp:
+                    problems.add(f"{where}: the cost is not list x {mult} x k ({f!r})")
+                if not isinstance(cost, (int, float)) or abs(lst * mult * K - cost) > 0.06:
+                    problems.add(f"{where}: cost {cost!r} is not list {lst} x {mult} x k")
+                by_count[n] = money(lst * mult * K)
+            if not by_count:
+                problems.add(f"{ws.title}: {name} at {get_column_letter(c)}{rr} has no figures under it")
+                continue
+            glass_up[gid] = by_count
+    if not glass_up:
+        problems.add(f"{ws.title}: no special glass blocks below the grid")
+    counts = sorted({windows_at(w) for w in widths if has_section[w]} - {None})
+    for gid, by_count in glass_up.items():
+        for n in counts:
+            if n not in by_count:
+                problems.add(f"{ws.title}: {gid} has no figure for {n}-window doors")
 
-    # Bands in the shape the 3-layer sheets produce: contiguous widths with the
-    # same window count and the same figures; a width without a glass top
-    # section breaks the run, so it falls outside every band.
+    # Bands: contiguous grid widths with the same figures; a width without a
+    # section (14'0") breaks the run, so it falls outside every band.
     def runs(value_at):
         out = []
-        for w, n, adder, arch_cost in dsb_rows:
-            v = value_at(w, n, adder, arch_cost)
+        for w in widths:
+            v = value_at(w)
             if v is None:
                 out.append(None)
                 continue
-            if out and out[-1] is not None and out[-1][2:] == (n, *v):
-                out[-1] = (out[-1][0], w, n, *v)
+            if out and out[-1] is not None and out[-1][2] == v:
+                out[-1] = (out[-1][0], w, v)
             else:
-                out.append((w, w, n, *v))
-        return [{"lo": lo, "hi": hi, "windows": n, "glass": g, "inserts": i} for b in out if b for lo, hi, n, g, i in [b]]
+                out.append((w, w, v))
+        return [b for b in out if b]
 
-    glass = {"dsb": {"short": runs(lambda w, n, adder, a: None if adder is None else (adder, None if a is None else money(a))), "long": []}}
-    for gid, spec in glass_adders.items():
-        if spec[0] == "flat":
-            # The special glass sits on the glass top section: its band is the
-            # DSB band plus the flat adder, single to 10'0" and double from 10'2".
-            _, single, double = spec
-            value_at = lambda w, n, adder, a, single=single, double=double: None if adder is None else (money(adder + (single if w <= 120 else double)), None)
-        else:
-            rows = spec[1]
-            def value_at(w, n, adder, a, rows=rows):
-                if adder is None:
-                    return None   # no glass top section at this width, so no glass
-                hit = [cost for lo, hi, cnt, cost in rows if (cnt is not None and cnt == n) or (lo is not None and lo <= w <= hi)]
-                return (money(hit[0]), None) if hit else None
-        glass[gid] = {"short": runs(value_at), "long": []}
-    missing = [gid for _, gid, _ in GLASS_IDS if gid not in glass]
+    glass = {"dsb": {"short": [{"lo": lo, "hi": hi, "windows": n, "glass": 0.0, "inserts": None}
+                               for lo, hi, n in runs(lambda w: windows_at(w) if has_section[w] else None)], "long": []}}
+    for gid, by_count in glass_up.items():
+        glass[gid] = {"short": [{"lo": lo, "hi": hi, "windows": n, "glass": cost, "inserts": None}
+                                for lo, hi, (n, cost) in runs(lambda w: (windows_at(w), by_count.get(windows_at(w))) if has_section[w] and windows_at(w) in by_count else None)],
+                      "long": []}
+    sections = {name: [{"lo": lo, "hi": hi, "cost": cost} for lo, hi, cost in runs(lambda w: section_at[name][w])] for name in order}
     print(f"  note: {ws.title} prices {sorted(glass)}; no block for the other types")
-    print(f"  note: {ws.title} window counts {count_rules}; arch sections {arch_designs} add {arch} (cost) — "
-          f"check COACHMAN_ARCH in inserts.ts names the same designs")
-    unpriced = sorted({n for _, n, adder, a in dsb_rows if adder is not None and a is None})
-    if unpriced:
-        print(f"  note: {ws.title}: no arch section price for {unpriced}-window doors; the arch designs are not offered there")
+    print(f"  note: {ws.title} window counts {count_rules}; {len(order)} window designs: {order}")
+    for name in order:
+        print(f"    {name}: " + ", ".join(f"{width_label(b['lo'])}-{width_label(b['hi'])} {b['cost']:.2f}" for b in sections[name]))
 
     return {
         "sheet": ws.title, "group": group, "members": [group], "mult": mult, "glass_mult": mult, "flat": flat,
         "min_width": {}, "ug": None, "only_to_8": False, "unavailable": [],
-        "tiers": ["7", "8", "9", "10"], "bands": bands, "gaps": [], "no_windows": {}, "glass": glass,
-        "solid_only": [width_key(w) for w, n, adder, a in dsb_rows if adder is None],
+        "tiers": list(solid_cols), "bands": bands, "gaps": [], "no_windows": {}, "glass": glass,
+        "sections": sections, "section_order": order, "solid_grid_only": True,
+        "solid_only": [width_key(w) for w in widths if not has_section[w]],
         "problems": problems,
     }
 
@@ -809,7 +885,9 @@ def grid_for(info, margin):
                 if any(t == tier and hlo <= w <= hhi for t, hlo, hhi in held):
                     continue
                 cell = {"solid": sell(cost)}
-                if band:
+                # The Coachman's windows are a section priced by design over
+                # the solid door (coachman-windows.ts): no GLASS column.
+                if band and not info.get("solid_grid_only"):
                     # DSB is the base glass: GLASS and INSERTS are the solid door
                     # plus the short DSB adder, as the Gallery grid is built.
                     cell["glass"] = sell(cost + band["glass"])
@@ -842,16 +920,18 @@ def write_glass(fam, infos, workbook_name):
            "// it by the group's door margin at quote time (so-glass.ts). Width bands are",
            "// in inches. The groups are keyed as special-orders.ts keys them.",
            *(["//",
-              "// The Coachman's glass is a top section, not a window count the counter",
-              "// picks: the sheet prices the door solid and with the double strength top",
-              "// section, so DSB here is the gap between the two, and the other glass is",
-              "// the sheet's flat ADD TO PRICE OF SOLID DOOR by window count. The inserts",
-              "// figure on the DSB bands is the arch window section (ARC13A and the rest),",
-              "// which the sheet prices over the solid door on 3- and 4-window doors only.",
-              "// There is one window layout, so every band is 'short' and 'long' is empty."]
+              "// The Coachman's windows are a top section priced by design (CJ's workbook",
+              "// of 13/10/2026): SECTIONS below is each design's adder over the solid",
+              "// door by width band, and a design is not built at a width outside its",
+              "// bands. The glass is an ADD ON TO DOUBLE STRENGTH DOOR PRICE by window",
+              "// count, so the bands here hold that add-on (double strength itself is",
+              "// 0) on the widths some section is priced; a width in no band is solid",
+              "// only. One window layout, so every band is 'short' and 'long' is empty.",
+              "// coachman-windows.ts puts the two together."]
              if fam["layout"] == "coachman" else []),
            "",
-           'import type { GlassOption, SheetBand } from "./sheet-band";',
+           'import type { GlassOption, SectionBand, SheetBand } from "./sheet-band";' if fam["layout"] == "coachman"
+           else 'import type { GlassOption, SheetBand } from "./sheet-band";',
            "",
            f"/** The groups this workbook prices. */",
            f"export const {const}_GROUPS = [" + ", ".join(f'"{i["group"]}"' for i in infos) + "] as const;",
@@ -880,8 +960,22 @@ def write_glass(fam, infos, workbook_name):
                 out.append("      ],")
             out.append("    },")
         out.append("  },")
-    out += ["};", "",
-            "/**",
+    out += ["};", ""]
+    if fam["layout"] == "coachman":
+        out += ["/**",
+                " * The window sections by design: the cost adder over the solid door, by",
+                " * width band (inches), in the order the sheet lists the designs. A design",
+                " * with no band at a width is not built there.",
+                " */",
+                f"export const {const}_SECTIONS: Record<string, Record<string, SectionBand[]>> = {{"]
+        for info in infos:
+            out.append(f'  "{info["group"]}": {{')
+            for name in info["section_order"]:
+                bands = ", ".join(f"{{ lo: {b['lo']}, hi: {b['hi']}, cost: {b['cost']:.2f} }}" for b in info["sections"][name])
+                out.append(f'    "{name}": [{bands}],')
+            out.append("  },")
+        out += ["};", ""]
+    out += ["/**",
             " * Ultra-Grain (and the other premium finishes): a flat adder by door, single",
             " * or double (10'2\" and up), in two height bands — up to 8'0\", and 8'2\" and",
             " * up. Cost, before margin. A group built to 8'0\" only carries one band twice.",

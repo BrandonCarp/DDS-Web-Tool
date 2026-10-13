@@ -365,6 +365,26 @@ describe("seals paste the feet as the quantity (7/10/2026)", () => {
     expect(line.description).toContain("50FT"); // the description stays as it was
   });
 
+  it("sells the jamb seal in white, black or brown, the colour leading the line (13/10/2026)", async () => {
+    const seals = tab("seals");
+    show(<PartsTool menu={seals.menu} categories={seals.categories} group="Seals" eyebrow="Seals quote" finder="Find seals" />);
+    fireEvent.click(screen.getByTestId("page-jamb-seals"));
+    const color = screen.getByTestId("parts-color") as HTMLSelectElement;
+    expect([...color.options].map((o) => o.value)).toEqual(["White", "Black", "Brown"]);
+    expect(color.value).toBe("White");
+    fireEvent.change(screen.getByTestId("parts-feet"), { target: { value: "30" } });
+    expect((await copiedQbLine(screen.getByTestId("parts-copy-qb"))).description).toBe("WHITE JAMB SEAL,  30FT");
+    fireEvent.change(color, { target: { value: "Brown" } });
+    const line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
+    expect(line.description).toBe("BROWN JAMB SEAL,  30FT");
+    expect([line.qty, line.rate]).toEqual([30, 1.25]);                     // the same price in every colour
+    // Only the jamb seal takes a colour.
+    fireEvent.click(screen.getByTestId("pnav-back"));
+    fireEvent.click(screen.getByTestId("page-bottom-t-rubbers"));
+    fireEvent.click(screen.getByText('4" BOTTOM T RUBBER').closest("button")!);
+    expect(screen.queryByTestId("parts-color")).toBeNull();
+  });
+
   it("leaves retainers as one line at the price of the stick", async () => {
     const retainers = tab("retainers");
     show(<PartsTool menu={retainers.menu} categories={retainers.categories} group="Retainers" />);

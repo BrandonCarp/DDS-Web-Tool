@@ -52,12 +52,10 @@ export const ARCHITECTURAL: InsertDesign[] = [
 ];
 
 /**
- * Coachman arch window sections — the five named on CJ's Coachman sheet
- * (12/10/2026): "ARC13A, ARC14A, ARC1A, ARC3A AND ARC4A ADD $793.45 TO SOLID
- * PRICE (12FT TO 15FT, 3 WINDOW SECTION)", and $1055.50 on a 4-window door.
- * They are the window, not an insert over one; the price rides in the inserts
- * slot of the Coachman's sheet bands (coachman-glass.ts), and the special
- * order tab offers them only where the sheet prices them.
+ * The Coachman's arched window sections — the five on CJ's Coachman sheet,
+ * priced by width like the window designs (coachman-glass.ts) and built on
+ * 3- and 4-window doors only. They are the window, not an insert over one;
+ * the special order tab offers them only where the sheet prices them.
  */
 export const COACHMAN_ARCH: InsertDesign[] = [
   { id: "ARC13A", name: "ARC13A", cat: "arch" },
@@ -68,10 +66,10 @@ export const COACHMAN_ARCH: InsertDesign[] = [
 ];
 
 /**
- * Coachman window designs on the plain glass top section — all at the double
- * strength top section price, no adder (CJ, 12/10/2026): the design names the
- * line and changes nothing else. Distinct from COACHMAN_ARCH, the arched
- * sections that carry their own adder on 3- and 4-window doors.
+ * The Coachman's window designs on the double strength top section. Each is
+ * priced on its own by width (CJ's workbook of 13/10/2026, coachman-glass.ts:
+ * ARCH3 and ARCH4 twice the rest). Distinct from COACHMAN_ARCH, the arched
+ * sections, built on 3- and 4-window doors only.
  */
 export const COACHMAN_GLASS_DESIGNS: InsertDesign[] = [
   { id: "ARCH1", name: "ARCH1", cat: "glass" },
@@ -85,6 +83,9 @@ export const COACHMAN_GLASS_DESIGNS: InsertDesign[] = [
   { id: "SQ23", name: "SQ23", cat: "glass" },
   { id: "SQ24", name: "SQ24", cat: "glass" },
 ];
+
+/** Every window design the Coachman's line may name, in the sheet's order. */
+export const COACHMAN_WINDOW_DESIGNS: InsertDesign[] = [...COACHMAN_GLASS_DESIGNS, ...COACHMAN_ARCH];
 
 // Which window designs each specific model can take.
 // short = plain short windows (508/509/510 + Sunsets); shortlong adds long panels; all = everything.
@@ -147,11 +148,12 @@ export function excludedDesignsFor(unit: string): string[] {
 /** Window/insert designs available for the current door (specific model + style + width). */
 export function windowDesigns(unit: string, style: string, widthCode: string | null): InsertDesign[] {
   if (style === "solid") return [];
-  // The Coachman names a design on plain glass too — ten of them, all at the
-  // glass top section price (CJ, 12/10/2026) — and its third choice is an
-  // arch window section, every width alike; the special order tab offers
-  // that only where the sheet prices it.
-  if (String(unit) === "CD") return style === "glass" ? COACHMAN_GLASS_DESIGNS : COACHMAN_ARCH;
+  // The Coachman's windows are a top section named by design, on plain glass
+  // or any of its special glass: the ten window designs, then the five arched
+  // sections (CJ's workbook of 13/10/2026 prices each one). It takes no
+  // inserts. Which designs a width is built in is the sheet's
+  // (coachman-windows.ts); this is every name the line may carry.
+  if (String(unit) === "CD") return style === "glass" ? COACHMAN_WINDOW_DESIGNS : [];
   // Designs are INSERTS: only offered when the framing/insert selection is
   // "insert" (style === "inserts"). Plain glass gets no design on any model,
   // Gallery included — otherwise an insert could ride along at the glass price.

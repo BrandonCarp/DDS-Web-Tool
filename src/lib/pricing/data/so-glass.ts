@@ -109,8 +109,9 @@ const widthIn = (width: string) => {
  * long band is the L model's window and the short band the S model's, so long
  * glass on a GD1SP prices as the GD1LP's (Brandon, 8/10/2026); on a Bridgeport
  * door the N, E and C designs each take either. The Coachman has one window
- * layout — a glass top section — so its sheet fills the short band only and
- * the choice never appears; its "inserts" figure is the arch window section.
+ * layout — a top section priced by design — so its sheet fills the short band
+ * only and the choice never appears; its bands hold the glass over the double
+ * strength door, and the section itself is priced in coachman-windows.ts.
  */
 const SHEET_GLASS: Record<string, Record<string, Record<PanelStyle, SheetBand[]>>> = {
   ...GALLERY_GLASS,

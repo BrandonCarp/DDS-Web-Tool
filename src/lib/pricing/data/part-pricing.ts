@@ -12,29 +12,52 @@ import type { Part } from "./parts";
 import { handSuffix } from "./torsion";
 
 /**
+ * Jamb seal colours — Brandon, 13/10/2026. The sheet's one line ("WHITE JAMB
+ * SEAL,") is stocked in white, black and brown at the same price; the colour
+ * chosen leads the line in the sheet's place.
+ */
+export const JAMB_SEAL_COLORS: readonly string[] = ["White", "Black", "Brown"];
+const JAMB_SEAL = /\bJAMB SEAL\b/i;
+export const isJambSeal = (part: Part) => JAMB_SEAL.test(part.name) || JAMB_SEAL.test(part.desc);
+
+/** The colours a part is sold in, where the counter picks one; empty where it is not. */
+export function partColors(part: Part): readonly string[] {
+  return isJambSeal(part) ? JAMB_SEAL_COLORS : [];
+}
+
+/** The sheet's line in the colour chosen — a jamb seal's leading WHITE becomes BLACK or BROWN. */
+function coloredDesc(part: Part, color?: string): string {
+  if (!color || !partColors(part).includes(color)) return part.desc;
+  return part.desc.replace(/^[A-Z]+(?=\s+JAMB SEAL\b)/i, color.toUpperCase());
+}
+
+/**
  * Description ready for QuickBooks.
  *
  * Per-foot parts get the footage written on (`2" RAW TRACK,  10FT`).
  * Hand-ordered parts get the counts appended (`... [2] - RIGHTS AND [1] - LEFT`).
+ * A part sold in colours (the jamb seal) says the one chosen.
  */
 export function partDescription(
   part: Part,
   feet?: number,
   right?: number,
   left?: number,
+  color?: string,
 ): string {
+  const desc = coloredDesc(part, color);
   if (part.hands) {
     const suffix = handSuffix(right ?? 0, left ?? 0);
-    return suffix ? `${part.desc} ${suffix}` : part.desc;
+    return suffix ? `${desc} ${suffix}` : desc;
   }
   if (isLockbar(part)) {
     // The sheet's "8FT LOCKBAR ASSEMBLY" becomes "9'6\" LOCKBAR ASSEMBLY" at
     // the length it is cut to; with no length given the sheet's line stands.
-    if (!feet) return part.desc;
-    return `${feetText(billedFeet(part, feet))} ${part.desc.replace(/^\d+FT\s+/i, "")}`;
+    if (!feet) return desc;
+    return `${feetText(billedFeet(part, feet))} ${desc.replace(/^\d+FT\s+/i, "")}`;
   }
-  if (!part.perFoot || !feet) return part.desc;
-  const base = part.desc.replace(/,\s*$/, "");
+  if (!part.perFoot || !feet) return desc;
+  const base = desc.replace(/,\s*$/, "");
   // Raw track and solid shaft say the length asked for, to the inch — 16'6" of
   // 3" raw track is billed at the 24FT stick but the line reads 16'6" (Brandon,
   // 12/10/2026; solid shafts 13/10/2026). A retainer still says the stick it

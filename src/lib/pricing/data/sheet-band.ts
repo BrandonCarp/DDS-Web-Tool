@@ -14,6 +14,17 @@ export interface SheetBand {
   inserts: number | null;
 }
 
+/**
+ * A window section's adder over the solid door, on a door whose windows are
+ * priced by design (the Coachman, coachman-glass.ts). Cost, before margin.
+ */
+export interface SectionBand {
+  /** Door width this band covers, in inches, inclusive. */
+  lo: number;
+  hi: number;
+  cost: number;
+}
+
 export interface GlassOption {
   id: string;
   label: string;

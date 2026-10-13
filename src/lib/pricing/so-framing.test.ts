@@ -115,14 +115,16 @@ describe("framing", () => {
     expect(["SQ24", "REC14", "PLAINLONG", "ARCH1GRILLE", "ARCH3VERT"].map(arch)).toEqual(["long", "long", "long", "long", "long"]);
   });
 
-  it("lists the Coachman's ten window designs, and its arch sections where the sheet prices them", () => {
+  it("lists the Coachman's window designs and arched sections where its sheet builds them, with any glass", () => {
     const at8 = framingOptions("CD", "CD", "8", "dsb");
     expect(at8.map((o) => o.label)).toEqual(["ARCH1", "ARCH3", "ARCH4", "ARCH13", "ARCH14", "REC11", "REC13", "REC14", "SQ23", "SQ24"]);
     const at16 = framingOptions("CD", "CD", "16", "dsb");
     expect(at16.slice(10).map((o) => o.label)).toEqual(["ARC13A arch section", "ARC14A arch section", "ARC1A arch section", "ARC3A arch section", "ARC4A arch section"]);
-    expect(at16[10]).toMatchObject({ kind: "arch", design: "ARC13A" });
-    // An arch section goes with the plain glass top section, not a special glass.
-    expect(framingOptions("CD", "CD", "16", "rain")).toHaveLength(10);
+    expect(at16[10]).toMatchObject({ kind: "design", design: "ARC13A" });
+    expect(framingOptions("CD", "CD", "16", "rain")).toHaveLength(15);
+    // 12'0" to 13'8": the REC and SQ designs and the arched sections; 14'0": solid only.
+    expect(framingOptions("CD", "CD", "12", "dsb").map((o) => o.design)).toEqual(["REC11", "REC13", "REC14", "SQ23", "SQ24", "ARC13A", "ARC14A", "ARC1A", "ARC3A", "ARC4A"]);
+    expect(framingOptions("CD", "CD", "14", "dsb")).toEqual([]);
   });
 });
 
@@ -145,7 +147,7 @@ describe("what the quote is asked for", () => {
     expect(windowChoice("dsb", f("GD1LP/GD1SP", "GD1SP", "8", "dsb", "SQ22 inserts")))
       .toEqual({ style: "inserts", glassType: "dsb", panelStyle: "short", windesign: "SQ22" });
     expect(windowChoice("dsb", f("CD", "CD", "8", "dsb", "REC13"))).toEqual({ style: "glass", glassType: "dsb", windesign: "REC13" });
-    expect(windowChoice("dsb", f("CD", "CD", "16", "dsb", "ARC1A arch section"))).toEqual({ style: "inserts", glassType: "dsb", windesign: "ARC1A" });
+    expect(windowChoice("rain", f("CD", "CD", "16", "rain", "ARC1A arch section"))).toEqual({ style: "glass", glassType: "rain", windesign: "ARC1A" });
     // Rain with a framing not yet chosen is plain rain glass.
     expect(windowChoice("rain", undefined)).toEqual({ style: "glass", glassType: "rain" });
   });

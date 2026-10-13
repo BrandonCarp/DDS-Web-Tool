@@ -6,8 +6,8 @@
  *   Section glazed  which section carries the windows — section 4 for now
  *   Framing         the plain windows by their order names, then every insert
  *                   the door takes, each its own entry (Brandon, 12/10/2026:
- *                   no second drop-down); on the Coachman, its window designs
- *                   and arch sections
+ *                   no second drop-down); on the Coachman, the window designs
+ *                   and arched sections its sheet builds at the width
  *
  * …and the size as two boxes each, feet and inches, like the stock tab's.
  * What the quote needs — style, glass type, panel, design, plain window —
@@ -15,8 +15,8 @@
  * pricing knowledge and the mapping can be tested on its own.
  */
 import { glassOptionsFor, glassTakesInserts, isSheetGroup, panelStylesFor, type GlassOption, type PanelStyle } from "./so-glass";
-import { archSectionGroup } from "./special-door-pricing";
-import { COACHMAN_ARCH, COACHMAN_GLASS_DESIGNS, plainWindowsFor, takesInserts, windowDesigns, type InsertDesign } from "./inserts";
+import { sectionDesignsAt, windowSectionGroup } from "./coachman-windows";
+import { plainWindowsFor, takesInserts, windowDesigns, type InsertDesign } from "./inserts";
 import type { WindowStyle } from "../types";
 
 /** "8.2" -> ["8", "2"]; "7" -> ["7", "0"]. */
@@ -61,7 +61,7 @@ export function glassTypeOptions(group: string, width: string, windowsOk: boolea
   return [SOLID, SINGLE_STRENGTH, ...named];
 }
 
-export type FramingKind = "plain" | "insert" | "design" | "arch";
+export type FramingKind = "plain" | "insert" | "design";
 export interface FramingOption {
   value: string;
   label: string;
@@ -70,7 +70,7 @@ export interface FramingOption {
   panel?: PanelStyle;
   /** The plain window's order name, where the model has one, for the line. */
   plainWindow?: string;
-  /** An insert design, a Coachman window design or an arch section. */
+  /** An insert design, or a Coachman window design or arched section. */
   design?: string;
 }
 
@@ -102,20 +102,17 @@ const plainDesign = (d: InsertDesign) => d.cat === "arch" && /\bPLAIN\b/i.test(d
  * long windows apart, so each plain window and each insert says which. The
  * model's own plain window names (PLAIN SHORT 19-1/2" X 12"…) are used where
  * it has them, as the stock tab does; the inserts follow, one entry each, in
- * the window their design goes in. The Coachman has one window layout: its
- * ten glass designs, then the arch sections where the sheet prices them.
+ * the window their design goes in. The Coachman has one window layout: the
+ * window designs and arched sections its sheet builds at the width, each
+ * priced on its own, with any of its glass.
  */
 export function framingOptions(group: string, member: string, width: string, glass: string): FramingOption[] {
   if (!width || glass === "solid") return [];
   const widthFt = width.split(".")[0];
-  if (archSectionGroup(group)) {
-    const designs: FramingOption[] = COACHMAN_GLASS_DESIGNS.map((d) => ({ value: `design:${d.id}`, label: d.name, kind: "design", design: d.id }));
-    // An arch section is priced over the solid door with its own glass, on the
-    // widths the sheet prices it; it is not combined with a special glass.
-    const arch: FramingOption[] = glass === "dsb" && glassTakesInserts(group, "short", width, "dsb")
-      ? COACHMAN_ARCH.map((d) => ({ value: `arch:${d.id}`, label: `${d.name} arch section`, kind: "arch", design: d.id }))
-      : [];
-    return [...designs, ...arch];
+  if (windowSectionGroup(group)) {
+    return sectionDesignsAt(group, width).map((d) => ({
+      value: `design:${d.id}`, label: d.cat === "arch" ? `${d.name} arch section` : d.name, kind: "design", design: d.id,
+    }));
   }
   const panels = panelStylesFor(group, width);
   const named = plainWindowsFor(member);
@@ -173,7 +170,6 @@ export function windowChoice(glass: string, framing: FramingOption | undefined):
   if (!framing) return { style: "glass", glassType };
   switch (framing.kind) {
     case "design": return { style: "glass", glassType, windesign: framing.design };
-    case "arch": return { style: "inserts", glassType: "dsb", windesign: framing.design };
     case "insert": return { style: "inserts", glassType, panelStyle: framing.panel, windesign: framing.design };
     default: return { style: "glass", glassType, panelStyle: framing.panel, plainWindow: framing.plainWindow };
   }

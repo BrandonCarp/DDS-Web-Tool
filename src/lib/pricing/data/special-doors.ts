@@ -16616,72 +16616,52 @@ export const SPECIAL_DOORS: Record<string, Record<string, Record<string, Partial
   "CD": {
     "7": {
       "6.2": {
-        "solid": 2359.33,
-        "glass": 2807.6
+        "solid": 2359.33
       },
       "6.4": {
-        "solid": 2359.33,
-        "glass": 2807.6
+        "solid": 2359.33
       },
       "7": {
-        "solid": 2359.33,
-        "glass": 2807.6
+        "solid": 2359.33
       },
       "7.2": {
-        "solid": 2359.33,
-        "glass": 2807.6
+        "solid": 2359.33
       },
       "7.6": {
-        "solid": 2359.33,
-        "glass": 2807.6
+        "solid": 2359.33
       },
       "7.8": {
-        "solid": 2359.33,
-        "glass": 2807.6
+        "solid": 2359.33
       },
       "8": {
-        "solid": 2359.33,
-        "glass": 2807.6
+        "solid": 2359.33
       },
       "8.2": {
-        "solid": 2460.09,
-        "glass": 2926.87
+        "solid": 2460.09
       },
       "8.6": {
-        "solid": 2460.09,
-        "glass": 2926.87
+        "solid": 2460.09
       },
       "9": {
-        "solid": 2460.09,
-        "glass": 2926.87
+        "solid": 2460.09
       },
       "9.2": {
-        "solid": 3060.53,
-        "glass": 3656.85
+        "solid": 3060.53
       },
       "10": {
-        "solid": 3060.53,
-        "glass": 3656.85
+        "solid": 3060.53
       },
       "12": {
-        "solid": 3350.47,
-        "glass": 4022.88,
-        "inserts": 4695.3
+        "solid": 3350.47
       },
       "12.2": {
-        "solid": 3852.21,
-        "glass": 4524.62,
-        "inserts": 5197.04
+        "solid": 3852.21
       },
       "13": {
-        "solid": 3852.21,
-        "glass": 4524.62,
-        "inserts": 5197.04
+        "solid": 3852.21
       },
       "13.8": {
-        "solid": 3852.21,
-        "glass": 4524.62,
-        "inserts": 5197.04
+        "solid": 3852.21
       },
       "14": {
         "solid": 3852.21
@@ -16690,114 +16670,78 @@ export const SPECIAL_DOORS: Record<string, Record<string, Record<string, Partial
         "solid": 4399.19
       },
       "15": {
-        "solid": 4399.19,
-        "glass": 5293.68,
-        "inserts": 6188.17
+        "solid": 4399.19
       },
       "15.2": {
-        "solid": 4399.19,
-        "glass": 5293.68,
-        "inserts": 6188.17
+        "solid": 4399.19
       },
       "15.6": {
-        "solid": 4399.19,
-        "glass": 5293.68,
-        "inserts": 6188.17
+        "solid": 4399.19
       },
       "15.8": {
-        "solid": 4399.19,
-        "glass": 5293.68,
-        "inserts": 6188.17
+        "solid": 4399.19
       },
       "16": {
-        "solid": 4399.19,
-        "glass": 5293.68,
-        "inserts": 6188.17
+        "solid": 4399.19
       },
       "16.2": {
-        "solid": 4473.21,
-        "glass": 5406.77,
-        "inserts": 6262.2
+        "solid": 4473.21
       },
       "17": {
-        "solid": 4473.21,
-        "glass": 5406.77,
-        "inserts": 6262.2
+        "solid": 4473.21
       },
       "18": {
-        "solid": 4734.36,
-        "glass": 5667.92,
-        "inserts": 6523.35
+        "solid": 4734.36
       }
     },
     "8": {
       "6.2": {
-        "solid": 2421.02,
-        "glass": 2869.29
+        "solid": 2421.02
       },
       "6.4": {
-        "solid": 2421.02,
-        "glass": 2869.29
+        "solid": 2421.02
       },
       "7": {
-        "solid": 2421.02,
-        "glass": 2869.29
+        "solid": 2421.02
       },
       "7.2": {
-        "solid": 2421.02,
-        "glass": 2869.29
+        "solid": 2421.02
       },
       "7.6": {
-        "solid": 2421.02,
-        "glass": 2869.29
+        "solid": 2421.02
       },
       "7.8": {
-        "solid": 2421.02,
-        "glass": 2869.29
+        "solid": 2421.02
       },
       "8": {
-        "solid": 2421.02,
-        "glass": 2869.29
+        "solid": 2421.02
       },
       "8.2": {
-        "solid": 2523.84,
-        "glass": 2990.61
+        "solid": 2523.84
       },
       "8.6": {
-        "solid": 2523.84,
-        "glass": 2990.61
+        "solid": 2523.84
       },
       "9": {
-        "solid": 2523.84,
-        "glass": 2990.61
+        "solid": 2523.84
       },
       "9.2": {
-        "solid": 3140.73,
-        "glass": 3737.05
+        "solid": 3140.73
       },
       "10": {
-        "solid": 3140.73,
-        "glass": 3737.05
+        "solid": 3140.73
       },
       "12": {
-        "solid": 3447.12,
-        "glass": 4119.52,
-        "inserts": 4791.95
+        "solid": 3447.12
       },
       "12.2": {
-        "solid": 3963.25,
-        "glass": 4635.66,
-        "inserts": 5308.08
+        "solid": 3963.25
       },
       "13": {
-        "solid": 3963.25,
-        "glass": 4635.66,
-        "inserts": 5308.08
+        "solid": 3963.25
       },
       "13.8": {
-        "solid": 3963.25,
-        "glass": 4635.66,
-        "inserts": 5308.08
+        "solid": 3963.25
       },
       "14": {
         "solid": 3963.25
@@ -16806,114 +16750,78 @@ export const SPECIAL_DOORS: Record<string, Record<string, Record<string, Partial
         "solid": 4524.62
       },
       "15": {
-        "solid": 4524.62,
-        "glass": 5419.11,
-        "inserts": 6313.6
+        "solid": 4524.62
       },
       "15.2": {
-        "solid": 4524.62,
-        "glass": 5419.11,
-        "inserts": 6313.6
+        "solid": 4524.62
       },
       "15.6": {
-        "solid": 4524.62,
-        "glass": 5419.11,
-        "inserts": 6313.6
+        "solid": 4524.62
       },
       "15.8": {
-        "solid": 4524.62,
-        "glass": 5419.11,
-        "inserts": 6313.6
+        "solid": 4524.62
       },
       "16": {
-        "solid": 4524.62,
-        "glass": 5419.11,
-        "inserts": 6313.6
+        "solid": 4524.62
       },
       "16.2": {
-        "solid": 4598.65,
-        "glass": 5532.21,
-        "inserts": 6387.63
+        "solid": 4598.65
       },
       "17": {
-        "solid": 4598.65,
-        "glass": 5532.21,
-        "inserts": 6387.63
+        "solid": 4598.65
       },
       "18": {
-        "solid": 4868.02,
-        "glass": 5801.58,
-        "inserts": 6657.01
+        "solid": 4868.02
       }
     },
     "9": {
       "6.2": {
-        "solid": 3132.5,
-        "glass": 3580.77
+        "solid": 3132.5
       },
       "6.4": {
-        "solid": 3132.5,
-        "glass": 3580.77
+        "solid": 3132.5
       },
       "7": {
-        "solid": 3132.5,
-        "glass": 3580.77
+        "solid": 3132.5
       },
       "7.2": {
-        "solid": 3132.5,
-        "glass": 3580.77
+        "solid": 3132.5
       },
       "7.6": {
-        "solid": 3132.5,
-        "glass": 3580.77
+        "solid": 3132.5
       },
       "7.8": {
-        "solid": 3132.5,
-        "glass": 3580.77
+        "solid": 3132.5
       },
       "8": {
-        "solid": 3132.5,
-        "glass": 3580.77
+        "solid": 3132.5
       },
       "8.2": {
-        "solid": 3255.88,
-        "glass": 3722.66
+        "solid": 3255.88
       },
       "8.6": {
-        "solid": 3255.88,
-        "glass": 3722.66
+        "solid": 3255.88
       },
       "9": {
-        "solid": 3255.88,
-        "glass": 3722.66
+        "solid": 3255.88
       },
       "9.2": {
-        "solid": 4064.01,
-        "glass": 4660.33
+        "solid": 4064.01
       },
       "10": {
-        "solid": 4064.01,
-        "glass": 4660.33
+        "solid": 4064.01
       },
       "12": {
-        "solid": 4306.65,
-        "glass": 4979.06,
-        "inserts": 5651.48
+        "solid": 4306.65
       },
       "12.2": {
-        "solid": 4882.42,
-        "glass": 5554.82,
-        "inserts": 6227.25
+        "solid": 4882.42
       },
       "13": {
-        "solid": 4882.42,
-        "glass": 5554.82,
-        "inserts": 6227.25
+        "solid": 4882.42
       },
       "13.8": {
-        "solid": 4882.42,
-        "glass": 5554.82,
-        "inserts": 6227.25
+        "solid": 4882.42
       },
       "14": {
         "solid": 4882.42
@@ -16922,114 +16830,78 @@ export const SPECIAL_DOORS: Record<string, Record<string, Record<string, Partial
         "solid": 5575.39
       },
       "15": {
-        "solid": 5575.39,
-        "glass": 6469.88,
-        "inserts": 7364.38
+        "solid": 5575.39
       },
       "15.2": {
-        "solid": 5575.39,
-        "glass": 6469.88,
-        "inserts": 7364.38
+        "solid": 5575.39
       },
       "15.6": {
-        "solid": 5575.39,
-        "glass": 6469.88,
-        "inserts": 7364.38
+        "solid": 5575.39
       },
       "15.8": {
-        "solid": 5575.39,
-        "glass": 6469.88,
-        "inserts": 7364.38
+        "solid": 5575.39
       },
       "16": {
-        "solid": 5575.39,
-        "glass": 6469.88,
-        "inserts": 7364.38
+        "solid": 5575.39
       },
       "16.2": {
-        "solid": 6013.39,
-        "glass": 6946.95,
-        "inserts": 7802.37
+        "solid": 6013.39
       },
       "17": {
-        "solid": 6013.39,
-        "glass": 6946.95,
-        "inserts": 7802.37
+        "solid": 6013.39
       },
       "18": {
-        "solid": 6365.01,
-        "glass": 7298.57,
-        "inserts": 8154.0
+        "solid": 6365.01
       }
     },
     "10": {
       "6.2": {
-        "solid": 3210.64,
-        "glass": 3658.91
+        "solid": 3210.64
       },
       "6.4": {
-        "solid": 3210.64,
-        "glass": 3658.91
+        "solid": 3210.64
       },
       "7": {
-        "solid": 3210.64,
-        "glass": 3658.91
+        "solid": 3210.64
       },
       "7.2": {
-        "solid": 3210.64,
-        "glass": 3658.91
+        "solid": 3210.64
       },
       "7.6": {
-        "solid": 3210.64,
-        "glass": 3658.91
+        "solid": 3210.64
       },
       "7.8": {
-        "solid": 3210.64,
-        "glass": 3658.91
+        "solid": 3210.64
       },
       "8": {
-        "solid": 3210.64,
-        "glass": 3658.91
+        "solid": 3210.64
       },
       "8.2": {
-        "solid": 3344.3,
-        "glass": 3811.08
+        "solid": 3344.3
       },
       "8.6": {
-        "solid": 3344.3,
-        "glass": 3811.08
+        "solid": 3344.3
       },
       "9": {
-        "solid": 3344.3,
-        "glass": 3811.08
+        "solid": 3344.3
       },
       "9.2": {
-        "solid": 4170.94,
-        "glass": 4767.26
+        "solid": 4170.94
       },
       "10": {
-        "solid": 4170.94,
-        "glass": 4767.26
+        "solid": 4170.94
       },
       "12": {
-        "solid": 4506.11,
-        "glass": 5178.52,
-        "inserts": 5850.94
+        "solid": 4506.11
       },
       "12.2": {
-        "solid": 5160.02,
-        "glass": 5832.43,
-        "inserts": 6504.85
+        "solid": 5160.02
       },
       "13": {
-        "solid": 5160.02,
-        "glass": 5832.43,
-        "inserts": 6504.85
+        "solid": 5160.02
       },
       "13.8": {
-        "solid": 5160.02,
-        "glass": 5832.43,
-        "inserts": 6504.85
+        "solid": 5160.02
       },
       "14": {
         "solid": 5160.02
@@ -17038,44 +16910,28 @@ export const SPECIAL_DOORS: Record<string, Record<string, Record<string, Partial
         "solid": 5894.12
       },
       "15": {
-        "solid": 5894.12,
-        "glass": 6788.61,
-        "inserts": 7683.1
+        "solid": 5894.12
       },
       "15.2": {
-        "solid": 5894.12,
-        "glass": 6788.61,
-        "inserts": 7683.1
+        "solid": 5894.12
       },
       "15.6": {
-        "solid": 5894.12,
-        "glass": 6788.61,
-        "inserts": 7683.1
+        "solid": 5894.12
       },
       "15.8": {
-        "solid": 5894.12,
-        "glass": 6788.61,
-        "inserts": 7683.1
+        "solid": 5894.12
       },
       "16": {
-        "solid": 5894.12,
-        "glass": 6788.61,
-        "inserts": 7683.1
+        "solid": 5894.12
       },
       "16.2": {
-        "solid": 6200.51,
-        "glass": 7134.07,
-        "inserts": 7989.49
+        "solid": 6200.51
       },
       "17": {
-        "solid": 6200.51,
-        "glass": 7134.07,
-        "inserts": 7989.49
+        "solid": 6200.51
       },
       "18": {
-        "solid": 6564.48,
-        "glass": 7498.04,
-        "inserts": 8353.46
+        "solid": 6564.48
       }
     }
   }

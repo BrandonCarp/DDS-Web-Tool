@@ -13,7 +13,7 @@ import {
 import {
   specialDoorQuote, hasGrid, griddedWidths, griddedHeights,
   offeredHeights, tierForOfferedHeight, heightLabel,
-  groupMembers, groupHasWidthLimits, heightForcesTorsion, torsionIncluded, galvanizedOnly, glassOnHold, shouldSplitGroup,
+  groupMembers, groupHasWidthLimits, heightForcesTorsion, torsionIncluded, highLiftOffered, shouldSplitGroup,
   minWidthFor, excludedWidthsFor,
   parseModelSelection, modelSelectionValue, windowsOfferedAt,
 } from "@/lib/pricing/data/special-door-pricing";
@@ -230,25 +230,28 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   // and a sheet-priced door with no glass band at a width has no window price:
   // the glass list is Solid alone there.
   const isSheet = isSheetGroup(modelGroup);
-  // The Coachman's windows are held back for now (glassOnHold): Solid alone, no note.
-  const gGlassHeld = gridded && glassOnHold(modelGroup);
-  const gWindowsOk = !gGlassHeld && (!gWidth || (windowsOfferedAt(modelMember || undefined, gWidth) && (!isSheet || panelStylesFor(modelGroup, gWidth).length > 0)
-    && (!gDesigned || designTakesWindows(modelGroup, gDesignEff))));
+  const gWindowsOk = !gWidth || (windowsOfferedAt(modelMember || undefined, gWidth) && (!isSheet || panelStylesFor(modelGroup, gWidth).length > 0)
+    && (!gDesigned || designTakesWindows(modelGroup, gDesignEff)));
   const gGlassOptions = gridded && gWidth ? glassTypeOptions(modelGroup, gWidth, gWindowsOk) : [];
   const gGlassEff = gGlassOptions.some((g) => g.id === gGlass) ? gGlass : "solid";
   const gFramings = gridded && gWidth ? framingOptions(modelGroup, member, gWidth, gGlassEff) : [];
+  // The framing picked stays through a glass change where the new glass
+  // offers it (a Coachman design, say); where it does not, the first is used.
   const gFramingEff = gFramings.find((f) => f.value === gFraming) ?? gFramings[0];
   const choice = windowChoice(gGlassEff, gFramingEff);
   const gStyleEff = choice.style;
 
-  // High lift is torsion only, and caps at the door height less 3 inches —
-  // above that the door is full vertical lift, a different track entirely.
-  // A tall door locks out extension springs; standard or galvanized torsion
-  // stay open. The Coachman is sold with galvanized torsion only (12/10/2026).
-  const gGalvOnly = gridded && galvanizedOnly(modelGroup);
-  const gSpringUsed = gGalvOnly ? "galvanized" : gTorsionOnly && gSpring === "extension" ? "torsion" : gSpring;
-  const gLiftAllowed = canTakeHighLift(gSpringUsed);
-  const gIsLift = gTrack === "high_lift";
+  // High lift is the 4050 family's (Brandon, 13/10/2026), torsion only, and
+  // caps at the door height less 3 inches — above that the door is full
+  // vertical lift, a different track entirely. A tall door locks out extension
+  // springs; standard or galvanized torsion stay open (on the Coachman at one
+  // price, 13/10/2026).
+  const gSpringUsed = gTorsionOnly && gSpring === "extension" ? "torsion" : gSpring;
+  const gLiftOffered = gridded && highLiftOffered(modelGroup);
+  const gLiftAllowed = gLiftOffered && canTakeHighLift(gSpringUsed);
+  // A high lift chosen on a door that then stops offering it is 12" radius.
+  const gTrackEff = gTrack === "high_lift" && !gLiftAllowed ? "r12" : gTrack;
+  const gIsLift = gTrackEff === "high_lift";
   const gHeightFtN = Number(gHeightFt || "0");
   const gHeightInN = Number(gHeightIn || "0");
   const gLiftSteps = highLiftChoices(gHeightFtN, gHeightInN);
@@ -288,7 +291,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
         design: gDesignEff || undefined, overlayColor: gSecondName ? gOverlayEff : undefined,
         style: choice.style, glassType: choice.glassType, panelStyle: choice.panelStyle, windesign: choice.windesign, plainWindow: choice.plainWindow,
         variant: (modelMember || gVariant) || undefined,
-        track: gTrack as never, spring: gSpringUsed as never, lock: gLock as never,
+        track: gTrackEff as never, spring: gSpringUsed as never, lock: gLock as never,
         trackMount: gMount, incline: gIncline, highLiftInches: gIsLift ? gEffLift : 0 })
     : null;
 
@@ -594,11 +597,11 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                   <div className="grow"><label>Glass type</label>
                     <div className="ctl selectwrap">
                       <select disabled={!gOpen} data-testid="so-glass" value={gGlassEff}
-                        onChange={(e) => { setGGlass(e.target.value); setGFraming(""); setSaved(false); }}>
+                        onChange={(e) => { setGGlass(e.target.value); setSaved(false); }}>
                         {(gGlassOptions.length ? gGlassOptions : [{ id: "solid", label: "Solid — no windows" }]).map((g) => <option key={g.id} value={g.id}>{g.label}</option>)}
                       </select>
                     </div>
-                    {gWidth && !gWindowsOk && !gGlassHeld && (!gDesigned || designTakesWindows(modelGroup, gDesignEff)) && (
+                    {gWidth && !gWindowsOk && (!gDesigned || designTakesWindows(modelGroup, gDesignEff)) && (
                       <div className="muted-note" style={{ marginTop: 6 }} data-testid="so-no-windows">
                         Not built with windows at this width — solid only.
                       </div>
@@ -626,7 +629,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                   <div className="ghdr">Track options</div>
                   {!gSizeSet && (
                     <div className="grow"><span className="muted-note" style={{ gridColumn: "1 / -1" }}>
-                      Choose a width and height first — high lift and spring depend on the door size.
+                      Choose a width and height first — {gLiftOffered ? "high lift and spring depend" : "the spring depends"} on the door size.
                     </span></div>
                   )}
                   {gSizeSet && <><div className="grow"><label>Spring</label>
@@ -638,14 +641,14 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                           setSaved(false);
                         }}>
                         {!gTorsionOnly && <option value="extension">Extension</option>}
-                        {!gGalvOnly && <option value="torsion">Torsion</option>}
+                        <option value="torsion">Torsion</option>
                         <option value="galvanized">Galvanized torsion</option>
                       </select>
                     </div>
                   </div>
                   <div className="grow"><label>Track</label>
                     <div className="ctl selectwrap">
-                      <select disabled={!gOpen} data-testid="so-track" value={gTrack}
+                      <select disabled={!gOpen} data-testid="so-track" value={gTrackEff}
                         onChange={(e) => { setGTrack(e.target.value); if (e.target.value !== "high_lift") setGLift(0); setSaved(false); }}>
                         <option value="r10">10&quot; radius</option>
                         <option value="r12">12&quot; radius</option>

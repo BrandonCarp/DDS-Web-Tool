@@ -130,7 +130,9 @@ export function ResidentialTool({
   const [secKind, setSecKind] = useState<"bt" | "int">("bt");
   const [secHeight, setSecHeight] = useState<"18" | "21">("18");
   const [secWidth, setSecWidth] = useState("");
-  const [secGlass, setSecGlass] = useState<"solid" | "glazed">("solid");
+  // "solid", or "glazed:<window>" — the model's plain window by its order
+  // name (13/10/2026); "glazed" alone on a model that names none.
+  const [secGlass, setSecGlass] = useState("solid");
   const [secLock, setSecLock] = useState<"none" | "installed">("none");
   // No default: the counter has to choose the color — Brandon, 25/9/2026.
   const [color, setColor] = useState("");
@@ -175,9 +177,19 @@ export function ResidentialTool({
   const sectionsOnly = assemblyUsed === "sectionsonly";
   // …and its 18" sections come solid only.
   const noGlassHere = sections && secHeight === "18" && NO_GLASS_AT_18.has(dataKey(model));
-  const secGlassUsed = noGlassHere ? "solid" : secGlass;
   const secWidths = RES_SECTION_WIDTHS[dataKey(model)] ?? [];
   const activeSecWidth = secWidth && secWidths.includes(secWidth) ? secWidth : "";
+  // A glazed section names its window like the door does: the model's plain
+  // windows by their order names, long ones at the widths a stock door takes
+  // them; a model with none is "glazed" alone (Brandon, 13/10/2026).
+  const [secWf, secWi] = activeSecWidth.split(".");
+  const secLongOk = stockLongAllowed(model, activeSecWidth ? Number(secWf) : NaN, Number(secWi ?? 0));
+  const secWindows = plainWindowsFor(model).filter((w) => secLongOk || !/\bLONG\b/i.test(w));
+  const secGlassOpts = noGlassHere ? ["solid"] : ["solid", ...(secWindows.length ? secWindows.map((w) => `glazed:${w}`) : ["glazed"])];
+  const secGlassUsed = secGlassOpts.includes(secGlass) ? secGlass
+    : secGlass !== "solid" && secGlassOpts.length > 1 ? secGlassOpts[1] : "solid";
+  const secGlazed = secGlassUsed !== "solid";
+  const secWindow = secGlassUsed.startsWith("glazed:") ? secGlassUsed.slice("glazed:".length) : undefined;
   // Only what is on the floor, narrowed to the size once one is chosen. A 7'0"
   // 4050 is White alone; listing the other four would offer a door that cannot
   // be ordered at that size.
@@ -277,8 +289,9 @@ export function ResidentialTool({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             model, assembly: "sections", widthKey: activeSecWidth,
-            secHeight, secKind, glazed: secKind === "int" && secGlassUsed === "glazed",
-            lockbar: secKind === "int" && secGlassUsed === "solid" && secLock === "installed",
+            secHeight, secKind, glazed: secKind === "int" && secGlazed,
+            plainWindow: secKind === "int" && secGlazed ? secWindow : undefined,
+            lockbar: secKind === "int" && !secGlazed && secLock === "installed",
             color, homeowner,
           }),
         });
@@ -678,9 +691,10 @@ export function ResidentialTool({
                       <div className="grow">
                         <label>Glass</label>
                         <div className="ctl selectwrap">
-                          <select data-testid="sec-glass" value={secGlassUsed} disabled={!optionsOpen} onChange={(e) => setSecGlass(e.target.value as "solid" | "glazed")}>
-                            <option value="solid">Solid — no windows</option>
-                            {!noGlassHere && <option value="glazed">Glazed (glass section)</option>}
+                          <select data-testid="sec-glass" value={secGlassUsed} disabled={!optionsOpen} onChange={(e) => setSecGlass(e.target.value)}>
+                            {secGlassOpts.map((v) => (
+                              <option key={v} value={v}>{v === "solid" ? "Solid — no windows" : v === "glazed" ? "Glazed (glass section)" : v.slice("glazed:".length)}</option>
+                            ))}
                           </select>
                         </div>
                       </div>
@@ -694,7 +708,7 @@ export function ResidentialTool({
                         </select>
                       </div>
                     </div>
-                      {secGlassUsed === "solid" && (
+                      {!secGlazed && (
                         <div className="grow">
                           <label>Lockbar</label>
                           <div className="ctl selectwrap">
