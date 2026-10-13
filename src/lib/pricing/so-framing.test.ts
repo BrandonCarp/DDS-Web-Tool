@@ -178,7 +178,7 @@ describe("what the quote is asked for", () => {
     expect(g({ style: "glass", plainWindow: "Arch 3 Plain" }).quote?.description).not.toContain("arch 3");
   });
 
-  it("has one section glazed for now: section 4", () => {
-    expect(GLAZED_SECTIONS).toEqual([{ value: "4", label: "Section 4" }]);
+  it("has one section glazed for now: TOP SECTION", () => {
+    expect(GLAZED_SECTIONS).toEqual([{ value: "4", label: "TOP SECTION" }]);
   });
 });

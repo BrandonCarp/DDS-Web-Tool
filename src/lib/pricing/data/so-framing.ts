@@ -3,7 +3,7 @@
  * (Brandon, 12/10/2026, "DDS App Changes" 1-5):
  *
  *   Glass type      Solid, then every glass the door prices
- *   Section glazed  which section carries the windows — section 4 for now
+ *   Section glazed  which section carries the windows — top section for now
  *   Framing         the plain windows by their order names, then every insert
  *                   the door takes, each its own entry (Brandon, 12/10/2026:
  *                   no second drop-down); on the Coachman, the window designs
@@ -175,5 +175,5 @@ export function windowChoice(glass: string, framing: FramingOption | undefined):
   }
 }
 
-/** The one section glazed input for now: section 4. */
-export const GLAZED_SECTIONS = [{ value: "4", label: "Section 4" }];
+/** The one section glazed input for now: top section. */
+export const GLAZED_SECTIONS = [{ value: "4", label: "TOP SECTION" }];
