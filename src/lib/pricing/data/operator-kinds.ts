@@ -1,7 +1,7 @@
 /**
  * How the Operators tab sorts the operators — Brandon, 13/10/2026: Residential
  * or Commercial, then Belt / Chain / Side Mount, then (belt and chain) the
- * rail length, then the operator itself from a drop-down.
+ * operator by model, then its rail length; a side mount is the operator itself.
  *
  * Nothing is retyped: the use comes from the catalogue section (the
  * RESIDENTIAL sections are residential, the rest commercial), the kind and
@@ -89,6 +89,46 @@ export function operatorLabel(o: CatalogueOperator): string {
   let s = o.item.desc.replace(PREFIX, "");
   if (typeof o.rail === "number") s = s.replace(/,\s*\d+\s*FT\s+(?:BELT|CHAIN|I-BEAM|TROLLEY)\s+RAIL/i, "");
   return s.replace(/\s+/g, " ").trim();
+}
+
+/**
+ * A belt or chain operator's model number — the label's first clause: the
+ * 6690L of "6690L, HEAD ONLY", the TDC12S1BMC of "TDC12S1BMC, STANDARD, 1200
+ * LBS, 20 CYCLES". The rail rows and the head-only row of one model share it.
+ */
+export function operatorModel(o: CatalogueOperator): string {
+  return operatorLabel(o).split(",")[0].trim();
+}
+
+export interface OperatorModel {
+  id: string;
+  /** The model as its rail rows describe it ("TDC12S1BMC, STANDARD, 1200 LBS, 20 CYCLES"); the head-only row says less. */
+  label: string;
+}
+
+/** The models a belt or chain kind comes in, in catalogue order. */
+export function modelsFor(use: OperatorUse, kind: OperatorKind): OperatorModel[] {
+  const out: OperatorModel[] = [];
+  for (const o of OPERATORS.filter((x) => x.use === use && x.kind === kind)) {
+    const id = operatorModel(o);
+    const label = operatorLabel(o).replace(/,\s*HEAD ONLY$/i, "").trim();
+    const have = out.find((m) => m.id === id);
+    if (!have) out.push({ id, label });
+    else if (label.length > have.label.length) have.label = label;
+  }
+  return out;
+}
+
+/** The rail lengths a model comes in, ascending, with "head" last where it is sold as a head alone. */
+export function railLengthsForModel(use: OperatorUse, kind: OperatorKind, model: string): RailLength[] {
+  const have = OPERATORS.filter((o) => o.use === use && o.kind === kind && operatorModel(o) === model);
+  const feet = [...new Set(have.flatMap((o) => (typeof o.rail === "number" ? [o.rail] : [])))].sort((a, b) => a - b);
+  return have.some((o) => o.rail === "head") ? [...feet, "head"] : feet;
+}
+
+/** The one operator of a model at a rail length, or null. */
+export function operatorAt(use: OperatorUse, kind: OperatorKind, model: string, rail: RailLength): CatalogueOperator | null {
+  return OPERATORS.find((o) => o.use === use && o.kind === kind && operatorModel(o) === model && o.rail === rail) ?? null;
 }
 
 /** Where a catalogue item sits in the flow, for a top-bar search landing on it. */
