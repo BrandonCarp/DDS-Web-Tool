@@ -613,7 +613,7 @@ describe("special order — Bridgeport Steel from its own sheets (12/10/2026)", 
     await settle();
     // Short or long windows, a free choice, in the framing: the plain windows, then each insert in its window.
     expect(options("so-framing").map((o) => o.textContent)).toEqual([
-      "Plain short windows", "Plain long windows", "Arch 1 Plain", "Arch 2 Plain",
+      'PLAIN SHORT 19-1/2" X 16"', 'PLAIN LONG 42" X 16"', "PLAIN ARCH 1", "Arch 2 Plain",
       "SQ22 inserts", "REC12 inserts", "SQ24 inserts", "REC14 inserts",
       "Arch 1 Grille inserts", "Arch 1 Vertical Grille inserts", "Arch 2 Grille inserts", "Arch 2 Vertical Grille inserts",
     ]);

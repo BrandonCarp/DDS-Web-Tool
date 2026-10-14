@@ -16,7 +16,7 @@
  */
 import { glassOptionsFor, glassTakesInserts, isSheetGroup, panelStylesFor, type GlassOption, type PanelStyle } from "./so-glass";
 import { sectionDesignsAt, windowSectionGroup } from "./coachman-windows";
-import { plainWindowsFor, takesInserts, windowDesigns, type InsertDesign } from "./inserts";
+import { specialPlainWindowsFor, takesInserts, windowDesigns, type InsertDesign } from "./inserts";
 import type { WindowStyle } from "../types";
 
 /** "8.2" -> ["8", "2"]; "7" -> ["7", "0"]. */
@@ -101,8 +101,10 @@ const plainDesign = (d: InsertDesign) => d.cat === "arch" && /\bPLAIN\b/i.test(d
  * Sheet-priced doors (Gallery, Bridgeport) and the 4050 family price short and
  * long windows apart, so each plain window and each insert says which. The
  * model's own plain window names (PLAIN SHORT 19-1/2" X 12"…) are used where
- * it has them, as the stock tab does; the inserts follow, one entry each, in
- * the window their design goes in. The Coachman has one window layout: the
+ * it has them, as the stock tab does — every Gallery and Bridgeport door the
+ * one list (PLAIN SHORT 19-1/2" X 16", PLAIN LONG 42" X 16", PLAIN ARCH 1;
+ * Brandon, 14/10/2026); the inserts follow, one entry each, in the window
+ * their design goes in. The Coachman has one window layout: the
  * window designs and arched sections its sheet builds at the width, each
  * priced on its own, with any of its glass.
  */
@@ -115,7 +117,7 @@ export function framingOptions(group: string, member: string, width: string, gla
     }));
   }
   const panels = panelStylesFor(group, width);
-  const named = plainWindowsFor(member);
+  const named = specialPlainWindowsFor(member);
   const designs = takesInserts(member) ? windowDesigns(member, "inserts", widthFt) : [];
   if (panels.length) {
     const out: FramingOption[] = [];

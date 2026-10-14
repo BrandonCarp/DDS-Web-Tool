@@ -27,7 +27,7 @@ import { colorTakesPremium } from "./catalog-meta";
 import { highLiftPrice, mountPhrase, type TrackMount, type InclineStyle } from "./track-lift";
 import { ADDONS, GRADE_RES, COLLECTIONS_RES } from "./addons";
 import { dataKey } from "../model-groups";
-import { designName, plainWindowsFor, windowDesigns } from "./inserts";
+import { designName, specialPlainWindowsFor, windowDesigns } from "./inserts";
 import { designBuilt, designTakesWindows, hasDesigns, modelWithDesign, secondColorName, secondColorPricedAs } from "./door-designs";
 import { SPECIAL_DOORS } from "./special-doors";
 import type { LockKey, SpringKey, TrackKey, WindowStyle } from "../types";
@@ -577,7 +577,7 @@ export function specialDoorQuote(
   // here). The Gallery's and Bridgeport's other plain arch windows (Arch 2
   // Plain, Arch 3 Plain) are named from the window list the same way.
   const plainNames = [
-    ...plainWindowsFor(member),
+    ...specialPlainWindowsFor(member),
     ...windowDesigns(member, "inserts", input.width.split(".")[0]).filter((d) => d.cat === "arch" && /\bPLAIN\b/i.test(d.name)).map((d) => d.name),
   ];
   const plain = style === "glass" && input.plainWindow && plainNames.includes(input.plainWindow)

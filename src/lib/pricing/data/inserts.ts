@@ -215,6 +215,21 @@ export function plainWindowsFor(model: string): readonly string[] {
   return PLAIN_WINDOWS[model] ?? [];
 }
 
+/**
+ * The plain windows a Gallery or Bridgeport door takes on a special order —
+ * Brandon, 14/10/2026: the two collections share the names, the short window
+ * a special order takes and the stock Gallery does not, then the long and the
+ * arch the stock tab already names. The other plain arches (Arch 2 at 8' and
+ * 9', Arch 3 at 16') come off the architectural list as they do today.
+ */
+const SHEET_PLAIN_SHORT = 'PLAIN SHORT 19-1/2" X 16"';
+export const SPECIAL_PLAIN_WINDOWS: readonly string[] = [SHEET_PLAIN_SHORT, GALLERY_LONG, "PLAIN ARCH 1"];
+
+/** The plain windows a model names on a special order: the Gallery and Bridgeport list, or the model's own. */
+export function specialPlainWindowsFor(model: string): readonly string[] {
+  return /^(GD|BD)/.test(model) ? SPECIAL_PLAIN_WINDOWS : plainWindowsFor(model);
+}
+
 export function takesInserts(model: string): boolean {
   return !NO_INSERTS.has(model);
 }

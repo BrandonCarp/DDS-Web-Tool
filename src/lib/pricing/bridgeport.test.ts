@@ -222,6 +222,27 @@ describe("Bridgeport wording", () => {
     expect(q({ model: "BD2CU", variant: "BD2CU", style: "inserts", glassType: "insulated", windesign: "ARCH1GRILLE" }).quote?.description)
       .toContain("Model BD2CU, 8'0\" x 7'0\", in the color White, insulated windows in the top section, Arch 1 Grille inserts");
   });
+
+  it("names the plain window the Gallery and Bridgeport share — short, long or arch (Brandon, 14/10/2026)", () => {
+    const line = (o: Record<string, unknown>) => q({ style: "glass", glassType: "dsb", ...o }).quote?.description;
+    expect(line({ panelStyle: "short", plainWindow: 'PLAIN SHORT 19-1/2" X 16"' }))
+      .toContain('double strength b grade windows in the top section, plain short 19-1/2" x 16", no inserts');
+    expect(line({ panelStyle: "long", plainWindow: 'PLAIN LONG 42" X 16"' }))
+      .toContain('windows in the top section, plain long 42" x 16", no inserts');
+    expect(line({ panelStyle: "long", plainWindow: "PLAIN ARCH 1" })).toContain("windows in the top section, plain arch 1, no inserts");
+    expect(line({ panelStyle: "long", plainWindow: "Arch 2 Plain" })).toContain("windows in the top section, arch 2 plain, no inserts");
+    // A window the door does not name is not written.
+    expect(line({ panelStyle: "short", plainWindow: 'PLAIN SHORT 19-1/2" X 12"' })).toContain("windows in the top section, no inserts");
+    // The same on a Gallery door; the short window is priced at its short band.
+    const gd = (o: Record<string, unknown>) => specialDoorQuote({
+      model: "GD2LU/GD2SU", variant: "GD2SU", width: "8", height: "7", color: "White", style: "glass", glassType: "dsb",
+      track: "r12", spring: "extension", lock: "none", ...o,
+    } as never).quote!;
+    expect(gd({ panelStyle: "short", plainWindow: 'PLAIN SHORT 19-1/2" X 16"' }).description)
+      .toContain('Model GD2SU, 8\'0" x 7\'0", in the color White, double strength b grade windows in the top section, plain short 19-1/2" x 16", no inserts');
+    expect(gd({ panelStyle: "short", plainWindow: 'PLAIN SHORT 19-1/2" X 16"' }).unitPrice).toBe(gd({ panelStyle: "short" }).unitPrice);
+    expect(gd({ panelStyle: "long", plainWindow: 'PLAIN LONG 42" X 16"' }).unitPrice).toBe(gd({ panelStyle: "long" }).unitPrice);
+  });
 });
 
 describe("Bridgeport Inlay designs and inlay colour (Brandon, 12/10/2026)", () => {

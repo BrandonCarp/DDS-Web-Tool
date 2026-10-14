@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   splitSize, sizeKey, feetOptions, inchOptions, glassTypeOptions, framingOptions, designPanel, windowChoice, GLAZED_SECTIONS,
 } from "./data/so-framing";
-import { ARCHITECTURAL, DECORATIVE } from "./data/inserts";
+import { ARCHITECTURAL, DECORATIVE, plainWindowsFor, specialPlainWindowsFor } from "./data/inserts";
 import { specialDoorQuote } from "./data/special-door-pricing";
 
 // The special order configurator's window choices, shaped like the stock tab's
@@ -71,9 +71,10 @@ describe("framing", () => {
     expect(at7.map((o) => o.design)).not.toContain("608");
   });
 
-  it("lists the Gallery's named long windows and a plain short, its other plain arches, then the inserts by window", () => {
+  it("names the Gallery's plain windows — short, long, arch — its other plain arches, then the inserts by window", () => {
     const f = framingOptions("GD1LP/GD1SP", "GD1SP", "8", "dsb");
-    expect(f.filter((o) => o.kind === "plain").map((o) => o.label)).toEqual(["Plain short windows", 'PLAIN LONG 42" X 16"', "PLAIN ARCH 1", "Arch 2 Plain"]);
+    expect(f.filter((o) => o.kind === "plain").map((o) => o.label)).toEqual(['PLAIN SHORT 19-1/2" X 16"', 'PLAIN LONG 42" X 16"', "PLAIN ARCH 1", "Arch 2 Plain"]);
+    expect(f[0]).toMatchObject({ kind: "plain", panel: "short", plainWindow: 'PLAIN SHORT 19-1/2" X 16"' });
     expect(f[2]).toMatchObject({ kind: "plain", panel: "long", plainWindow: "PLAIN ARCH 1" });
     expect(f[3]).toMatchObject({ kind: "plain", panel: "long", plainWindow: "Arch 2 Plain" });
     const inserts = f.filter((o) => o.kind === "insert");
@@ -89,10 +90,16 @@ describe("framing", () => {
     expect(framingOptions("GD1LP/GD1SP", "GD1SP", "16", "dsb").map((o) => o.label)).not.toContain("Arch 2 Plain");
     // Acrylic takes no inserts on a sheet-priced door.
     expect(framingOptions("GD1LP/GD1SP", "GD1SP", "8", "acrylic").every((o) => o.kind === "plain")).toBe(true);
-    // A Bridgeport design has no named plain windows: the generic pair, then the same inserts.
-    const bd = framingOptions("BD1CU", "BD1CU", "8", "dsb");
-    expect(bd.filter((o) => o.kind === "plain").map((o) => o.label)).toEqual(["Plain short windows", "Plain long windows", "Arch 1 Plain", "Arch 2 Plain"]);
-    expect(bd.filter((o) => o.kind === "insert")).toHaveLength(8);
+    // A Bridgeport door names the same windows (Brandon, 14/10/2026), then the same inserts.
+    for (const [group, member] of [["BD1CU", "BD1CU"], ["BD2EU/BD2NU", "BD2NU"], ["GD2LU/GD2SU", "GD2SU"]]) {
+      const bd = framingOptions(group, member, "8", "dsb");
+      expect(bd.filter((o) => o.kind === "plain").map((o) => o.label), member).toEqual(['PLAIN SHORT 19-1/2" X 16"', 'PLAIN LONG 42" X 16"', "PLAIN ARCH 1", "Arch 2 Plain"]);
+      expect(bd.filter((o) => o.kind === "insert"), member).toHaveLength(8);
+    }
+    // The stock tab is as it was: the Gallery's long window and arch, no short.
+    expect(plainWindowsFor("GD1SP")).toEqual(['PLAIN LONG 42" X 16"', "PLAIN ARCH 1"]);
+    expect(specialPlainWindowsFor("GD1SP")).toEqual(['PLAIN SHORT 19-1/2" X 16"', 'PLAIN LONG 42" X 16"', "PLAIN ARCH 1"]);
+    expect(specialPlainWindowsFor("4050")).toEqual(['PLAIN SHORT 19-1/2" X 12"', 'PLAIN LONG 40-1/2" X 12"']);
   });
 
   it("lists the T50S's one plain window and each insert, with no panel to choose", () => {
