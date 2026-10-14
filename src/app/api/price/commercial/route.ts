@@ -34,9 +34,12 @@ export async function POST(req: Request) {
       secKind: b.secKind === "int" ? "int" : "bt",
       secHeight: b.secHeight === "24" ? "24" : "21",
       windows: Number(b.windows) || 0,
+      // Checked against the model's own sizes in the engine.
+      windowSize: typeof b.windowSize === "string" ? b.windowSize : undefined,
       retainer: b.retainer === true,
       // Sections always carry end stiles now; single is the default.
       stile: b.stile === "double" ? "double" : "single",
+      stileLocations: typeof b.stileLocations === "string" ? b.stileLocations.slice(0, 120) : undefined,
       color: b.color === "Brown" ? "Brown" : "White",
     };
   }

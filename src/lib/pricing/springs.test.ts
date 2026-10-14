@@ -213,11 +213,11 @@ describe("prices set by hand ahead of the sheet (7/10/2026)", () => {
   it("writes every tube shaft 9\" over its nominal length on the line, under the sheet's name (13/10/2026)", () => {
     const tube = SHELF_PART_CATEGORIES.find((c) => c.name === "TUBE SHAFT")!;
     const desc = (name: string) => tube.items.find((p) => p.name === name)?.desc;
-    expect(desc("10FT TUBE SHAFT")).toBe("10'9\" TUBE SHAFT");
-    expect(desc("8FT TUBE SHAFT")).toBe("8'9\" TUBE SHAFT");
-    expect(desc("16FT TUBE SHAFT - HEAVY")).toBe("16'9\" TUBE SHAFT - HEAVY");
-    expect(tubeShaftDesc("18FT TUBE SHAFT")).toBe("18'9\" TUBE SHAFT");
-    for (const p of tube.items.filter((x) => /TUBE SHAFT/.test(x.name))) expect(p.desc, p.name).toMatch(/^\d+'9" TUBE SHAFT/);
+    expect(desc("10FT TUBE SHAFT")).toBe("10'9\" GALVANIZED TUBE SHAFT");
+    expect(desc("8FT TUBE SHAFT")).toBe("8'9\" GALVANIZED TUBE SHAFT");
+    expect(desc("16FT TUBE SHAFT - HEAVY")).toBe("16'9\" GALVANIZED TUBE SHAFT - HEAVY");
+    expect(tubeShaftDesc("18FT TUBE SHAFT")).toBe("18'9\" GALVANIZED TUBE SHAFT");
+    for (const p of tube.items.filter((x) => /TUBE SHAFT/.test(x.name))) expect(p.desc, p.name).toMatch(/^\d+'9" GALVANIZED TUBE SHAFT/);
     // Solid shafts are not tube shafts.
     expect(desc('1" SOLID SHAFT')).toBe('1" SOLID SHAFT');
   });

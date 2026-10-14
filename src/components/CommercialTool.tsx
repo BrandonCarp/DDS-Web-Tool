@@ -15,7 +15,7 @@ import {
   COMM_COMPLETE, COMM_MATRIX_SIZES,
   SLAB_RATE, SLAB_LABEL, commMfrs, commModelsFor, maxWindows, roundedFeet,
   SECTION_MAX_WIDTH_IN, maxWidthLabel, sectionColors,
-  STOCK_SECTION_WIDTHS, sectionWidthLabel,
+  STOCK_SECTION_WIDTHS, sectionWidthLabel, sectionWindowSizes, asksStileLocations,
 } from "@/lib/pricing/data/commercial-meta";
 import { homeownerMarkup } from "@/lib/pricing/engine";
 import { QtyStepper } from "./QtyStepper";
@@ -51,7 +51,12 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const [homeowner, setHomeowner] = useState(false);
   const [secHeight, setSecHeight] = useState<"21" | "24">("21");
   const [windows, setWindows] = useState("0");
+  // The windows' size, where the model's sections come in more than one
+  // (24x12 or 24x6 on a 524 or 2415, 24x8 or 24x12 on a 3200 — 14/10/2026).
+  const [windowSize, setWindowSize] = useState("");
   const [stile, setStile] = useState<"single" | "double">("single");
+  // Where the stiles go, asked on a 524 or 2415 from 10'0" wide (14/10/2026).
+  const [stileLocations, setStileLocations] = useState("");
   const [secColor, setSecColor] = useState<"White" | "Brown">("White");
 
   const [qty, setQty] = useState(1);
@@ -90,8 +95,11 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const maxIn = SECTION_MAX_WIDTH_IN[model] ?? null;
   const maxFt = maxIn != null ? Math.floor(maxIn / 12) : null;
   const overMax = maxIn != null && manFt !== "" && (Number(manFt) * 12 + (Number(manIn) || 0)) > maxIn;
+  const winSizes = sectionWindowSizes(model);
+  const winSizeUsed = winSizes.includes(windowSize) ? windowSize : winSizes[0];
+  const askStiles = order === "section" && asksStileLocations(model, Number(manFt) || 0, Number(manIn) || 0);
 
-  const cfgSig = JSON.stringify([mfr, model, order, size, glass, track, mount, cspring, clock, cColor, winSection, manFt, manIn, secKind, secHeight, windows, stile, secColor, homeowner]);
+  const cfgSig = JSON.stringify([mfr, model, order, size, glass, track, mount, cspring, clock, cColor, winSection, manFt, manIn, secKind, secHeight, windows, winSizeUsed, stile, stileLocations, secColor, homeowner]);
   const result = resultRaw && resultSig === cfgSig ? resultRaw : null;
   const liveError = errorRaw && resultSig === cfgSig ? errorRaw : null;
   const priced = result?.priced ?? false;
@@ -125,7 +133,8 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
       const body =
         order === "complete"
           ? { order, mfr, model, size, glass, track, mount, cspring, clock, color: cColor, winSection: Number(winSection) || 3 }
-          : { order, mfr, model, manFt: Number(manFt), manIn: Number(manIn) || 0, secKind, secHeight, windows: Number(windows) || 0, stile, color: secColor };
+          : { order, mfr, model, manFt: Number(manFt), manIn: Number(manIn) || 0, secKind, secHeight, windows: Number(windows) || 0, windowSize, stile,
+              stileLocations: asksStileLocations(model, Number(manFt) || 0, Number(manIn) || 0) ? stileLocations : undefined, color: secColor };
       const res = await fetch("/api/price/commercial", {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
       });
@@ -152,7 +161,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
       setError(e instanceof Error ? e.message : "Something went wrong");
       setResult(null); setResultSig(cfgSig);
     }
-  }, [order, mfr, model, size, glass, track, mount, cspring, clock, cColor, winSection, manFt, manIn, secKind, secHeight, windows, stile, secColor, qty, cfgSig, custName, custPo, custJob]);
+  }, [order, mfr, model, size, glass, track, mount, cspring, clock, cColor, winSection, manFt, manIn, secKind, secHeight, windows, windowSize, stile, stileLocations, secColor, qty, cfgSig, custName, custPo, custJob]);
 
 
   // ---------------- STEP 1 ----------------
@@ -319,19 +328,31 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
                     </div>
                   </div>
                 ) : secKind === "int" ? (
+                  <>
                   <div className="grow">
                     <label>Windows</label>
                     <div className="ctl selectwrap">
-                      <select value={windows} onChange={(e) => setWindows(e.target.value)}>
+                      <select data-testid="comm-windows" value={windows} onChange={(e) => setWindows(e.target.value)}>
                         <option value="0">Solid — no windows</option>
                         {Array.from({ length: mx }, (_, i) => i + 1).map((i) => (
                           <option key={i} value={String(i)}>
-                            {i} {model === "3200" ? "insulated 24x12 " : ""}window{i > 1 ? "s" : ""}
+                            {i} window{i > 1 ? "s" : ""}
                           </option>
                         ))}
                       </select>
                     </div>
                   </div>
+                  {Number(windows) > 0 && winSizes.length > 1 && (
+                    <div className="grow">
+                      <label>Window size</label>
+                      <div className="ctl selectwrap">
+                        <select data-testid="comm-window-size" value={winSizeUsed} onChange={(e) => setWindowSize(e.target.value)}>
+                          {winSizes.map((w) => <option key={w} value={w}>{w}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                  </>
                 ) : (
                   <div className="grow"><label>Windows</label><div className="ctl"><span className="muted-note">— bottom section —</span></div></div>
                 )}
@@ -414,6 +435,14 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
                         </select>
                       </div>
                     </div>
+                    {askStiles && (
+                      <div className="grow">
+                        <label>Stile locations</label>
+                        <div className="ctl">
+                          <input data-testid="comm-stile-locations" type="text" value={stileLocations} onChange={(e) => setStileLocations(e.target.value)} />
+                        </div>
+                      </div>
+                    )}
                     <div className="grow">
                       <label>Color</label>
                       <div className="ctl selectwrap">

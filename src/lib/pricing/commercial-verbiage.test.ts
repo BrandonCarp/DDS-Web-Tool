@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { quoteCommercial } from "./commercial";
+import { asksStileLocations, sectionWindowSizes } from "./data/commercial-meta";
 
 const section = (model: string, o: Record<string, unknown> = {}) =>
   quoteCommercial({
@@ -30,52 +31,82 @@ describe("ribbed steel verbiage", () => {
     );
   });
 
-  // Brandon's three lines (7/10/2026), for a 12'0" x 24" section, single end stile.
+  // Brandon's lines of 14/10/2026, for an 8'2" x 24" section with single end stiles.
   const sec = (model: string, o: Record<string, unknown> = {}) =>
-    section(model, { manFt: 12, secHeight: "24", stile: "single", ...o });
+    section(model, { manFt: 8, manIn: 2, secHeight: "24", stile: "single", ...o });
 
-  it("words a 524 bottom section as Brandon wrote it", () => {
+  it("words a bottom section as Brandon wrote it: section, colour, insulation, stiles", () => {
+    expect(sec("2415V", { secKind: "bt" })).toBe(
+      'Wayne Dalton Model 2415V, 8\'2" x 24", steel ribbed bottom section, in the color white, insulated with vinyl back cover, single end stiles',
+    );
+    expect(sec("2415", { secKind: "bt" })).toBe(
+      'Wayne Dalton Model 2415, 8\'2" x 24", steel ribbed bottom section, in the color white, non insulated, single end stiles',
+    );
     expect(sec("524", { secKind: "bt" })).toBe(
-      'CLOPAY MODEL 524,  12\'0" X 24",  STEEL RIBBED BOTTOM SECTION,  NON INSULATED,  IN THE COLOR WHITE,  SINGLE END STILE',
+      'Clopay Model 524, 8\'2" x 24", steel ribbed bottom section, in the color white, non insulated, single end stiles',
     );
   });
 
-  it("words a solid 524 intermediate section as Brandon wrote it", () => {
-    expect(sec("524")).toBe(
-      'CLOPAY MODEL 524,  12\'0" X 24",  SOLID STEEL RIBBED INTERMEDIATE SECTION,  NON INSULATED,  IN THE COLOR WHITE,  SINGLE END STILE',
+  it("says SOLID NO WINDOWS on a solid intermediate, between the colour and the insulation", () => {
+    expect(sec("2415V")).toBe(
+      'Wayne Dalton Model 2415V, 8\'2" x 24", steel ribbed intermediate section, in the color white, solid no windows, insulated with vinyl back cover, single end stiles',
     );
+    expect(sec("524V")).toBe(
+      'Clopay Model 524V, 8\'2" x 24", steel ribbed intermediate section, in the color white, solid no windows, insulated with vinyl back cover, single end stiles',
+    );
+    expect(sec("2415S")).toBe(
+      'Wayne Dalton Model 2415S, 8\'2" x 24", steel ribbed intermediate section, in the color white, solid no windows, insulated with steel back cover, single end stiles',
+    );
+    expect(sec("524")).toContain("steel ribbed intermediate section, in the color white, solid no windows, non insulated, single end stiles");
   });
 
-  it("words a 524 intermediate with glass as Brandon wrote it, windows before the insulation", () => {
-    expect(sec("524", { windows: 2 })).toBe(
-      'CLOPAY MODEL 524,  12\'0" X 24",  STEEL RIBBED INTERMEDIATE SECTION,  TWO 24X12 WINDOWS,  NON INSULATED,  IN THE COLOR WHITE,  SINGLE END STILE',
+  it("names the windows by count, size and glass: double strength b grade on the plain door, insulated on the V and S", () => {
+    expect(sec("2415V", { windows: 2 })).toBe(
+      'Wayne Dalton Model 2415V, 8\'2" x 24", steel ribbed intermediate section, in the color white, two 24x12 insulated glass windows, insulated with vinyl back cover, single end stiles',
     );
-    expect(sec("524", { windows: 1 })).toContain("ONE 24X12 WINDOW,");
+    expect(sec("524", { windows: 2 })).toContain("in the color white, two 24x12 double strength b grade glass windows, non insulated, single end stiles");
+    expect(sec("2415S", { windows: 1 })).toContain("in the color white, one 24x12 insulated glass window, insulated with steel back cover");
+    // The size the sections come in: 24x12 or 24x6 on a 524 or 2415; a size they do not come in is the first.
+    expect(sec("524", { windows: 2, windowSize: "24x6" })).toContain("two 24x6 double strength b grade glass windows");
+    expect(sec("2415V", { windows: 2, windowSize: "24x8" })).toContain("two 24x12 insulated glass windows");
+    expect(sectionWindowSizes("524")).toEqual(["24x12", "24x6"]);
+    expect(sectionWindowSizes("2415S")).toEqual(["24x12", "24x6"]);
+    expect(sectionWindowSizes("3200")).toEqual(["24x8", "24x12"]);
+    expect(sectionWindowSizes("2742")).toEqual(["24x12"]);
   });
 
-  it("gives the V a vinyl backer and the S a steel one", () => {
-    for (const m of ["524V", "2415V"]) {
-      expect(sec(m), m).toContain("SOLID STEEL RIBBED INTERMEDIATE SECTION,  INSULATED VINYL BACKER,  IN THE COLOR");
-      expect(sec(m), m).not.toContain("NON INSULATED");
-    }
-    for (const m of ["524S", "2415S"]) {
-      expect(sec(m), m).toContain("SOLID STEEL RIBBED INTERMEDIATE SECTION,  INSULATED STEEL BACKER,  IN THE COLOR");
-    }
+  it("gives the 3200 its 24x8 or 24x12 insulated glass windows", () => {
+    const s3200 = (o: Record<string, unknown>) => section("3200", { manFt: 8, manIn: 2, secHeight: "24", stile: "single", ...o });
+    expect(s3200({ windows: 2 })).toContain('intermediate section, in the color White, two 24x8 insulated glass windows');
+    expect(s3200({ windows: 2, windowSize: "24x12" })).toContain("two 24x12 insulated glass windows");
+  });
+
+  it("asks a 524 or 2415 from 10'0\" wide where its stiles go, and writes it on the end", () => {
+    expect(asksStileLocations("524", 10, 0)).toBe(true);
+    expect(asksStileLocations("2415V", 9, 11)).toBe(false);
+    expect(asksStileLocations("3200", 12, 0)).toBe(false);
+    expect(sec("524", { manFt: 12, manIn: 0, stileLocations: '48" and 96"' })).toBe(
+      'Clopay Model 524, 12\'0" x 24", steel ribbed intermediate section, in the color white, solid no windows, non insulated, single end stiles, stile locations 48" and 96"',
+    );
+    expect(sec("2415V", { manFt: 12, manIn: 0, secKind: "bt", stile: "double", stileLocations: "center" })).toMatch(/double end stiles, stile locations center$/);
+    // Under 10'0" the locations are not asked, so none are written.
+    expect(sec("524", { stileLocations: "center" })).not.toContain("stile locations");
+    expect(sec("524", { manFt: 12, manIn: 0, stileLocations: "  " })).not.toContain("stile locations");
   });
 
   it("words the 2415 the same way, under its own maker", () => {
-    expect(sec("2415", { secKind: "bt" })).toBe(
-      'WAYNE DALTON MODEL 2415,  12\'0" X 24",  STEEL RIBBED BOTTOM SECTION,  NON INSULATED,  IN THE COLOR WHITE,  SINGLE END STILE',
+    expect(sec("2415", { secKind: "bt", manFt: 12, manIn: 0 })).toBe(
+      'Wayne Dalton Model 2415, 12\'0" x 24", steel ribbed bottom section, in the color white, non insulated, single end stiles',
     );
   });
 
   it("never assumes a colour from the model", () => {
-    expect(section("524S", { color: "White" })).toContain("IN THE COLOR WHITE");
-    expect(section("524V", { color: "Brown" })).toContain("IN THE COLOR BROWN");
+    expect(section("524S", { color: "White" })).toContain("in the color white");
+    expect(section("524V", { color: "Brown" })).toContain("in the color brown");
   });
 
   it("keeps two end stiles plural", () => {
-    expect(section("524", { stile: "double" })).toMatch(/DOUBLE END STILES$/);
+    expect(section("524", { stile: "double" })).toMatch(/double end stiles$/);
   });
 
   it("leaves every other commercial model alone", () => {

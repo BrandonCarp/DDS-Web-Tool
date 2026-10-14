@@ -2,7 +2,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { cleanup, render, screen, fireEvent } from "@testing-library/react";
 import { SpecialTool } from "./SpecialTool";
-import { copiedQbLine } from "./test-clipboard";
+import { copiedQbLine, copyFrom } from "./test-clipboard";
+import { QB_VINYL } from "@/lib/pricing/data/quickbooks";
 
 /**
  * Special order follows the same two steps as the stock tabs: choose the door,
@@ -901,5 +902,45 @@ describe("special order — high lift is the 4050 family's (Brandon, 13/10/2026)
     fireEvent.click(maybe("so-configure")!);
     await settle();
     expect(document.body.textContent).toMatch(/high lift and spring depend on the door size/i);
+  });
+});
+
+describe("special order — vinyl molding on a configured door (Brandon, 14/10/2026)", () => {
+  it("asks once the door prices, puts a Yes on the copy as the vinyl line, and can change its mind in the card", async () => {
+    await configured("9", "7");
+    // Asked as the stock tab asks, in the vinyl that matches the door's colour.
+    expect(screen.getByTestId("vinyl-prompt").textContent).toContain("WHITE vinyl");
+    expect(screen.getByTestId("vinyl-prompt").textContent).toContain("9'0\" x 7'0\"");
+    fireEvent.click(screen.getByTestId("vinyl-ask-yes"));
+    await settle();
+    expect(screen.queryByTestId("vinyl-prompt")).toBeNull();
+    expect(screen.getByTestId("so-vinyl-line").textContent?.trim()).toBe("WHITE vinyl (1) 9FT & (2) 7FT");
+    const rows = (await copyFrom(screen.getByTestId("copy-qb"))).split("\n");
+    expect(rows).toHaveLength(3);
+    expect(rows[1]).toBe("");
+    expect(rows[2].split("\t")).toEqual([QB_VINYL, "WHITE VINYL STOP MOLDING,  [1] - 9FT AND [2] - 7FT", "23", "0.95"]);
+    // A change of track does not ask again; No in the card drops the line.
+    fireEvent.change(sel("so-track"), { target: { value: "r15" } });
+    await settle();
+    expect(screen.queryByTestId("vinyl-prompt")).toBeNull();
+    fireEvent.click(screen.getByTestId("so-vinyl-no"));
+    await settle();
+    expect(screen.queryByTestId("so-vinyl-line")).toBeNull();
+    expect((await copyFrom(screen.getByTestId("copy-qb"))).split("\n")).toHaveLength(1);
+  });
+
+  it("No copies the door line alone", async () => {
+    await configured("9", "7");
+    fireEvent.click(screen.getByTestId("vinyl-ask-no"));
+    await settle();
+    expect(screen.queryByTestId("vinyl-prompt")).toBeNull();
+    expect(screen.getByTestId("so-vinyl-row")).toBeTruthy();
+    expect((await copyFrom(screen.getByTestId("copy-qb"))).split("\n")).toHaveLength(1);
+  });
+
+  it("never asks on a typed-in total", async () => {
+    await pickDoor();
+    expect(screen.queryByTestId("vinyl-prompt")).toBeNull();
+    expect(screen.queryByTestId("so-vinyl-row")).toBeNull();
   });
 });

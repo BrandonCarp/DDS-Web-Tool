@@ -284,3 +284,24 @@ export const SECTION_COLORS: Record<string, ("White" | "Brown")[]> = {
 export function sectionColors(model: string): ("White" | "Brown")[] {
   return SECTION_COLORS[model] ?? ["White", "Brown"];
 }
+
+/**
+ * The window sizes a model's sections take (Brandon, 14/10/2026): the 3200
+ * 24x8 or 24x12, the 524 and 2415 families 24x12 or 24x6, listed in the order
+ * he gave them. Every other model keeps the one size it always had.
+ */
+export const SECTION_WINDOW_SIZES: Record<string, readonly string[]> = {
+  "3200": ["24x8", "24x12"],
+  "524": ["24x12", "24x6"], "524V": ["24x12", "24x6"], "524S": ["24x12", "24x6"],
+  "2415": ["24x12", "24x6"], "2415V": ["24x12", "24x6"], "2415S": ["24x12", "24x6"],
+};
+export function sectionWindowSizes(model: string): readonly string[] {
+  return SECTION_WINDOW_SIZES[model] ?? ["24x12"];
+}
+
+/** The 524 and 2415 families: the steel ribbed sections, which ask for stile locations from 10'0" wide (14/10/2026). */
+export const RIBBED_SECTION_MODELS = new Set(["524", "524V", "524S", "2415", "2415V", "2415S"]);
+export const STILE_LOCATIONS_FROM_IN = 120;
+export function asksStileLocations(model: string, ft: number, inch: number): boolean {
+  return RIBBED_SECTION_MODELS.has(model) && ft * 12 + inch >= STILE_LOCATIONS_FROM_IN;
+}

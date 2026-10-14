@@ -10,6 +10,12 @@ const find = (cat: string, name: string) => {
   if (!p) throw new Error(`${cat} / ${name} not in the parts list`);
   return p;
 };
+/** The same part as the shelf carries it — with the hand-kept wording and prices (springs.ts). */
+const shelfPart = (cat: string, name: string) => {
+  const p = SHELF_PART_CATEGORIES.find((x) => x.name === cat)?.items.find((i) => i.name === name);
+  if (!p) throw new Error(`${cat} / ${name} not on the shelf`);
+  return p;
+};
 
 describe("parts list", () => {
   it("generated every category with at least one item", () => {
@@ -35,7 +41,10 @@ describe("parts list", () => {
     expect(partDescription(find("BRUSH SEAL / RETAINERS", '1" BRUSH SEAL'), 50)).toBe(
       '1" BRUSH SEAL,  50FT',
     );
-    expect(partDescription(find("RETAINERS", '2" U RETAINER'), 8)).toBe('2"  U  RETAINER,  8FT');
+    // A U retainer counts its piece, in the shelf's wording (14/10/2026).
+    expect(partDescription(shelfPart("RETAINERS", '2" U RETAINER'), 8)).toBe('2" PLASTIC U RETAINER WITH RUBBER, [1] - 8FT');
+    expect(partDescription(shelfPart("RETAINERS", '1-3/8" U RETAINER'), 8.5)).toBe('1-3/8" PLASTIC U RETAINER WITH RUBBER, [1] - 8\'6"');
+    expect(partDescription(shelfPart("RETAINERS", '2" L RETAINER'), 8)).toBe('2"  L  RETAINER,  8FT');
   });
 
   it("extends a per-foot part into the rate, keeping quantity at 1", () => {
@@ -149,7 +158,8 @@ describe("raw track sticks (30/9/2026)", () => {
     expect(partDescription(raw2(), 7)).toBe('2" RAW TRACK,  7FT');
     expect(partPrice(raw2(), 7)).toBe(12 * 3.75);
     // A retainer still names the stick it bills.
-    expect(partDescription(find("RETAINERS", '2" U RETAINER'), 12)).toBe('2"  U  RETAINER,  16FT');
+    expect(partDescription(shelfPart("RETAINERS", '2" U RETAINER'), 12)).toBe('2" PLASTIC U RETAINER WITH RUBBER, [1] - 16FT');
+    expect(partDescription(shelfPart("RETAINERS", '2" U RETAINER'), 17)).toBe('2" PLASTIC U RETAINER WITH RUBBER, [1] - 18FT');
   });
 
   it("is asked for in feet and inches, and the line says them", () => {
@@ -167,6 +177,16 @@ describe("raw track sticks (30/9/2026)", () => {
     expect(feetLimits(raw2())).toEqual({ min: 1, max: 24 });
     expect(feetLimits(raw3())).toEqual({ min: 1, max: 24 });
     expect(feetLimits(find("BRUSH SEAL / RETAINERS", '1" BRUSH SEAL'))).toBeNull();
+  });
+});
+
+describe("drums (14/10/2026)", () => {
+  it("say PAIR on the line, every one of them", () => {
+    const drums = SHELF_PART_CATEGORIES.find((c) => c.name === "DRUMS")!;
+    expect(drums.items.map((p) => p.desc)).toContain("400-8 DRUMS,  PAIR");
+    for (const p of drums.items) expect(p.desc, p.name).toMatch(/ DRUMS,  PAIR$/);
+    expect(partDescription(shelfPart("DRUMS", "400-8"))).toBe("400-8 DRUMS,  PAIR");
+    expect(shelfPart("DRUMS", "400-8").price).toBe(12.95);
   });
 });
 

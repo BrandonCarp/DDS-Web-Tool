@@ -77,15 +77,15 @@ describe("commercial section description", () => {
     expect(q.description).toBe('Amarr Model 2742, 8\'2" x 24", solid intermediate section, in the color White, single end stile');
   });
 
-  it("names the window count and size when the section is glazed", () => {
+  it("names the window count, size and glass after the colour when the section is glazed (14/10/2026)", () => {
     const q = quoteCommercial({ ...base, manFt: 12, manIn: 0, secKind: "int", windows: 3, stile: "single", color: "White" });
-    expect(q.description).toContain("3 24x12 window section");
+    expect(q.description).toBe('Amarr Model 2742, 12\'0" x 24", intermediate section, in the color White, three 24x12 insulated glass windows, single end stile');
     expect(q.description).not.toContain("solid");
   });
 
   it("the description honours the window cap for the width — 8ft fits 2, not 3", () => {
     const q = quoteCommercial({ ...base, manFt: 8, manIn: 2, secKind: "int", windows: 3, stile: "single", color: "White" });
-    expect(q.description).toContain("2 24x12 window section");
+    expect(q.description).toContain("two 24x12 insulated glass windows");
   });
 
   it("describes a bottom section and carries the colour through", () => {

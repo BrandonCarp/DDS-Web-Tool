@@ -3,7 +3,10 @@
 
 import { collapseUpcharges } from "./types";
 import { COMM_MATRIX, COMM_SECTIONS, COMM_SECTION_STOCK, COMM_SLAB, STOCK_COMM, GRADE_COMM } from "./data/commercial";
-import { COMM_COMPLETE, maxWindows, roundedFeet, slabBilledFeet, SLAB_MIN_FEET, SECTION_MAX_WIDTH_IN, maxWidthLabel, sectionColors } from "./data/commercial-meta";
+import {
+  COMM_COMPLETE, maxWindows, roundedFeet, slabBilledFeet, SLAB_MIN_FEET, SECTION_MAX_WIDTH_IN, maxWidthLabel, sectionColors,
+  sectionWindowSizes, asksStileLocations,
+} from "./data/commercial-meta";
 
 export interface CommQuoteLine { name: string; value: number; kind: "base" | "add" | "minus" }
 export interface CommQuote {
@@ -37,8 +40,12 @@ export interface CommSectionInput {
   secKind: "bt" | "int";
   secHeight: "21" | "24";
   windows?: number;                   // intermediate sections only
+  /** The windows' size, from sectionWindowSizes (24x12, 24x6, 24x8); the model's first where not given. */
+  windowSize?: string;
   retainer?: boolean;                 // DEPRECATED — ignored; retainer is always included on bottom sections
   stile?: "none" | "single" | "double"; // per-foot only
+  /** Where the stiles go, as the counter types it — asked on a 524 or 2415 from 10'0" wide (14/10/2026). */
+  stileLocations?: string;
   color?: "White" | "Brown";          // DESCRIPTION ONLY — individual sections come in white or brown
                                       // at the same price. No colour data exists in the source books;
                                       // if brown ever carries an upcharge it must come from a parsed
@@ -53,25 +60,34 @@ function commWidthToken(label: string): string {
 }
 /**
  * The 524 and 2415 sections, worded as they go on the invoice — Brandon,
- * 7/10/2026:
- *   CLOPAY MODEL 524,  12'0" X 24",  STEEL RIBBED BOTTOM SECTION,  NON INSULATED,  IN THE COLOR WHITE,  SINGLE END STILE
- * A solid intermediate is a SOLID STEEL RIBBED INTERMEDIATE SECTION; one with
- * glass is a STEEL RIBBED INTERMEDIATE SECTION followed by its windows. The
- * plain models are non insulated, V has an insulated vinyl backer and S an
- * insulated steel one. Colour stays a separate choice, never assumed.
+ * 14/10/2026 (reworded from the 7th):
+ *   Wayne Dalton Model 2415V, 8'2" x 24", steel ribbed bottom section, in the color white, insulated with vinyl back cover, single end stiles
+ *   Clopay Model 524, 8'2" x 24", steel ribbed intermediate section, in the color white, solid no windows, non insulated, single end stiles
+ *   Wayne Dalton Model 2415V, 8'2" x 24", steel ribbed intermediate section, in the color white, two 24x12 insulated glass windows, insulated with vinyl back cover, single end stiles
+ * The section, the colour, the windows (an intermediate says SOLID NO WINDOWS
+ * without them), the insulation, the stiles. The plain models are non
+ * insulated and their glass is double strength b grade; V has a vinyl back
+ * cover and S a steel one, and their glass is insulated. Colour stays a
+ * separate choice, never assumed.
  *
  * A complete 524 door says just the insulation (9/10/2026 — it had kept an
  * older "hollow steel ribbed" from September), then runs on like any other door:
  *   CLOPAY MODEL 524, 8'2" X 8'0", NON INSULATED, IN THE COLOR WHITE, SOLID NO WINDOWS, 2" ANGLE MOUNT TRACK TO WOOD, ...
  */
 const RIBBED_SECTION_INSULATION: Record<string, string> = {
-  "524": "NON INSULATED",
-  "2415": "NON INSULATED",
-  "524V": "INSULATED VINYL BACKER",
-  "2415V": "INSULATED VINYL BACKER",
-  "524S": "INSULATED STEEL BACKER",
-  "2415S": "INSULATED STEEL BACKER",
+  "524": "non insulated",
+  "2415": "non insulated",
+  "524V": "insulated with vinyl back cover",
+  "2415V": "insulated with vinyl back cover",
+  "524S": "insulated with steel back cover",
+  "2415S": "insulated with steel back cover",
 };
+/** The glass in a section's windows: insulated on an insulated door, the book's grade on the rest. */
+function sectionGlassWord(model: string): string {
+  const insulation = RIBBED_SECTION_INSULATION[model];
+  if (insulation) return insulation === "non insulated" ? "double strength b grade" : "insulated";
+  return GRADE_COMM[model] || "insulated";
+}
 
 /** Window counts read as words on these lines: "two 24x12 windows". */
 const COUNT_WORDS = ["", "one", "two", "three", "four", "five", "six", "seven", "eight"];
@@ -138,7 +154,7 @@ export function quoteCommercial(input: CommInput): CommQuote {
     // Ribbed models say the insulation and no grade word; then the colour and
     // the windows (or SOLID NO WINDOWS) like any other door, and the
     // track/spring/lock tail. "Steel ribbed" is for the section lines only.
-    const leadTxt = insulation ? `${insulation.toLowerCase()}, ` : "";
+    const leadTxt = insulation ? `${insulation}, ` : "";
     const mountTxt = input.mount === "reverse" ? '2" angle mount track to steel' : '2" angle mount track to wood';
     // FV is FULL VERTICAL LIFT. It read "full view" here, which is a different
     // product entirely — a full-view door is aluminium and glass. The dropdown
@@ -250,37 +266,40 @@ export function quoteCommercial(input: CommInput): CommQuote {
   const unitPrice = lines.reduce((a, l) => a + (l.kind === "minus" ? -l.value : l.value), 0);
 
   // Description for a replacement section. Written in the counter's own order —
-  // manufacturer, model, size, what the section IS, colour, stiles — so it can
-  // be pasted straight onto a QuickBooks estimate line.
+  // manufacturer, model, size, what the section IS, colour, windows, stiles —
+  // so it can be pasted straight onto a QuickBooks estimate line.
   const nWin = input.secKind === "int" ? Math.min(Math.trunc(Number(input.windows)) || 0, maxWindows(rFeet)) : 0;
   const asciiWidth = `${ft}'${inch ? inch + '"' : '0"'}`;
   const insulation = RIBBED_SECTION_INSULATION[model];
-  const kindPhrase = input.secKind === "bt"
-    ? "bottom section"
-    : nWin > 0
-      ? `${nWin} 24x12 window section`
-      : "solid intermediate section";
-  // One end stile is singular on the invoice; two stay plural (Brandon, 6/10/2026).
-  const stilePhrase =
-    input.stile === "double" ? "double end stiles" : input.stile === "single" ? "single end stile" : null;
+  // The windows: "two 24x12 double strength b grade glass windows" — the size
+  // the model's sections take (24x12 or 24x6 on a 524 or 2415, 24x8 or 24x12
+  // on a 3200), the glass insulated on an insulated door (Brandon, 14/10/2026).
+  const sizes = sectionWindowSizes(model);
+  const winSize = input.windowSize && sizes.includes(input.windowSize) ? input.windowSize : sizes[0];
+  const windowsPhrase = nWin > 0 ? `${countWord(nWin)} ${winSize} ${sectionGlassWord(model)} glass ${nWin === 1 ? "window" : "windows"}` : null;
   const color = input.color === "Brown" ? "Brown" : "White";
+  // Stile locations are asked for on a 524 or 2415 from 10'0" wide, and go on the line as typed.
+  const stileLocations = asksStileLocations(model, ft, inch) && input.stileLocations?.trim()
+    ? `stile locations ${input.stileLocations.trim()}` : null;
   const description = insulation
-    // The 524 and 2415: Brandon's invoice wording, in capitals, two spaces after
-    // each comma — section, windows, insulation, colour, stiles.
+    // The 524 and 2415 — Brandon's wording of 14/10/2026: the section, the
+    // colour, the windows or SOLID NO WINDOWS on an intermediate, the
+    // insulation, the stiles.
     ? [
-        `${(input.mfr || "Clopay").toUpperCase()} MODEL ${model}`,
-        `${asciiWidth} X ${input.secHeight}"`,
-        input.secKind === "bt"
-          ? "STEEL RIBBED BOTTOM SECTION"
-          : nWin > 0 ? "STEEL RIBBED INTERMEDIATE SECTION" : "SOLID STEEL RIBBED INTERMEDIATE SECTION",
-        nWin > 0 ? `${countWord(nWin).toUpperCase()} 24X12 ${nWin === 1 ? "WINDOW" : "WINDOWS"}` : null,
+        `${input.mfr || "Clopay"} Model ${model}`,
+        `${asciiWidth} x ${input.secHeight}"`,
+        input.secKind === "bt" ? "steel ribbed bottom section" : "steel ribbed intermediate section",
+        `in the color ${color.toLowerCase()}`,
+        input.secKind === "bt" ? null : windowsPhrase ?? "solid no windows",
         insulation,
-        `IN THE COLOR ${color.toUpperCase()}`,
-        stilePhrase ? stilePhrase.toUpperCase() : null,
-      ].filter(Boolean).join(",  ")
+        input.stile === "double" ? "double end stiles" : input.stile === "single" ? "single end stiles" : null,
+        stileLocations,
+      ].filter(Boolean).join(", ")
     : `${input.mfr || "Clopay"} Model ${model}, ${asciiWidth} x ${input.secHeight}", ` +
-      `${kindPhrase}, in the color ${color}` +
-      (stilePhrase ? `, ${stilePhrase}` : "");
+      `${input.secKind === "bt" ? "bottom section" : nWin > 0 ? "intermediate section" : "solid intermediate section"}, in the color ${color}` +
+      (windowsPhrase ? `, ${windowsPhrase}` : "") +
+      // One end stile is singular on these lines; two stay plural (Brandon, 6/10/2026).
+      (input.stile === "double" ? ", double end stiles" : input.stile === "single" ? ", single end stile" : "");
 
   return { priced: true, lines: collapseUpcharges(lines), unitPrice, sub, description };
 }

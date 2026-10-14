@@ -5,7 +5,9 @@ import type { SearchPick } from "@/lib/search";
 import { useCustomerJob } from "@/components/CustomerJobFields";
 import { priceText } from "@/components/CopyButton";
 import { CopyQuickBooks } from "./CopyQuickBooks";
-import { QB_SPECIAL_ORDERS } from "@/lib/pricing/data/quickbooks";
+import { QB_SPECIAL_ORDERS, QB_VINYL } from "@/lib/pricing/data/quickbooks";
+import { vinylForDoor, vinylForDoorColor } from "@/lib/pricing/data/vinyl";
+import { VinylPrompt, YES_NO } from "./VinylPrompt";
 import {
   SPECIAL, SPECIAL_COMMERCIAL, SPECIAL_COMMERCIAL_PINNED, SPECIAL_COMMERCIAL_SERIES,
   commercialSeriesOf, SO_MANUFACTURERS, seriesFor, hasSingleSeries,
@@ -170,9 +172,14 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const isPinnedModel = (v: string) => SPECIAL_COMMERCIAL_PINNED.includes(v);
   const commSeriesName = isPinnedModel(cSeries) ? (commercialSeriesOf(cSeries) ?? "") : cSeries;
   const commModels = SPECIAL_COMMERCIAL_SERIES.find((g) => g.name === commSeriesName)?.models ?? [];
+  // Vinyl molding for a configured door, asked once the door prices and
+  // changeable after, as the stock tab does it (Brandon, 14/10/2026).
+  const [vinylOn, setVinylOn] = useState(false);
+  const [vinylAsked, setVinylAsked] = useState(false);
   const resetGrid = () => {
     setGWidthFt(""); setGWidthIn("0"); setGHeightFt(""); setGHeightIn("0"); setGColor(""); setGCdDesign(""); setGOverlay("");
     setGGlass("solid"); setGFraming(""); setGVariant("");
+    setVinylOn(false); setVinylAsked(false);
   };
   const pickCommSeries = (v: string) => {
     setCSeries(v);
@@ -294,6 +301,16 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
         track: gTrackEff as never, spring: gSpringUsed as never, lock: gLock as never,
         trackMount: gMount, incline: gIncline, highLiftInches: gIsLift ? gEffLift : 0 })
     : null;
+
+  // The door's vinyl stop molding, in the vinyl that matches its colour and cut
+  // to its opening, exactly as the stock tab works it out — whole doors only.
+  const vinylColor = gridded && kind === "door" && gResult?.quote ? vinylForDoorColor(gColor) : null;
+  const [vwf, vwi] = gWidth.split("."); const [vhf, vhi] = gHeight.split(".");
+  const vinyl = vinylColor
+    ? vinylForDoor(vinylColor, Number(vwf) + (Number(vwi ?? 0)) / 12, Number(vhf) + (Number(vhi ?? 0)) / 12, Math.max(1, qty))
+    : null;
+  // Asked once, when the door first prices; Yes or No stays in the quote card.
+  const askVinyl = !!vinyl && !vinylAsked;
 
   // Grid first when it produced a price and the counter has not typed a total.
   // A typed total always wins: it is what someone reaches for precisely when
@@ -825,10 +842,37 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                 <span className="tl">Door price (each)</span>
                 <span className="tv" data-testid="so-total">{fmt(n.sell + hoMarkup)}</span>
               </div>
+              {gridded && kind === "door" && !manual && (
+                <div className="qtyrow vinylrow" data-testid="so-vinyl-row">
+                  <label>Vinyl molding</label>
+                  {vinyl ? (
+                    <OptionButtons label="Vinyl molding" testid="so-vinyl" options={YES_NO} value={vinylOn ? "yes" : "no"}
+                      onChange={(v) => { setVinylOn(v === "yes"); setSaved(false); }} />
+                  ) : (
+                    <span className="muted-note">None to match {gColor}</span>
+                  )}
+                </div>
+              )}
+              {vinylOn && vinyl && (
+                <div className="lines">
+                  <div className="qline">
+                    <span className="nm" data-testid="so-vinyl-line">
+                      {vinyl.color} vinyl {vinyl.pieces.map((p) => `(${p.count}) ${p.ft}FT`).join(" & ")}
+                    </span>
+                  </div>
+                </div>
+              )}
               <div className="qfoot">
                 <CopyQuickBooks item={QB_SPECIAL_ORDERS} description={copyText ?? label}
-                  rate={(n?.sell ?? 0) + hoMarkup} qty={qty} onCopy={saveQuote} testId="copy-qb" />
+                  rate={(n?.sell ?? 0) + hoMarkup} qty={qty} onCopy={saveQuote} testId="copy-qb"
+                  extraLines={vinylOn && vinyl ? [{ item: QB_VINYL, description: vinyl.description, qty: vinyl.feet, rate: vinyl.pricePerFt }] : undefined} />
               </div>
+              {askVinyl && vinyl && (
+                <VinylPrompt
+                  detail={`${vinyl.color} vinyl stop molding for this ${heightLabel(gWidth)} x ${heightLabel(gHeight)} door.`}
+                  onAnswer={(yes) => { setVinylOn(yes); setVinylAsked(true); setSaved(false); }}
+                />
+              )}
             </>
           )}
         </div>

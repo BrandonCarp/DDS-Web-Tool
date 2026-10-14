@@ -127,12 +127,26 @@ export const HAND_PRICES: Record<string, number> = {
 export const HAND_PER_FOOT = new Set<string>(['TUBE SHAFT|1" SOLID SHAFT', 'TUBE SHAFT|1-1/4" SOLID SHAFT']);
 /**
  * Tube shafts are cut 9" over the nominal length, and the line says so
- * (Brandon, 13/10/2026): the sheet's "10FT TUBE SHAFT" pastes as 10'9" TUBE
- * SHAFT. The name the counter picks stays the sheet's.
+ * (Brandon, 13/10/2026), and that they are galvanized (14/10/2026): the
+ * sheet's "10FT TUBE SHAFT" pastes as 10'9" GALVANIZED TUBE SHAFT. The name
+ * the counter picks stays the sheet's.
  */
 export function tubeShaftDesc(desc: string): string {
-  return desc.replace(/^(\d+)FT TUBE SHAFT/, "$1'9\" TUBE SHAFT");
+  return desc.replace(/^(\d+)FT TUBE SHAFT/, "$1'9\" GALVANIZED TUBE SHAFT");
 }
+/** Drums are sold as a pair, and the line says so (Brandon, 14/10/2026): "400-8 DRUMS,  PAIR". */
+export function drumDesc(desc: string): string {
+  return /\bPAIR\b/i.test(desc) ? desc : `${desc.replace(/,\s*$/, "")},  PAIR`;
+}
+/**
+ * Lines reworded by hand (Brandon, 14/10/2026), keyed "CATEGORY|NAME" like
+ * HAND_PRICES: the U retainers say what they are, and part-pricing.ts writes
+ * their stick as "[1] - 8FT". The names the counter picks stay the sheet's.
+ */
+export const HAND_DESCS: Record<string, string> = {
+  'RETAINERS|2" U RETAINER': '2" PLASTIC U RETAINER WITH RUBBER',
+  'RETAINERS|1-3/8" U RETAINER': '1-3/8" PLASTIC U RETAINER WITH RUBBER',
+};
 function withHandPrices(c: PartCategory): PartCategory {
   return {
     ...c,
@@ -141,7 +155,9 @@ function withHandPrices(c: PartCategory): PartCategory {
       const price = HAND_PRICES[key];
       let out = price === undefined ? p : { ...p, price };
       if (HAND_PER_FOOT.has(key)) out = { ...out, perFoot: true };
+      if (HAND_DESCS[key]) out = { ...out, desc: HAND_DESCS[key] };
       if (c.name === "TUBE SHAFT") out = { ...out, desc: tubeShaftDesc(out.desc) };
+      if (c.name === "DRUMS") out = { ...out, desc: drumDesc(out.desc) };
       return out;
     }),
   };
