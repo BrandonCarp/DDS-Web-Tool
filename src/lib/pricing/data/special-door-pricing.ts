@@ -81,6 +81,7 @@ const TRACK_TEXT: Record<string, string> = {
   r12: '12\u2033 radius track',
   r15: '15\u2033 radius track',
   low_headroom: "low headroom track",
+  reverse_low_headroom: "reverse low headroom track",
   r20: '20\u2033 radius track',
   r32: '32\u2033 radius track',
 };

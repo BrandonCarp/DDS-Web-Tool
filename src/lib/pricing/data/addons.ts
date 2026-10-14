@@ -18,6 +18,8 @@ export const ADDONS = {
   "lockbar_installed": 74.95,
   "track": {
     "low_headroom": 45,
+    // Reverse low headroom: 15 over low headroom — Brandon, 14/10/2026.
+    "reverse_low_headroom": 60,
     "r20": 200,
     "r32": 225,
     "no_tracks": -10

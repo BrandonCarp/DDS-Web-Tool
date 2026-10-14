@@ -215,6 +215,9 @@ describe("residential tool — sections only", () => {
     for (const t of ["track", "spring", "upgraded-hardware", "lock", "homeowner"]) {
       expect(screen.getByTestId(t), t).toBeTruthy();
     }
+    // Reverse low headroom sits under low headroom (Brandon, 14/10/2026), and is sent as asked.
+    expect([...(screen.getByTestId("track") as HTMLSelectElement).options].map((o) => o.value))
+      .toEqual(["r10", "r12", "r15", "low_headroom", "reverse_low_headroom", "r20", "r32"]);
   });
 });
 

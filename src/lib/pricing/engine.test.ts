@@ -175,6 +175,18 @@ describe("quoteResidential — full quote with add-on upcharges", () => {
     expect(q.unitPrice).toBeCloseTo(base + 225 + 35 + 74.95, 2);
   });
 
+  it("adds reverse low headroom track at 15 over low headroom — 60 (Brandon, 14/10/2026)", () => {
+    const base = priceResidential("T50S", dim(9, 0, 7, 0), "solid").price!;
+    const lhr = quoteResidential("T50S", dim(9, 0, 7, 0), opts({ track: "low_headroom" }));
+    const rlhr = quoteResidential("T50S", dim(9, 0, 7, 0), opts({ track: "reverse_low_headroom" }));
+    expect(lhr.unitPrice).toBeCloseTo(base + 45, 2);
+    expect(rlhr.unitPrice).toBeCloseTo(base + 60, 2);
+    expect(rlhr.unitPrice).toBeCloseTo(lhr.unitPrice + 15, 2);
+    expect(rlhr.description).toContain(", reverse low headroom track, extension springs");
+    expect(quoteResidential("4050", dim(16, 0, 7, 0), opts({ track: "reverse_low_headroom", style: "glass" })).unitPrice)
+      .toBeCloseTo(priceResidential("4050", dim(16, 0, 7, 0), "glass").price! + 60, 2);
+  });
+
   it("15in track and extension spring add nothing", () => {
     const base = priceResidential("T52S", dim(16, 0, 8, 0), "inserts").price!;
     const q = quoteResidential("T52S", dim(16, 0, 8, 0), opts({ style: "inserts", track: "r15" }));

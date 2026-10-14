@@ -111,6 +111,8 @@ describe("options", () => {
   it("reads track wording", () => {
     expect(p("4050 8x7 wh 12 radius").track).toBe("r12");
     expect(p("4050 8x7 wh low headroom").track).toBe("low_headroom");
+    expect(p("4050 8x7 wh reverse low headroom").track).toBe("reverse_low_headroom");
+    expect(p("4050 8x7 wh rlhr").track).toBe("reverse_low_headroom");
     expect(p("4050 8x7 wh 15 rad").track).toBe("r15");
   });
 

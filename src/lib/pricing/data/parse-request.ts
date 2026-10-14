@@ -109,6 +109,7 @@ const TRACK_PHRASE: Record<string, string> = {
   '15 radius': "r15", "15in radius": "r15", "15 rad": "r15",
   '20 radius': "r20", '32 radius': "r32",
   "low headroom": "low_headroom", "low hr": "low_headroom", lhr: "low_headroom",
+  "reverse low headroom": "reverse_low_headroom", "reverse low hr": "reverse_low_headroom", rlhr: "reverse_low_headroom",
 };
 
 const LOCK_PHRASE: Record<string, string> = {
@@ -500,7 +501,7 @@ function buildIndex(): Suggestion[] {
     ["No lock", "Lock"], ["Inside slide lock", "Lock"],
     ["Lockbar assembly", "Lock"], ["Lockbar installed", "Lock"],
     ["10\" radius", "Track"], ["12\" radius", "Track"], ["15\" radius", "Track"],
-    ["Low headroom", "Track"], ["20\" radius", "Track"], ["32\" radius", "Track"],
+    ["Low headroom", "Track"], ["Reverse low headroom", "Track"], ["20\" radius", "Track"], ["32\" radius", "Track"],
     ["Torsion springs", "Spring"], ["Extension springs", "Spring"],
     ["Upgraded hardware", "Option"], ["Home owner surcharge", "Option"],
   ] as const) {

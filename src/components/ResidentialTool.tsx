@@ -34,6 +34,7 @@ const TRACKS: { value: TrackKey; label: string }[] = [
   { value: "r12", label: '12" radius' },
   { value: "r15", label: '15" radius' },
   { value: "low_headroom", label: "Low headroom" },
+  { value: "reverse_low_headroom", label: "Reverse low headroom" },
   { value: "r20", label: '20" radius' },
   { value: "r32", label: '32" radius' },
 ];

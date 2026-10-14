@@ -162,6 +162,7 @@ const TRACK_NAME: Record<string, string> = {
   r12: "12″ radius track",
   r15: "15″ radius track",
   low_headroom: "Low headroom track",
+  reverse_low_headroom: "Reverse low headroom track",
   r20: "20″ radius track",
   r32: "32″ radius track",
   no_tracks: "No tracks",
