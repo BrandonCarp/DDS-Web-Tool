@@ -134,6 +134,17 @@ export function springRatesFor(member: string): SpringRates {
 }
 
 /**
+ * A 9'0" wide Coachman with windows is priced as the 8'0" door of the same
+ * build, plus a flat $200 on the sell price — Brandon, 14/10/2026: an 8x7 with
+ * ARCH1 at $2,812.60 makes the 9x7 $3,012.60. The line still says 9'0". A
+ * solid 9'0" door, and every other width, is as the sheet prices it.
+ */
+const NINE_FOOT_GLASS = { width: "9", pricedAs: "8", flat: 200 };
+function nineFootGlass(group: string, width: string, style: WindowStyle): boolean {
+  return windowSectionGroup(group) && width === NINE_FOOT_GLASS.width && style !== "solid";
+}
+
+/**
  * Groups whose torsion and galvanized torsion are one price — the galvanized
  * rate (Brandon, 13/10/2026, the Coachman; galvanized alone on the 12th). The
  * choice still names the spring on the line. No extension: the sheet includes
@@ -402,7 +413,17 @@ export function specialDoorQuote(
     return { reason: `${reason} — enter the Clopay total below for this one.` };
   }
 
-  const triple = tier[input.width];
+  // A door whose windows are a section priced by design (the Coachman) grids
+  // the solid door alone; the section is added below. Its sections are not
+  // inserts, so a window asked for as "inserts" is the same window.
+  const sectioned = windowSectionGroup(input.model);
+  const style: WindowStyle = sectioned && input.style === "inserts" ? "glass" : input.style;
+  // The width the door is priced at: its own, except the 9'0" Coachman with
+  // windows, priced as the 8'0" door (NINE_FOOT_GLASS). The line, the design
+  // and window checks all go by the width asked for.
+  const asEight = nineFootGlass(input.model, input.width, style);
+  const priceWidth = asEight ? NINE_FOOT_GLASS.pricedAs : input.width;
+  const triple = tier[priceWidth];
   if (!triple) return { reason: "That width is not on the grid — enter the Clopay total below." };
 
   // The door's design, where it has one: built at this size, and on the
@@ -425,11 +446,6 @@ export function specialDoorQuote(
     return { reason: `Clopay prices no windows on the ${input.variant || input.model} at ${heightLabel(input.width)} — solid only at this width.` };
   }
 
-  // A door whose windows are a section priced by design (the Coachman) grids
-  // the solid door alone; the section is added below. Its sections are not
-  // inserts, so a window asked for as "inserts" is the same window.
-  const sectioned = windowSectionGroup(input.model);
-  const style: WindowStyle = sectioned && input.style === "inserts" ? "glass" : input.style;
   let base = triple[sectioned ? "solid" : style];
   if (typeof base !== "number") {
     return { reason: "Clopay does not grid that style at this size — enter the total below." };
@@ -464,10 +480,10 @@ export function specialDoorQuote(
     // the solid door, then the glass over the double strength door, by window
     // count — both from the sheet, lifted by the margin together.
     if (!designId) return { reason: "Pick a window design — the Coachman's windows are priced by design." };
-    if (sectionCost(input.model, designId, input.width) == null) {
+    if (sectionCost(input.model, designId, input.width) == null || sectionCost(input.model, designId, priceWidth) == null) {
       return { reason: `Clopay does not build the ${designName(designId)} window section at ${heightLabel(input.width)} — pick another design.` };
     }
-    const add = windowSectionSell(input.model, input.width, designId, input.glassType || "dsb");
+    const add = windowSectionSell(input.model, priceWidth, designId, input.glassType || "dsb");
     if (add == null) return { reason: "That glass is not priced at this width — pick another glass." };
     base = triple.solid + add;
     glassName = input.glassType && input.glassType !== "dsb" ? glassLabel(input.glassType) : null;
@@ -553,7 +569,8 @@ export function specialDoorQuote(
     (track === "high_lift" ? 0 : ADDONS.track[track as keyof typeof ADDONS.track] ?? 0) +
     springAdder(springPriced, torsionOnly, parseInt(input.width, 10) >= 12, springRatesFor(member)) +
     (LOCK[input.lock] ?? 0) +
-    lift.value;
+    lift.value +
+    (asEight ? NINE_FOOT_GLASS.flat : 0);
 
   // Worded the way a residential door is worded, because it lands in the same
   // QuickBooks description column and the counter reads both. The one thing
