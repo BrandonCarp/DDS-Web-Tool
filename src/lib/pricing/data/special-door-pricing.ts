@@ -27,7 +27,7 @@ import { colorTakesPremium } from "./catalog-meta";
 import { highLiftPrice, mountPhrase, type TrackMount, type InclineStyle } from "./track-lift";
 import { ADDONS, GRADE_RES, COLLECTIONS_RES } from "./addons";
 import { dataKey } from "../model-groups";
-import { designName, specialPlainWindowsFor, windowDesigns } from "./inserts";
+import { designName, specialPlainWindowsFor, specialWindowDesigns } from "./inserts";
 import { designBuilt, designTakesWindows, hasDesigns, modelWithDesign, secondColorName, secondColorPricedAs } from "./door-designs";
 import { SPECIAL_DOORS } from "./special-doors";
 import type { LockKey, SpringKey, TrackKey, WindowStyle } from "../types";
@@ -456,7 +456,7 @@ export function specialDoorQuote(
   // everywhere, and plain glass on the Coachman (its window sections).
   const designId = (() => {
     if (style === "solid" || !input.windesign) return null;
-    const valid = windowDesigns(member, style, input.width.split(".")[0]).map((d) => d.id);
+    const valid = specialWindowDesigns(member, style, input.width).map((d) => d.id);
     return valid.includes(input.windesign) ? input.windesign : null;
   })();
 
@@ -596,7 +596,7 @@ export function specialDoorQuote(
   // Plain, Arch 3 Plain) are named from the window list the same way.
   const plainNames = [
     ...specialPlainWindowsFor(member),
-    ...windowDesigns(member, "inserts", input.width.split(".")[0]).filter((d) => d.cat === "arch" && /\bPLAIN\b/i.test(d.name)).map((d) => d.name),
+    ...specialWindowDesigns(member, "inserts", input.width).filter((d) => d.cat === "arch" && /\bPLAIN\b/i.test(d.name)).map((d) => d.name),
   ];
   const plain = style === "glass" && input.plainWindow && plainNames.includes(input.plainWindow)
     ? `${input.plainWindow.toLowerCase()}, ` : "";

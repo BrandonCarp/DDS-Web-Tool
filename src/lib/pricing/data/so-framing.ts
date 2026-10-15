@@ -3,7 +3,7 @@
  * (Brandon, 12/10/2026, "DDS App Changes" 1-5):
  *
  *   Glass type      Solid, then every glass the door prices
- *   Section glazed  which section carries the windows — top section for now
+ *   Section glazed  which section carries the windows — section 4 for now
  *   Framing         the plain windows by their order names, then every insert
  *                   the door takes, each its own entry (Brandon, 12/10/2026:
  *                   no second drop-down); on the Coachman, the window designs
@@ -16,7 +16,7 @@
  */
 import { glassOptionsFor, glassTakesInserts, isSheetGroup, panelStylesFor, type GlassOption, type PanelStyle } from "./so-glass";
 import { sectionDesignsAt, windowSectionGroup } from "./coachman-windows";
-import { specialPlainWindowsFor, takesInserts, windowDesigns, type InsertDesign } from "./inserts";
+import { specialPlainWindowsFor, specialWindowDesigns, takesInserts, type InsertDesign } from "./inserts";
 import type { WindowStyle } from "../types";
 
 /** "8.2" -> ["8", "2"]; "7" -> ["7", "0"]. */
@@ -110,7 +110,6 @@ const plainDesign = (d: InsertDesign) => d.cat === "arch" && /\bPLAIN\b/i.test(d
  */
 export function framingOptions(group: string, member: string, width: string, glass: string): FramingOption[] {
   if (!width || glass === "solid") return [];
-  const widthFt = width.split(".")[0];
   if (windowSectionGroup(group)) {
     return sectionDesignsAt(group, width).map((d) => ({
       value: `design:${d.id}`, label: d.cat === "arch" ? `${d.name} arch section` : d.name, kind: "design", design: d.id,
@@ -118,7 +117,7 @@ export function framingOptions(group: string, member: string, width: string, gla
   }
   const panels = panelStylesFor(group, width);
   const named = specialPlainWindowsFor(member);
-  const designs = takesInserts(member) ? windowDesigns(member, "inserts", widthFt) : [];
+  const designs = takesInserts(member) ? specialWindowDesigns(member, "inserts", width) : [];
   if (panels.length) {
     const out: FramingOption[] = [];
     for (const p of panels) {
@@ -177,5 +176,5 @@ export function windowChoice(glass: string, framing: FramingOption | undefined):
   }
 }
 
-/** The one section glazed input for now: top section. */
-export const GLAZED_SECTIONS = [{ value: "4", label: "TOP SECTION" }];
+/** The one section glazed input for now: section 4. */
+export const GLAZED_SECTIONS = [{ value: "4", label: "Section 4" }];

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   splitSize, sizeKey, feetOptions, inchOptions, glassTypeOptions, framingOptions, designPanel, windowChoice, GLAZED_SECTIONS,
 } from "./data/so-framing";
-import { ARCHITECTURAL, DECORATIVE, plainWindowsFor, specialPlainWindowsFor } from "./data/inserts";
+import { ARCHITECTURAL, DECORATIVE, plainWindowsFor, specialPlainWindowsFor, specialWindowDesigns, windowDesigns } from "./data/inserts";
 import { specialDoorQuote } from "./data/special-door-pricing";
 
 // The special order configurator's window choices, shaped like the stock tab's
@@ -85,9 +85,27 @@ describe("framing", () => {
     // Plain Long, Plain Short and Arch 1 Plain are the named windows already listed.
     expect(f.map((o) => o.label)).not.toContain("Plain Long");
     expect(f.map((o) => o.label)).not.toContain("Arch 1 Plain inserts");
-    // Arch 3 is built at 16'0" only.
-    expect(framingOptions("GD1LP/GD1SP", "GD1SP", "16", "dsb").map((o) => o.label)).toContain("Arch 3 Plain");
-    expect(framingOptions("GD1LP/GD1SP", "GD1SP", "16", "dsb").map((o) => o.label)).not.toContain("Arch 2 Plain");
+  });
+
+  it("takes the architectural windows as Clopay's size chart has them: the Arch 3s on double doors, 11'6\" and wider (15/10/2026)", () => {
+    const labels = (group: string, member: string, width: string) => framingOptions(group, member, width, "dsb").map((o) => o.label);
+    const arch3 = ["Arch 3 Plain", "Arch 3 Grille inserts", "Arch 3 Vertical Grille inserts"];
+    for (const w of ["8", "9", "10", "11.4"]) for (const a of arch3) expect(labels("GD1LP/GD1SP", "GD1SP", w), `${a} at ${w}`).not.toContain(a);
+    for (const w of ["11.6", "12", "16", "18", "20"]) for (const a of arch3) expect(labels("GD1LP/GD1SP", "GD1LP", w), `${a} at ${w}`).toContain(a);
+    // Every Gallery pair and Bridgeport door alike; Arch 1 and Arch 2 on singles and doubles.
+    expect(labels("GD2LU/GD2SU", "GD2SU", "16")).toEqual(expect.arrayContaining(arch3));
+    expect(labels("BD1CU", "BD1CU", "12")).toEqual(expect.arrayContaining(arch3));
+    expect(labels("BD1CU", "BD1CU", "8")).not.toContain("Arch 3 Plain");
+    expect(labels("GD1LP/GD1SP", "GD1SP", "16")).toEqual(expect.arrayContaining(["PLAIN ARCH 1", "Arch 2 Plain", "Arch 2 Grille inserts", "Arch 1 Vertical Grille inserts"]));
+    expect(labels("GD1LP/GD1SP", "GD1SP", "16").filter((l) => l.startsWith("Arch 3"))).toEqual(["Arch 3 Plain", "Arch 3 Grille inserts", "Arch 3 Vertical Grille inserts"]);
+    // The stock tab keeps the stock widths.
+    expect(windowDesigns("GD1SP", "inserts", "8").map((d) => d.id)).not.toContain("ARCH3PLAIN");
+    expect(windowDesigns("GD1SP", "inserts", "16").map((d) => d.id)).not.toContain("ARCH2PLAIN");
+    expect(specialWindowDesigns("GD1SP", "inserts", "16").map((d) => d.id)).toContain("ARCH2PLAIN");
+    expect(specialWindowDesigns("GD1SP", "inserts", null).map((d) => d.id)).not.toContain("ARCH3PLAIN");
+    // Other models keep their own lists, by the width's own code.
+    expect(specialWindowDesigns("4050", "inserts", "7.6").map((d) => d.id)).toContain("502");
+    expect(specialWindowDesigns("4050", "inserts", "8").map((d) => d.id)).not.toContain("502");
     // Acrylic takes no inserts on a sheet-priced door.
     expect(framingOptions("GD1LP/GD1SP", "GD1SP", "8", "acrylic").every((o) => o.kind === "plain")).toBe(true);
     // A Bridgeport door names the same windows (Brandon, 14/10/2026), then the same inserts.
@@ -181,11 +199,18 @@ describe("what the quote is asked for", () => {
     expect(plain.quote?.description).toContain("double strength b grade windows in the top section, arch 2 plain, no inserts");
     expect(plain.quote?.unitPrice).toBe(g({ style: "glass" }).quote?.unitPrice);
     expect(g({ style: "inserts", windesign: "ARCH2GRILLE" }).quote?.unitPrice).toBeGreaterThan(plain.quote!.unitPrice);
-    // Arch 3 Plain is built at 16'0" only, so at 8'0" it is not a window to name.
+    // Arch 3 is a double door's window (11'6" and wider): not one to name at 8'0", named and priced at 16'0" —
+    // the plain window as plain glass, the grilles at the inserts adder (15/10/2026).
     expect(g({ style: "glass", plainWindow: "Arch 3 Plain" }).quote?.description).not.toContain("arch 3");
+    expect(g({ style: "inserts", windesign: "ARCH3GRILLE" }).quote?.description).not.toContain("Arch 3");
+    const wide = g({ width: "16", style: "glass", plainWindow: "Arch 3 Plain" });
+    expect(wide.quote?.description).toContain("windows in the top section, arch 3 plain, no inserts");
+    expect(wide.quote?.unitPrice).toBe(g({ width: "16", style: "glass" }).quote?.unitPrice);
+    expect(g({ width: "16", style: "inserts", windesign: "ARCH3GRILLE" }).quote?.description).toContain("windows in the top section, Arch 3 Grille inserts");
+    expect(g({ width: "16", style: "inserts", windesign: "ARCH3VERT" }).quote?.unitPrice).toBe(g({ width: "16", style: "inserts", windesign: "ARCH1GRILLE" }).quote?.unitPrice);
   });
 
-  it("has one section glazed for now: TOP SECTION", () => {
-    expect(GLAZED_SECTIONS).toEqual([{ value: "4", label: "TOP SECTION" }]);
+  it("has one section glazed for now: section 4", () => {
+    expect(GLAZED_SECTIONS).toEqual([{ value: "4", label: "Section 4" }]);
   });
 });

@@ -101,6 +101,26 @@ export const INSERT_RULES: Record<string, "short" | "shortlong" | "all"> = {
   "4300": "short", "4301": "short", "4310": "short",
 };
 
+/**
+ * The designs a SPECIAL ORDER door takes at a width (a size key, "11.6").
+ *
+ * A Gallery or Bridgeport door takes the architectural windows as Clopay's
+ * size chart has them (Brandon, 15/10/2026): every one on a single or a
+ * double door, except the Arch 3s — Arch 3 Plain, Grille on Arch 3, Vertical
+ * Grille on Arch 3 — which the chart shows on double doors only, 11'6" and
+ * wider. The stock tab keeps the stock widths (Arch 2 at 8' and 9', Arch 3 at
+ * 16'); every other model keeps its own list.
+ */
+const ARCH3_FROM_INCHES = 11 * 12 + 6;
+export function specialWindowDesigns(unit: string, style: string, width: string | null): InsertDesign[] {
+  const [wf, wi] = (width ?? "").split(".");
+  if (style !== "inserts" || !/^(GD|BD)/.test(String(unit))) {
+    return windowDesigns(unit, style, width ? designWidthCode(Number(wf), Number(wi ?? 0)) : null);
+  }
+  const inches = width ? Number(wf) * 12 + Number(wi ?? 0) : null;
+  return ARCHITECTURAL.filter((d) => !/^ARCH3/.test(d.id) || (inches !== null && inches >= ARCH3_FROM_INCHES));
+}
+
 /** Resolve the width code used by the design width-restriction lists (e.g. 7'6" -> "7.6"). */
 /**
  * The stock 4050 takes long-panel windows and long-panel inserts only at 8', 9'
