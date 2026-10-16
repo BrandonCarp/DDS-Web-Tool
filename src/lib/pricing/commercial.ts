@@ -5,7 +5,7 @@ import { collapseUpcharges } from "./types";
 import { COMM_MATRIX, COMM_SECTIONS, COMM_SECTION_STOCK, COMM_SLAB, STOCK_COMM, GRADE_COMM } from "./data/commercial";
 import {
   COMM_COMPLETE, panelCount, panelsPhrase, joinAnd, roundedFeet, slabBilledFeet, SLAB_MIN_FEET, SECTION_MAX_WIDTH_IN, maxWidthLabel, sectionColors,
-  sectionWindowSizes, stileLocationCount,
+  sectionWindowSizes, stileLocationCount, jointStyleAsked, JOINT_STYLES, type JointStyle,
 } from "./data/commercial-meta";
 
 export interface CommQuoteLine { name: string; value: number; kind: "base" | "add" | "minus" }
@@ -54,6 +54,8 @@ export interface CommSectionInput {
   stileLocations?: string[];
   /** An inside slide lock on an intermediate section — wording only, as on the complete door (16/10/2026). */
   lock?: "none" | "slide";
+  /** The 524's section joint, ship lap unless chosen (jointStyleAsked); wording only. */
+  joint?: JointStyle;
   /** The locations are still to come: the line ends "stile locations needed". */
   stileLocationsNeeded?: boolean;
   color?: "White" | "Brown";          // DESCRIPTION ONLY — individual sections come in white or brown
@@ -306,16 +308,18 @@ export function quoteCommercial(input: CommInput): CommQuote {
   const color = input.color === "Brown" ? "Brown" : "White";
   // The stile locations of a 524 or 2415, one a stile, left to right, as typed
   // — "stile locations 59"  82-1/4" and 90-1/2"", two spaces between them and
-  // "and" before the last, like the vinyl — or "stile locations needed" when
-  // they are still to come (Brandon, 15/10/2026). The sheet's count by width
-  // is what the counter is shown; a stile typed past it is written too.
+  // "and" before the last, like the vinyl (Brandon, 15/10/2026) — or "stile
+  // locations needed" when none are typed (16/10/2026). The sheet's count by
+  // width is what the counter is shown; a stile typed past it is written too.
   const stileCount = stileLocationCount(model, ft, inch);
   const typed = stileCount > 0 ? (input.stileLocations ?? []).slice(0, 10).map((x) => String(x ?? "").trim()).filter(Boolean) : [];
-  const stileLocations = stileCount > 0 && input.stileLocationsNeeded
-    ? "stile locations needed"
-    : typed.length ? `stile locations ${joinAnd(typed, "  ")}` : null;
+  const stileLocations = stileCount > 0
+    ? input.stileLocationsNeeded || !typed.length ? "stile locations needed" : `stile locations ${joinAnd(typed, "  ")}`
+    : null;
   // An inside slide lock goes on an intermediate section only; the line ends with it, as the door's does.
   const lockTxt = input.secKind === "int" && input.lock === "slide" ? "inside slide lock" : null;
+  // The 524's joint, after the section: ship lap unless tongue and groove is chosen (16/10/2026).
+  const jointTxt = jointStyleAsked(model) ? `${JOINT_STYLES.includes(input.joint as JointStyle) ? input.joint : JOINT_STYLES[0]} joint` : null;
   const description = insulation
     // The 524 and 2415 — Brandon's wording of 14/10/2026: the section, the
     // colour, the windows or SOLID NO WINDOWS on an intermediate, the
@@ -324,6 +328,7 @@ export function quoteCommercial(input: CommInput): CommQuote {
         `${input.mfr || "Clopay"} Model ${model}`,
         `${asciiWidth} x ${input.secHeight}"`,
         input.secKind === "bt" ? "steel ribbed bottom section" : "steel ribbed intermediate section",
+        jointTxt,
         `in the color ${color.toLowerCase()}`,
         input.secKind === "bt" ? null : windowsPhrase ?? "solid no windows",
         insulation,

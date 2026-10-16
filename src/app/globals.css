@@ -1573,21 +1573,31 @@ html, body { margin: 0; padding: 0; }
 }
 .tool-shell .ppanel { position: relative; flex: 1 1 0; min-width: 0; border-right: 2px solid var(--ink); }
 .tool-shell .ppanel:last-child { border-right: 0; }
-.tool-shell .phit { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; margin: 0; border: 0; background: transparent; cursor: pointer; }
+.tool-shell .phit { position: absolute; inset: 0; display: grid; place-items: center; width: 100%; height: 100%; padding: 4px; margin: 0; border: 0; background: transparent; cursor: pointer; }
 .tool-shell .ppanel:not(.static):hover { background: var(--surface-3); }
 .tool-shell .ppanel.on { background: var(--surface-3); }
-/* The window: the glass over its size, in the panel's middle; the word passes
-   a press through to the panel, the dropdown keeps it. */
-.tool-shell .pglass {
-  position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 3px;
-  padding: 4px; pointer-events: none;
+/* Once Add windows is pressed, every empty panel says where to press. */
+.tool-shell .phint {
+  display: inline-block; padding: 5px 8px; border: 2px dashed var(--muted-2); border-radius: 4px;
+  font-size: 12px; line-height: 1.1; color: var(--muted); animation: phint-in .9s ease-out 1;
 }
-.tool-shell .pglass-word { font-size: 11.5px; line-height: 1.15; text-align: center; color: var(--ink); }
-.tool-shell .pglass .selectwrap { pointer-events: auto; width: 88px; max-width: 100%; }
+.tool-shell .ppanel:not(.static):hover .phint { color: var(--ink); border-color: var(--ink); }
+@keyframes phint-in { 0% { transform: scale(.85); opacity: 0; } 60% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .tool-shell .phint { animation: none; } }
+/* The window: its size in the panel's middle, under the x that takes it out. */
+.tool-shell .premove {
+  position: absolute; top: 4px; left: 50%; z-index: 1; transform: translateX(-50%);
+  width: 28px; height: 22px; padding: 0; margin: 0; display: grid; place-items: center;
+  border: 2px dashed var(--muted-2); border-radius: 4px; background: transparent; color: var(--muted);
+  font-size: 15px; line-height: 1; cursor: pointer;
+}
+.tool-shell .premove:hover { color: var(--ink); border-color: var(--ink); }
+.tool-shell .pglass { position: absolute; inset: 0; display: grid; place-content: center; padding: 28px 4px 4px; pointer-events: none; }
+.tool-shell .pglass .selectwrap { pointer-events: auto; width: 100px; max-width: 100%; }
 .tool-shell .pglass select {
-  width: 100%; min-height: 30px; padding: 4px 22px 4px 8px;
-  border: 1px solid var(--accent); border-radius: 3px; background: var(--accent); color: var(--on-accent);
-  font-size: 13px; font-weight: 700; letter-spacing: .02em;
+  width: 100%; min-height: 38px; padding: 5px 24px 5px 9px;
+  border: 1px solid var(--accent); border-radius: 4px; background: var(--accent); color: var(--on-accent);
+  font-size: 15px; font-weight: 700; letter-spacing: .02em;
 }
 .tool-shell .pglass .selectwrap::after { right: 8px; border-color: var(--on-accent); }
 /* The stile boxes sit under each stile: the inches, then the quarter. */
@@ -1597,10 +1607,9 @@ html, body { margin: 0; padding: 0; }
 .tool-shell .pstile .selectwrap { width: 56px; }
 .tool-shell .pstile select { width: 100%; min-height: 34px; padding: 4px 18px 4px 6px; font-size: 12.5px; }
 .tool-shell .pstile .selectwrap::after { right: 7px; }
-/* Under the drawing: what to do, and the stiles-to-be-determined button. */
-.tool-shell .pnotes { display: flex; align-items: center; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; padding: 2px 16px 12px; }
-.tool-shell .pnote-lines { display: grid; gap: 2px; min-width: 0; }
-.tool-shell .pnotes .btn { min-height: 36px; padding: 6px 12px; font-size: 13px; }
+/* Under the drawing, centred: what to do, then the Add windows button. */
+.tool-shell .pnotes { display: grid; justify-items: center; gap: 2px; padding: 2px 16px 12px; text-align: center; }
+.tool-shell .pnotes .btn { min-height: 38px; margin-top: 8px; padding: 6px 16px; font-size: 13.5px; }
 .tool-shell .btn.on { color: var(--accent-ink); border-color: var(--accent); background: var(--surface-3); }
 /* A group across both columns of the configuration; a column of groups stacked with no row to line up with. */
 .tool-shell .cfg2 > .span { grid-column: 1 / -1; }

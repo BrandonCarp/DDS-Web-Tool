@@ -56,7 +56,7 @@ describe("ribbed steel verbiage", () => {
       'Wayne Dalton Model 2415, 8\'2" x 24", steel ribbed bottom section, in the color white, non insulated, single end stiles',
     );
     expect(sec("524", { secKind: "bt" })).toBe(
-      'Clopay Model 524, 8\'2" x 24", steel ribbed bottom section, in the color white, non insulated, single end stiles',
+      'Clopay Model 524, 8\'2" x 24", steel ribbed bottom section, ship lap joint, in the color white, non insulated, single end stiles',
     );
   });
 
@@ -65,12 +65,12 @@ describe("ribbed steel verbiage", () => {
       'Wayne Dalton Model 2415V, 8\'2" x 24", steel ribbed intermediate section, in the color white, solid no windows, insulated with vinyl back cover, single end stiles',
     );
     expect(sec("524V")).toBe(
-      'Clopay Model 524V, 8\'2" x 24", steel ribbed intermediate section, in the color white, solid no windows, insulated with vinyl back cover, single end stiles',
+      'Clopay Model 524V, 8\'2" x 24", steel ribbed intermediate section, ship lap joint, in the color white, solid no windows, insulated with vinyl back cover, single end stiles',
     );
     expect(sec("2415S")).toBe(
       'Wayne Dalton Model 2415S, 8\'2" x 24", steel ribbed intermediate section, in the color white, solid no windows, insulated with steel back cover, single end stiles',
     );
-    expect(sec("524")).toContain("steel ribbed intermediate section, in the color white, solid no windows, non insulated, single end stiles");
+    expect(sec("524")).toContain("steel ribbed intermediate section, ship lap joint, in the color white, solid no windows, non insulated, single end stiles");
   });
 
   it("names the windows by count, size and glass: double strength b grade on the plain door, insulated on the V and S", () => {
@@ -137,7 +137,7 @@ describe("ribbed steel verbiage", () => {
     expect(joinAnd(['59"', '82-1/4', '90-1/2"'], "  ")).toBe('59"  82-1/4 and 90-1/2"');
     // 12'0": three panels, two stiles.
     expect(sec("524", { manFt: 12, manIn: 0, stileLocations: ['48"', '96"'] })).toBe(
-      'Clopay Model 524, 12\'0" x 24", steel ribbed intermediate section, in the color white, solid no windows, non insulated, single end stiles, stile locations 48" and 96"',
+      'Clopay Model 524, 12\'0" x 24", steel ribbed intermediate section, ship lap joint, in the color white, solid no windows, non insulated, single end stiles, stile locations 48" and 96"',
     );
     // 16'3": five panels, four stiles; blanks are skipped, and a stile added past the sheet's count is written too (Add Stile, 15/10/2026).
     expect(sec("2415V", { manFt: 16, manIn: 3, secKind: "bt", stile: "double", stileLocations: ['39"', "", '78-1/2"', '117"', '156"'] }))
@@ -148,8 +148,9 @@ describe("ribbed steel verbiage", () => {
     expect(sec("2415", { manFt: 9, manIn: 2, stileLocations: ['55"'], stileLocationsNeeded: true })).toMatch(/single end stiles$/);
     // Still to come.
     expect(sec("524", { manFt: 12, manIn: 0, stileLocations: ['48"'], stileLocationsNeeded: true })).toMatch(/single end stiles, stile locations needed$/);
-    // Nothing typed, nothing written; and never on another model.
-    expect(sec("524", { manFt: 12, manIn: 0 })).toMatch(/single end stiles$/);
+    // Nothing typed: needed (16/10/2026); and never on another model.
+    expect(sec("524", { manFt: 12, manIn: 0 })).toMatch(/single end stiles, stile locations needed$/);
+    expect(sec("524", { manFt: 12, manIn: 0, stileLocations: ["", " "] })).toMatch(/single end stiles, stile locations needed$/);
     expect(section("3200", { manFt: 12, manIn: 0, stileLocations: ['48"'], stileLocationsNeeded: true })).not.toContain("stile locations");
   });
 
@@ -182,6 +183,7 @@ describe("ribbed steel verbiage", () => {
     expect(sec("2415V", { lock: "slide" })).toMatch(/insulated with vinyl back cover, single end stiles, inside slide lock$/);
     expect(sec("2415V", { lock: "none" })).toMatch(/single end stiles$/);
     expect(sec("2415V", { secKind: "bt", lock: "slide" })).toMatch(/single end stiles$/);
+    expect(sec("524", { manFt: 12, manIn: 0, lock: "slide" })).toMatch(/single end stiles, stile locations needed, inside slide lock$/);
     expect(section("3200", { manFt: 8, manIn: 2, secHeight: "24", stile: "single", lock: "slide" })).toMatch(/single end stile, inside slide lock$/);
     expect(section("3720", { manFt: 12, manIn: 0, windows: 1, stile: "single", lock: "slide" })).toMatch(/single end stile, inside slide lock$/);
     // Wording only: the price does not move.
@@ -189,9 +191,18 @@ describe("ribbed steel verbiage", () => {
     expect(price({ lock: "slide" })).toBe(price({ lock: "none" }));
   });
 
+  it("names the 524's joint after the section — ship lap unless tongue and groove is chosen — and never the 2415's (16/10/2026)", () => {
+    expect(sec("524", { secKind: "bt" })).toContain("steel ribbed bottom section, ship lap joint, in the color white");
+    expect(sec("524", { secKind: "bt", joint: "tongue and groove" })).toContain("steel ribbed bottom section, tongue and groove joint, in the color white");
+    expect(sec("524S", { joint: "tongue and groove" })).toContain("steel ribbed intermediate section, tongue and groove joint, in the color white, solid no windows");
+    expect(sec("524", { joint: "x" })).toContain("ship lap joint");
+    expect(sec("2415V", { joint: "tongue and groove" })).not.toContain("joint");
+    expect(section("3200", { manFt: 8, manIn: 2, joint: "tongue and groove" })).not.toContain("joint");
+  });
+
   it("words the 2415 the same way, under its own maker", () => {
-    expect(sec("2415", { secKind: "bt", manFt: 12, manIn: 0 })).toBe(
-      'Wayne Dalton Model 2415, 12\'0" x 24", steel ribbed bottom section, in the color white, non insulated, single end stiles',
+    expect(sec("2415", { secKind: "bt", manFt: 12, manIn: 0, stileLocations: ['48"', '96"'] })).toBe(
+      'Wayne Dalton Model 2415, 12\'0" x 24", steel ribbed bottom section, in the color white, non insulated, single end stiles, stile locations 48" and 96"',
     );
   });
 
@@ -201,7 +212,8 @@ describe("ribbed steel verbiage", () => {
   });
 
   it("keeps two end stiles plural", () => {
-    expect(section("524", { stile: "double" })).toMatch(/double end stiles$/);
+    expect(section("524", { stile: "double", stileLocations: ['48"', '96"', '144"'] })).toMatch(/double end stiles, stile locations 48"  96" and 144"$/);
+    expect(section("524", { stile: "double", manFt: 8, manIn: 2 })).toMatch(/double end stiles$/);
   });
 
   it("leaves every other commercial model alone", () => {

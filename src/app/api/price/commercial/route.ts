@@ -52,6 +52,7 @@ export async function POST(req: Request) {
       stileLocations: Array.isArray(b.stileLocations) ? b.stileLocations.slice(0, 10).map((x) => String(x ?? "").slice(0, 40)) : undefined,
       stileLocationsNeeded: b.stileLocationsNeeded === true,
       lock: b.lock === "slide" ? "slide" : "none",
+      joint: b.joint === "tongue and groove" ? "tongue and groove" : "ship lap",
       color: b.color === "Brown" ? "Brown" : "White",
     };
   }

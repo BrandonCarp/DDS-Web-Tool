@@ -201,7 +201,7 @@ export const SLAB_LABEL: Record<string, string> = {
   "2415V": "2″ vinyl backer",
   "2415S": "2″ steel backer",
   "2742": "2″",
-  "524": "2″",
+  "524": "2″ non-insulated",
   "524V": "2″ vinyl backer",
   "524S": "2″ steel backer"
 };
@@ -389,4 +389,14 @@ export function stileLocationText(inches: string, fraction: string): string {
   if (!whole) return "";
   const frac = (STILE_FRACTIONS as readonly string[]).includes(fraction) && fraction !== "0" ? `-${fraction}` : "";
   return `${whole}${frac}"`;
+}
+
+/**
+ * The 524's section joint — ship lap or tongue and groove (Brandon,
+ * 16/10/2026): on the line after the section, ship lap unless chosen.
+ */
+export const JOINT_STYLES = ["ship lap", "tongue and groove"] as const;
+export type JointStyle = (typeof JOINT_STYLES)[number];
+export function jointStyleAsked(model: string): boolean {
+  return model === "524" || model === "524V" || model === "524S";
 }

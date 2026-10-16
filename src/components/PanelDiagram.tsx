@@ -7,20 +7,21 @@ export interface StileValue { inch: string; frac: string }
 /**
  * A section drawn as its panels, left to right, to its own proportions — CJ's
  * RIBBED SECTIONS sheet, laid out as Brandon drew it (15–16/10/2026). On an
- * intermediate section, press a panel to put a window in it: it shows the
- * glass and its size, 24x12 first, with the smaller size in the dropdown.
- * Where a 524 or 2415 asks for its stile locations, the inches and the
- * quarter go in the boxes under each stile, left to right.
+ * intermediate section, once Add windows is pressed, every empty panel says
+ * where to press; a press puts a window in it, shown as its size, 24x12
+ * first, with the smaller size in the dropdown, and an x at the top to take
+ * it out again. Where a 524 or 2415 asks for
+ * its stile locations, the inches and the quarter go in the boxes under each
+ * stile, left to right.
  */
 export function PanelDiagram({
-  panels, windows, onToggle, glassLabel = "Insulated", sizes = ["24x12"], size, onSize,
+  panels, windows, onToggle, sizes = ["24x12"], size, onSize,
   stiles, onStile, widthIn, heightIn = 24, testId = "comm-panels",
 }: {
   panels: number;
-  /** The 1-based panels with windows; null where the section takes none (a bottom section). */
+  /** The 1-based panels with windows; null where none can be pressed in (a bottom section, or Add windows not pressed). */
   windows: ReadonlySet<number> | null;
   onToggle?: (panel: number) => void;
-  glassLabel?: string;
   sizes?: readonly string[];
   size?: string;
   onSize?: (size: string) => void;
@@ -43,21 +44,24 @@ export function PanelDiagram({
           {Array.from({ length: n }, (_, i) => i + 1).map((p) => {
             const on = !!windows?.has(p);
             return (
-              <div key={p} className={`ppanel${on ? " on" : ""}${windows ? "" : " static"}`}>
-                {windows ? (
-                  <button type="button" className="phit" data-testid={`comm-panel-${p}`} aria-pressed={on} aria-label={`Panel ${p}`} onClick={() => onToggle?.(p)} />
-                ) : (
-                  <span data-testid={`comm-panel-${p}`} />
+              <div key={p} className={`ppanel${on ? " on" : ""}${windows ? "" : " static"}`} data-testid={`comm-panel-${p}`} data-on={on ? "true" : "false"}>
+                {windows && !on && (
+                  <button type="button" className="phit" data-testid={`comm-panel-${p}-add`} aria-label={`Add a window to panel ${p}`} onClick={() => onToggle?.(p)}>
+                    <span className="phint">+ Add window</span>
+                  </button>
                 )}
                 {on && (
-                  <div className="pglass">
-                    <span className="pglass-word">{glassLabel}</span>
-                    <div className="selectwrap">
-                      <select data-testid={`comm-panel-${p}-size`} aria-label={`Panel ${p} window size`} value={sizeUsed} onChange={(e) => onSize?.(e.target.value)}>
-                        {sizes.map((s) => <option key={s} value={s}>{s}</option>)}
-                      </select>
+                  <>
+                    {/* The x at the top takes the window out again. */}
+                    <button type="button" className="premove" data-testid={`comm-panel-${p}-remove`} aria-label={`Remove the window from panel ${p}`} onClick={() => onToggle?.(p)}>×</button>
+                    <div className="pglass">
+                      <div className="selectwrap">
+                        <select data-testid={`comm-panel-${p}-size`} aria-label={`Panel ${p} window size`} value={sizeUsed} onChange={(e) => onSize?.(e.target.value)}>
+                          {sizes.map((s) => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                      </div>
                     </div>
-                  </div>
+                  </>
                 )}
               </div>
             );

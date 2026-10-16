@@ -14,9 +14,9 @@ import { useCustomerJob } from "@/components/CustomerJobFields";
 import {
   COMM_COMPLETE, COMM_COMPLETE_MODELS, COMM_SECTION_MODELS, COMM_MATRIX_SIZES,
   SLAB_RATE, SLAB_LABEL, panelCount, placementOf, placementPanels, windowPlacements,
-  SECTION_MAX_WIDTH_IN, maxWidthLabel, sectionColors, sectionGlassLabel,
+  SECTION_MAX_WIDTH_IN, maxWidthLabel, sectionColors,
   STOCK_SECTION_WIDTHS, sectionWidthLabel, sectionWindowSizes, stileLocationCount,
-  stileLocationText,
+  stileLocationText, JOINT_STYLES, jointStyleAsked, type JointStyle,
 } from "@/lib/pricing/data/commercial-meta";
 import { PanelDiagram, type StileValue } from "./PanelDiagram";
 import { homeownerMarkup } from "@/lib/pricing/engine";
@@ -68,10 +68,13 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   // the inches and the quarter — as many as the sheet asks by width; or
   // "needed" when they are still to be determined (15/10/2026).
   const [stileVals, setStileVals] = useState<StileValue[]>([]);
-  const [stilesNeeded, setStilesNeeded] = useState(false);
+  // Windows go in only after Add windows is pressed (16/10/2026).
+  const [addingWindows, setAddingWindows] = useState(false);
   const [secColor, setSecColor] = useState<"White" | "Brown">("White");
   // An inside slide lock on an intermediate section (16/10/2026).
   const [lock, setLock] = useState<"none" | "slide">("none");
+  // The 524's joint: ship lap or tongue and groove (16/10/2026).
+  const [joint, setJoint] = useState<JointStyle>("ship lap");
 
   const [qty, setQty] = useState(1);
   const { custName, custPo, custJob } = useCustomerJob();
@@ -100,7 +103,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
     ? (sizeDims ? Number(sizeDims[1]) * 12 + Number(sizeDims[2]) : 0)
     : (parseInt(manFt, 10) || 0) * 12 + (parseInt(manIn, 10) || 0);
   const panels = widthIn > 0 ? panelCount(0, widthIn) : 0;
-  const glassOn = order === "complete" ? glass === "glass" : secKind === "int";
+  const glassOn = order === "complete" ? glass === "glass" : secKind === "int" && addingWindows;
   const winPanelsUsed = glassOn ? winPanels.filter((n) => n >= 1 && n <= panels) : [];
   const stileCount = order === "section" ? stileLocationCount(model, parseInt(manFt, 10) || 0, parseInt(manIn, 10) || 0) : 0;
   const stileValsUsed = Array.from({ length: stileCount }, (_, i) => stileVals[i] ?? { inch: "", frac: "0" });
@@ -129,7 +132,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const placements = order === "complete" ? windowPlacements(panels) : [];
   const placement = placementOf(panels, winPanelsUsed);
 
-  const cfgSig = JSON.stringify([mfr, model, order, size, glass, track, mount, cspring, clock, cColor, winSection, manFt, manIn, secKind, secHeight, winPanelsUsed, winSizeUsed, stile, stileLocationsUsed, stilesNeeded, secColor, lock, homeowner]);
+  const cfgSig = JSON.stringify([mfr, model, order, size, glass, track, mount, cspring, clock, cColor, winSection, manFt, manIn, secKind, secHeight, winPanelsUsed, winSizeUsed, stile, stileLocationsUsed, secColor, lock, joint, homeowner]);
   const result = resultRaw && resultSig === cfgSig ? resultRaw : null;
   const liveError = errorRaw && resultSig === cfgSig ? errorRaw : null;
   const priced = result?.priced ?? false;
@@ -146,7 +149,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   function pickModel(m: string) {
     setModel(m);
     setSize(""); setManFt(""); setManIn("0");
-    setWinPanels([]); setWindowSize(""); setStile("single"); setSecColor("White"); setStileVals([]); setStilesNeeded(false); setLock("none");
+    setWinPanels([]); setAddingWindows(false); setWindowSize(""); setStile("single"); setSecColor("White"); setStileVals([]); setLock("none"); setJoint("ship lap");
   }
   /** The order type, as the first two buttons ask it: it decides which models are listed. */
   function pickOrder(o: "complete" | "section") {
@@ -168,8 +171,8 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   function resetConfig() {
     setSize(""); setGlass("solid"); setTrack("15R"); setMount("continuous"); setCspring("torsion"); setClock("none");
     setManFt(""); setManIn("0");
-    setSecKind("bt"); setSecHeight("24"); setWinPanels([]); setWindowSize(""); setStile("single"); setSecColor("White");
-    setStileVals([]); setStilesNeeded(false); setLock("none");
+    setSecKind("bt"); setSecHeight("24"); setWinPanels([]); setAddingWindows(false); setWindowSize(""); setStile("single"); setSecColor("White");
+    setStileVals([]); setLock("none"); setJoint("ship lap");
     setQty(1); setResult(null); setError(null); setSaved(false);
   }
   function onBack() { resetConfig(); setStep(1); }
@@ -181,7 +184,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
         order === "complete"
           ? { order, mfr, model, size, glass, track, mount, cspring, clock, color: cColor, winSection: Number(winSection) || 3, windowPanels: winPanelsUsed, windowSize: winSizeUsed }
           : { order, mfr, model, manFt: Number(manFt), manIn: Number(manIn) || 0, secKind, secHeight, windowPanels: winPanelsUsed, windowSize: winSizeUsed, stile,
-              stileLocations: stileLocationsUsed, stileLocationsNeeded: stilesNeeded, color: secColor, lock: secKind === "int" ? lock : "none" };
+              stileLocations: stileLocationsUsed, color: secColor, lock: secKind === "int" ? lock : "none", joint };
       const res = await fetch("/api/price/commercial", {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
       });
@@ -521,6 +524,16 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
                             </select>
                           </div>
                         </div>
+                        {jointStyleAsked(model) && (
+                          <div className="grow">
+                            <label>Joint</label>
+                            <div className="ctl selectwrap">
+                              <select data-testid="comm-joint" value={joint} onChange={(e) => setJoint(e.target.value as JointStyle)}>
+                                {JOINT_STYLES.map((j) => <option key={j} value={j}>{j === "ship lap" ? "Ship lap" : "Tongue and groove"}</option>)}
+                              </select>
+                            </div>
+                          </div>
+                        )}
                       </>
                     )}
                     {secKind === "int" && (
@@ -540,26 +553,24 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
                   </div>
 
                   {/* The section, drawn to its proportions as soon as it has a width
-                      (16/10/2026): on an intermediate section press a panel for a
-                      window — 24x12, the smaller size in its dropdown; on a 524 or
-                      2415 the stile measurements go under the stiles, left to right,
-                      or are still to be determined. */}
+                      (16/10/2026): on a 524 or 2415 the stile measurements go under
+                      the stiles, left to right (left blank, the line says they are
+                      needed). On an intermediate section, Add windows opens the
+                      panels — each says where to press — and a press puts a window
+                      in, 24x12 with the smaller size in its dropdown. */}
                   {panels > 0 && (
                     <div className="ggroup span" data-testid="comm-drawing">
-                      <PanelDiagram panels={panels} windows={secKind === "int" ? new Set(winPanelsUsed) : null} onToggle={togglePanel}
-                        glassLabel={sectionGlassLabel(model)} sizes={winSizes} size={winSizeUsed} onSize={setWindowSize}
-                        stiles={stileCount > 0 && !stilesNeeded ? stileValsUsed : null} onStile={setStileVal}
+                      <PanelDiagram panels={panels} windows={glassOn ? new Set(winPanelsUsed) : null} onToggle={togglePanel}
+                        sizes={winSizes} size={winSizeUsed} onSize={setWindowSize}
+                        stiles={stileCount > 0 ? stileValsUsed : null} onStile={setStileVal}
                         widthIn={widthIn} heightIn={Number(secHeight)} />
                       {(secKind === "int" || stileCount > 0) && (
                         <div className="pnotes">
-                          <div className="pnote-lines">
-                            {secKind === "int" && <div className="muted-note">If windows are needed, click on which panel you want windows in, and what size.</div>}
-                            {stileCount > 0 && !stilesNeeded && <div className="muted-note">Enter in stile measurements — measurements are taken left to right.</div>}
-                          </div>
-                          {stileCount > 0 && (
-                            <button type="button" className={`btn${stilesNeeded ? " on" : ""}`} data-testid="comm-stiles-needed" aria-pressed={stilesNeeded}
-                              onClick={() => setStilesNeeded((v) => !v)}>
-                              Stiles to be determined
+                          {stileCount > 0 && <div className="muted-note">Enter in stile measurements — measurements are taken left to right.</div>}
+                          {secKind === "int" && (
+                            <button type="button" className={`btn${addingWindows ? " on" : ""}`} data-testid="comm-add-windows" aria-pressed={addingWindows}
+                              onClick={() => { setAddingWindows((v) => !v); setWinPanels([]); }}>
+                              Add windows
                             </button>
                           )}
                         </div>
