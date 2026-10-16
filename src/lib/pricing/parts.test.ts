@@ -44,7 +44,15 @@ describe("parts list", () => {
     // A U retainer counts its piece, in the shelf's wording (14/10/2026).
     expect(partDescription(shelfPart("RETAINERS", '2" U RETAINER'), 8)).toBe('2" PLASTIC U RETAINER WITH RUBBER, [1] - 8FT');
     expect(partDescription(shelfPart("RETAINERS", '1-3/8" U RETAINER'), 8.5)).toBe('1-3/8" PLASTIC U RETAINER WITH RUBBER, [1] - 8\'6"');
-    expect(partDescription(shelfPart("RETAINERS", '2" L RETAINER'), 8)).toBe('2"  L  RETAINER,  8FT');
+    // The 1-3/8" and 2" L retainers are plastic and count the piece too (16/10/2026); the 1-3/4" stays the sheet's.
+    expect(partDescription(shelfPart("RETAINERS", '2" L RETAINER'), 8)).toBe('2" PLASTIC L RETAINER, [1] - 8FT');
+    expect(partDescription(shelfPart("RETAINERS", '1-3/8" L RETAINER'), 8)).toBe('1-3/8" PLASTIC L RETAINER, [1] - 8FT');
+    expect(partDescription(shelfPart("RETAINERS", '1-3/8" L RETAINER'), 12)).toBe('1-3/8" PLASTIC L RETAINER, [1] - 18FT');
+    expect(partDescription(shelfPart("RETAINERS", '1-3/4" L RETAINER'), 8)).toBe('1-3/4"  L  RETAINER,  8FT');
+    // Struts say what they are and count the piece (16/10/2026).
+    expect(partDescription(shelfPart("STRUTS", "12FT STRUT"))).toBe('2-1/4" GALVANIZED STRUT, [1] - 12FT');
+    expect(partDescription(shelfPart("STRUTS", "10FT STRUT"))).toBe('2-1/4" GALVANIZED STRUT, [1] - 10FT');
+    expect(partDescription(shelfPart("STRUTS", '16FT STRUT - 3"'))).toBe('3" GALVANIZED STRUT, [1] - 16FT');
   });
 
   it("extends a per-foot part into the rate, keeping quantity at 1", () => {

@@ -139,13 +139,28 @@ export function drumDesc(desc: string): string {
   return /\bPAIR\b/i.test(desc) ? desc : `${desc.replace(/,\s*$/, "")},  PAIR`;
 }
 /**
- * Lines reworded by hand (Brandon, 14/10/2026), keyed "CATEGORY|NAME" like
- * HAND_PRICES: the U retainers say what they are, and part-pricing.ts writes
- * their stick as "[1] - 8FT". The names the counter picks stay the sheet's.
+ * Struts say what they are and count the piece (Brandon, 16/10/2026): the
+ * sheet's "12FT STRUT" pastes as 2-1/4" GALVANIZED STRUT, [1] - 12FT, and
+ * its 3" struts as 3" GALVANIZED STRUT, [1] - 16FT. The names stay the sheet's.
+ */
+export function strutDesc(desc: string): string {
+  const three = desc.match(/^3",\s*(\d+)FT STRUT$/);
+  if (three) return `3" GALVANIZED STRUT, [1] - ${three[1]}FT`;
+  const plain = desc.match(/^(\d+)FT STRUT$/);
+  if (plain) return `2-1/4" GALVANIZED STRUT, [1] - ${plain[1]}FT`;
+  return desc;
+}
+/**
+ * Lines reworded by hand (Brandon, 14 and 16/10/2026), keyed "CATEGORY|NAME"
+ * like HAND_PRICES: the U retainers and the plastic L retainers say what they
+ * are, and part-pricing.ts writes their stick as "[1] - 8FT". The names the
+ * counter picks stay the sheet's.
  */
 export const HAND_DESCS: Record<string, string> = {
   'RETAINERS|2" U RETAINER': '2" PLASTIC U RETAINER WITH RUBBER',
   'RETAINERS|1-3/8" U RETAINER': '1-3/8" PLASTIC U RETAINER WITH RUBBER',
+  'RETAINERS|2" L RETAINER': '2" PLASTIC L RETAINER',
+  'RETAINERS|1-3/8" L RETAINER': '1-3/8" PLASTIC L RETAINER',
 };
 function withHandPrices(c: PartCategory): PartCategory {
   return {
@@ -158,6 +173,7 @@ function withHandPrices(c: PartCategory): PartCategory {
       if (HAND_DESCS[key]) out = { ...out, desc: HAND_DESCS[key] };
       if (c.name === "TUBE SHAFT") out = { ...out, desc: tubeShaftDesc(out.desc) };
       if (c.name === "DRUMS") out = { ...out, desc: drumDesc(out.desc) };
+      if (c.name === "STRUTS") out = { ...out, desc: strutDesc(out.desc) };
       return out;
     }),
   };

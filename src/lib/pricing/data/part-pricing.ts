@@ -62,9 +62,10 @@ export function partDescription(
   // 3" raw track is billed at the 24FT stick but the line reads 16'6" (Brandon,
   // 12/10/2026; solid shafts 13/10/2026). A retainer still says the stick it
   // bills: a 12FT U retainer is sold as a 16FT stick, and the line says what
-  // left the building — a U retainer as one piece, "[1] - 16FT" (14/10/2026).
+  // left the building — a U retainer as one piece, "[1] - 16FT" (14/10/2026),
+  // and the plastic L retainers the same way (16/10/2026).
   const said = isRawTrack(part) || isSolidShaft(part) ? Math.max(0, Math.round(feet * 12) / 12) : billedFeet(part, feet);
-  if (isURetainer(part)) return `${base}, [1] - ${feetText(said)}`;
+  if (isURetainer(part) || isPlasticLRetainer(part)) return `${base}, [1] - ${feetText(said)}`;
   return `${base},  ${feetText(said)}`;
 }
 
@@ -167,6 +168,10 @@ export function isRetainer(part: Part): boolean {
 /** A U retainer — its line counts the piece: "2" PLASTIC U RETAINER WITH RUBBER, [1] - 8FT". */
 export function isURetainer(part: Part): boolean {
   return /\bU\s+RETAINER/i.test(part.desc);
+}
+/** The 1-3/8" and 2" plastic L retainers — their line counts the piece too: "2" PLASTIC L RETAINER, [1] - 8FT" (16/10/2026). */
+export function isPlasticLRetainer(part: Part): boolean {
+  return /\bPLASTIC L\s+RETAINER/i.test(part.desc);
 }
 
 /** 10.5 -> 10'6", 16 -> 16FT: whole feet keep the FT the sheet writes. */
