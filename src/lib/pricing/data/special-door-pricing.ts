@@ -135,14 +135,16 @@ export function springRatesFor(member: string): SpringRates {
 }
 
 /**
- * A 9'0" wide Coachman with windows is priced as the 8'0" door of the same
- * build, plus a flat $200 on the sell price — Brandon, 14/10/2026: an 8x7 with
- * ARCH1 at $2,812.60 makes the 9x7 $3,012.60. The line still says 9'0". A
- * solid 9'0" door, and every other width, is as the sheet prices it.
+ * A Coachman with windows over 8'0" wide up to 9'0" — the sheet's 8'2", 8'6"
+ * and 9'0" — is priced as the 8'0" door of the same build, plus a flat $200
+ * on the sell price — Brandon, 14/10/2026 for the 9'0" (an 8x7 with ARCH1 at
+ * $2,812.60 makes the 9x7 $3,012.60), 16/10/2026 for the widths between. The
+ * line still says the width asked for. A solid door at these widths, and
+ * every other width, is as the sheet prices it.
  */
-const NINE_FOOT_GLASS = { width: "9", pricedAs: "8", flat: 200 };
+const NINE_FOOT_GLASS = { widths: new Set(["8.2", "8.6", "9"]), pricedAs: "8", flat: 200 };
 function nineFootGlass(group: string, width: string, style: WindowStyle): boolean {
-  return windowSectionGroup(group) && width === NINE_FOOT_GLASS.width && style !== "solid";
+  return windowSectionGroup(group) && NINE_FOOT_GLASS.widths.has(width) && style !== "solid";
 }
 
 /**
@@ -419,9 +421,9 @@ export function specialDoorQuote(
   // inserts, so a window asked for as "inserts" is the same window.
   const sectioned = windowSectionGroup(input.model);
   const style: WindowStyle = sectioned && input.style === "inserts" ? "glass" : input.style;
-  // The width the door is priced at: its own, except the 9'0" Coachman with
-  // windows, priced as the 8'0" door (NINE_FOOT_GLASS). The line, the design
-  // and window checks all go by the width asked for.
+  // The width the door is priced at: its own, except a Coachman with windows
+  // over 8'0" up to 9'0", priced as the 8'0" door (NINE_FOOT_GLASS). The line,
+  // the design and window checks all go by the width asked for.
   const asEight = nineFootGlass(input.model, input.width, style);
   const priceWidth = asEight ? NINE_FOOT_GLASS.pricedAs : input.width;
   const triple = tier[priceWidth];

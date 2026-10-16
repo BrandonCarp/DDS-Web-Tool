@@ -89,8 +89,8 @@ describe("Coachman special order grid (workbook of 12/10/2026)", () => {
     for (const w of ["8.2", "8.6", "9"]) {
       expect(price({ width: w }), w).toBe(sell(door(1184)));
       expect(price({ width: w, height: "8" }), w).toBe(sell(door(1215)));
-      if (w === "9") continue;   // 9'0" with windows is the 8'0" door plus 200 — its own test
-      expect(plus(price({ width: w, style: "glass", windesign: "ARCH3" }), -price({ width: w })), w).toBe(adder(227 * MULT * K));
+      // With windows these widths are the 8'0" door plus 200 — their own test.
+      expect(price({ width: w, style: "glass", windesign: "ARCH3" }), w).toBe(plus(price({ width: "8", style: "glass", windesign: "ARCH3" }), 200));
     }
   });
 
@@ -107,9 +107,9 @@ describe("Coachman special order grid (workbook of 12/10/2026)", () => {
     for (const d of ["ARCH13", "ARCH14", "REC11", "REC13", "REC14", "SQ23", "SQ24"]) expect(win(d), d).toBe(win("ARCH1"));
     // The sheet's own figure for the window door, to the cent of the adder's rounding.
     expect(win("ARCH1")).toBeCloseTo(sell(door(1135 + 218)), 1);
-    // 8'2" to 9'0": 113.5 and 227; 9'2" to 10'0": 145 and 290.
-    expect(win("REC13", { width: "8.6" })).toBe(plus(sell(door(1184)), adder(113.5 * MULT * K)));
-    expect(win("ARCH4", { width: "8.6", height: "8" })).toBe(plus(sell(door(1215)), adder(227 * MULT * K)));
+    // 8'2" to 9'0" with windows: the 8'0" door plus 200 (16/10/2026); 9'2" to 10'0": 145 and 290.
+    expect(win("REC13", { width: "8.6" })).toBe(plus(win("REC13", { width: "8" }), 200));
+    expect(win("ARCH4", { width: "8.6", height: "8" })).toBe(plus(win("ARCH4", { width: "8", height: "8" }), 200));
     expect(win("SQ24", { width: "10" })).toBe(plus(sell(door(1476)), adder(145 * MULT * K)));
     expect(win("ARCH3", { width: "9.2", height: "10" })).toBe(plus(sell(door(2016)), adder(290 * MULT * K)));
     // 12'0" to 13'8": 327 on the REC and SQ designs; 14'2" to 16'2": 435; 17'0" and 18'0": 454.
@@ -185,7 +185,7 @@ describe("Coachman special order grid (workbook of 12/10/2026)", () => {
     expect(win("SQ24", { glassType: "frosted", width: "16.2" })).toBe(plus(sell(door(2163)), adder(435 * MULT * K + 310 * MULT * K)));
     expect(win("REC14", { glassType: "seeded", width: "12.2" })).toBe(plus(sell(door(1861)), adder(327 * MULT * K + 550 * MULT * K)));
     expect(win("ARCH1", { glassType: "obscure" })).toBe(plus(sell(door(1135)), adder(218 * MULT * K + 40 * MULT * K)));
-    expect(win("ARCH13", { glassType: "obscure", width: "8.2" })).toBe(plus(sell(door(1184)), adder(113.5 * MULT * K + 40 * MULT * K)));
+    expect(win("ARCH13", { glassType: "obscure", width: "8.2" })).toBe(plus(win("ARCH13", { glassType: "obscure", width: "8" }), 200));
     // The arched sections take the glass too.
     expect(win("ARC1A", { glassType: "seeded", width: "16" })).toBe(plus(sell(door(2127)), adder(870 * MULT * K + 550 * MULT * K)));
     expect(windowSectionCost("CD", "16", "ARC1A", "seeded")).toBe(plus(1055.5, 667.27));
@@ -217,19 +217,26 @@ describe("Coachman special order grid (workbook of 12/10/2026)", () => {
       .toContain("seeded dsb windows in the top section, ARC4A inserts, 12″ radius track");
   });
 
-  it("prices a 9'0\" wide door with windows as the 8'0\" door of the same build plus a flat $200 (Brandon, 14/10/2026)", () => {
+  it("prices a door with windows over 8'0\" up to 9'0\" as the 8'0\" door of the same build plus a flat $200 (Brandon, 14 and 16/10/2026)", () => {
     const at = (width: string, o: Record<string, unknown> = {}) => q({ style: "glass", windesign: "ARCH1", width, ...o }).quote!.unitPrice;
-    // His example: an 8x7 with double strength ARCH1 is $2,812.60, so the 9x7 is $3,012.60.
+    // His example: an 8x7 with double strength ARCH1 is $2,812.60, so the 9x7 is $3,012.60 — and so are the 8'2" and 8'6".
     expect(at("8")).toBe(2812.6);
     expect(at("9")).toBe(3012.6);
-    for (const o of [{ windesign: "ARCH4" }, { windesign: "REC13", glassType: "rain" }, { windesign: "SQ24", height: "8" }, { windesign: "ARCH13", height: "10", glassType: "seeded" }]) {
-      expect(at("9", o), JSON.stringify(o)).toBe(plus(at("8", o), 200));
+    expect(at("8.2")).toBe(3012.6);
+    expect(at("8.6")).toBe(3012.6);
+    for (const width of ["8.2", "8.6", "9"]) {
+      for (const o of [{ windesign: "ARCH4" }, { windesign: "REC13", glassType: "rain" }, { windesign: "SQ24", height: "8" }, { windesign: "ARCH13", height: "10", glassType: "seeded" }]) {
+        expect(at(width, o), `${width} ${JSON.stringify(o)}`).toBe(plus(at("8", o), 200));
+      }
     }
-    // The line still says 9'0"; a solid 9'0" door, and every other width, is as the sheet prices it.
+    // The line still says the width asked for; a solid door at these widths, and every other width, is as the sheet prices it.
     expect(q({ width: "9", style: "glass", windesign: "REC13" }).quote?.description).toContain("Model CD, 9'0\" x 7'0\", in the color White, double strength b grade windows in the top section, REC13 inserts");
+    expect(q({ width: "8.6", style: "glass", windesign: "REC13" }).quote?.description).toContain("Model CD, 8'6\" x 7'0\", in the color White");
     expect(price({ width: "9" })).toBe(sell(door(1184)));
-    expect(price({ width: "8.6", style: "glass", windesign: "REC13" })).toBe(plus(sell(door(1184)), adder(113.5 * MULT * K)));
+    expect(price({ width: "8.6" })).toBe(sell(door(1184)));
+    expect(price({ width: "8.2" })).toBe(sell(door(1184)));
     expect(price({ width: "9.2", style: "glass", windesign: "REC13" })).toBe(plus(sell(door(1476)), adder(145 * MULT * K)));
+    expect(price({ width: "8", style: "glass", windesign: "REC13" })).toBe(plus(sell(door(1135)), adder(218 * MULT * K)));
   });
 
   it("includes torsion springs at every height — the sheet's ALL TORSION SPRING PRICES", () => {
