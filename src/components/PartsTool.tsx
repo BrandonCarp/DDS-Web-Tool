@@ -18,7 +18,7 @@ import type { SearchPick } from "@/lib/search";
 import { entryId, feetAsQuantity, type PartsMenu } from "@/lib/pricing/data/parts-menu";
 import { PartsNavigator } from "./PartsNavigator";
 import { cableQuote, CABLE_GAUGES } from "@/lib/pricing/data/cables";
-import { feetLimits, isLockbar, isSolidShaft, measuredToInch, partColors, priceNoteText, priceNotSet, takesLength } from "@/lib/pricing/data/part-pricing";
+import { feetLimits, isLockbar, isSolidShaft, measuredToInch, partColors, pieceCounted, priceNoteText, priceNotSet, takesLength } from "@/lib/pricing/data/part-pricing";
 import { QtyStepper } from "./QtyStepper";
 import { COMMERCIAL_TRACK, COMMERCIAL_TRACK_HEIGHTS, COMMERCIAL_TRACK_SUB, commercialTrackAt } from "@/lib/pricing/data/commercial-track";
 import { RESIDENTIAL_TRACK_SUB, pickResidentialTrack, radiiFor, residentialTrackSets, trackHeightFor } from "@/lib/pricing/data/residential-track";
@@ -567,9 +567,11 @@ export function PartsTool({
                       </b>
                     </div>
                     <div className="qfoot">
+                      {/* A retainer's or a strut's "[1] - 16FT" counts the
+                          pieces: the count follows the quantity (16/10/2026). */}
                       {price != null && (
                         <CopyQuickBooks item={categoryItem(hit?.category ?? catName)} description={description}
-                          {...(feetQty ? { qty: ft } : {})}
+                          {...(feetQty ? { qty: ft } : {})} counted={!onCable && !trackPick && pieceCounted(description)}
                           rate={feetQty ? part!.price : price} testId="parts-copy-qb" />
                       )}
                       <button className="btn" type="button" onClick={clear}>

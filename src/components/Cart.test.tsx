@@ -51,6 +51,26 @@ describe("the cart", () => {
     expect(lines()).toHaveLength(0);
   });
 
+  it("writes the quantity into a line that counts its pieces, as added and as changed (16/10/2026)", async () => {
+    render(
+      <CartProvider>
+        <CopyQuickBooks item="PARTS" description='2" PLASTIC U RETAINER WITH RUBBER, [1] - 16FT' rate={60} counted testId="ret" />
+        <CartTool />
+      </CartProvider>,
+    );
+    // Two on the button, then three in the cart; the same retainer again adds to it.
+    fireEvent.change(screen.getByTestId("ret-qty"), { target: { value: "2" } });
+    expect(await copyFrom(screen.getByTestId("ret"))).toBe('PARTS\t2" PLASTIC U RETAINER WITH RUBBER, [2] - 16FT\t2\t60.00');
+    fireEvent.click(screen.getByTestId("ret-cart"));
+    expect(lines()[0].textContent).toContain("[2] - 16FT");
+    fireEvent.change(screen.getAllByTestId("cartline-qty")[0], { target: { value: "3" } });
+    expect(lines()[0].textContent).toContain("[3] - 16FT");
+    fireEvent.click(screen.getByTestId("ret-cart"));
+    expect(lines()).toHaveLength(1);
+    expect(qtys()).toEqual(["5"]);
+    expect(await copyFrom(screen.getByTestId("cart-qb"))).toBe('PARTS\t2" PLASTIC U RETAINER WITH RUBBER, [5] - 16FT\t5\t60.00');
+  });
+
   it("asks whether to clear the cart once it is copied to QuickBooks (12/10/2026)", async () => {
     render(quotes());
     fireEvent.click(screen.getByTestId("door-cart"));

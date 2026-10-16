@@ -69,6 +69,24 @@ export function partDescription(
   return `${base},  ${feetText(said)}`;
 }
 
+/**
+ * A line that counts its pieces — a U or plastic L retainer's "[1] - 16FT", a
+ * strut's "[1] - 12FT" — counts what goes out, so the figure follows the
+ * line's quantity (Brandon, 16/10/2026): three 16FT U retainers paste as
+ * "[3] - 16FT" with a quantity of 3. The count sits before a length, which is
+ * what tells it from a spring's hands ("[1] - RIGHT WOUND"), counted on their
+ * own; vinyl's pieces, counted by length, never come this way.
+ */
+const PIECE_COUNT = /\[\d+\](?=\s*-\s*\d+(?:FT\b|'))/;
+export function pieceCounted(description: string): boolean {
+  return PIECE_COUNT.test(description);
+}
+/** The description with its piece count set to the quantity: "[1] - 16FT" at 3 is "[3] - 16FT". */
+export function withPieceCount(description: string, qty: number): string {
+  const n = Number.isFinite(qty) ? Math.max(1, Math.trunc(qty)) : 1;
+  return description.replace(PIECE_COUNT, `[${n}]`);
+}
+
 /** Springs are priced each — the pair shows up as quantity 2, not a doubled rate. */
 export function partQuantity(part: Part, right?: number, left?: number): number {
   if (!part.hands) return 1;

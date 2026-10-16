@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { CopyButton } from "./CopyButton";
 import { quickBooksRow } from "@/lib/pricing/data/quickbooks";
+import { pieceCounted, withPieceCount } from "@/lib/pricing/data/part-pricing";
 import { QtyStepper } from "./QtyStepper";
 
 export type CartLine = {
@@ -97,7 +98,9 @@ export function ScannerTool() {
   const clear = () => { setCart([]); setNote(null); refocus(); };
   // A blank line between lines leaves a blank row between them in QuickBooks —
   // the paste script moves down a row for every line break (Brandon, 25/9/2026).
-  const qbText = cart.map((l) => quickBooksRow(l.qbItem, l.desc, l.qty, l.price)).join("\n\n");
+  // A line that counts its pieces (a strut's "[1] - 12FT") says the quantity in the count (16/10/2026).
+  const lineText = (l: CartLine) => (pieceCounted(l.desc) ? withPieceCount(l.desc, l.qty) : l.desc);
+  const qbText = cart.map((l) => quickBooksRow(l.qbItem, lineText(l), l.qty, l.price)).join("\n\n");
 
   return (
     <div
@@ -119,7 +122,7 @@ export function ScannerTool() {
                   {l.photo && <img className="partphoto" src={l.photo} alt="" />}
                   <span className="cart-text">
                     <b>{l.name}</b>
-                    <small>{l.desc}</small>
+                    <small>{lineText(l)}</small>
                   </span>
                 </span>
                 <QtyStepper value={l.qty} testId="cart-qty" label={`Quantity of ${l.name}`}

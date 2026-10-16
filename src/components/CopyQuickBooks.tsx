@@ -5,6 +5,7 @@ import { CopyButton, CopyPrice } from "./CopyButton";
 import { AddToCart } from "./Cart";
 import { copyExtrasFor, useCurrentUser, type CopyExtra } from "./CurrentUser";
 import { quickBooksRow } from "@/lib/pricing/data/quickbooks";
+import { withPieceCount } from "@/lib/pricing/data/part-pricing";
 import { QtyStepper } from "./QtyStepper";
 
 /**
@@ -29,6 +30,7 @@ export function CopyQuickBooks({
   rate,
   qty,
   defaultQty = 1,
+  counted = false,
   testId = "copy-qb",
   onCopy,
   extraLines,
@@ -43,6 +45,9 @@ export function CopyQuickBooks({
       carries its own box, which is the case on the parts and spring tabs. */
   qty?: number;
   defaultQty?: number;
+  /** The description counts its pieces ("[1] - 16FT"): the count follows the
+      quantity on the line and in the cart (part-pricing.ts, 16/10/2026). */
+  counted?: boolean;
   testId?: string;
   onCopy?: () => void;
   /** More invoice lines, each pasted two rows below the one before with a
@@ -58,10 +63,11 @@ export function CopyQuickBooks({
   const extras = forcedExtras ?? accountExtras;
   const controlled = qty !== undefined;
   const n = controlled ? qty : own;
+  const line = counted ? withPieceCount(description, n) : description;
   // One clipboard line per invoice row; an empty line leaves that row blank.
   // The paste script moves down a row for every line break.
   const text = [
-    quickBooksRow(item, description, n, rate),
+    quickBooksRow(item, line, n, rate),
     ...(extraLines ?? []).flatMap((l) => ["", quickBooksRow(l.item, l.description, l.qty, l.rate)]),
   ].join("\n");
 
@@ -87,12 +93,12 @@ export function CopyQuickBooks({
         it; the quantity on the line; and the rate — through CopyPrice, so it
         goes out as a bare number like every price copy. */}
     {extras.includes("description") && (
-      <CopyButton text={description.replace(/[\t\r\n]+/g, " ").trim().toUpperCase()} label="Copy description" testId={`${testId}-desc`} />
+      <CopyButton text={line.replace(/[\t\r\n]+/g, " ").trim().toUpperCase()} label="Copy description" testId={`${testId}-desc`} />
     )}
     {extras.includes("quantity") && <CopyButton text={String(n)} label="Copy quantity" testId={`${testId}-qtycopy`} />}
     {extras.includes("price") && <CopyPrice amount={rate} testId={`${testId}-price`} />}
     {/* The same lines, kept in the Cart tab for later (30/9/2026). */}
-    <AddToCart lines={[{ item, description, qty: n, rate }, ...(extraLines ?? [])]} testId={`${testId}-cart`} />
+    <AddToCart lines={[{ item, description, qty: n, rate, ...(counted ? { counted } : {}) }, ...(extraLines ?? [])]} testId={`${testId}-cart`} />
     </>
   );
 }

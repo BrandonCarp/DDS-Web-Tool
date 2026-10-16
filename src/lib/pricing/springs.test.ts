@@ -16,6 +16,7 @@ import {
   CABLE_CATEGORIES,
   STOCK_TORSION_SPRINGS,
   TORSION_CATEGORY,
+  springFieldSpacing,
   springGroups,
 } from "./data/springs";
 
@@ -81,6 +82,17 @@ describe("shapes the spring tabs assume", () => {
       expect(p.perFoot).toBeFalsy();
       expect(p.hands).toBeFalsy();
     }
+  });
+
+  it("separates every stock torsion spring's fields with a comma and two spaces, as the cut-to-size line does (16/10/2026)", () => {
+    for (const p of STOCK_TORSION_SPRINGS.items) {
+      expect(p.desc, p.name).not.toMatch(/,(?!  )/);
+      expect(p.desc, p.name).not.toMatch(/,   /);
+    }
+    // The sheet's 160, 170 and 180LBS 7FT rows had one space before the length.
+    const row = STOCK_TORSION_SPRINGS.items.find((p) => p.name === '160LBS,  2 X 262 X 35-1/4"');
+    expect(row?.desc).toBe('TORSION SPRINGS,  2" ID,  262 WIRE,  35-1/4" LONG');
+    expect(springFieldSpacing('TORSION SPRINGS,  2" ID, 262 WIRE,35" LONG')).toBe('TORSION SPRINGS,  2" ID,  262 WIRE,  35" LONG');
   });
 
   it("has no per-foot stock torsion spring", () => {

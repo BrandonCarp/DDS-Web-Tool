@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { PART_CATEGORIES, partDescription, partPrice, partQuantity, billedFeet, feetLimits } from "./data/parts";
-import { JAMB_SEAL_COLORS, measuredToInch, partColors } from "./data/part-pricing";
+import { JAMB_SEAL_COLORS, measuredToInch, partColors, pieceCounted, withPieceCount } from "./data/part-pricing";
 import { SHELF_PART_CATEGORIES } from "./data/springs";
 import { QB_ITEMS } from "../qb/iif";
 
@@ -53,6 +53,24 @@ describe("parts list", () => {
     expect(partDescription(shelfPart("STRUTS", "12FT STRUT"))).toBe('2-1/4" GALVANIZED STRUT, [1] - 12FT');
     expect(partDescription(shelfPart("STRUTS", "10FT STRUT"))).toBe('2-1/4" GALVANIZED STRUT, [1] - 10FT');
     expect(partDescription(shelfPart("STRUTS", '16FT STRUT - 3"'))).toBe('3" GALVANIZED STRUT, [1] - 16FT');
+  });
+
+  it("counts the pieces on a retainer or strut line by the quantity, and nothing else (16/10/2026)", () => {
+    const u = partDescription(shelfPart("RETAINERS", '2" U RETAINER'), 12);
+    expect(pieceCounted(u)).toBe(true);
+    expect(withPieceCount(u, 3)).toBe('2" PLASTIC U RETAINER WITH RUBBER, [3] - 16FT');
+    expect(withPieceCount(partDescription(shelfPart("RETAINERS", '1-3/8" U RETAINER'), 8.5), 2)).toBe('1-3/8" PLASTIC U RETAINER WITH RUBBER, [2] - 8\'6"');
+    expect(withPieceCount(partDescription(shelfPart("RETAINERS", '2" L RETAINER'), 8), 4)).toBe('2" PLASTIC L RETAINER, [4] - 8FT');
+    expect(withPieceCount(partDescription(shelfPart("STRUTS", "12FT STRUT")), 2)).toBe('2-1/4" GALVANIZED STRUT, [2] - 12FT');
+    // One at a quantity of one, and a broken quantity counts one.
+    expect(withPieceCount(u, 1)).toBe(u);
+    expect(withPieceCount(u, NaN)).toBe(u);
+    expect(withPieceCount(u, 0)).toBe(u);
+    // A spring's hands and a plain per-foot line are not piece counts.
+    expect(pieceCounted('TORSION SPRINGS,  2" ID,  218 WIRE,  26" LONG [2] - RIGHT WOUND AND [1] - LEFT WOUND')).toBe(false);
+    expect(pieceCounted('1-3/4"  L  RETAINER,  8FT')).toBe(false);
+    expect(pieceCounted('2" RAW TRACK,  16\'6"')).toBe(false);
+    expect(withPieceCount('400-8 DRUMS,  PAIR', 2)).toBe('400-8 DRUMS,  PAIR');
   });
 
   it("extends a per-foot part into the rate, keeping quantity at 1", () => {

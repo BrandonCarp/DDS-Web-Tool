@@ -50,8 +50,18 @@ export function inSpringOrder(items: Part[]): Part[] {
 export const EXTENSION_SPRINGS: PartCategory = {
   name: EXTENSION_CATEGORY, items: inSpringOrder(EXTENSION_ALL.items.filter((p) => !isKit(p))),
 };
+/**
+ * A torsion spring line separates its fields with a comma and TWO spaces
+ * (torsion.ts, FIELD_SEP), so a stock spring and a cut-to-size one line up on
+ * the same estimate. The sheet's 160, 170 and 180LBS 7FT rows have one space
+ * before the length; every stock line gets the two (Brandon, 16/10/2026).
+ */
+export function springFieldSpacing(desc: string): string {
+  return desc.replace(/,\s*/g, ",  ");
+}
 export const STOCK_TORSION_SPRINGS: PartCategory = {
-  name: TORSION_CATEGORY, items: inSpringOrder(TORSION_ALL.items.filter((p) => !isKit(p))),
+  name: TORSION_CATEGORY,
+  items: inSpringOrder(TORSION_ALL.items.filter((p) => !isKit(p))).map((p) => ({ ...p, desc: springFieldSpacing(p.desc) })),
 };
 export const EXTENSION_KITS_CATEGORY = "EXTENSION KITS";
 export const TORSION_KITS_CATEGORY = "TORSION KITS";

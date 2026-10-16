@@ -5,12 +5,18 @@ import { createPortal } from "react-dom";
 import { CopyButton } from "./CopyButton";
 import { Icon } from "./Icon";
 import { quickBooksRow } from "@/lib/pricing/data/quickbooks";
+import { withPieceCount } from "@/lib/pricing/data/part-pricing";
 import { QtyStepper } from "./QtyStepper";
 import { OptionButtons } from "./OptionButtons";
 import { YES_NO } from "./VinylPrompt";
 
-/** One QuickBooks invoice line in the cart. The rate is the price of ONE. */
-export type CartLine = { id: number; item: string; description: string; qty: number; rate: number };
+/**
+ * One QuickBooks invoice line in the cart. The rate is the price of ONE. A
+ * counted line's description counts its pieces ("[1] - 16FT", a retainer or
+ * a strut) and the count follows the quantity (16/10/2026): the description
+ * is kept as added, and lineText writes the quantity into it.
+ */
+export type CartLine = { id: number; item: string; description: string; qty: number; rate: number; counted?: boolean };
 export type NewCartLine = Omit<CartLine, "id">;
 
 type CartApi = {
@@ -85,6 +91,11 @@ export function AddToCart({ lines, testId = "add-to-cart" }: { lines: NewCartLin
 
 const fmt = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD" });
 
+/** The description as it pastes: a counted line says its quantity in its piece count. */
+export function lineText(l: Pick<CartLine, "description" | "qty" | "counted">): string {
+  return l.counted ? withPieceCount(l.description, l.qty) : l.description;
+}
+
 /**
  * Asked once the cart has been copied to QuickBooks: clear it now? The lines
  * are in QuickBooks, so most of the time the answer is yes and the next job
@@ -120,7 +131,7 @@ export function CartTool() {
   const { lines, setQty, remove, clear } = cart;
   // A blank row between every line, as the door and its vinyl paste — the
   // paste script moves down a row for each line break.
-  const qbText = lines.map((l) => quickBooksRow(l.item, l.description, l.qty, l.rate)).join("\n\n");
+  const qbText = lines.map((l) => quickBooksRow(l.item, lineText(l), l.qty, l.rate)).join("\n\n");
 
   return (
     <div className="wrap two">
@@ -138,14 +149,14 @@ export function CartTool() {
               <div className="cart-row" key={l.id} data-testid="cartline">
                 <span className="cart-item">
                   <span className="cart-text">
-                    <b>{l.description}</b>
+                    <b>{lineText(l)}</b>
                     <small>{l.item}</small>
                   </span>
                 </span>
-                <QtyStepper value={l.qty} testId="cartline-qty" label={`Quantity of ${l.description}`}
+                <QtyStepper value={l.qty} testId="cartline-qty" label={`Quantity of ${lineText(l)}`}
                   onChange={(v) => setQty(l.id, Number(v))} />
                 <span className="cart-price">{fmt(l.rate)}</span>
-                <button type="button" className="cart-del" data-testid="cartline-del" aria-label={`Remove ${l.description}`}
+                <button type="button" className="cart-del" data-testid="cartline-del" aria-label={`Remove ${lineText(l)}`}
                   onClick={() => remove(l.id)}>×</button>
               </div>
             ))
