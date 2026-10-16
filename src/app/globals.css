@@ -68,28 +68,28 @@
 }
 
 :root:not([data-theme="light"]) {
-  /* Neutral greys in even steps — sidebar darkest, the main area a step
-     lighter, panels a step lighter again, headers and inputs a step on top
-     — with lines a touch lighter than what they sit on, so every card and
-     box lifts off the one under it; one red, kept for buttons and the thing
-     selected (Brandon, 16/10/2026). */
-  --rail: #121316;
-  --canvas: #1a1c20;
-  --surface: #22252a;
-  --surface-2: #2a2e34;
-  --surface-3: #33373e;
-  --line: #353a41;
-  --line-2: #2d3137;
-  --line-strong: #4a515a;
+  /* Near-black neutral greys with the depth done by light, not colour: borders
+     are white at a few percent, every card carries a hairline highlight along
+     its top edge and a deep soft shadow, and the page has a faint glow behind
+     the content — the look of Brandon's reference of 16/10/2026. One red,
+     kept for buttons and the thing selected. */
+  --rail: #0b0b0c;
+  --canvas: #111113;
+  --surface: #18181b;
+  --surface-2: #1f1f23;
+  --surface-3: #27272c;
+  --line: rgba(255, 255, 255, .09);
+  --line-2: rgba(255, 255, 255, .06);
+  --line-strong: rgba(255, 255, 255, .18);
 
-  --ink: #f3f4f6;
-  --ink-2: #d5d9de;
-  --muted: #a3aab4;
-  --muted-2: #7c838d;
+  --ink: #f2f2f3;
+  --ink-2: #cfcfd3;
+  --muted: #9d9da4;
+  --muted-2: #6f6f77;
 
   --accent: #c0262f;
   --accent-hover: #d8303a;
-  --accent-ink: #ff5c66;        /* the red as text: the button red is too dark to read on grey */
+  --accent-ink: #ff6b74;        /* the red as text: the button red is too dark to read on near-black */
   --accent-soft: var(--surface-3);
   --accent-line: var(--accent);
 
@@ -100,10 +100,24 @@
   --bad-soft: rgba(255, 138, 122, .12);
   --bad-line: rgba(255, 138, 122, .35);
 
-  --shadow-float: 0 1px 2px rgba(0, 0, 0, .4), 0 18px 40px -20px rgba(0, 0, 0, .85);
+  --shadow-float: inset 0 1px 0 rgba(255, 255, 255, .05), 0 1px 2px rgba(0, 0, 0, .6), 0 24px 48px -24px rgba(0, 0, 0, .9);
 
   color-scheme: dark;
 }
+/* The cards: a hairline of light along the top edge and a soft, deep shadow,
+   so they float off the page instead of sitting on it. */
+:root:not([data-theme="light"]) .tool-shell :is(.panel, .ggroup, .qtotalbox) {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05), 0 1px 2px rgba(0, 0, 0, .5), 0 20px 40px -24px rgba(0, 0, 0, .85);
+}
+:root:not([data-theme="light"]) .tool-shell .panel:has(> .step > .ggroup) { box-shadow: none; }
+:root:not([data-theme="light"]) .tool-shell .ghdr { background: rgba(255, 255, 255, .035); }
+/* A faint glow high on the page, behind the content. */
+:root:not([data-theme="light"]) .tool-shell .main {
+  background:
+    radial-gradient(900px 420px at 30% -120px, rgba(255, 255, 255, .055), transparent 70%),
+    radial-gradient(700px 360px at 90% 10%, rgba(192, 38, 47, .07), transparent 70%);
+}
+:root:not([data-theme="light"]) .tool-shell .topbar { background: rgba(17, 17, 19, .82); backdrop-filter: blur(10px); }
 
 :root[data-sidebar="collapsed"] { --side-w: 76px; }
 
