@@ -93,6 +93,7 @@ describe("every quantity box in the app is a stepper", () => {
   const ALLOWED = [
     'data-testid="parts-feet"', 'data-testid="cable-ft"', 'data-testid="cable-in"', // feet and inches
     'data-testid="width-ft"', 'data-testid="height-ft"', 'data-testid="comm-width-ft"', // door and section sizes
+    'data-testid={`comm-stile-', // a stile location's inches (15/10/2026)
     'data-testid="track-width-ft"', 'data-testid="track-height-ft"', // the door a residential track set is for
     'step="0.01"', // prices
   ];

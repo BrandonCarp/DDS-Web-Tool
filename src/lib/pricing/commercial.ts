@@ -4,8 +4,8 @@
 import { collapseUpcharges } from "./types";
 import { COMM_MATRIX, COMM_SECTIONS, COMM_SECTION_STOCK, COMM_SLAB, STOCK_COMM, GRADE_COMM } from "./data/commercial";
 import {
-  COMM_COMPLETE, maxWindows, roundedFeet, slabBilledFeet, SLAB_MIN_FEET, SECTION_MAX_WIDTH_IN, maxWidthLabel, sectionColors,
-  sectionWindowSizes, asksStileLocations,
+  COMM_COMPLETE, panelCount, panelsPhrase, joinAnd, roundedFeet, slabBilledFeet, SLAB_MIN_FEET, SECTION_MAX_WIDTH_IN, maxWidthLabel, sectionColors,
+  sectionWindowSizes, stileLocationCount,
 } from "./data/commercial-meta";
 
 export interface CommQuoteLine { name: string; value: number; kind: "base" | "add" | "minus" }
@@ -32,6 +32,10 @@ export interface CommCompleteInput {
   color?: string;
   /** Which section the windows sit in, 1-based. Defaults to the third. */
   winSection?: number;
+  /** The panels of that section with windows, 1-based from the left; every panel when not given (15/10/2026). */
+  windowPanels?: number[];
+  /** The windows' size, from sectionWindowSizes; the model's first where not given. */
+  windowSize?: string;
 }
 export interface CommSectionInput {
   order: "section";
@@ -39,13 +43,17 @@ export interface CommSectionInput {
   manFt?: number; manIn?: number;     // customer's width — any size
   secKind: "bt" | "int";
   secHeight: "21" | "24";
-  windows?: number;                   // intermediate sections only
+  windows?: number;                   // intermediate sections only: a count, where the panels are not named
+  /** The panels with windows, 1-based from the left (15/10/2026); their count is the windows. */
+  windowPanels?: number[];
   /** The windows' size, from sectionWindowSizes (24x12, 24x6, 24x8); the model's first where not given. */
   windowSize?: string;
   retainer?: boolean;                 // DEPRECATED — ignored; retainer is always included on bottom sections
   stile?: "none" | "single" | "double"; // per-foot only
-  /** Where the stiles go, as the counter types it — asked on a 524 or 2415 from 10'0" wide (14/10/2026). */
-  stileLocations?: string;
+  /** The stile measurements, left to right, as typed — a 524 or 2415 (stileLocationCount shows how many; more may be added). */
+  stileLocations?: string[];
+  /** The locations are still to come: the line ends "stile locations needed". */
+  stileLocationsNeeded?: boolean;
   color?: "White" | "Brown";          // DESCRIPTION ONLY — individual sections come in white or brown
                                       // at the same price. No colour data exists in the source books;
                                       // if brown ever carries an upcharge it must come from a parsed
@@ -141,14 +149,27 @@ export function quoteCommercial(input: CommInput): CommQuote {
     const cgrade = GRADE_COMM[model] || "insulated";
 
     // Windows are called out by the section they sit in — "in the third
-    // section" — because that is what the installer needs off the line. Plain
-    // ASCII inch marks throughout: this string is pasted into QuickBooks.
+    // section" — because that is what the installer needs off the line, and
+    // by the panels of it when not every panel has one: "one 24x12 window in
+    // the middle of the third section" (15/10/2026). Plain ASCII inch marks
+    // throughout: this string is pasted into QuickBooks.
     const insulation = RIBBED_SECTION_INSULATION[model];
+    // A complete door's windows are 24x12 unless another size is picked \u2014 the
+    // line has always read so; the section lines lead with the model's first.
+    const sizes = sectionWindowSizes(model);
+    const winSize = input.windowSize && sizes.includes(input.windowSize) ? input.windowSize : sizes.includes("24x12") ? "24x12" : sizes[0];
+    const dw = String(input.size).match(/(\d+)\u2032(\d+)\u2033/);
+    const panels = dw ? panelCount(Number(dw[1]), Number(dw[2])) : 0;
+    const picked = [...new Set((input.windowPanels ?? []).map((n) => Math.trunc(n)))].filter((n) => n >= 1 && n <= panels);
+    const partial = picked.length > 0 && picked.length < panels;
+    const glassWord = model === "3200" ? "insulated " : insulation ? "" : `${cgrade} `;
     // "solid no windows" with no comma, as the door lines read everywhere
     // (Brandon, 9/10/2026).
     const winTxt =
       input.glass === "glass"
-        ? `${model === "3200" ? "insulated 24x12" : insulation ? "24x12" : cgrade} windows in the ${ordinal(input.winSection)} section`
+        ? partial
+          ? `${countWord(picked.length)} ${glassWord}${winSize} ${picked.length === 1 ? "window" : "windows"} ${panelsPhrase(panels, picked)} of the ${ordinal(input.winSection)} section`
+          : `${glassWord}${winSize} windows in the ${ordinal(input.winSection)} section`
         : "solid no windows";
     const colorTxt = `in the color ${(input.color || "White").toLowerCase()}`;
     // Ribbed models say the insulation and no grade word; then the colour and
@@ -257,30 +278,40 @@ export function quoteCommercial(input: CommInput): CommQuote {
   } else {
     return { ...base, sub, incomplete: "No section pricing for this model" };
   }
-  // windows on any intermediate section
-  if (input.secKind === "int") {
-    const n = Math.trunc(Number(input.windows)) || 0;
-    const mx = maxWindows(rFeet);
-    if (n > 0) lines.push({ name: `Windows ×${Math.min(n, mx)}`, value: COMM_SLAB.adders.window * Math.min(n, mx), kind: "add" });
-  }
+  // Windows on an intermediate section: one a panel, the panels chosen from
+  // the left (15/10/2026), or a plain count where none are named.
+  const panels = panelCount(ft, inch);
+  const picked = input.secKind !== "int" ? []
+    : [...new Set((input.windowPanels ?? []).map((n) => Math.trunc(n)))].filter((n) => n >= 1 && n <= panels).sort((a, b) => a - b);
+  const nWin = input.secKind !== "int" ? 0 : input.windowPanels ? picked.length : Math.min(Math.trunc(Number(input.windows)) || 0, panels);
+  if (nWin > 0) lines.push({ name: `Windows ×${nWin}`, value: COMM_SLAB.adders.window * nWin, kind: "add" });
   const unitPrice = lines.reduce((a, l) => a + (l.kind === "minus" ? -l.value : l.value), 0);
 
   // Description for a replacement section. Written in the counter's own order —
   // manufacturer, model, size, what the section IS, colour, windows, stiles —
   // so it can be pasted straight onto a QuickBooks estimate line.
-  const nWin = input.secKind === "int" ? Math.min(Math.trunc(Number(input.windows)) || 0, maxWindows(rFeet)) : 0;
   const asciiWidth = `${ft}'${inch ? inch + '"' : '0"'}`;
   const insulation = RIBBED_SECTION_INSULATION[model];
   // The windows: "two 24x12 double strength b grade glass windows" — the size
   // the model's sections take (24x12 or 24x6 on a 524 or 2415, 24x8 or 24x12
-  // on a 3200), the glass insulated on an insulated door (Brandon, 14/10/2026).
+  // on a 3200), the glass insulated on an insulated door (Brandon, 14/10/2026)
+  // — and where not every panel has one, which: "one 24x12 ... window in the
+  // middle panel" (15/10/2026).
   const sizes = sectionWindowSizes(model);
   const winSize = input.windowSize && sizes.includes(input.windowSize) ? input.windowSize : sizes[0];
-  const windowsPhrase = nWin > 0 ? `${countWord(nWin)} ${winSize} ${sectionGlassWord(model)} glass ${nWin === 1 ? "window" : "windows"}` : null;
+  const where = picked.length > 0 && picked.length < panels ? ` ${panelsPhrase(panels, picked)}` : "";
+  const windowsPhrase = nWin > 0 ? `${countWord(nWin)} ${winSize} ${sectionGlassWord(model)} glass ${nWin === 1 ? "window" : "windows"}${where}` : null;
   const color = input.color === "Brown" ? "Brown" : "White";
-  // Stile locations are asked for on a 524 or 2415 from 10'0" wide, and go on the line as typed.
-  const stileLocations = asksStileLocations(model, ft, inch) && input.stileLocations?.trim()
-    ? `stile locations ${input.stileLocations.trim()}` : null;
+  // The stile locations of a 524 or 2415, one a stile, left to right, as typed
+  // — "stile locations 59"  82-1/4" and 90-1/2"", two spaces between them and
+  // "and" before the last, like the vinyl — or "stile locations needed" when
+  // they are still to come (Brandon, 15/10/2026). The sheet's count by width
+  // is what the counter is shown; a stile added past it is written too.
+  const stileCount = stileLocationCount(model, ft, inch);
+  const typed = stileCount > 0 ? (input.stileLocations ?? []).slice(0, 10).map((x) => String(x ?? "").trim()).filter(Boolean) : [];
+  const stileLocations = stileCount > 0 && input.stileLocationsNeeded
+    ? "stile locations needed"
+    : typed.length ? `stile locations ${joinAnd(typed, "  ")}` : null;
   const description = insulation
     // The 524 and 2415 — Brandon's wording of 14/10/2026: the section, the
     // colour, the windows or SOLID NO WINDOWS on an intermediate, the

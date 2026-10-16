@@ -268,6 +268,10 @@ describe("the welcome cards", () => {
     fireEvent.click(document.querySelector('.side [data-tab="commercial"]') as HTMLElement);
     expect(screen.getByTestId("door-show").querySelector("img")?.getAttribute("src")).toMatch(/^\/door-photos\/commercial\//);
     expect(screen.getByText("Select your commercial configuration")).toBeTruthy();
+    // Complete door or replacement section comes first (15/10/2026); the maker and model after.
+    expect(screen.queryByText("Pick a manufacturer and model, then Configure.")).toBeNull();
+    fireEvent.click(screen.getByTestId("comm-order-section"));
+    expect(screen.getByTestId("door-show").querySelector("img")?.getAttribute("src")).toMatch(/^\/door-photos\/commercial\//);
     expect(screen.getByText("Pick a manufacturer and model, then Configure.")).toBeTruthy();
   });
 });

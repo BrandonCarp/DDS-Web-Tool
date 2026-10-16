@@ -220,7 +220,49 @@ export function commMfrs(): string[] {
 export function commModelsFor(mfr: string): string[] {
   return [...new Set([...(COMM_COMPLETE_MODELS[mfr] ?? []), ...(COMM_SECTION_MODELS[mfr] ?? [])])];
 }
-export function maxWindows(ft: number): number { if (ft <= 9) return 2; if (ft <= 13) return 3; if (ft <= 16) return 4; return 5; }
+/**
+ * A section's panels, and the stiles between them, by width — CJ's RIBBED
+ * SECTIONS sheet (15/10/2026): up to 9'2" two panels and one stile, 9'3" to
+ * 13'2" three and two, 13'3" to 16'2" four and three, 16'3" to 20'2" five and
+ * four, 20'3" to 24'2" six and five, 24'3" and up seven and six. A window goes
+ * in a panel, so the panels are the most windows a section takes (it had been
+ * 2 / 3 / 4 / 5 by rounded feet, which agrees to 20'2").
+ */
+const PANEL_BANDS: { toIn: number; panels: number }[] = [
+  { toIn: 9 * 12 + 2, panels: 2 }, { toIn: 13 * 12 + 2, panels: 3 }, { toIn: 16 * 12 + 2, panels: 4 },
+  { toIn: 20 * 12 + 2, panels: 5 }, { toIn: 24 * 12 + 2, panels: 6 },
+];
+export function panelCount(ft: number, inch = 0): number {
+  const w = ft * 12 + inch;
+  return PANEL_BANDS.find((b) => w <= b.toIn)?.panels ?? 7;
+}
+/** The most windows a section takes: one a panel. */
+export function maxWindows(ft: number, inch = 0): number { return panelCount(ft, inch); }
+
+/**
+ * The panels named left to right, as the stile measurements are taken: left
+ * and right; left, middle and right; past three, first to seventh from the
+ * left.
+ */
+export function panelNames(panels: number): string[] {
+  if (panels <= 2) return ["left", "right"].slice(0, panels);
+  if (panels === 3) return ["left", "middle", "right"];
+  return ["first", "second", "third", "fourth", "fifth", "sixth", "seventh"].slice(0, panels);
+}
+
+/** "a", "a and b", "a, b and c" — or with another separator between the first ones. */
+export function joinAnd(items: string[], sep = ", "): string {
+  if (items.length <= 1) return items.join("");
+  return `${items.slice(0, -1).join(sep)} and ${items[items.length - 1]}`;
+}
+
+/** "in the middle panel", "in the left and right panels", "in the second and fourth panels from the left". */
+export function panelsPhrase(panels: number, chosen: number[]): string {
+  const names = panelNames(panels);
+  const picked = [...new Set(chosen)].filter((n) => n >= 1 && n <= panels).sort((a, b) => a - b).map((n) => names[n - 1]);
+  if (!picked.length) return "";
+  return `in the ${joinAnd(picked)} ${picked.length === 1 ? "panel" : "panels"}${panels > 3 ? " from the left" : ""}`;
+}
 export function roundedFeet(ft: number, inch: number): number { return ft + (inch >= 5 ? 1 : 0); }
 
 /**
@@ -299,9 +341,49 @@ export function sectionWindowSizes(model: string): readonly string[] {
   return SECTION_WINDOW_SIZES[model] ?? ["24x12"];
 }
 
-/** The 524 and 2415 families: the steel ribbed sections, which ask for stile locations from 10'0" wide (14/10/2026). */
+/**
+ * The 524 and 2415 families: the steel ribbed sections, whose stile locations
+ * are asked for — one measurement a stile, left to right, as CJ's sheet counts
+ * them by width (15/10/2026; from 10'0" only on the 14th).
+ */
 export const RIBBED_SECTION_MODELS = new Set(["524", "524V", "524S", "2415", "2415V", "2415S"]);
-export const STILE_LOCATIONS_FROM_IN = 120;
-export function asksStileLocations(model: string, ft: number, inch: number): boolean {
-  return RIBBED_SECTION_MODELS.has(model) && ft * 12 + inch >= STILE_LOCATIONS_FROM_IN;
+export function stileLocationCount(model: string, ft: number, inch: number): number {
+  return RIBBED_SECTION_MODELS.has(model) && ft > 0 ? panelCount(ft, inch) - 1 : 0;
+}
+
+/**
+ * A complete door's window placement, written the way Clopay's order form
+ * has it — GL or SOL a panel, left to right: "GL,GL,GL", "GL,SOL,SOL"
+ * (Brandon, 15/10/2026). Every placement with at least one window, all glass
+ * first, then by the windows there are, left to right.
+ */
+export function windowPlacements(panels: number): string[] {
+  const n = Math.max(0, Math.min(8, Math.trunc(panels)));
+  // A placement is a bit a panel, the left panel the high bit: GL where set.
+  const windows = (mask: number) => mask.toString(2).split("1").length - 1;
+  const masks = Array.from({ length: (1 << n) - 1 }, (_, i) => i + 1).sort((a, b) => windows(b) - windows(a) || b - a);
+  return masks.map((mask) => Array.from({ length: n }, (_, i) => (mask & (1 << (n - 1 - i)) ? "GL" : "SOL")).join(","));
+}
+/** The panels (1-based, left to right) a placement puts glass in. */
+export function placementPanels(placement: string): number[] {
+  return placement.split(",").map((x, i) => (x.trim().toUpperCase() === "GL" ? i + 1 : 0)).filter((n) => n > 0);
+}
+/** The placement of a set of panels across a door of `panels`: "GL,SOL,GL". */
+export function placementOf(panels: number, chosen: readonly number[]): string {
+  return Array.from({ length: Math.max(0, panels) }, (_, i) => (chosen.includes(i + 1) ? "GL" : "SOL")).join(",");
+}
+
+/** The glass a section's windows are, as the dropdown names it: double strength on a non-insulated 524 or 2415, insulated otherwise. */
+export function sectionGlassLabel(model: string): string {
+  return model === "524" || model === "2415" ? "Double Strength" : "Insulated";
+}
+
+/** A stile location's parts: whole inches, then the quarter (15/10/2026). */
+export const STILE_FRACTIONS = ["0", "1/4", "1/2", "3/4"] as const;
+/** `59"`, `82-1/4"`; blank where no inches are typed. */
+export function stileLocationText(inches: string, fraction: string): string {
+  const whole = inches.trim();
+  if (!whole) return "";
+  const frac = (STILE_FRACTIONS as readonly string[]).includes(fraction) && fraction !== "0" ? `-${fraction}` : "";
+  return `${whole}${frac}"`;
 }

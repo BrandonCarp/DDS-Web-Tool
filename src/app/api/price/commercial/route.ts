@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { quoteCommercial, type CommInput } from "@/lib/pricing/commercial";
 
+/** The panels with windows, as sent: whole numbers, or nothing when the body names none. */
+function panels(v: unknown): number[] | undefined {
+  return Array.isArray(v) ? v.map(Number).filter((n) => Number.isInteger(n) && n > 0).slice(0, 8) : undefined;
+}
+
 export async function POST(req: Request) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -26,6 +31,10 @@ export async function POST(req: Request) {
       mount: b.mount === "reverse" ? "reverse" : "continuous",
       cspring: b.cspring === "extension" ? "extension" : "torsion",
       clock: b.clock === "slide" ? "slide" : "none",
+      color: typeof b.color === "string" ? b.color : undefined,
+      winSection: Number(b.winSection) || undefined,
+      windowPanels: panels(b.windowPanels),
+      windowSize: typeof b.windowSize === "string" ? b.windowSize : undefined,
     };
   } else {
     input = {
@@ -34,12 +43,14 @@ export async function POST(req: Request) {
       secKind: b.secKind === "int" ? "int" : "bt",
       secHeight: b.secHeight === "24" ? "24" : "21",
       windows: Number(b.windows) || 0,
+      windowPanels: panels(b.windowPanels),
       // Checked against the model's own sizes in the engine.
       windowSize: typeof b.windowSize === "string" ? b.windowSize : undefined,
       retainer: b.retainer === true,
       // Sections always carry end stiles now; single is the default.
       stile: b.stile === "double" ? "double" : "single",
-      stileLocations: typeof b.stileLocations === "string" ? b.stileLocations.slice(0, 120) : undefined,
+      stileLocations: Array.isArray(b.stileLocations) ? b.stileLocations.slice(0, 10).map((x) => String(x ?? "").slice(0, 40)) : undefined,
+      stileLocationsNeeded: b.stileLocationsNeeded === true,
       color: b.color === "Brown" ? "Brown" : "White",
     };
   }

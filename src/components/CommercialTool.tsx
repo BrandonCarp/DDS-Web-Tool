@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useState } from "react";
 import type { SearchPick } from "@/lib/search";
 import { DoorSlideshow } from "./DoorSlideshow";
 import { COMMERCIAL_PHOTOS } from "@/lib/door-photos";
@@ -12,11 +12,13 @@ import { QbLineDemo } from "@/components/QbLineDemo";
 import { QB_ITEMS } from "@/lib/qb/iif";
 import { useCustomerJob } from "@/components/CustomerJobFields";
 import {
-  COMM_COMPLETE, COMM_MATRIX_SIZES,
-  SLAB_RATE, SLAB_LABEL, commMfrs, commModelsFor, maxWindows, roundedFeet,
-  SECTION_MAX_WIDTH_IN, maxWidthLabel, sectionColors,
-  STOCK_SECTION_WIDTHS, sectionWidthLabel, sectionWindowSizes, asksStileLocations,
+  COMM_COMPLETE, COMM_COMPLETE_MODELS, COMM_SECTION_MODELS, COMM_MATRIX_SIZES,
+  SLAB_RATE, SLAB_LABEL, panelCount, placementOf, placementPanels, windowPlacements,
+  SECTION_MAX_WIDTH_IN, maxWidthLabel, sectionColors, sectionGlassLabel,
+  STOCK_SECTION_WIDTHS, sectionWidthLabel, sectionWindowSizes, stileLocationCount,
+  STILE_FRACTIONS, stileLocationText,
 } from "@/lib/pricing/data/commercial-meta";
+import { PanelDiagram } from "./PanelDiagram";
 import { homeownerMarkup } from "@/lib/pricing/engine";
 import { QtyStepper } from "./QtyStepper";
 
@@ -29,7 +31,9 @@ const fmt = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigi
 
 export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const start = openOn?.kind === "commdoor" ? openOn : null;
-  const [step, setStep] = useState<1 | 2>(1);
+  // Complete door or replacement section comes first, as two buttons (Brandon,
+  // 15/10/2026), then the maker and model, then the configuration.
+  const [step, setStep] = useState<0 | 1 | 2>(start ? 1 : 0);
   const [mfr, setMfr] = useState(start?.mfr ?? "");
   const [model, setModel] = useState(start?.model ?? "");
 
@@ -44,19 +48,29 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   // Windows are called out by section on the description; third is the common one.
   const [winSection, setWinSection] = useState("3");
   // section config
-  const [order, setOrder] = useState<"complete" | "section">("section");
+  const [order, setOrder] = useState<"complete" | "section">(start ? (COMM_COMPLETE.has(start.model) ? "complete" : "section") : "section");
   const [manFt, setManFt] = useState("");
   const [manIn, setManIn] = useState("0");
   const [secKind, setSecKind] = useState<"bt" | "int">("bt");
   const [homeowner, setHomeowner] = useState(false);
-  const [secHeight, setSecHeight] = useState<"21" | "24">("21");
-  const [windows, setWindows] = useState("0");
+  // 24" first and by default (Brandon, 15/10/2026).
+  const [secHeight, setSecHeight] = useState<"21" | "24">("24");
+  // The panels with windows, 1-based from the left (15/10/2026): pressed on
+  // the section diagram, or read off a complete door's placement ("GL,SOL,GL").
+  // Glass starts with a window in every panel.
+  const [winPanels, setWinPanels] = useState<number[]>([]);
   // The windows' size, where the model's sections come in more than one
   // (24x12 or 24x6 on a 524 or 2415, 24x8 or 24x12 on a 3200 — 14/10/2026).
   const [windowSize, setWindowSize] = useState("");
+  // A section's glass, as its dropdown has it: "" for solid, else the size.
+  const [secGlass, setSecGlass] = useState("");
   const [stile, setStile] = useState<"single" | "double">("single");
-  // Where the stiles go, asked on a 524 or 2415 from 10'0" wide (14/10/2026).
-  const [stileLocations, setStileLocations] = useState("");
+  // The stile measurements of a 524 or 2415, one a stile, left to right —
+  // the inches and the quarter — as many as the sheet asks by width, plus
+  // any added; or "needed" when they are still to come (15/10/2026).
+  const [stileVals, setStileVals] = useState<{ inch: string; frac: string }[]>([]);
+  const [extraStiles, setExtraStiles] = useState(0);
+  const [stilesNeeded, setStilesNeeded] = useState(false);
   const [secColor, setSecColor] = useState<"White" | "Brown">("White");
 
   const [qty, setQty] = useState(1);
@@ -66,7 +80,6 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const [errorRaw, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
-  const canComplete = COMM_COMPLETE.has(model);
   const hasRate = SLAB_RATE[model] != null;
   const stockWidths = STOCK_SECTION_WIDTHS[model];
   const perFoot = hasRate; // per-foot rate models; others price from the section cost table
@@ -80,14 +93,36 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
     manFt === "" ||
     stockWidths.includes(`${Math.trunc(Number(manFt)) || 0}.${Math.trunc(Number(manIn)) || 0}`);
 
-  const rFeet = useMemo(() => {
-    if (order !== "section") return null;
-    const ft = parseInt(manFt, 10);
-    const inch = parseInt(manIn, 10) || 0;
-    if (Number.isNaN(ft)) return null;
-    return roundedFeet(ft, inch);
-  }, [order, manFt, manIn]);
-  const mx = rFeet ? maxWindows(rFeet) : 0;
+  // The panels of the section (or of a complete door's glazed section), from
+  // its width: a window goes in a panel, a stile between each two.
+  const sizeDims = String(size).match(/(\d+)\u2032(\d+)\u2033/);
+  const widthIn = order === "complete"
+    ? (sizeDims ? Number(sizeDims[1]) * 12 + Number(sizeDims[2]) : 0)
+    : (parseInt(manFt, 10) || 0) * 12 + (parseInt(manIn, 10) || 0);
+  const panels = widthIn > 0 ? panelCount(0, widthIn) : 0;
+  const glassOn = order === "complete" ? glass === "glass" : secKind === "int" && secGlass !== "";
+  const winPanelsUsed = glassOn ? winPanels.filter((n) => n >= 1 && n <= panels) : [];
+  const stileCount = order === "section" ? stileLocationCount(model, parseInt(manFt, 10) || 0, parseInt(manIn, 10) || 0) : 0;
+  const stileRows = stileCount > 0 ? stileCount + extraStiles : 0;
+  const stileValsUsed = Array.from({ length: stileRows }, (_, i) => stileVals[i] ?? { inch: "", frac: "0" });
+  const stileLocationsUsed = stileValsUsed.map((v) => stileLocationText(v.inch, v.frac));
+  function togglePanel(p: number) {
+    setWinPanels((cur) => (cur.includes(p) ? cur.filter((x) => x !== p) : [...cur, p].sort((a, b) => a - b)));
+  }
+  const allPanels = (n: number) => Array.from({ length: n }, (_, i) => i + 1);
+  function setStileVal(i: number, patch: Partial<{ inch: string; frac: string }>) {
+    setStileVals((cur) => {
+      const next = Array.from({ length: Math.max(stileRows, i + 1) }, (_, k) => cur[k] ?? { inch: "", frac: "0" });
+      next[i] = { ...next[i], ...patch };
+      return next;
+    });
+  }
+  /** A section's glass, from its dropdown: solid clears the panels; a glass size starts with a window in every panel. */
+  function pickSecGlass(v: string) {
+    setSecGlass(v);
+    if (v) setWindowSize(v);
+    setWinPanels(v ? allPanels(panels) : []);
+  }
 
   // Widest section this model may be ordered in, for the input hint and the
   // number field's max. quoteCommercial() enforces it regardless.
@@ -95,11 +130,14 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const maxIn = SECTION_MAX_WIDTH_IN[model] ?? null;
   const maxFt = maxIn != null ? Math.floor(maxIn / 12) : null;
   const overMax = maxIn != null && manFt !== "" && (Number(manFt) * 12 + (Number(manIn) || 0)) > maxIn;
+  // A complete door's windows are 24x12 unless another size is picked; a
+  // section's lead with the model's first (24x8 on a 3200) — as the engine reads them.
   const winSizes = sectionWindowSizes(model);
-  const winSizeUsed = winSizes.includes(windowSize) ? windowSize : winSizes[0];
-  const askStiles = order === "section" && asksStileLocations(model, Number(manFt) || 0, Number(manIn) || 0);
+  const winSizeUsed = winSizes.includes(windowSize) ? windowSize : order === "complete" && winSizes.includes("24x12") ? "24x12" : winSizes[0];
+  const placements = order === "complete" ? windowPlacements(panels) : [];
+  const placement = placementOf(panels, winPanelsUsed);
 
-  const cfgSig = JSON.stringify([mfr, model, order, size, glass, track, mount, cspring, clock, cColor, winSection, manFt, manIn, secKind, secHeight, windows, winSizeUsed, stile, stileLocations, secColor, homeowner]);
+  const cfgSig = JSON.stringify([mfr, model, order, size, glass, track, mount, cspring, clock, cColor, winSection, manFt, manIn, secKind, secHeight, secGlass, winPanelsUsed, winSizeUsed, stile, stileLocationsUsed, stilesNeeded, secColor, homeowner]);
   const result = resultRaw && resultSig === cfgSig ? resultRaw : null;
   const liveError = errorRaw && resultSig === cfgSig ? errorRaw : null;
   const priced = result?.priced ?? false;
@@ -116,25 +154,44 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   function pickModel(m: string) {
     setModel(m);
     setSize(""); setManFt(""); setManIn("0");
-    setWindows("0"); setStile("single"); setSecColor("White");
-    setOrder(COMM_COMPLETE.has(m) ? "complete" : "section");
+    setWinPanels([]); setSecGlass(""); setWindowSize(""); setStile("single"); setSecColor("White"); setStileVals([]); setExtraStiles(0); setStilesNeeded(false);
+  }
+  /** The order type, as the first two buttons ask it: it decides which models are listed. */
+  function pickOrder(o: "complete" | "section") {
+    setOrder(o); setMfr(""); setModel(""); setStep(1);
+  }
+  const modelsFor = (m: string) => (order === "complete" ? COMM_COMPLETE_MODELS[m] ?? [] : COMM_SECTION_MODELS[m] ?? []);
+  const mfrsFor = Object.keys(order === "complete" ? COMM_COMPLETE_MODELS : COMM_SECTION_MODELS);
+  /** A complete door's glass starts with a window in every panel (GL,GL,GL); a size change keeps it that way. */
+  function pickSize(v: string) {
+    setSize(v);
+    const d = v.match(/(\d+)\u2032(\d+)\u2033/);
+    setWinPanels(d ? allPanels(panelCount(Number(d[1]), Number(d[2]))) : []);
+  }
+  /** A section's width: the panels and stiles follow it, so what was pressed or added starts over. */
+  function pickWidth(ft: string, inch: string) {
+    setManFt(ft); setManIn(inch);
+    const n = (parseInt(ft, 10) || 0) * 12 + (parseInt(inch, 10) || 0);
+    setWinPanels(secGlass && n > 0 ? allPanels(panelCount(0, n)) : []);
+    setExtraStiles(0);
   }
   function resetConfig() {
     setSize(""); setGlass("solid"); setTrack("15R"); setMount("continuous"); setCspring("torsion"); setClock("none");
     setManFt(""); setManIn("0");
-    setSecKind("bt"); setSecHeight("21"); setWindows("0"); setStile("single"); setSecColor("White");
+    setSecKind("bt"); setSecHeight("24"); setWinPanels([]); setSecGlass(""); setWindowSize(""); setStile("single"); setSecColor("White");
+    setStileVals([]); setExtraStiles(0); setStilesNeeded(false);
     setQty(1); setResult(null); setError(null); setSaved(false);
   }
   function onBack() { resetConfig(); setStep(1); }
 
-  const getPrice = useCallback(async () => {
+  async function getPrice() {
     setError(null); setSaved(false);
     try {
       const body =
         order === "complete"
-          ? { order, mfr, model, size, glass, track, mount, cspring, clock, color: cColor, winSection: Number(winSection) || 3 }
-          : { order, mfr, model, manFt: Number(manFt), manIn: Number(manIn) || 0, secKind, secHeight, windows: Number(windows) || 0, windowSize, stile,
-              stileLocations: asksStileLocations(model, Number(manFt) || 0, Number(manIn) || 0) ? stileLocations : undefined, color: secColor };
+          ? { order, mfr, model, size, glass, track, mount, cspring, clock, color: cColor, winSection: Number(winSection) || 3, windowPanels: winPanelsUsed, windowSize: winSizeUsed }
+          : { order, mfr, model, manFt: Number(manFt), manIn: Number(manIn) || 0, secKind, secHeight, windowPanels: winPanelsUsed, windowSize: winSizeUsed, stile,
+              stileLocations: stileLocationsUsed, stileLocationsNeeded: stilesNeeded, color: secColor };
       const res = await fetch("/api/price/commercial", {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
       });
@@ -161,8 +218,41 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
       setError(e instanceof Error ? e.message : "Something went wrong");
       setResult(null); setResultSig(cfgSig);
     }
-  }, [order, mfr, model, size, glass, track, mount, cspring, clock, cColor, winSection, manFt, manIn, secKind, secHeight, windows, windowSize, stile, stileLocations, secColor, qty, cfgSig, custName, custPo, custJob]);
+  }
 
+
+  // ---------------- STEP 0: complete door or replacement section ----------------
+  if (step === 0) {
+    return (
+      <div className="wrap two">
+        <section className="config-col">
+          <div className="panel">
+            <div className="step">
+              <div className="ggroup">
+                <div className="ghdr">Commercial</div>
+                <div className="gbody pnav-body">
+                  <div className="pnav stack">
+                    <div className="pnav-pages" role="group" aria-label="Complete door or replacement section">
+                      <button type="button" className="pnav-page" data-testid="comm-order-complete" onClick={() => pickOrder("complete")}>Complete door</button>
+                      <button type="button" className="pnav-page" data-testid="comm-order-section" onClick={() => pickOrder("section")}>Replacement section</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <aside className="quote">
+          <div className="panel">
+            <div className="empty">
+              <DoorSlideshow photos={COMMERCIAL_PHOTOS} testId="door-show" />
+              <div className="emptymsg">Select your commercial configuration</div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    );
+  }
 
   // ---------------- STEP 1 ----------------
   if (step === 1) {
@@ -171,7 +261,10 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
         <section className="config-col">
           <div className="panel">
             <div className="step">
-              <div className="step-h"><span className="step-n">1</span><h3>Select your door</h3><span className="hint">Commercial</span></div>
+              <div className="step-h">
+                <button type="button" className="btn backbtn" data-testid="comm-back-order" onClick={() => { setMfr(""); setModel(""); setStep(0); }}>‹ Back</button>
+                <h3>{order === "complete" ? "Complete door" : "Replacement section"}</h3><span className="hint">Commercial</span>
+              </div>
               {/* The manufacturer IS the first real choice here — commercial
                   carries four. The disabled "category" box above it only
                   repeated the tab. */}
@@ -179,7 +272,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
                 <div className="selectwrap">
                   <select data-testid="comm-mfr" value={mfr} onChange={(e) => { setMfr(e.target.value); setModel(""); }}>
                     <option value="">Select…</option>
-                    {commMfrs().map((m) => <option key={m} value={m}>{m}</option>)}
+                    {mfrsFor.map((m) => <option key={m} value={m}>{m}</option>)}
                   </select>
                 </div></div>
               {mfr && (
@@ -187,7 +280,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
                   <div className="selectwrap">
                     <select data-testid="comm-model" value={model} onChange={(e) => pickModel(e.target.value)}>
                       <option value="">Select…</option>
-                      {commModelsFor(mfr).map((m) => <option key={m} value={m}>{m}{SLAB_LABEL[m] ? ` - ${SLAB_LABEL[m]}` : ""}</option>)}
+                      {modelsFor(mfr).map((m) => <option key={m} value={m}>{m}{SLAB_LABEL[m] ? ` - ${SLAB_LABEL[m]}` : ""}</option>)}
                     </select>
                   </div></div>
               )}
@@ -225,35 +318,139 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
               <span className="muted-note" style={{ marginLeft: "auto" }}>{mfr}{SLAB_LABEL[model] ? ` · ${SLAB_LABEL[model]}` : ""}</span>
             </div>
 
+            {/* Brandon's layout of 15/10/2026. A complete door: its size and
+                colour with the track options under them on the left, the window
+                options and the lock on the right. A section: the section and its
+                colour on the left, the window options on the right, then — when
+                it has windows — the section drawn across both, and the stile
+                options across both under that. */}
             <div className="cfg2">
-              <div className="ggroup">
-                <div className="ghdr">Layout options</div>
-                <div className="grow">
-                  <label>Assembly type</label>
-                  <div className="ctl selectwrap">
-                    <select value={order} onChange={(e) => setOrder(e.target.value as "complete" | "section")}>
-                      {canComplete && <option value="complete">Complete door</option>}
-                      <option value="section">Replacement section</option>
-                    </select>
-                  </div>
-                </div>
-
-                {order === "complete" ? (
-                  <div className="grow">
-                    <label>Size</label>
-                    <div className="ctl selectwrap">
-                      <select data-testid="comm-size" value={size} onChange={(e) => setSize(e.target.value)}>
-                        <option value="">Select size…</option>
-                        {(COMM_MATRIX_SIZES[model] ?? []).map((s) => <option key={s} value={s}>{s}</option>)}
-                      </select>
+              {order === "complete" ? (
+                <>
+                  <div className="cfgcol">
+                    <div className="ggroup">
+                      <div className="ghdr">Complete door</div>
+                      <div className="grow">
+                        <label>Size</label>
+                        <div className="ctl selectwrap">
+                          <select data-testid="comm-size" value={size} onChange={(e) => pickSize(e.target.value)}>
+                            <option value="">Select size…</option>
+                            {(COMM_MATRIX_SIZES[model] ?? []).map((s) => <option key={s} value={s}>{s}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                      <div className="grow">
+                        <label>Color</label>
+                        <div className="ctl selectwrap">
+                          <select data-testid="comm-door-color" value={cColor} onChange={(e) => setCColor(e.target.value)}>
+                            {colorOpts.map((c) => <option key={c} value={c}>{c}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="ggroup">
+                      <div className="ghdr">Track options</div>
+                      <div className="grow">
+                        <label>Track / lift</label>
+                        <div className="ctl selectwrap">
+                          <select value={track} onChange={(e) => setTrack(e.target.value as "15R" | "FV" | "LHR")}>
+                            <option value="15R">15R (15″ radius)</option>
+                            <option value="FV">Full vertical</option>
+                            <option value="LHR">Low headroom</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="grow">
+                        <label>Track mount</label>
+                        <div className="ctl selectwrap">
+                          <select value={mount} onChange={(e) => setMount(e.target.value as "continuous" | "reverse")}>
+                            <option value="continuous">Continuous angle (wood)</option>
+                            <option value="reverse">Reverse angle (steel)</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="grow">
+                        <label>Spring</label>
+                        <div className="ctl selectwrap">
+                          <select value={cspring} onChange={(e) => setCspring(e.target.value as "torsion" | "extension")}>
+                            <option value="torsion">Torsion</option>
+                            <option value="extension">Extension</option>
+                          </select>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                ) : (
-                  <>
+
+                  <div className="cfgcol">
+                    <div className="ggroup">
+                      <div className="ghdr">Window options</div>
+                      <div className="grow">
+                        <label>Glass type</label>
+                        <div className="ctl selectwrap">
+                          <select data-testid="comm-glass" value={glass} onChange={(e) => setGlass(e.target.value as "solid" | "glass")} disabled={!size}>
+                            <option value="solid">Solid (no windows)</option>
+                            <option value="glass">Glass</option>
+                          </select>
+                        </div>
+                      </div>
+                      {glass === "glass" && (
+                        <>
+                          <div className="grow">
+                            <label>Window section</label>
+                            <div className="ctl selectwrap">
+                              <select data-testid="comm-win-section" value={winSection} onChange={(e) => setWinSection(e.target.value)}>
+                                {["1","2","3","4","5","6"].map((n) => (
+                                  <option key={n} value={n}>{["First","Second","Third","Fourth","Fifth","Sixth"][Number(n)-1]}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                          {/* GL or SOL a panel, left to right, as Clopay's order form has it (15/10/2026). */}
+                          {placements.length > 0 && (
+                            <div className="grow">
+                              <label>Window placement</label>
+                              <div className="ctl selectwrap">
+                                <select data-testid="comm-placement" value={placement} onChange={(e) => setWinPanels(placementPanels(e.target.value))}>
+                                  {placements.map((pl) => <option key={pl} value={pl}>{pl}</option>)}
+                                </select>
+                              </div>
+                            </div>
+                          )}
+                          {winSizes.length > 1 && (
+                            <div className="grow">
+                              <label>Window size</label>
+                              <div className="ctl selectwrap">
+                                <select data-testid="comm-window-size" value={winSizeUsed} onChange={(e) => setWindowSize(e.target.value)}>
+                                  {winSizes.map((w) => <option key={w} value={w}>{w}</option>)}
+                                </select>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                    <div className="ggroup">
+                      <div className="ghdr">Additional options</div>
+                      <div className="grow">
+                        <label>Lock</label>
+                        <div className="ctl selectwrap">
+                          <select value={clock} onChange={(e) => setClock(e.target.value as "none" | "slide")}>
+                            <option value="none">No lock</option>
+                            <option value="slide">Inside slide lock</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className={`ggroup${secKind === "int" || !hasStileChoice ? "" : " span"}`}>
+                    <div className="ghdr">Replacement section</div>
                     <div className="grow">
                       <label>Section type</label>
                       <div className="ctl selectwrap">
-                        <select value={secKind} onChange={(e) => setSecKind(e.target.value as "bt" | "int")}>
+                        <select data-testid="comm-sec-kind" value={secKind} onChange={(e) => setSecKind(e.target.value as "bt" | "int")}>
                           <option value="bt">Bottom section</option>
                           <option value="int">Intermediate section</option>
                         </select>
@@ -262,9 +459,9 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
                     <div className="grow">
                       <label>Section height</label>
                       <div className="ctl selectwrap">
-                        <select value={secHeight} onChange={(e) => setSecHeight(e.target.value as "21" | "24")}>
-                          <option value="21">21″</option>
+                        <select data-testid="comm-sec-height" value={secHeight} onChange={(e) => setSecHeight(e.target.value as "21" | "24")}>
                           <option value="24">24″</option>
+                          <option value="21">21″</option>
                         </select>
                       </div>
                     </div>
@@ -272,7 +469,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
                       <label>Door width</label>
                       <div className="ctl dimstack">
                         <div className="dimrow">
-                          <input data-testid="comm-width-ft" type="number" min={0} max={maxFt ?? undefined} placeholder="ft" value={manFt} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setManFt(v); }} />
+                          <input data-testid="comm-width-ft" type="number" min={0} max={maxFt ?? undefined} placeholder="ft" value={manFt} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) pickWidth(v, manIn); }} />
                           <span className="u">ft</span>
                           {/* A picker, not a number box: 12 or 20 inches used to price a
                               section that cannot be built. The engine re-checks this
@@ -281,7 +478,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
                             <select
                               data-testid="comm-width-in"
                               value={manIn}
-                              onChange={(e) => setManIn(e.target.value)}
+                              onChange={(e) => pickWidth(manFt, e.target.value)}
                             >
                               {Array.from({ length: 12 }, (_, i) => (
                                 <option key={i} value={String(i)}>
@@ -309,153 +506,100 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
                         )}
                       </div>
                     </div>
-                  </>
-                )}
-              </div>
-
-              <div className="ggroup">
-                <div className="ghdr">Window options</div>
-                {order === "complete" ? (
-                  <div className="grow">
-                    <label>Glass type</label>
-                    <div className="ctl selectwrap">
-                      <select value={glass} onChange={(e) => setGlass(e.target.value as "solid" | "glass")} disabled={!size}>
-                        <option value="solid">Solid (no windows)</option>
-                        {/* The 3200 takes insulated 24x12 windows and nothing else, so the
-                            choice says so (Brandon, 9/10/2026), as the line already did. */}
-                        <option value="glass">{model === "3200" ? "Insulated 24x12 windows" : "Glass"}</option>
-                      </select>
-                    </div>
-                  </div>
-                ) : secKind === "int" ? (
-                  <>
-                  <div className="grow">
-                    <label>Windows</label>
-                    <div className="ctl selectwrap">
-                      <select data-testid="comm-windows" value={windows} onChange={(e) => setWindows(e.target.value)}>
-                        <option value="0">Solid — no windows</option>
-                        {Array.from({ length: mx }, (_, i) => i + 1).map((i) => (
-                          <option key={i} value={String(i)}>
-                            {i} window{i > 1 ? "s" : ""}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  {Number(windows) > 0 && winSizes.length > 1 && (
-                    <div className="grow">
-                      <label>Window size</label>
-                      <div className="ctl selectwrap">
-                        <select data-testid="comm-window-size" value={winSizeUsed} onChange={(e) => setWindowSize(e.target.value)}>
-                          {winSizes.map((w) => <option key={w} value={w}>{w}</option>)}
-                        </select>
-                      </div>
-                    </div>
-                  )}
-                  </>
-                ) : (
-                  <div className="grow"><label>Windows</label><div className="ctl"><span className="muted-note">— bottom section —</span></div></div>
-                )}
-              </div>
-
-              {order === "complete" && (
-                <div className="ggroup">
-                  <div className="ghdr">Track options</div>
-                  <div className="grow">
-                    <label>Track / lift</label>
-                    <div className="ctl selectwrap">
-                      <select value={track} onChange={(e) => setTrack(e.target.value as "15R" | "FV" | "LHR")}>
-                        <option value="15R">15R (15″ radius)</option>
-                        <option value="FV">Full vertical</option>
-                        <option value="LHR">Low headroom</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="grow">
-                    <label>Color</label>
-                    <div className="ctl selectwrap">
-                      <select data-testid="comm-door-color" value={cColor} onChange={(e) => setCColor(e.target.value)}>
-                        {colorOpts.map((c) => <option key={c} value={c}>{c}</option>)}
-                      </select>
-                    </div>
-                  </div>
-                  {glass === "glass" && (
-                    <div className="grow">
-                      <label>Windows in section</label>
-                      <div className="ctl selectwrap">
-                        <select data-testid="comm-win-section" value={winSection} onChange={(e) => setWinSection(e.target.value)}>
-                          {["1","2","3","4","5","6"].map((n) => (
-                            <option key={n} value={n}>{["First","Second","Third","Fourth","Fifth","Sixth"][Number(n)-1]}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  )}
-                  <div className="grow">
-                    <label>Track mount</label>
-                    <div className="ctl selectwrap">
-                      <select value={mount} onChange={(e) => setMount(e.target.value as "continuous" | "reverse")}>
-                        <option value="continuous">Continuous angle (wood)</option>
-                        <option value="reverse">Reverse angle (steel)</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="grow">
-                    <label>Spring</label>
-                    <div className="ctl selectwrap">
-                      <select value={cspring} onChange={(e) => setCspring(e.target.value as "torsion" | "extension")}>
-                        <option value="torsion">Torsion</option>
-                        <option value="extension">Extension</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="ggroup">
-                <div className="ghdr">Additional options</div>
-                {order === "complete" ? (
-                  <div className="grow">
-                    <label>Lock</label>
-                    <div className="ctl selectwrap">
-                      <select value={clock} onChange={(e) => setClock(e.target.value as "none" | "slide")}>
-                        <option value="none">No lock</option>
-                        <option value="slide">Inside slide lock</option>
-                      </select>
-                    </div>
-                  </div>
-                ) : hasStileChoice ? (
-                  <>
-                    <div className="grow">
-                      <label>End stiles</label>
-                      <div className="ctl selectwrap">
-                        <select value={stile} onChange={(e) => setStile(e.target.value as "single" | "double")}>
-                          <option value="single">Single</option>
-                          <option value="double">Double</option>
-                        </select>
-                      </div>
-                    </div>
-                    {askStiles && (
+                    {hasStileChoice && (
                       <div className="grow">
-                        <label>Stile locations</label>
-                        <div className="ctl">
-                          <input data-testid="comm-stile-locations" type="text" value={stileLocations} onChange={(e) => setStileLocations(e.target.value)} />
+                        <label>Color</label>
+                        <div className="ctl selectwrap">
+                          <select data-testid="comm-color" value={secColor} onChange={(e) => setSecColor(e.target.value as "White" | "Brown")} disabled={colorOpts.length === 1}>
+                            {colorOpts.map((c) => <option key={c} value={c}>{c}</option>)}
+                          </select>
                         </div>
                       </div>
                     )}
-                    <div className="grow">
-                      <label>Color</label>
-                      <div className="ctl selectwrap">
-                        <select data-testid="comm-color" value={secColor} onChange={(e) => setSecColor(e.target.value as "White" | "Brown")} disabled={colorOpts.length === 1}>
-                          {colorOpts.map((c) => <option key={c} value={c}>{c}</option>)}
-                        </select>
+                  </div>
+
+                  {(secKind === "int" || !hasStileChoice) && (
+                    <div className="ggroup">
+                      <div className="ghdr">Additional options</div>
+                      {secKind === "int" && (
+                        <>
+                          <div className="gsub">Window options</div>
+                          <div className="grow stack">
+                            <label>Glass type</label>
+                            <div className="ctl selectwrap">
+                              <select data-testid="comm-sec-glass" value={secGlass} onChange={(e) => pickSecGlass(e.target.value)}>
+                                <option value="">Solid</option>
+                                {winSizes.map((w) => <option key={w} value={w}>{sectionGlassLabel(model)} {w}</option>)}
+                              </select>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                      {!hasStileChoice && (
+                        <div className="grow"><label>&nbsp;</label><div className="ctl"><span className="muted-note">Any width — priced from the next standard section up. 21″ and 24″ are the same price.</span></div></div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* The section, drawn to its proportions, once it has glass: a
+                      window in every panel to begin with; press one to take it out
+                      (CJ's sheet, 15/10/2026). */}
+                  {secKind === "int" && secGlass !== "" && panels > 0 && (
+                    <div className="ggroup span">
+                      <PanelDiagram panels={panels} windows={new Set(winPanelsUsed)} onToggle={togglePanel} widthIn={widthIn} heightIn={Number(secHeight)} />
+                    </div>
+                  )}
+
+                  {hasStileChoice && (
+                    <div className="ggroup span">
+                      <div className="ghdr">Stile options</div>
+                      {/* Two to a row, so a wide door's stiles fit on the screen: the end
+                          stiles beside the buttons, then the stile locations of a 524 or
+                          2415 — one a stile, as many as the sheet counts by width, each its
+                          inches and quarter; Add Stile for one more; or still to be
+                          determined (15/10/2026). */}
+                      <div className="stilegrid">
+                        <div className="grow compact">
+                          <label>End stiles</label>
+                          <div className="ctl selectwrap">
+                            <select data-testid="comm-end-stiles" value={stile} onChange={(e) => setStile(e.target.value as "single" | "double")}>
+                              <option value="single">Single</option>
+                              <option value="double">Double</option>
+                            </select>
+                          </div>
+                        </div>
+                        {stileCount > 0 && (
+                          <div className="grow compact nolabel">
+                            <div className="ctl stilebtns">
+                              {!stilesNeeded && (
+                                <button type="button" className="btn" data-testid="comm-add-stile" onClick={() => setExtraStiles((n) => n + 1)}>Add Stile</button>
+                              )}
+                              <button type="button" className={`btn${stilesNeeded ? " on" : ""}`} data-testid="comm-stiles-needed" aria-pressed={stilesNeeded}
+                                onClick={() => setStilesNeeded((v) => !v)}>
+                                Stiles to be determined
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                        {stileCount > 0 && !stilesNeeded && stileValsUsed.map((v, i) => (
+                          <div className="grow compact" key={i}>
+                            <label>Stile # {i + 1}</label>
+                            <div className="ctl stilerow">
+                              <input data-testid={`comm-stile-${i + 1}`} type="number" min={0} inputMode="numeric" aria-label={`Stile ${i + 1} inches`}
+                                value={v.inch} onChange={(e) => setStileVal(i, { inch: e.target.value })} />
+                              <div className="selectwrap">
+                                <select data-testid={`comm-stile-${i + 1}-frac`} aria-label={`Stile ${i + 1} fraction`} value={v.frac} onChange={(e) => setStileVal(i, { frac: e.target.value })}>
+                                  {STILE_FRACTIONS.map((f) => <option key={f} value={f}>{f}</option>)}
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  </>
-                ) : (
-                  <div className="grow"><label>&nbsp;</label><div className="ctl"><span className="muted-note">Any width — priced from the next standard section up. 21″ and 24″ are the same price.</span></div></div>
-                )}
-              </div>
+                  )}
+                </>
+              )}
             </div>
 
             <button data-testid="comm-get-price" className="btn primary configbtn" type="button" disabled={priced} onClick={getPrice}>

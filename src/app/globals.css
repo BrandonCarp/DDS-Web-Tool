@@ -1565,3 +1565,45 @@ html, body { margin: 0; padding: 0; }
   .tool-shell .estsheet .es-tot td{padding:2pt 0 2pt 26pt;font-size:9pt}
   .tool-shell .estsheet .es-tot .es-grand td{font-weight:700;font-size:10.5pt;padding-top:5pt}
   .tool-shell .estsheet .es-ph{margin-top:16pt;font-size:8.5pt;line-height:1.6}
+
+/* A commercial section drawn as its panels (CJ's RIBBED SECTIONS sheet,
+   15/10/2026): press a panel for a window. */
+.tool-shell .pdiag { padding: 10px 16px; border-top: 1px solid var(--line-2); }
+.tool-shell .ggroup > .pdiag:first-child { border-top: 0; }
+.tool-shell .pdiag + .grow { border-top: 1px solid var(--line-2); }
+/* Drawn to the section's proportions (aspect-ratio and max-width set inline), up to 110px tall, centred. */
+.tool-shell .pdiag-panels { display: flex; width: 100%; max-height: 90px; margin: 0 auto; border: 2px solid var(--ink); border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.tool-shell .ppanel { flex: 1 1 0; min-width: 0; display: grid; place-items: center; padding: 0; margin: 0; border: 0; border-right: 2px solid var(--ink); background: transparent; cursor: pointer; }
+.tool-shell .ppanel:last-child { border-right: 0; }
+.tool-shell .ppanel:hover { background: var(--surface-3); }
+.tool-shell .ppanel.on { background: var(--surface-3); }
+.tool-shell .pwin { display: block; width: 62%; height: 46%; border: 2px solid var(--accent); border-radius: 2px; background: var(--accent); opacity: 0.85; }
+.tool-shell .btn.on { color: var(--accent-ink); border-color: var(--accent); background: var(--surface-3); }
+/* A row whose control is too wide for the label column: the label sits above it. */
+.tool-shell .grow.stack { grid-template-columns: minmax(0, 1fr); }
+/* The stile rows: shorter, and two to a row, so a wide door's fit on the screen. */
+.tool-shell .grow.compact { padding: 6px 16px; }
+.tool-shell .stilegrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); }
+.tool-shell .grow.nolabel { grid-template-columns: minmax(0, 1fr); }
+.tool-shell .stilegrid > .grow { border-top: 1px solid var(--line-2); }
+.tool-shell .stilegrid > .grow:nth-child(-n + 2) { border-top: 0; }
+.tool-shell .stilegrid > .grow:nth-child(odd) { border-right: 1px solid var(--line-2); }
+.tool-shell .stilegrid .btn { min-height: 38px; padding: 6px 12px; font-size: 13px; }
+@container config (max-width: 659px) {
+  .tool-shell .stilegrid { grid-template-columns: minmax(0, 1fr); }
+  .tool-shell .stilegrid > .grow:nth-child(2) { border-top: 1px solid var(--line-2); }
+  .tool-shell .stilegrid > .grow:nth-child(odd) { border-right: 0; }
+}
+/* A group across both columns of the configuration; a column of groups stacked with no row to line up with. */
+.tool-shell .cfg2 > .span { grid-column: 1 / -1; }
+.tool-shell .cfgcol { display: grid; gap: 14px; align-content: start; min-width: 0; }
+/* A heading inside a group — "Window options" under Additional options. */
+.tool-shell .gsub { padding: 8px 16px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line-2); background: var(--surface-2); font-size: 12.5px; color: var(--muted); }
+.tool-shell .ggroup > .ghdr + .gsub { border-top: 0; }
+/* A stile location: the inches, then the quarter (15/10/2026). */
+.tool-shell .stilerow { display: flex; align-items: center; gap: 6px; }
+.tool-shell .stilerow input { width: 64px; min-height: 36px; padding: 6px; text-align: center; font-size: 14px; }
+.tool-shell .stilerow .selectwrap { flex: none; width: 78px; }
+.tool-shell .stilerow .selectwrap select { min-height: 36px; padding: 6px 24px 6px 8px; font-size: 13.5px; }
+.tool-shell .stilerow .selectwrap::after { right: 10px; }
+.tool-shell .stilebtns { display: flex; flex-wrap: wrap; gap: 8px; }
