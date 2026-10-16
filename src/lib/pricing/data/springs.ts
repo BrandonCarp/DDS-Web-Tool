@@ -66,18 +66,35 @@ export const TORSION_KITS_CATEGORY = "TORSION KITS";
  * They belong in NEW_PARTS_LIST.xlsx: once they are in it and gen_parts.py has
  * been re-run, delete them here, or they will show twice.
  */
-/** A hand-added part may be listed before it has a price: see priceNotSet. */
-export type ShelfPart = Part & { priceNotSet?: boolean };
+/**
+ * A hand-added part may be listed before it has a price: see priceNotSet.
+ * priceNote is what the counter sees in the price's place — "CONTACT CJ FOR
+ * PRICING" (16/10/2026) — in place of the plain "Price not set".
+ */
+export type ShelfPart = Part & { priceNotSet?: boolean; priceNote?: string };
 
 export const HAND_ADDED_PARTS: Record<string, ShelfPart[]> = {
   TRACKS: [
     { name: '36" ADDER PIECE', desc: '36" ADDER PIECE', price: 129.95, sub: "ADDER PIECES" },
     { name: '54" ADDER PIECE', desc: '54" ADDER PIECE', price: 149.95, sub: "ADDER PIECES" },
-    // Pierced track is sold in pairs; the price is the pair's (30/9/2026).
-    { name: '76" PIERCED TRACK', desc: '76" PIERCED TRACK,  PAIR', price: 29.95, sub: "PIERCED TRACK" },
-    { name: '88" PIERCED TRACK', desc: '88" PIERCED TRACK,  PAIR', price: 34.95, sub: "PIERCED TRACK" },
-    { name: '100" PIERCED TRACK', desc: '100" PIERCED TRACK,  PAIR', price: 39.95, sub: "PIERCED TRACK" },
-    { name: '112" PIERCED TRACK', desc: '112" PIERCED TRACK,  PAIR', price: 45.95, sub: "PIERCED TRACK" },
+    // Pierced track is sold in pairs; the price is the pair's (30/9/2026), and
+    // the button says so (16/10/2026).
+    { name: '76" PIERCED TRACK (PAIR)', desc: '76" PIERCED TRACK,  PAIR', price: 29.95, sub: "PIERCED TRACK" },
+    { name: '88" PIERCED TRACK (PAIR)', desc: '88" PIERCED TRACK,  PAIR', price: 34.95, sub: "PIERCED TRACK" },
+    { name: '100" PIERCED TRACK (PAIR)', desc: '100" PIERCED TRACK,  PAIR', price: 39.95, sub: "PIERCED TRACK" },
+    { name: '112" PIERCED TRACK (PAIR)', desc: '112" PIERCED TRACK,  PAIR', price: 45.95, sub: "PIERCED TRACK" },
+  ],
+  // Retainers CJ prices on request (Brandon, 16/10/2026): listed so the counter
+  // sees them, with no price to paste until CJ gives one.
+  RETAINERS: [
+    { name: '2" ALUMINUM L RETAINERS', desc: '2" ALUMINUM L RETAINERS', price: 0, priceNotSet: true, priceNote: "CONTACT CJ FOR PRICING" },
+    { name: '2" PLASTIC FLAT RETAINER', desc: '2" PLASTIC FLAT RETAINER', price: 0, priceNotSet: true, priceNote: "CONTACT CJ FOR PRICING" },
+    { name: '1-3/8" PLASTIC FLAT RETAINER', desc: '1-3/8" PLASTIC FLAT RETAINER', price: 0, priceNotSet: true, priceNote: "CONTACT CJ FOR PRICING" },
+  ],
+  // Spreader bars, with the collars and couplings (Brandon, 16/10/2026).
+  "COLLAR / COUPLING": [
+    { name: '1" TO 1" SPREADER BAR', desc: '1" TO 1" SPREADER BAR', price: 74.95 },
+    { name: '1-1/4" TO 1-1/4" SPREADER BAR', desc: '1-1/4" TO 1-1/4" SPREADER BAR', price: 84.95 },
   ],
   // Sleeves, stops and thimbles for cable, bags of 100 (30/9/2026).
   CABLES: [

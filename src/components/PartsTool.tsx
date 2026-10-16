@@ -18,7 +18,7 @@ import type { SearchPick } from "@/lib/search";
 import { entryId, feetAsQuantity, type PartsMenu } from "@/lib/pricing/data/parts-menu";
 import { PartsNavigator } from "./PartsNavigator";
 import { cableQuote, CABLE_GAUGES } from "@/lib/pricing/data/cables";
-import { feetLimits, isLockbar, isSolidShaft, measuredToInch, partColors, priceNotSet, takesLength } from "@/lib/pricing/data/part-pricing";
+import { feetLimits, isLockbar, isSolidShaft, measuredToInch, partColors, priceNoteText, priceNotSet, takesLength } from "@/lib/pricing/data/part-pricing";
 import { QtyStepper } from "./QtyStepper";
 import { COMMERCIAL_TRACK, COMMERCIAL_TRACK_HEIGHTS, COMMERCIAL_TRACK_SUB, commercialTrackAt } from "@/lib/pricing/data/commercial-track";
 import { RESIDENTIAL_TRACK_SUB, pickResidentialTrack, radiiFor, residentialTrackSets, trackHeightFor } from "@/lib/pricing/data/residential-track";
@@ -326,7 +326,7 @@ export function PartsTool({
                           {/* A page picked from the buttons already says what it holds. */}
                           <span className="partname">{p.name}</span>
                           <span className="partprice">
-                            {priceNotSet(p) ? "Price not set" : fmt(p.price)}
+                            {priceNotSet(p) ? priceNoteText(p) : fmt(p.price)}
                             {p.perFoot && !priceNotSet(p) && <span className="perft">/ft</span>}
                           </span>
                         </button>
@@ -401,7 +401,7 @@ export function PartsTool({
                           {p.sub && !grouped && <span className="partsub">{p.sub}</span>}
                         </span>
                         <span className="partprice">
-                          {priceNotSet(p) ? "Price not set" : fmt(p.price)}
+                          {priceNotSet(p) ? priceNoteText(p) : fmt(p.price)}
                           {p.perFoot && !priceNotSet(p) && <span className="perft">/ft</span>}
                         </span>
                       </button>
@@ -562,7 +562,7 @@ export function PartsTool({
                       {/* Seals show their price per foot, the rate on the line, not the run's
                           total (Brandon, 7/10/2026). */}
                       <b data-testid="parts-price">
-                        {price == null ? "Price not set" : feetQty ? fmt(part!.price) : fmt(price)}
+                        {price == null ? priceNoteText(part!) : feetQty ? fmt(part!.price) : fmt(price)}
                         {feetQty && price != null && <span className="perft">/ft</span>}
                       </b>
                     </div>

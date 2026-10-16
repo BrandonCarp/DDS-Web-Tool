@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { COMMERCIAL_TRACK_PARTS, COMMERCIAL_TRACK_SUB } from "./data/commercial-track";
 import { PART_CATEGORIES } from "./data/parts";
-import { priceNotSet } from "./data/part-pricing";
+import { priceNoteText, priceNotSet } from "./data/part-pricing";
 import { categoryItem } from "./data/quickbooks";
 import {
   EXTENSION_CATEGORY,
@@ -155,11 +155,31 @@ describe("the Track tab", () => {
 describe("pierced track (30/9/2026)", () => {
   it("sells four lengths, by the pair, under their own heading", () => {
     const pierced = TRACK_CATEGORIES[0].items.filter((p) => p.sub === "PIERCED TRACK");
+    // The button says (PAIR) too (16/10/2026).
     expect(pierced.map((p) => [p.name, p.price])).toEqual([
-      ['76" PIERCED TRACK', 29.95], ['88" PIERCED TRACK', 34.95],
-      ['100" PIERCED TRACK', 39.95], ['112" PIERCED TRACK', 45.95],
+      ['76" PIERCED TRACK (PAIR)', 29.95], ['88" PIERCED TRACK (PAIR)', 34.95],
+      ['100" PIERCED TRACK (PAIR)', 39.95], ['112" PIERCED TRACK (PAIR)', 45.95],
     ]);
     for (const p of pierced) expect(p.desc).toMatch(/PAIR$/);
+  });
+});
+
+describe("parts added by hand on 16/10/2026", () => {
+  const shelf = (cat: string) => SHELF_PART_CATEGORIES.find((c) => c.name === cat)!.items;
+  it("lists the aluminum L and plastic flat retainers with no price, saying to contact CJ", () => {
+    for (const nm of ['2" ALUMINUM L RETAINERS', '2" PLASTIC FLAT RETAINER', '1-3/8" PLASTIC FLAT RETAINER']) {
+      const p = shelf("RETAINERS").find((x) => x.name === nm)!;
+      expect(p, nm).toBeTruthy();
+      expect(priceNotSet(p), nm).toBe(true);
+      expect(priceNoteText(p), nm).toBe("CONTACT CJ FOR PRICING");
+      expect(p.desc).toBe(nm);
+      expect(p.perFoot).toBeUndefined();
+    }
+    expect(priceNoteText(shelf("RETAINERS").find((x) => x.name === '2" U RETAINER')!)).toBe("Price not set");
+  });
+  it("prices the spreader bars with the collars and couplings", () => {
+    expect(shelf("COLLAR / COUPLING").find((x) => x.name === '1" TO 1" SPREADER BAR')).toMatchObject({ desc: '1" TO 1" SPREADER BAR', price: 74.95 });
+    expect(shelf("COLLAR / COUPLING").find((x) => x.name === '1-1/4" TO 1-1/4" SPREADER BAR')).toMatchObject({ desc: '1-1/4" TO 1-1/4" SPREADER BAR', price: 84.95 });
   });
 });
 
@@ -192,8 +212,9 @@ describe("cable rolls (6/10/2026)", () => {
     ]);
   });
 
-  it("leaves no part on the shelf without a price", () => {
-    expect(SHELF_PART_CATEGORIES.flatMap((c) => c.items).filter(priceNotSet).map((p) => p.name)).toEqual([]);
+  it("leaves no part on the shelf without a price but the three CJ prices on request (16/10/2026)", () => {
+    expect(SHELF_PART_CATEGORIES.flatMap((c) => c.items).filter(priceNotSet).map((p) => p.name))
+      .toEqual(['2" ALUMINUM L RETAINERS', '2" PLASTIC FLAT RETAINER', '1-3/8" PLASTIC FLAT RETAINER']);
   });
 });
 

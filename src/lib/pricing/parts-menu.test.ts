@@ -36,7 +36,9 @@ describe("the Parts drop-downs Brandon set out (6/10/2026)", () => {
   });
 
   it("splits retainers from seals, the aluminum retainers and brush seals included", () => {
-    expect(names(PARTS_MENU, "Retainers", "L retainers")).toEqual(['1-3/4" L RETAINER', '1-3/8" L RETAINER', '2" L RETAINER']);
+    expect(names(PARTS_MENU, "Retainers", "L retainers")).toEqual(['1-3/4" L RETAINER', '1-3/8" L RETAINER', '2" L RETAINER', '2" ALUMINUM L RETAINERS']);
+    expect(names(PARTS_MENU, "Retainers", "Flat retainers")).toEqual(['2" PLASTIC FLAT RETAINER', '1-3/8" PLASTIC FLAT RETAINER']);
+    expect(names(PARTS_MENU, "Tube shafts", "Spreader bars")).toEqual(['1" TO 1" SPREADER BAR', '1-1/4" TO 1-1/4" SPREADER BAR']);
     expect(names(PARTS_MENU, "Retainers", "U retainers")).toEqual(['1-3/8" U RETAINER', '2" U RETAINER']);
     expect(names(PARTS_MENU, "Retainers", "Aluminum retainers")).toHaveLength(3);
     expect(names(PARTS_MENU, "Seals", "Bottom T rubbers")).toHaveLength(3);
@@ -62,7 +64,7 @@ describe("the Track buttons", () => {
     expect(TRACK_MENU.map((g) => g.label)).toEqual(["Complete track", "Adder pieces", "Raw track", "Pierced track"]);
     expect(names(TRACK_MENU, "Complete track", "Residential")).toHaveLength(16);
     expect(names(TRACK_MENU, "Complete track", "Commercial")).toHaveLength(25);   // five options at each of five heights (12/10/2026)
-    expect(names(TRACK_MENU, "Pierced track", "Pierced track")).toEqual(['76" PIERCED TRACK', '88" PIERCED TRACK', '100" PIERCED TRACK', '112" PIERCED TRACK']);
+    expect(names(TRACK_MENU, "Pierced track", "Pierced track")).toEqual(['76" PIERCED TRACK (PAIR)', '88" PIERCED TRACK (PAIR)', '100" PIERCED TRACK (PAIR)', '112" PIERCED TRACK (PAIR)']);
   });
 });
 

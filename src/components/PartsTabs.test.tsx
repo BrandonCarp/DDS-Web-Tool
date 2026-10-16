@@ -132,7 +132,8 @@ describe("the Parts buttons (6/10/2026)", () => {
     expect(screen.queryByTestId("parts-category")).toBeNull();
     open("group-retainers", "page-l-retainers");
     expect(screen.getByTestId("parts-page").textContent).toBe("Retainers › L retainers");
-    expect(document.querySelectorAll("ul.partlist .partrow")).toHaveLength(3);
+    expect(document.querySelectorAll("ul.partlist .partrow")).toHaveLength(4); // three sizes and the aluminum (16/10/2026)
+    expect([...document.querySelectorAll("ul.partlist .partrow")].at(-1)?.textContent).toContain("CONTACT CJ FOR PRICING");
   });
 
   it("picks the part straight away on a one-part page", () => {

@@ -195,3 +195,7 @@ export function partPrice(part: Part, feet?: number): number {
 export function priceNotSet(part: Part): boolean {
   return (part as { priceNotSet?: boolean }).priceNotSet === true;
 }
+/** What stands in for the price of a part that has none: its own note, or "Price not set". */
+export function priceNoteText(part: Part): string {
+  return (part as { priceNote?: string }).priceNote || "Price not set";
+}

@@ -86,6 +86,7 @@ export const PARTS_MENU: PartsMenu = build(
     { label: "Retainers", entries: [
       ["L retainers", "RETAINERS", name(/\bL RETAINER/)],
       ["U retainers", "RETAINERS", name(/\bU RETAINER/)],
+      ["Flat retainers", "RETAINERS", name(/FLAT RETAINER/)],
       ["Universal bottom retainer", "RETAINERS", name(/UNIVERSAL BTM/)],
       ["Nail-on bottom wood rubber", "RETAINERS", name(/WOOD RUBBER/)],
       ["Aluminum retainers", "BRUSH SEAL / RETAINERS", name(/^ALUM/)],
@@ -133,6 +134,7 @@ export const PARTS_MENU: PartsMenu = build(
       ["Solid shafts", "TUBE SHAFT", name(/SOLID SHAFT/)],
       ["Collars", "COLLAR / COUPLING", name(/COLLAR/)],
       ["Couplings", "COLLAR / COUPLING", name(/COUPLING/)],
+      ["Spreader bars", "COLLAR / COUPLING", name(/SPREADER BAR/)],
     ] },
     { label: "Bearings & plates", entries: [
       ["Bearings", "CENTER PLATES / BEARINGS", name(/BEARING|FOOTBALL/)],
