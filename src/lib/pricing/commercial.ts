@@ -5,7 +5,7 @@ import { collapseUpcharges } from "./types";
 import { COMM_MATRIX, COMM_SECTIONS, COMM_SECTION_STOCK, COMM_SLAB, STOCK_COMM, GRADE_COMM } from "./data/commercial";
 import {
   COMM_COMPLETE, panelCount, panelsPhrase, joinAnd, roundedFeet, slabBilledFeet, SLAB_MIN_FEET, SECTION_MAX_WIDTH_IN, maxWidthLabel, sectionColors,
-  sectionWindowSizes, stileLocationCount, jointStyleAsked, JOINT_STYLES, type JointStyle,
+  sectionWindowSizes, stileLocationCount,
 } from "./data/commercial-meta";
 
 export interface CommQuoteLine { name: string; value: number; kind: "base" | "add" | "minus" }
@@ -54,8 +54,6 @@ export interface CommSectionInput {
   stileLocations?: string[];
   /** An inside slide lock on an intermediate section — wording only, as on the complete door (16/10/2026). */
   lock?: "none" | "slide";
-  /** The 524's section joint, ship lap unless chosen (jointStyleAsked); wording only. */
-  joint?: JointStyle;
   /** The locations are still to come: the line ends "stile locations needed". */
   stileLocationsNeeded?: boolean;
   color?: "White" | "Brown";          // DESCRIPTION ONLY — individual sections come in white or brown
@@ -318,8 +316,6 @@ export function quoteCommercial(input: CommInput): CommQuote {
     : null;
   // An inside slide lock goes on an intermediate section only; the line ends with it, as the door's does.
   const lockTxt = input.secKind === "int" && input.lock === "slide" ? "inside slide lock" : null;
-  // The 524's joint, after the section: ship lap unless tongue and groove is chosen (16/10/2026).
-  const jointTxt = jointStyleAsked(model) ? `${JOINT_STYLES.includes(input.joint as JointStyle) ? input.joint : JOINT_STYLES[0]} joint` : null;
   const description = insulation
     // The 524 and 2415 — Brandon's wording of 14/10/2026: the section, the
     // colour, the windows or SOLID NO WINDOWS on an intermediate, the
@@ -328,7 +324,6 @@ export function quoteCommercial(input: CommInput): CommQuote {
         `${input.mfr || "Clopay"} Model ${model}`,
         `${asciiWidth} x ${input.secHeight}"`,
         input.secKind === "bt" ? "steel ribbed bottom section" : "steel ribbed intermediate section",
-        jointTxt,
         `in the color ${color.toLowerCase()}`,
         input.secKind === "bt" ? null : windowsPhrase ?? "solid no windows",
         insulation,

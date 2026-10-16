@@ -16,7 +16,7 @@ import {
   SLAB_RATE, SLAB_LABEL, panelCount, placementOf, placementPanels, windowPlacements,
   SECTION_MAX_WIDTH_IN, maxWidthLabel, sectionColors,
   STOCK_SECTION_WIDTHS, sectionWidthLabel, sectionWindowSizes, stileLocationCount,
-  stileLocationText, JOINT_STYLES, jointStyleAsked, type JointStyle,
+  stileLocationText,
 } from "@/lib/pricing/data/commercial-meta";
 import { PanelDiagram, type StileValue } from "./PanelDiagram";
 import { homeownerMarkup } from "@/lib/pricing/engine";
@@ -73,8 +73,6 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const [secColor, setSecColor] = useState<"White" | "Brown">("White");
   // An inside slide lock on an intermediate section (16/10/2026).
   const [lock, setLock] = useState<"none" | "slide">("none");
-  // The 524's joint: ship lap or tongue and groove (16/10/2026).
-  const [joint, setJoint] = useState<JointStyle>("ship lap");
 
   const [qty, setQty] = useState(1);
   const { custName, custPo, custJob } = useCustomerJob();
@@ -132,7 +130,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const placements = order === "complete" ? windowPlacements(panels) : [];
   const placement = placementOf(panels, winPanelsUsed);
 
-  const cfgSig = JSON.stringify([mfr, model, order, size, glass, track, mount, cspring, clock, cColor, winSection, manFt, manIn, secKind, secHeight, winPanelsUsed, winSizeUsed, stile, stileLocationsUsed, secColor, lock, joint, homeowner]);
+  const cfgSig = JSON.stringify([mfr, model, order, size, glass, track, mount, cspring, clock, cColor, winSection, manFt, manIn, secKind, secHeight, winPanelsUsed, winSizeUsed, stile, stileLocationsUsed, secColor, lock, homeowner]);
   const result = resultRaw && resultSig === cfgSig ? resultRaw : null;
   const liveError = errorRaw && resultSig === cfgSig ? errorRaw : null;
   const priced = result?.priced ?? false;
@@ -149,7 +147,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   function pickModel(m: string) {
     setModel(m);
     setSize(""); setManFt(""); setManIn("0");
-    setWinPanels([]); setAddingWindows(false); setWindowSize(""); setStile("single"); setSecColor("White"); setStileVals([]); setLock("none"); setJoint("ship lap");
+    setWinPanels([]); setAddingWindows(false); setWindowSize(""); setStile("single"); setSecColor("White"); setStileVals([]); setLock("none");
   }
   /** The order type, as the first two buttons ask it: it decides which models are listed. */
   function pickOrder(o: "complete" | "section") {
@@ -172,7 +170,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
     setSize(""); setGlass("solid"); setTrack("15R"); setMount("continuous"); setCspring("torsion"); setClock("none");
     setManFt(""); setManIn("0");
     setSecKind("bt"); setSecHeight("24"); setWinPanels([]); setAddingWindows(false); setWindowSize(""); setStile("single"); setSecColor("White");
-    setStileVals([]); setLock("none"); setJoint("ship lap");
+    setStileVals([]); setLock("none");
     setQty(1); setResult(null); setError(null); setSaved(false);
   }
   function onBack() { resetConfig(); setStep(1); }
@@ -184,7 +182,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
         order === "complete"
           ? { order, mfr, model, size, glass, track, mount, cspring, clock, color: cColor, winSection: Number(winSection) || 3, windowPanels: winPanelsUsed, windowSize: winSizeUsed }
           : { order, mfr, model, manFt: Number(manFt), manIn: Number(manIn) || 0, secKind, secHeight, windowPanels: winPanelsUsed, windowSize: winSizeUsed, stile,
-              stileLocations: stileLocationsUsed, color: secColor, lock: secKind === "int" ? lock : "none", joint };
+              stileLocations: stileLocationsUsed, color: secColor, lock: secKind === "int" ? lock : "none" };
       const res = await fetch("/api/price/commercial", {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
       });
@@ -308,7 +306,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
               <button type="button" className="btn backbtn" onClick={onBack}>‹ Back</button>
               <span className="mlbl">Model</span>
               <span className="mval">{model}</span>
-              <span className="muted-note" style={{ marginLeft: "auto" }}>{mfr}{SLAB_LABEL[model] ? ` · ${SLAB_LABEL[model]}` : ""}</span>
+              <span className="muted-note" data-testid="comm-model-note" style={{ marginLeft: "auto" }}>{mfr}{SLAB_LABEL[model] ? ` · ${SLAB_LABEL[model]}` : ""}</span>
             </div>
 
             {/* Brandon's layout of 15/10/2026. A complete door: its size and
@@ -524,16 +522,6 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
                             </select>
                           </div>
                         </div>
-                        {jointStyleAsked(model) && (
-                          <div className="grow">
-                            <label>Joint</label>
-                            <div className="ctl selectwrap">
-                              <select data-testid="comm-joint" value={joint} onChange={(e) => setJoint(e.target.value as JointStyle)}>
-                                {JOINT_STYLES.map((j) => <option key={j} value={j}>{j === "ship lap" ? "Ship lap" : "Tongue and groove"}</option>)}
-                              </select>
-                            </div>
-                          </div>
-                        )}
                       </>
                     )}
                     {secKind === "int" && (

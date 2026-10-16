@@ -177,21 +177,13 @@ describe("commercial tab — a section's windows, pressed into the drawing once 
     expect(await getPrice()).toMatchObject({ secKind: "bt", windowPanels: [], lock: "none" });
   });
 
-  it("asks the 524 family its joint — ship lap unless tongue and groove — and no other model", async () => {
-    configure("section", "Clopay", "524V");
-    expect(options("comm-joint")).toEqual(["ship lap", "tongue and groove"]);
-    expect(sel("comm-joint").value).toBe("ship lap");
-    expect([...document.querySelectorAll(".cfg2 > .ggroup")][1].querySelectorAll(".grow > label").length).toBe(3); // colour, end stiles, joint
-    width("12");
-    expect(await getPrice()).toMatchObject({ model: "524V", joint: "ship lap" });
-    change("comm-joint", "tongue and groove");
-    expect(await getPrice()).toMatchObject({ joint: "tongue and groove" });
+  it("labels the 524 non-insulated at the top, like the 2415", () => {
+    configure("section", "Clopay", "524");
+    expect(screen.getByTestId("comm-model-note").textContent).toBe("Clopay · 2″ non-insulated");
+    expect(screen.queryByTestId("comm-joint")).toBeNull();
     cleanup();
     configure("section", "Wayne Dalton", "2415");
-    expect(screen.queryByTestId("comm-joint")).toBeNull();
-    cleanup();
-    configure("section", "Clopay", "3200");
-    expect(screen.queryByTestId("comm-joint")).toBeNull();
+    expect(screen.getByTestId("comm-model-note").textContent).toBe("Wayne Dalton · 2″ non-insulated");
   });
 
   it("offers an inside slide lock on an intermediate section only", async () => {
@@ -284,8 +276,8 @@ describe("commercial tab — stile locations on a 524 or 2415, under the stiles 
     const groups = [...document.querySelectorAll(".cfg2 > .ggroup")];
     expect(groups.map((g) => g.querySelector(".ghdr")?.textContent ?? "")).toEqual(["Replacement section", "Additional options", ""]);
     expect([...groups[0].querySelectorAll(".grow > label")].map((l) => l.textContent)).toEqual(["Section type", "Section height", "Door width"]);
-    expect([...groups[1].querySelectorAll(".grow > label")].map((l) => l.textContent)).toEqual(["Color", "End stiles", "Joint", "Lock"]);
-    for (const id of ["comm-color", "comm-end-stiles", "comm-joint", "comm-sec-lock"]) expect(groupOf(id)).toBe(groups[1]);
+    expect([...groups[1].querySelectorAll(".grow > label")].map((l) => l.textContent)).toEqual(["Color", "End stiles", "Lock"]);
+    for (const id of ["comm-color", "comm-end-stiles", "comm-sec-lock"]) expect(groupOf(id)).toBe(groups[1]);
     for (const id of ["comm-panel-1", "comm-stile-1", "comm-stile-3", "comm-add-windows"]) expect(groupOf(id)).toBe(groups[2]);
     expect(groups[2].classList.contains("span")).toBe(true);
     // The stile note, then the button, under the drawing; no other note.
@@ -297,7 +289,7 @@ describe("commercial tab — stile locations on a 524 or 2415, under the stiles 
     expect(screen.queryByText(/If windows are needed/)).toBeNull();
     // A bottom section: no lock, no Add windows, and the drawing stays for its stiles.
     change("comm-sec-kind", "bt");
-    expect([...groups[1].querySelectorAll(".grow > label")].map((l) => l.textContent)).toEqual(["Color", "End stiles", "Joint"]);
+    expect([...groups[1].querySelectorAll(".grow > label")].map((l) => l.textContent)).toEqual(["Color", "End stiles"]);
     expect(panelsDrawn()).toBe(4);
     expect(stileRows()).toBe(3);
     expect(screen.queryByTestId("comm-add-windows")).toBeNull();

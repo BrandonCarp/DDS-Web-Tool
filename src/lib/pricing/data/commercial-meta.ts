@@ -390,13 +390,3 @@ export function stileLocationText(inches: string, fraction: string): string {
   const frac = (STILE_FRACTIONS as readonly string[]).includes(fraction) && fraction !== "0" ? `-${fraction}` : "";
   return `${whole}${frac}"`;
 }
-
-/**
- * The 524's section joint — ship lap or tongue and groove (Brandon,
- * 16/10/2026): on the line after the section, ship lap unless chosen.
- */
-export const JOINT_STYLES = ["ship lap", "tongue and groove"] as const;
-export type JointStyle = (typeof JOINT_STYLES)[number];
-export function jointStyleAsked(model: string): boolean {
-  return model === "524" || model === "524V" || model === "524S";
-}
