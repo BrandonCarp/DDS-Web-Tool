@@ -301,8 +301,19 @@ export function quoteCommercial(input: CommInput): CommQuote {
   // middle panel" (15/10/2026).
   const sizes = sectionWindowSizes(model);
   const winSize = input.windowSize && sizes.includes(input.windowSize) ? input.windowSize : sizes[0];
-  const where = picked.length > 0 && picked.length < panels ? ` ${panelsPhrase(panels, picked)}` : "";
-  const windowsPhrase = nWin > 0 ? `${countWord(nWin)} ${winSize} ${sectionGlassWord(model)} glass ${nWin === 1 ? "window" : "windows"}${where}` : null;
+  // Windows that sit in the middle of the section — a run of panels either
+  // side of its centre, not every one — are "in center of section"; any other
+  // part-set names its panels (Brandon's estimate of 16/10/2026).
+  const centered = picked.length > 0 && picked.length < panels
+    && picked[picked.length - 1] - picked[0] + 1 === picked.length && picked[0] - 1 === panels - picked[picked.length - 1];
+  const where = picked.length > 0 && picked.length < panels ? (centered ? " in center of section" : ` ${panelsPhrase(panels, picked)}`) : "";
+  // The 524 and 2415 say the glass and "windows" — "two 24x12 double strength
+  // b grade windows" — then lay the section out panel by panel,
+  // "solid-glass-glass-solid" (16/10/2026); the other models keep "glass windows".
+  const windowsPhrase = nWin > 0
+    ? `${countWord(nWin)} ${winSize} ${sectionGlassWord(model)}${insulation ? "" : " glass"} ${nWin === 1 ? "window" : "windows"}${where}`
+    : null;
+  const layout = insulation && picked.length > 0 ? Array.from({ length: panels }, (_, i) => (picked.includes(i + 1) ? "glass" : "solid")).join("-") : null;
   const color = input.color === "Brown" ? "Brown" : "White";
   // The stile locations of a 524 or 2415, one a stile, left to right, as typed
   // — "stile locations 59"  82-1/4" and 90-1/2"", two spaces between them and
@@ -314,22 +325,25 @@ export function quoteCommercial(input: CommInput): CommQuote {
   const stileLocations = stileCount > 0
     ? input.stileLocationsNeeded || !typed.length ? "stile locations needed" : `stile locations ${joinAnd(typed, "  ")}`
     : null;
-  // An inside slide lock goes on an intermediate section only; the line ends with it, as the door's does.
+  // An inside slide lock goes on an intermediate section only: after the
+  // windows on a 524 or 2415, before the stiles; last on the other models.
   const lockTxt = input.secKind === "int" && input.lock === "slide" ? "inside slide lock" : null;
   const description = insulation
-    // The 524 and 2415 — Brandon's wording of 14/10/2026: the section, the
-    // colour, the windows or SOLID NO WINDOWS on an intermediate, the
-    // insulation, the stiles.
+    // The 524 and 2415 — Brandon's estimate of 16/10/2026: the section, the
+    // colour, the insulation, the windows (or SOLID NO WINDOWS) and the
+    // panel-by-panel layout on an intermediate, the end stile, the stile
+    // locations, the lock.
     ? [
         `${input.mfr || "Clopay"} Model ${model}`,
         `${asciiWidth} x ${input.secHeight}"`,
         input.secKind === "bt" ? "steel ribbed bottom section" : "steel ribbed intermediate section",
         `in the color ${color.toLowerCase()}`,
-        input.secKind === "bt" ? null : windowsPhrase ?? "solid no windows",
         insulation,
-        input.stile === "double" ? "double end stiles" : input.stile === "single" ? "single end stiles" : null,
+        input.secKind === "bt" ? null : windowsPhrase ?? "solid no windows",
+        input.secKind === "bt" ? null : layout,
+        lockTxt, // before any mention of stiles (Brandon, 16/10/2026)
+        input.stile === "double" ? "double end stiles" : input.stile === "single" ? "single end stile" : null,
         stileLocations,
-        lockTxt,
       ].filter(Boolean).join(", ")
     : `${input.mfr || "Clopay"} Model ${model}, ${asciiWidth} x ${input.secHeight}", ` +
       `${input.secKind === "bt" ? "bottom section" : nWin > 0 ? "intermediate section" : "solid intermediate section"}, in the color ${color}` +

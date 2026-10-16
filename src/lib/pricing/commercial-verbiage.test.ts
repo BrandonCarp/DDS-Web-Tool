@@ -48,40 +48,46 @@ describe("ribbed steel verbiage", () => {
   const sec = (model: string, o: Record<string, unknown> = {}) =>
     section(model, { manFt: 8, manIn: 2, secHeight: "24", stile: "single", ...o });
 
-  it("words a bottom section as Brandon wrote it: section, colour, insulation, stiles", () => {
+  // Brandon's estimate of 16/10/2026: section, colour, insulation, windows and the
+  // panel-by-panel layout, one end stile, the stile locations, the lock.
+  it("words a bottom section as Brandon wrote it: section, colour, insulation, stile", () => {
     expect(sec("2415V", { secKind: "bt" })).toBe(
-      'Wayne Dalton Model 2415V, 8\'2" x 24", steel ribbed bottom section, in the color white, insulated with vinyl back cover, single end stiles',
+      'Wayne Dalton Model 2415V, 8\'2" x 24", steel ribbed bottom section, in the color white, insulated with vinyl back cover, single end stile',
     );
     expect(sec("2415", { secKind: "bt" })).toBe(
-      'Wayne Dalton Model 2415, 8\'2" x 24", steel ribbed bottom section, in the color white, non insulated, single end stiles',
+      'Wayne Dalton Model 2415, 8\'2" x 24", steel ribbed bottom section, in the color white, non insulated, single end stile',
     );
     expect(sec("524", { secKind: "bt" })).toBe(
-      'Clopay Model 524, 8\'2" x 24", steel ribbed bottom section, in the color white, non insulated, single end stiles',
+      'Clopay Model 524, 8\'2" x 24", steel ribbed bottom section, in the color white, non insulated, single end stile',
     );
   });
 
-  it("says SOLID NO WINDOWS on a solid intermediate, between the colour and the insulation", () => {
+  it("says SOLID NO WINDOWS on a solid intermediate, after the insulation", () => {
     expect(sec("2415V")).toBe(
-      'Wayne Dalton Model 2415V, 8\'2" x 24", steel ribbed intermediate section, in the color white, solid no windows, insulated with vinyl back cover, single end stiles',
+      'Wayne Dalton Model 2415V, 8\'2" x 24", steel ribbed intermediate section, in the color white, insulated with vinyl back cover, solid no windows, single end stile',
     );
     expect(sec("524V")).toBe(
-      'Clopay Model 524V, 8\'2" x 24", steel ribbed intermediate section, in the color white, solid no windows, insulated with vinyl back cover, single end stiles',
+      'Clopay Model 524V, 8\'2" x 24", steel ribbed intermediate section, in the color white, insulated with vinyl back cover, solid no windows, single end stile',
     );
     expect(sec("2415S")).toBe(
-      'Wayne Dalton Model 2415S, 8\'2" x 24", steel ribbed intermediate section, in the color white, solid no windows, insulated with steel back cover, single end stiles',
+      'Wayne Dalton Model 2415S, 8\'2" x 24", steel ribbed intermediate section, in the color white, insulated with steel back cover, solid no windows, single end stile',
     );
-    expect(sec("524")).toContain("steel ribbed intermediate section, in the color white, solid no windows, non insulated, single end stiles");
+    expect(sec("524")).toContain("steel ribbed intermediate section, in the color white, non insulated, solid no windows, single end stile");
   });
 
-  it("names the windows by count, size and glass: double strength b grade on the plain door, insulated on the V and S", () => {
+  it("names the windows by count, size and glass — double strength b grade on the plain door, insulated on the V and S — then the layout", () => {
     expect(sec("2415V", { windows: 2 })).toBe(
-      'Wayne Dalton Model 2415V, 8\'2" x 24", steel ribbed intermediate section, in the color white, two 24x12 insulated glass windows, insulated with vinyl back cover, single end stiles',
+      'Wayne Dalton Model 2415V, 8\'2" x 24", steel ribbed intermediate section, in the color white, insulated with vinyl back cover, two 24x12 insulated windows, single end stile',
     );
-    expect(sec("524", { windows: 2 })).toContain("in the color white, two 24x12 double strength b grade glass windows, non insulated, single end stiles");
-    expect(sec("2415S", { windows: 1 })).toContain("in the color white, one 24x12 insulated glass window, insulated with steel back cover");
+    expect(sec("524", { windowPanels: [1, 2] })).toContain("in the color white, non insulated, two 24x12 double strength b grade windows, glass-glass, single end stile");
+    expect(sec("2415S", { windowPanels: [1] })).toContain("in the color white, insulated with steel back cover, one 24x12 insulated window in the left panel, glass-solid, single end stile");
+    // Brandon's own line: a 14'0" with the two middle panels glazed.
+    expect(section("524", { manFt: 14, manIn: 0, secHeight: "24", stile: "single", windowPanels: [2, 3], stileLocations: ['134"', '124"', '122"'] })).toBe(
+      'Clopay Model 524, 14\'0" x 24", steel ribbed intermediate section, in the color white, non insulated, two 24x12 double strength b grade windows in center of section, solid-glass-glass-solid, single end stile, stile locations 134"  124" and 122"',
+    );
     // The size the sections come in: 24x12 or 24x6 on a 524 or 2415; a size they do not come in is the first.
-    expect(sec("524", { windows: 2, windowSize: "24x6" })).toContain("two 24x6 double strength b grade glass windows");
-    expect(sec("2415V", { windows: 2, windowSize: "24x8" })).toContain("two 24x12 insulated glass windows");
+    expect(sec("524", { windows: 2, windowSize: "24x6" })).toContain("two 24x6 double strength b grade windows");
+    expect(sec("2415V", { windows: 2, windowSize: "24x8" })).toContain("two 24x12 insulated windows");
     expect(sectionWindowSizes("524")).toEqual(["24x12", "24x6"]);
     expect(sectionWindowSizes("2415S")).toEqual(["24x12", "24x6"]);
     expect(sectionWindowSizes("3200")).toEqual(["24x12", "24x8"]); // 24x12 first everywhere (16/10/2026)
@@ -115,20 +121,29 @@ describe("ribbed steel verbiage", () => {
     expect(panelsPhrase(4, [2, 4])).toBe("in the second and fourth panels from the left");
     expect(panelsPhrase(5, [1, 3, 5])).toBe("in the first, third and fifth panels from the left");
     expect(panelsPhrase(3, [])).toBe("");
-    // A 10'2" section has three panels: one window in the middle; two at the ends; all three say no panel.
+    // A 10'2" section has three panels: one window in the middle is "in center of
+    // section"; two at the ends name their panels; all three say no panel — and
+    // the layout follows, panel by panel (16/10/2026).
     const wide = (o: Record<string, unknown>) => sec("524", { manFt: 10, manIn: 2, ...o });
-    expect(wide({ windowPanels: [2] })).toContain("in the color white, one 24x12 double strength b grade glass window in the middle panel, non insulated");
-    expect(wide({ windowPanels: [1, 3] })).toContain("two 24x12 double strength b grade glass windows in the left and right panels, non insulated");
-    expect(wide({ windowPanels: [1, 2, 3] })).toContain("three 24x12 double strength b grade glass windows, non insulated");
+    expect(wide({ windowPanels: [2] })).toContain("in the color white, non insulated, one 24x12 double strength b grade window in center of section, solid-glass-solid, single end stile");
+    expect(wide({ windowPanels: [1, 3] })).toContain("two 24x12 double strength b grade windows in the left and right panels, glass-solid-glass, single end stile");
+    expect(wide({ windowPanels: [1, 2, 3] })).toContain("three 24x12 double strength b grade windows, glass-glass-glass, single end stile");
     expect(wide({ windowPanels: [] })).toContain("solid no windows");
-    expect(wide({ windowPanels: [2, 2, 9] })).toContain("one 24x12 double strength b grade glass window in the middle panel");
+    expect(wide({ windowPanels: [2, 2, 9] })).toContain("one 24x12 double strength b grade window in center of section, solid-glass-solid");
+    // "In center" is a run of panels either side of the middle; off-centre runs and gapped sets name their panels.
+    const five = (o: Record<string, unknown>) => sec("524", { manFt: 16, manIn: 3, ...o });
+    expect(five({ windowPanels: [3] })).toContain("one 24x12 double strength b grade window in center of section, solid-solid-glass-solid-solid");
+    expect(five({ windowPanels: [2, 3, 4] })).toContain("three 24x12 double strength b grade windows in center of section, solid-glass-glass-glass-solid");
+    expect(five({ windowPanels: [2, 4] })).toContain("two 24x12 double strength b grade windows in the second and fourth panels from the left, solid-glass-solid-glass-solid");
+    expect(five({ windowPanels: [1, 2] })).toContain("two 24x12 double strength b grade windows in the first and second panels from the left, glass-glass-solid-solid-solid");
+    expect(sec("524", { windowPanels: [1, 2] })).toContain("two 24x12 double strength b grade windows, glass-glass"); // both of two: no "center"
+    // A window count alone (no panels) has no layout to give.
+    expect(wide({ windows: 1 })).toContain("one 24x12 double strength b grade window, single end stile");
     // The price is a window a panel pressed; a bottom section takes none.
     const price = (o: Record<string, unknown>) => quoteCommercial({ order: "section", mfr: "Clopay", model: "524", manFt: 10, manIn: 2, secKind: "int", secHeight: "24", stile: "single", color: "White", ...o } as never).unitPrice;
     expect(price({ windowPanels: [1, 3] }) - price({ windowPanels: [] })).toBeCloseTo(2 * (price({ windowPanels: [2] }) - price({ windowPanels: [] })), 2);
     expect(price({ windowPanels: [1, 3] })).toBe(price({ windows: 2 }));
     expect(sec("524", { manFt: 10, manIn: 2, secKind: "bt", windowPanels: [1, 2] })).not.toContain("window");
-    // A plain count still works, with no panel named.
-    expect(wide({ windows: 1 })).toContain("one 24x12 double strength b grade glass window, non insulated");
   });
 
   it("writes the stile locations of a 524 or 2415 one a stile, left to right — or that they are needed", () => {
@@ -137,20 +152,21 @@ describe("ribbed steel verbiage", () => {
     expect(joinAnd(['59"', '82-1/4', '90-1/2"'], "  ")).toBe('59"  82-1/4 and 90-1/2"');
     // 12'0": three panels, two stiles.
     expect(sec("524", { manFt: 12, manIn: 0, stileLocations: ['48"', '96"'] })).toBe(
-      'Clopay Model 524, 12\'0" x 24", steel ribbed intermediate section, in the color white, solid no windows, non insulated, single end stiles, stile locations 48" and 96"',
+      'Clopay Model 524, 12\'0" x 24", steel ribbed intermediate section, in the color white, non insulated, solid no windows, single end stile, stile locations 48" and 96"',
     );
     // 16'3": five panels, four stiles; blanks are skipped, and a stile added past the sheet's count is written too (Add Stile, 15/10/2026).
     expect(sec("2415V", { manFt: 16, manIn: 3, secKind: "bt", stile: "double", stileLocations: ['39"', "", '78-1/2"', '117"', '156"'] }))
       .toMatch(/double end stiles, stile locations 39"  78-1\/2"  117" and 156"$/);
     expect(sec("524", { manFt: 12, manIn: 0, stileLocations: ['24"', '48"', '72"'] })).toMatch(/stile locations 24"  48" and 72"$/);
     // None under 9'3": an 8'2" or 9'2" writes no stile locations, typed or not (16/10/2026).
-    expect(sec("2415", { manFt: 8, manIn: 2, stileLocations: ['49"'] })).toMatch(/single end stiles$/);
-    expect(sec("2415", { manFt: 9, manIn: 2, stileLocations: ['55"'], stileLocationsNeeded: true })).toMatch(/single end stiles$/);
+    expect(sec("2415", { manFt: 8, manIn: 2, stileLocations: ['49"'] })).toMatch(/single end stile$/);
+    expect(sec("2415", { manFt: 9, manIn: 2, stileLocations: ['55"'], stileLocationsNeeded: true })).toMatch(/single end stile$/);
     // Still to come.
-    expect(sec("524", { manFt: 12, manIn: 0, stileLocations: ['48"'], stileLocationsNeeded: true })).toMatch(/single end stiles, stile locations needed$/);
-    // Nothing typed: needed (16/10/2026); and never on another model.
-    expect(sec("524", { manFt: 12, manIn: 0 })).toMatch(/single end stiles, stile locations needed$/);
-    expect(sec("524", { manFt: 12, manIn: 0, stileLocations: ["", " "] })).toMatch(/single end stiles, stile locations needed$/);
+    expect(sec("524", { manFt: 12, manIn: 0, stileLocations: ['48"'], stileLocationsNeeded: true })).toMatch(/single end stile, stile locations needed$/);
+    // Nothing typed: needed (16/10/2026), with or without windows; and never on another model.
+    expect(sec("524", { manFt: 12, manIn: 0 })).toMatch(/single end stile, stile locations needed$/);
+    expect(sec("524", { manFt: 12, manIn: 0, stileLocations: ["", " "] })).toMatch(/single end stile, stile locations needed$/);
+    expect(sec("524", { manFt: 14, manIn: 0, windowPanels: [2, 3] })).toMatch(/windows in center of section, solid-glass-glass-solid, single end stile, stile locations needed$/);
     expect(section("3200", { manFt: 12, manIn: 0, stileLocations: ['48"'], stileLocationsNeeded: true })).not.toContain("stile locations");
   });
 
@@ -179,11 +195,13 @@ describe("ribbed steel verbiage", () => {
   });
 
   it("ends an intermediate section with its inside slide lock, and a bottom section never (16/10/2026)", () => {
-    expect(sec("524", { manFt: 12, manIn: 0, lock: "slide", stileLocations: ['48"', '96"'] })).toMatch(/single end stiles, stile locations 48" and 96", inside slide lock$/);
-    expect(sec("2415V", { lock: "slide" })).toMatch(/insulated with vinyl back cover, single end stiles, inside slide lock$/);
-    expect(sec("2415V", { lock: "none" })).toMatch(/single end stiles$/);
-    expect(sec("2415V", { secKind: "bt", lock: "slide" })).toMatch(/single end stiles$/);
-    expect(sec("524", { manFt: 12, manIn: 0, lock: "slide" })).toMatch(/single end stiles, stile locations needed, inside slide lock$/);
+    // On a 524 or 2415 the lock comes before any mention of stiles (16/10/2026).
+    expect(sec("524", { manFt: 12, manIn: 0, lock: "slide", stileLocations: ['48"', '96"'] })).toMatch(/solid no windows, inside slide lock, single end stile, stile locations 48" and 96"$/);
+    expect(sec("2415V", { lock: "slide" })).toMatch(/insulated with vinyl back cover, solid no windows, inside slide lock, single end stile$/);
+    expect(sec("2415V", { lock: "none" })).toMatch(/single end stile$/);
+    expect(sec("2415V", { secKind: "bt", lock: "slide" })).toMatch(/single end stile$/);
+    expect(sec("524", { manFt: 12, manIn: 0, lock: "slide" })).toMatch(/inside slide lock, single end stile, stile locations needed$/);
+    expect(sec("524", { manFt: 14, manIn: 0, lock: "slide", windowPanels: [2, 3] })).toMatch(/windows in center of section, solid-glass-glass-solid, inside slide lock, single end stile, stile locations needed$/);
     expect(section("3200", { manFt: 8, manIn: 2, secHeight: "24", stile: "single", lock: "slide" })).toMatch(/single end stile, inside slide lock$/);
     expect(section("3720", { manFt: 12, manIn: 0, windows: 1, stile: "single", lock: "slide" })).toMatch(/single end stile, inside slide lock$/);
     // Wording only: the price does not move.
@@ -193,7 +211,7 @@ describe("ribbed steel verbiage", () => {
 
   it("words the 2415 the same way, under its own maker", () => {
     expect(sec("2415", { secKind: "bt", manFt: 12, manIn: 0, stileLocations: ['48"', '96"'] })).toBe(
-      'Wayne Dalton Model 2415, 12\'0" x 24", steel ribbed bottom section, in the color white, non insulated, single end stiles, stile locations 48" and 96"',
+      'Wayne Dalton Model 2415, 12\'0" x 24", steel ribbed bottom section, in the color white, non insulated, single end stile, stile locations 48" and 96"',
     );
   });
 
