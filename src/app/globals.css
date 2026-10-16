@@ -68,38 +68,39 @@
 }
 
 :root:not([data-theme="light"]) {
-  /* Sidebar darkest, the main area a step lighter, panels a step lighter
-     again — Brandon, 25/9/2026. */
-  --rail: #131112;
-  /* Lifted a smidge on 25/9/2026 so the main area pops off the sidebar; the
-     panels and their lines moved with it, so they still stand out. */
-  --canvas: #201d1e;
-  --surface: #282425;
-  --surface-2: #2e2a2c;
-  --surface-3: #373234;
-  --line: #3e383b;
-  --line-2: #342f31;
-  --line-strong: #514a4d;
+  /* Neutral greys in even steps — sidebar darkest, the main area a step
+     lighter, panels a step lighter again, headers and inputs a step on top
+     — with lines a touch lighter than what they sit on, so every card and
+     box lifts off the one under it; one red, kept for buttons and the thing
+     selected (Brandon, 16/10/2026). */
+  --rail: #121316;
+  --canvas: #1a1c20;
+  --surface: #22252a;
+  --surface-2: #2a2e34;
+  --surface-3: #33373e;
+  --line: #353a41;
+  --line-2: #2d3137;
+  --line-strong: #4a515a;
 
-  --ink: #efebeb;
-  --ink-2: #d8d1d2;
-  --muted: #a99fa1;
-  --muted-2: #7e7578;
+  --ink: #f3f4f6;
+  --ink-2: #d5d9de;
+  --muted: #a3aab4;
+  --muted-2: #7c838d;
 
-  --accent: #9a1f29;
-  --accent-hover: #b12a35;
-  --accent-ink: #f05252;        /* the red as text: the button red is too dark to read on black */
+  --accent: #c0262f;
+  --accent-hover: #d8303a;
+  --accent-ink: #ff5c66;        /* the red as text: the button red is too dark to read on grey */
   --accent-soft: var(--surface-3);
   --accent-line: var(--accent);
 
-  --good: #62c793;
-  --good-soft: rgba(98, 199, 147, .12);
-  --good-line: rgba(98, 199, 147, .35);
-  --bad: #f2917f;
-  --bad-soft: rgba(242, 145, 127, .12);
-  --bad-line: rgba(242, 145, 127, .35);
+  --good: #5fd39a;
+  --good-soft: rgba(95, 211, 154, .12);
+  --good-line: rgba(95, 211, 154, .35);
+  --bad: #ff8a7a;
+  --bad-soft: rgba(255, 138, 122, .12);
+  --bad-line: rgba(255, 138, 122, .35);
 
-  --shadow-float: 0 1px 2px rgba(0, 0, 0, .35), 0 16px 36px -20px rgba(0, 0, 0, .8);
+  --shadow-float: 0 1px 2px rgba(0, 0, 0, .4), 0 18px 40px -20px rgba(0, 0, 0, .85);
 
   color-scheme: dark;
 }
