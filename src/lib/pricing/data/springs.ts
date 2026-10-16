@@ -179,15 +179,17 @@ export function strutDesc(desc: string): string {
 }
 /**
  * Lines reworded by hand (Brandon, 14 and 16/10/2026), keyed "CATEGORY|NAME"
- * like HAND_PRICES: the U retainers and the plastic L retainers say what they
- * are, and part-pricing.ts writes their stick as "[1] - 8FT". The names the
- * counter picks stay the sheet's.
+ * like HAND_PRICES: the U retainers and the 1-3/8" and 2" L retainers say
+ * what they are, the 1-3/4" L retainer keeps the sheet's words without its
+ * doubled spaces, and part-pricing.ts writes each one's stick as "[1] - 8FT".
+ * The names the counter picks stay the sheet's.
  */
 export const HAND_DESCS: Record<string, string> = {
   'RETAINERS|2" U RETAINER': '2" PLASTIC U RETAINER WITH RUBBER',
   'RETAINERS|1-3/8" U RETAINER': '1-3/8" PLASTIC U RETAINER WITH RUBBER',
   'RETAINERS|2" L RETAINER': '2" PLASTIC L RETAINER',
   'RETAINERS|1-3/8" L RETAINER': '1-3/8" PLASTIC L RETAINER',
+  'RETAINERS|1-3/4" L RETAINER': '1-3/4" L RETAINER',
 };
 function withHandPrices(c: PartCategory): PartCategory {
   return {

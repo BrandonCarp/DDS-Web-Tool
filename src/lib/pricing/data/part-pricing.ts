@@ -63,9 +63,9 @@ export function partDescription(
   // 12/10/2026; solid shafts 13/10/2026). A retainer still says the stick it
   // bills: a 12FT U retainer is sold as a 16FT stick, and the line says what
   // left the building — a U retainer as one piece, "[1] - 16FT" (14/10/2026),
-  // and the plastic L retainers the same way (16/10/2026).
+  // and the L retainers the same way (16/10/2026).
   const said = isRawTrack(part) || isSolidShaft(part) ? Math.max(0, Math.round(feet * 12) / 12) : billedFeet(part, feet);
-  if (isURetainer(part) || isPlasticLRetainer(part)) return `${base}, [1] - ${feetText(said)}`;
+  if (isURetainer(part) || isLRetainer(part)) return `${base}, [1] - ${feetText(said)}`;
   return `${base},  ${feetText(said)}`;
 }
 
@@ -98,8 +98,10 @@ export function partQuantity(part: Part, right?: number, left?: number): number 
  *
  * U retainer (Brandon, 7/10/2026): up to 10FT bills by the foot, over 10FT up
  * to 16FT bills a 16FT stick, and over 16FT an 18FT stick — DDS stocks both
- * lengths. L retainer (31/8/2026): over 10FT bills an 18FT stick. The offcut is
- * not sellable, so the customer pays for the whole stick.
+ * lengths. L retainer: the same two sticks (16/10/2026 — it billed the 18FT
+ * for anything over 10FT from 31/8/2026, but DDS stocks 16FT L retainers too,
+ * so a 16'0" is a 16FT stick). The offcut is not sellable, so the customer
+ * pays for the whole stick.
  *
  * Under the threshold it still bills by the foot. Brandon: nobody asks for less
  * than 7 or 8 feet in practice, so there is no minimum charge to worry about.
@@ -112,7 +114,8 @@ export function partQuantity(part: Part, right?: number, left?: number): number 
 const RETAINER_STICKS: { type: RegExp; overFeet: number; billFeet: number }[] = [
   { type: /\bU\s+RETAINER/i, overFeet: 16, billFeet: 18 },
   { type: /\bU\s+RETAINER/i, overFeet: 10, billFeet: 16 },
-  { type: /\bL\s+RETAINER/i, overFeet: 10, billFeet: 18 },
+  { type: /\bL\s+RETAINER/i, overFeet: 16, billFeet: 18 },
+  { type: /\bL\s+RETAINER/i, overFeet: 10, billFeet: 16 },
 ];
 
 /**
@@ -187,9 +190,9 @@ export function isRetainer(part: Part): boolean {
 export function isURetainer(part: Part): boolean {
   return /\bU\s+RETAINER/i.test(part.desc);
 }
-/** The 1-3/8" and 2" plastic L retainers — their line counts the piece too: "2" PLASTIC L RETAINER, [1] - 8FT" (16/10/2026). */
-export function isPlasticLRetainer(part: Part): boolean {
-  return /\bPLASTIC L\s+RETAINER/i.test(part.desc);
+/** An L retainer sold by the foot — its line counts the piece too: "2" PLASTIC L RETAINER, [1] - 8FT" (16/10/2026, the 1-3/4" the same day). */
+export function isLRetainer(part: Part): boolean {
+  return /\bL\s+RETAINER/i.test(part.desc);
 }
 
 /** 10.5 -> 10'6", 16 -> 16FT: whole feet keep the FT the sheet writes. */

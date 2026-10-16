@@ -44,11 +44,12 @@ describe("parts list", () => {
     // A U retainer counts its piece, in the shelf's wording (14/10/2026).
     expect(partDescription(shelfPart("RETAINERS", '2" U RETAINER'), 8)).toBe('2" PLASTIC U RETAINER WITH RUBBER, [1] - 8FT');
     expect(partDescription(shelfPart("RETAINERS", '1-3/8" U RETAINER'), 8.5)).toBe('1-3/8" PLASTIC U RETAINER WITH RUBBER, [1] - 8\'6"');
-    // The 1-3/8" and 2" L retainers are plastic and count the piece too (16/10/2026); the 1-3/4" stays the sheet's.
+    // The 1-3/8" and 2" L retainers are plastic and count the piece too (16/10/2026); the 1-3/4" counts it under the sheet's words.
     expect(partDescription(shelfPart("RETAINERS", '2" L RETAINER'), 8)).toBe('2" PLASTIC L RETAINER, [1] - 8FT');
     expect(partDescription(shelfPart("RETAINERS", '1-3/8" L RETAINER'), 8)).toBe('1-3/8" PLASTIC L RETAINER, [1] - 8FT');
-    expect(partDescription(shelfPart("RETAINERS", '1-3/8" L RETAINER'), 12)).toBe('1-3/8" PLASTIC L RETAINER, [1] - 18FT');
-    expect(partDescription(shelfPart("RETAINERS", '1-3/4" L RETAINER'), 8)).toBe('1-3/4"  L  RETAINER,  8FT');
+    expect(partDescription(shelfPart("RETAINERS", '1-3/8" L RETAINER'), 12)).toBe('1-3/8" PLASTIC L RETAINER, [1] - 16FT');
+    expect(partDescription(shelfPart("RETAINERS", '1-3/4" L RETAINER'), 8)).toBe('1-3/4" L RETAINER, [1] - 8FT');
+    expect(partDescription(shelfPart("RETAINERS", '1-3/4" L RETAINER'), 10.5)).toBe('1-3/4" L RETAINER, [1] - 16FT');
     // Struts say what they are and count the piece (16/10/2026).
     expect(partDescription(shelfPart("STRUTS", "12FT STRUT"))).toBe('2-1/4" GALVANIZED STRUT, [1] - 12FT');
     expect(partDescription(shelfPart("STRUTS", "10FT STRUT"))).toBe('2-1/4" GALVANIZED STRUT, [1] - 10FT');
@@ -68,7 +69,7 @@ describe("parts list", () => {
     expect(withPieceCount(u, 0)).toBe(u);
     // A spring's hands and a plain per-foot line are not piece counts.
     expect(pieceCounted('TORSION SPRINGS,  2" ID,  218 WIRE,  26" LONG [2] - RIGHT WOUND AND [1] - LEFT WOUND')).toBe(false);
-    expect(pieceCounted('1-3/4"  L  RETAINER,  8FT')).toBe(false);
+    expect(pieceCounted('1" BRUSH SEAL,  50FT')).toBe(false);
     expect(pieceCounted('2" RAW TRACK,  16\'6"')).toBe(false);
     expect(withPieceCount('400-8 DRUMS,  PAIR', 2)).toBe('400-8 DRUMS,  PAIR');
   });
@@ -186,6 +187,15 @@ describe("raw track sticks (30/9/2026)", () => {
     // A retainer still names the stick it bills.
     expect(partDescription(shelfPart("RETAINERS", '2" U RETAINER'), 12)).toBe('2" PLASTIC U RETAINER WITH RUBBER, [1] - 16FT');
     expect(partDescription(shelfPart("RETAINERS", '2" U RETAINER'), 17)).toBe('2" PLASTIC U RETAINER WITH RUBBER, [1] - 18FT');
+    // L retainers come as 16FT and 18FT sticks too (16/10/2026): 16'0" is the 16FT, 16'1" the 18FT.
+    for (const nm of ['2" L RETAINER', '1-3/8" L RETAINER', '1-3/4" L RETAINER']) {
+      for (const [asked, billed] of [[8, 8], [10, 10], [10 + 1 / 12, 16], [16, 16], [16 + 1 / 12, 18], [18, 18]]) {
+        expect(billedFeet(shelfPart("RETAINERS", nm), asked), `${nm} at ${asked}`).toBe(billed);
+      }
+      expect(partPrice(shelfPart("RETAINERS", nm), 16)).toBe(2.75 * 16);
+      expect(partDescription(shelfPart("RETAINERS", nm), 16)).toContain("[1] - 16FT");
+      expect(partDescription(shelfPart("RETAINERS", nm), 16.5)).toContain("[1] - 18FT");
+    }
   });
 
   it("is asked for in feet and inches, and the line says them", () => {

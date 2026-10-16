@@ -95,11 +95,14 @@ describe("retainer stick lengths", () => {
     expect(partPrice(U!, 18)).toBeCloseTo(U!.price * 18, 2);
   });
 
-  it("bills an L retainer over 10FT as an 18FT stick", () => {
+  it("bills an L retainer over 10FT as a 16FT stick, and over 16FT an 18FT one, like the U (16/10/2026)", () => {
     expect(L, "L retainer not found").toBeTruthy();
     expect(billedFeet(L!, 10)).toBe(10);
-    expect(billedFeet(L!, 11)).toBe(18);
-    expect(partPrice(L!, 14)).toBeCloseTo(L!.price * 18, 2);
+    expect(billedFeet(L!, 11)).toBe(16);
+    expect(billedFeet(L!, 16)).toBe(16);
+    expect(billedFeet(L!, 17)).toBe(18);
+    expect(partPrice(L!, 14)).toBeCloseTo(L!.price * 16, 2);
+    expect(partPrice(L!, 18)).toBeCloseTo(L!.price * 18, 2);
   });
 
   it("still bills by the foot under the threshold", () => {
