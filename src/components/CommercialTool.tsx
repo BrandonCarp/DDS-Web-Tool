@@ -16,9 +16,9 @@ import {
   SLAB_RATE, SLAB_LABEL, panelCount, placementOf, placementPanels, windowPlacements,
   SECTION_MAX_WIDTH_IN, maxWidthLabel, sectionColors, sectionGlassLabel,
   STOCK_SECTION_WIDTHS, sectionWidthLabel, sectionWindowSizes, stileLocationCount,
-  STILE_FRACTIONS, stileLocationText,
+  stileLocationText,
 } from "@/lib/pricing/data/commercial-meta";
-import { PanelDiagram } from "./PanelDiagram";
+import { PanelDiagram, type StileValue } from "./PanelDiagram";
 import { homeownerMarkup } from "@/lib/pricing/engine";
 import { QtyStepper } from "./QtyStepper";
 
@@ -56,22 +56,22 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   // 24" first and by default (Brandon, 15/10/2026).
   const [secHeight, setSecHeight] = useState<"21" | "24">("24");
   // The panels with windows, 1-based from the left (15/10/2026): pressed on
-  // the section diagram, or read off a complete door's placement ("GL,SOL,GL").
-  // Glass starts with a window in every panel.
+  // the section drawing, or read off a complete door's placement ("GL,SOL,GL").
+  // A complete door's glass starts with a window in every panel; a section
+  // starts solid and takes a window a press.
   const [winPanels, setWinPanels] = useState<number[]>([]);
-  // The windows' size, where the model's sections come in more than one
-  // (24x12 or 24x6 on a 524 or 2415, 24x8 or 24x12 on a 3200 — 14/10/2026).
+  // The windows' size, 24x12 first, where the model's sections come in more
+  // than one (24x6 on a 524 or 2415, 24x8 on a 3200 — 14 and 16/10/2026).
   const [windowSize, setWindowSize] = useState("");
-  // A section's glass, as its dropdown has it: "" for solid, else the size.
-  const [secGlass, setSecGlass] = useState("");
   const [stile, setStile] = useState<"single" | "double">("single");
   // The stile measurements of a 524 or 2415, one a stile, left to right —
-  // the inches and the quarter — as many as the sheet asks by width, plus
-  // any added; or "needed" when they are still to come (15/10/2026).
-  const [stileVals, setStileVals] = useState<{ inch: string; frac: string }[]>([]);
-  const [extraStiles, setExtraStiles] = useState(0);
+  // the inches and the quarter — as many as the sheet asks by width; or
+  // "needed" when they are still to be determined (15/10/2026).
+  const [stileVals, setStileVals] = useState<StileValue[]>([]);
   const [stilesNeeded, setStilesNeeded] = useState(false);
   const [secColor, setSecColor] = useState<"White" | "Brown">("White");
+  // An inside slide lock on an intermediate section (16/10/2026).
+  const [lock, setLock] = useState<"none" | "slide">("none");
 
   const [qty, setQty] = useState(1);
   const { custName, custPo, custJob } = useCustomerJob();
@@ -100,28 +100,21 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
     ? (sizeDims ? Number(sizeDims[1]) * 12 + Number(sizeDims[2]) : 0)
     : (parseInt(manFt, 10) || 0) * 12 + (parseInt(manIn, 10) || 0);
   const panels = widthIn > 0 ? panelCount(0, widthIn) : 0;
-  const glassOn = order === "complete" ? glass === "glass" : secKind === "int" && secGlass !== "";
+  const glassOn = order === "complete" ? glass === "glass" : secKind === "int";
   const winPanelsUsed = glassOn ? winPanels.filter((n) => n >= 1 && n <= panels) : [];
   const stileCount = order === "section" ? stileLocationCount(model, parseInt(manFt, 10) || 0, parseInt(manIn, 10) || 0) : 0;
-  const stileRows = stileCount > 0 ? stileCount + extraStiles : 0;
-  const stileValsUsed = Array.from({ length: stileRows }, (_, i) => stileVals[i] ?? { inch: "", frac: "0" });
+  const stileValsUsed = Array.from({ length: stileCount }, (_, i) => stileVals[i] ?? { inch: "", frac: "0" });
   const stileLocationsUsed = stileValsUsed.map((v) => stileLocationText(v.inch, v.frac));
   function togglePanel(p: number) {
     setWinPanels((cur) => (cur.includes(p) ? cur.filter((x) => x !== p) : [...cur, p].sort((a, b) => a - b)));
   }
   const allPanels = (n: number) => Array.from({ length: n }, (_, i) => i + 1);
-  function setStileVal(i: number, patch: Partial<{ inch: string; frac: string }>) {
+  function setStileVal(i: number, patch: Partial<StileValue>) {
     setStileVals((cur) => {
-      const next = Array.from({ length: Math.max(stileRows, i + 1) }, (_, k) => cur[k] ?? { inch: "", frac: "0" });
+      const next = Array.from({ length: Math.max(stileCount, i + 1) }, (_, k) => cur[k] ?? { inch: "", frac: "0" });
       next[i] = { ...next[i], ...patch };
       return next;
     });
-  }
-  /** A section's glass, from its dropdown: solid clears the panels; a glass size starts with a window in every panel. */
-  function pickSecGlass(v: string) {
-    setSecGlass(v);
-    if (v) setWindowSize(v);
-    setWinPanels(v ? allPanels(panels) : []);
   }
 
   // Widest section this model may be ordered in, for the input hint and the
@@ -130,14 +123,13 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const maxIn = SECTION_MAX_WIDTH_IN[model] ?? null;
   const maxFt = maxIn != null ? Math.floor(maxIn / 12) : null;
   const overMax = maxIn != null && manFt !== "" && (Number(manFt) * 12 + (Number(manIn) || 0)) > maxIn;
-  // A complete door's windows are 24x12 unless another size is picked; a
-  // section's lead with the model's first (24x8 on a 3200) — as the engine reads them.
+  // 24x12 unless another size is picked — the model's first, as the engine reads it.
   const winSizes = sectionWindowSizes(model);
-  const winSizeUsed = winSizes.includes(windowSize) ? windowSize : order === "complete" && winSizes.includes("24x12") ? "24x12" : winSizes[0];
+  const winSizeUsed = winSizes.includes(windowSize) ? windowSize : winSizes[0];
   const placements = order === "complete" ? windowPlacements(panels) : [];
   const placement = placementOf(panels, winPanelsUsed);
 
-  const cfgSig = JSON.stringify([mfr, model, order, size, glass, track, mount, cspring, clock, cColor, winSection, manFt, manIn, secKind, secHeight, secGlass, winPanelsUsed, winSizeUsed, stile, stileLocationsUsed, stilesNeeded, secColor, homeowner]);
+  const cfgSig = JSON.stringify([mfr, model, order, size, glass, track, mount, cspring, clock, cColor, winSection, manFt, manIn, secKind, secHeight, winPanelsUsed, winSizeUsed, stile, stileLocationsUsed, stilesNeeded, secColor, lock, homeowner]);
   const result = resultRaw && resultSig === cfgSig ? resultRaw : null;
   const liveError = errorRaw && resultSig === cfgSig ? errorRaw : null;
   const priced = result?.priced ?? false;
@@ -154,7 +146,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   function pickModel(m: string) {
     setModel(m);
     setSize(""); setManFt(""); setManIn("0");
-    setWinPanels([]); setSecGlass(""); setWindowSize(""); setStile("single"); setSecColor("White"); setStileVals([]); setExtraStiles(0); setStilesNeeded(false);
+    setWinPanels([]); setWindowSize(""); setStile("single"); setSecColor("White"); setStileVals([]); setStilesNeeded(false); setLock("none");
   }
   /** The order type, as the first two buttons ask it: it decides which models are listed. */
   function pickOrder(o: "complete" | "section") {
@@ -168,18 +160,16 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
     const d = v.match(/(\d+)\u2032(\d+)\u2033/);
     setWinPanels(d ? allPanels(panelCount(Number(d[1]), Number(d[2]))) : []);
   }
-  /** A section's width: the panels and stiles follow it, so what was pressed or added starts over. */
+  /** A section's width: the panels and stiles follow it, so what was pressed starts over. */
   function pickWidth(ft: string, inch: string) {
     setManFt(ft); setManIn(inch);
-    const n = (parseInt(ft, 10) || 0) * 12 + (parseInt(inch, 10) || 0);
-    setWinPanels(secGlass && n > 0 ? allPanels(panelCount(0, n)) : []);
-    setExtraStiles(0);
+    setWinPanels([]);
   }
   function resetConfig() {
     setSize(""); setGlass("solid"); setTrack("15R"); setMount("continuous"); setCspring("torsion"); setClock("none");
     setManFt(""); setManIn("0");
-    setSecKind("bt"); setSecHeight("24"); setWinPanels([]); setSecGlass(""); setWindowSize(""); setStile("single"); setSecColor("White");
-    setStileVals([]); setExtraStiles(0); setStilesNeeded(false);
+    setSecKind("bt"); setSecHeight("24"); setWinPanels([]); setWindowSize(""); setStile("single"); setSecColor("White");
+    setStileVals([]); setStilesNeeded(false); setLock("none");
     setQty(1); setResult(null); setError(null); setSaved(false);
   }
   function onBack() { resetConfig(); setStep(1); }
@@ -191,7 +181,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
         order === "complete"
           ? { order, mfr, model, size, glass, track, mount, cspring, clock, color: cColor, winSection: Number(winSection) || 3, windowPanels: winPanelsUsed, windowSize: winSizeUsed }
           : { order, mfr, model, manFt: Number(manFt), manIn: Number(manIn) || 0, secKind, secHeight, windowPanels: winPanelsUsed, windowSize: winSizeUsed, stile,
-              stileLocations: stileLocationsUsed, stileLocationsNeeded: stilesNeeded, color: secColor };
+              stileLocations: stileLocationsUsed, stileLocationsNeeded: stilesNeeded, color: secColor, lock: secKind === "int" ? lock : "none" };
       const res = await fetch("/api/price/commercial", {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
       });
@@ -445,7 +435,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
                 </>
               ) : (
                 <>
-                  <div className={`ggroup${secKind === "int" || !hasStileChoice ? "" : " span"}`}>
+                  <div className="ggroup">
                     <div className="ghdr">Replacement section</div>
                     <div className="grow">
                       <label>Section type</label>
@@ -506,60 +496,23 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
                         )}
                       </div>
                     </div>
-                    {hasStileChoice && (
-                      <div className="grow">
-                        <label>Color</label>
-                        <div className="ctl selectwrap">
-                          <select data-testid="comm-color" value={secColor} onChange={(e) => setSecColor(e.target.value as "White" | "Brown")} disabled={colorOpts.length === 1}>
-                            {colorOpts.map((c) => <option key={c} value={c}>{c}</option>)}
-                          </select>
-                        </div>
-                      </div>
-                    )}
                   </div>
 
-                  {(secKind === "int" || !hasStileChoice) && (
-                    <div className="ggroup">
-                      <div className="ghdr">Additional options</div>
-                      {secKind === "int" && (
-                        <>
-                          <div className="gsub">Window options</div>
-                          <div className="grow stack">
-                            <label>Glass type</label>
-                            <div className="ctl selectwrap">
-                              <select data-testid="comm-sec-glass" value={secGlass} onChange={(e) => pickSecGlass(e.target.value)}>
-                                <option value="">Solid</option>
-                                {winSizes.map((w) => <option key={w} value={w}>{sectionGlassLabel(model)} {w}</option>)}
-                              </select>
-                            </div>
+                  {/* Colour, end stiles and the lock (an intermediate section's only)
+                      beside the section, as Brandon drew it (16/10/2026). */}
+                  <div className="ggroup">
+                    <div className="ghdr">Additional options</div>
+                    {hasStileChoice && (
+                      <>
+                        <div className="grow">
+                          <label>Color</label>
+                          <div className="ctl selectwrap">
+                            <select data-testid="comm-color" value={secColor} onChange={(e) => setSecColor(e.target.value as "White" | "Brown")} disabled={colorOpts.length === 1}>
+                              {colorOpts.map((c) => <option key={c} value={c}>{c}</option>)}
+                            </select>
                           </div>
-                        </>
-                      )}
-                      {!hasStileChoice && (
-                        <div className="grow"><label>&nbsp;</label><div className="ctl"><span className="muted-note">Any width — priced from the next standard section up. 21″ and 24″ are the same price.</span></div></div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* The section, drawn to its proportions, once it has glass: a
-                      window in every panel to begin with; press one to take it out
-                      (CJ's sheet, 15/10/2026). */}
-                  {secKind === "int" && secGlass !== "" && panels > 0 && (
-                    <div className="ggroup span">
-                      <PanelDiagram panels={panels} windows={new Set(winPanelsUsed)} onToggle={togglePanel} widthIn={widthIn} heightIn={Number(secHeight)} />
-                    </div>
-                  )}
-
-                  {hasStileChoice && (
-                    <div className="ggroup span">
-                      <div className="ghdr">Stile options</div>
-                      {/* Two to a row, so a wide door's stiles fit on the screen: the end
-                          stiles beside the buttons, then the stile locations of a 524 or
-                          2415 — one a stile, as many as the sheet counts by width, each its
-                          inches and quarter; Add Stile for one more; or still to be
-                          determined (15/10/2026). */}
-                      <div className="stilegrid">
-                        <div className="grow compact">
+                        </div>
+                        <div className="grow">
                           <label>End stiles</label>
                           <div className="ctl selectwrap">
                             <select data-testid="comm-end-stiles" value={stile} onChange={(e) => setStile(e.target.value as "single" | "double")}>
@@ -568,34 +521,49 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
                             </select>
                           </div>
                         </div>
-                        {stileCount > 0 && (
-                          <div className="grow compact nolabel">
-                            <div className="ctl stilebtns">
-                              {!stilesNeeded && (
-                                <button type="button" className="btn" data-testid="comm-add-stile" onClick={() => setExtraStiles((n) => n + 1)}>Add Stile</button>
-                              )}
-                              <button type="button" className={`btn${stilesNeeded ? " on" : ""}`} data-testid="comm-stiles-needed" aria-pressed={stilesNeeded}
-                                onClick={() => setStilesNeeded((v) => !v)}>
-                                Stiles to be determined
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                        {stileCount > 0 && !stilesNeeded && stileValsUsed.map((v, i) => (
-                          <div className="grow compact" key={i}>
-                            <label>Stile # {i + 1}</label>
-                            <div className="ctl stilerow">
-                              <input data-testid={`comm-stile-${i + 1}`} type="number" min={0} inputMode="numeric" aria-label={`Stile ${i + 1} inches`}
-                                value={v.inch} onChange={(e) => setStileVal(i, { inch: e.target.value })} />
-                              <div className="selectwrap">
-                                <select data-testid={`comm-stile-${i + 1}-frac`} aria-label={`Stile ${i + 1} fraction`} value={v.frac} onChange={(e) => setStileVal(i, { frac: e.target.value })}>
-                                  {STILE_FRACTIONS.map((f) => <option key={f} value={f}>{f}</option>)}
-                                </select>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
+                      </>
+                    )}
+                    {secKind === "int" && (
+                      <div className="grow">
+                        <label>Lock</label>
+                        <div className="ctl selectwrap">
+                          <select data-testid="comm-sec-lock" value={lock} onChange={(e) => setLock(e.target.value as "none" | "slide")}>
+                            <option value="none">No lock</option>
+                            <option value="slide">Inside slide lock</option>
+                          </select>
+                        </div>
                       </div>
+                    )}
+                    {!hasStileChoice && (
+                      <div className="grow"><label>&nbsp;</label><div className="ctl"><span className="muted-note">Any width — priced from the next standard section up. 21″ and 24″ are the same price.</span></div></div>
+                    )}
+                  </div>
+
+                  {/* The section, drawn to its proportions as soon as it has a width
+                      (16/10/2026): on an intermediate section press a panel for a
+                      window — 24x12, the smaller size in its dropdown; on a 524 or
+                      2415 the stile measurements go under the stiles, left to right,
+                      or are still to be determined. */}
+                  {panels > 0 && (
+                    <div className="ggroup span" data-testid="comm-drawing">
+                      <PanelDiagram panels={panels} windows={secKind === "int" ? new Set(winPanelsUsed) : null} onToggle={togglePanel}
+                        glassLabel={sectionGlassLabel(model)} sizes={winSizes} size={winSizeUsed} onSize={setWindowSize}
+                        stiles={stileCount > 0 && !stilesNeeded ? stileValsUsed : null} onStile={setStileVal}
+                        widthIn={widthIn} heightIn={Number(secHeight)} />
+                      {(secKind === "int" || stileCount > 0) && (
+                        <div className="pnotes">
+                          <div className="pnote-lines">
+                            {secKind === "int" && <div className="muted-note">If windows are needed, click on which panel you want windows in, and what size.</div>}
+                            {stileCount > 0 && !stilesNeeded && <div className="muted-note">Enter in stile measurements — measurements are taken left to right.</div>}
+                          </div>
+                          {stileCount > 0 && (
+                            <button type="button" className={`btn${stilesNeeded ? " on" : ""}`} data-testid="comm-stiles-needed" aria-pressed={stilesNeeded}
+                              onClick={() => setStilesNeeded((v) => !v)}>
+                              Stiles to be determined
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </>

@@ -84,21 +84,25 @@ describe("ribbed steel verbiage", () => {
     expect(sec("2415V", { windows: 2, windowSize: "24x8" })).toContain("two 24x12 insulated glass windows");
     expect(sectionWindowSizes("524")).toEqual(["24x12", "24x6"]);
     expect(sectionWindowSizes("2415S")).toEqual(["24x12", "24x6"]);
-    expect(sectionWindowSizes("3200")).toEqual(["24x8", "24x12"]);
+    expect(sectionWindowSizes("3200")).toEqual(["24x12", "24x8"]); // 24x12 first everywhere (16/10/2026)
     expect(sectionWindowSizes("2742")).toEqual(["24x12"]);
   });
 
-  it("gives the 3200 its 24x8 or 24x12 insulated glass windows", () => {
+  it("gives the 3200 its 24x12 or 24x8 insulated glass windows", () => {
     const s3200 = (o: Record<string, unknown>) => section("3200", { manFt: 8, manIn: 2, secHeight: "24", stile: "single", ...o });
-    expect(s3200({ windows: 2 })).toContain('intermediate section, in the color White, two 24x8 insulated glass windows');
-    expect(s3200({ windows: 2, windowSize: "24x12" })).toContain("two 24x12 insulated glass windows");
+    expect(s3200({ windows: 2 })).toContain('intermediate section, in the color White, two 24x12 insulated glass windows');
+    expect(s3200({ windows: 2, windowSize: "24x8" })).toContain("two 24x8 insulated glass windows");
   });
 
   it("counts a section's panels and stiles by width, as CJ's sheet does (15/10/2026)", () => {
     expect([[9, 2], [9, 3], [13, 2], [13, 3], [16, 2], [16, 3], [20, 2], [20, 3], [24, 2], [24, 3]].map(([f, i]) => panelCount(f, i)))
       .toEqual([2, 3, 3, 4, 4, 5, 5, 6, 6, 7]);
     expect(stileLocationCount("524", 10, 2)).toBe(2);
-    expect(stileLocationCount("2415S", 8, 0)).toBe(1);
+    // None up to 9'2" — the one stile of an 8'2" or 9'2" is not asked for (16/10/2026); two from 9'3".
+    expect(stileLocationCount("2415S", 8, 0)).toBe(0);
+    expect(stileLocationCount("2415S", 8, 2)).toBe(0);
+    expect(stileLocationCount("524", 9, 2)).toBe(0);
+    expect(stileLocationCount("524", 9, 3)).toBe(2);
     expect(stileLocationCount("2415V", 16, 3)).toBe(4);
     expect(stileLocationCount("3200", 16, 3)).toBe(0);
     expect(stileLocationCount("524", 0, 0)).toBe(0);
@@ -138,9 +142,10 @@ describe("ribbed steel verbiage", () => {
     // 16'3": five panels, four stiles; blanks are skipped, and a stile added past the sheet's count is written too (Add Stile, 15/10/2026).
     expect(sec("2415V", { manFt: 16, manIn: 3, secKind: "bt", stile: "double", stileLocations: ['39"', "", '78-1/2"', '117"', '156"'] }))
       .toMatch(/double end stiles, stile locations 39"  78-1\/2"  117" and 156"$/);
-    expect(sec("524", { manFt: 8, manIn: 2, stileLocations: ['24"', '48"', '72"'] })).toMatch(/stile locations 24"  48" and 72"$/);
-    // One stile under 9'3".
-    expect(sec("2415", { manFt: 8, manIn: 2, stileLocations: ['49"'] })).toMatch(/single end stiles, stile locations 49"$/);
+    expect(sec("524", { manFt: 12, manIn: 0, stileLocations: ['24"', '48"', '72"'] })).toMatch(/stile locations 24"  48" and 72"$/);
+    // None under 9'3": an 8'2" or 9'2" writes no stile locations, typed or not (16/10/2026).
+    expect(sec("2415", { manFt: 8, manIn: 2, stileLocations: ['49"'] })).toMatch(/single end stiles$/);
+    expect(sec("2415", { manFt: 9, manIn: 2, stileLocations: ['55"'], stileLocationsNeeded: true })).toMatch(/single end stiles$/);
     // Still to come.
     expect(sec("524", { manFt: 12, manIn: 0, stileLocations: ['48"'], stileLocationsNeeded: true })).toMatch(/single end stiles, stile locations needed$/);
     // Nothing typed, nothing written; and never on another model.
@@ -170,6 +175,18 @@ describe("ribbed steel verbiage", () => {
     expect(sectionGlassLabel("524S")).toBe("Insulated");
     expect(sectionGlassLabel("3200")).toBe("Insulated");
     expect(sectionGlassLabel("3720")).toBe("Insulated");
+  });
+
+  it("ends an intermediate section with its inside slide lock, and a bottom section never (16/10/2026)", () => {
+    expect(sec("524", { manFt: 12, manIn: 0, lock: "slide", stileLocations: ['48"', '96"'] })).toMatch(/single end stiles, stile locations 48" and 96", inside slide lock$/);
+    expect(sec("2415V", { lock: "slide" })).toMatch(/insulated with vinyl back cover, single end stiles, inside slide lock$/);
+    expect(sec("2415V", { lock: "none" })).toMatch(/single end stiles$/);
+    expect(sec("2415V", { secKind: "bt", lock: "slide" })).toMatch(/single end stiles$/);
+    expect(section("3200", { manFt: 8, manIn: 2, secHeight: "24", stile: "single", lock: "slide" })).toMatch(/single end stile, inside slide lock$/);
+    expect(section("3720", { manFt: 12, manIn: 0, windows: 1, stile: "single", lock: "slide" })).toMatch(/single end stile, inside slide lock$/);
+    // Wording only: the price does not move.
+    const price = (o: Record<string, unknown>) => quoteCommercial({ order: "section", mfr: "Clopay", model: "524", manFt: 12, manIn: 0, secKind: "int", secHeight: "24", stile: "single", color: "White", ...o } as never).unitPrice;
+    expect(price({ lock: "slide" })).toBe(price({ lock: "none" }));
   });
 
   it("words the 2415 the same way, under its own maker", () => {

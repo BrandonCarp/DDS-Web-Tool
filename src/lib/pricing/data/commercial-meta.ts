@@ -333,7 +333,7 @@ export function sectionColors(model: string): ("White" | "Brown")[] {
  * he gave them. Every other model keeps the one size it always had.
  */
 export const SECTION_WINDOW_SIZES: Record<string, readonly string[]> = {
-  "3200": ["24x8", "24x12"],
+  "3200": ["24x12", "24x8"],
   "524": ["24x12", "24x6"], "524V": ["24x12", "24x6"], "524S": ["24x12", "24x6"],
   "2415": ["24x12", "24x6"], "2415V": ["24x12", "24x6"], "2415S": ["24x12", "24x6"],
 };
@@ -344,11 +344,14 @@ export function sectionWindowSizes(model: string): readonly string[] {
 /**
  * The 524 and 2415 families: the steel ribbed sections, whose stile locations
  * are asked for — one measurement a stile, left to right, as CJ's sheet counts
- * them by width (15/10/2026; from 10'0" only on the 14th).
+ * them by width (15/10/2026; from 10'0" only on the 14th). None up to 9'2":
+ * the one stile of an 8'2" or 9'2" section is not asked for (Brandon,
+ * 16/10/2026).
  */
 export const RIBBED_SECTION_MODELS = new Set(["524", "524V", "524S", "2415", "2415V", "2415S"]);
 export function stileLocationCount(model: string, ft: number, inch: number): number {
-  return RIBBED_SECTION_MODELS.has(model) && ft > 0 ? panelCount(ft, inch) - 1 : 0;
+  const panels = RIBBED_SECTION_MODELS.has(model) && ft > 0 ? panelCount(ft, inch) : 0;
+  return panels >= 3 ? panels - 1 : 0;
 }
 
 /**

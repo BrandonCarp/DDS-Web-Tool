@@ -50,8 +50,10 @@ export interface CommSectionInput {
   windowSize?: string;
   retainer?: boolean;                 // DEPRECATED — ignored; retainer is always included on bottom sections
   stile?: "none" | "single" | "double"; // per-foot only
-  /** The stile measurements, left to right, as typed — a 524 or 2415 (stileLocationCount shows how many; more may be added). */
+  /** The stile measurements, left to right, as typed — a 524 or 2415 (stileLocationCount). */
   stileLocations?: string[];
+  /** An inside slide lock on an intermediate section — wording only, as on the complete door (16/10/2026). */
+  lock?: "none" | "slide";
   /** The locations are still to come: the line ends "stile locations needed". */
   stileLocationsNeeded?: boolean;
   color?: "White" | "Brown";          // DESCRIPTION ONLY — individual sections come in white or brown
@@ -306,12 +308,14 @@ export function quoteCommercial(input: CommInput): CommQuote {
   // — "stile locations 59"  82-1/4" and 90-1/2"", two spaces between them and
   // "and" before the last, like the vinyl — or "stile locations needed" when
   // they are still to come (Brandon, 15/10/2026). The sheet's count by width
-  // is what the counter is shown; a stile added past it is written too.
+  // is what the counter is shown; a stile typed past it is written too.
   const stileCount = stileLocationCount(model, ft, inch);
   const typed = stileCount > 0 ? (input.stileLocations ?? []).slice(0, 10).map((x) => String(x ?? "").trim()).filter(Boolean) : [];
   const stileLocations = stileCount > 0 && input.stileLocationsNeeded
     ? "stile locations needed"
     : typed.length ? `stile locations ${joinAnd(typed, "  ")}` : null;
+  // An inside slide lock goes on an intermediate section only; the line ends with it, as the door's does.
+  const lockTxt = input.secKind === "int" && input.lock === "slide" ? "inside slide lock" : null;
   const description = insulation
     // The 524 and 2415 — Brandon's wording of 14/10/2026: the section, the
     // colour, the windows or SOLID NO WINDOWS on an intermediate, the
@@ -325,12 +329,14 @@ export function quoteCommercial(input: CommInput): CommQuote {
         insulation,
         input.stile === "double" ? "double end stiles" : input.stile === "single" ? "single end stiles" : null,
         stileLocations,
+        lockTxt,
       ].filter(Boolean).join(", ")
     : `${input.mfr || "Clopay"} Model ${model}, ${asciiWidth} x ${input.secHeight}", ` +
       `${input.secKind === "bt" ? "bottom section" : nWin > 0 ? "intermediate section" : "solid intermediate section"}, in the color ${color}` +
       (windowsPhrase ? `, ${windowsPhrase}` : "") +
       // One end stile is singular on these lines; two stay plural (Brandon, 6/10/2026).
-      (input.stile === "double" ? ", double end stiles" : input.stile === "single" ? ", single end stile" : "");
+      (input.stile === "double" ? ", double end stiles" : input.stile === "single" ? ", single end stile" : "") +
+      (lockTxt ? `, ${lockTxt}` : "");
 
   return { priced: true, lines: collapseUpcharges(lines), unitPrice, sub, description };
 }

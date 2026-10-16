@@ -120,7 +120,6 @@ function QuickSearch({ tabs, doorModels, onJump }: {
           else if (e.key === "Escape") { setQ(""); setOpen(false); box.current?.blur(); }
         }}
       />
-      <kbd className="qsearch-kbd" aria-hidden="true">Ctrl K</kbd>
       {showing && (
         <ul id="qsearch-list" role="listbox" className="qsearch-list" aria-label="Search results">
           {hits.length ? (

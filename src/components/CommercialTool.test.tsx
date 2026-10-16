@@ -78,75 +78,96 @@ describe("commercial tab — complete door or replacement section first (15/10/2
   });
 });
 
-describe("commercial tab — a section's windows, by glass type and the panels pressed", () => {
-  it("offers solid, then the glass a 524 or 2415 takes, and draws the panels once glass is picked", async () => {
+describe("commercial tab — a section's windows, pressed into the drawing (16/10/2026)", () => {
+  const glassWord = (p: number) => screen.getByTestId(`comm-panel-${p}`).parentElement!.querySelector(".pglass-word")?.textContent ?? null;
+
+  it("draws the section as soon as it has a width, and a press puts a 24x12 window in a panel, the smaller size in its dropdown", async () => {
     configure("section", "Clopay", "524");
-    expect(screen.queryByTestId("comm-sec-glass")).toBeNull(); // a bottom section takes no windows
     change("comm-sec-kind", "int");
-    expect(options("comm-sec-glass")).toEqual(["", "24x12", "24x6"]);
-    expect(labels("comm-sec-glass")).toEqual(["Solid", "Double Strength 24x12", "Double Strength 24x6"]);
-    expect(sel("comm-sec-glass").value).toBe("");
-    expect(panelsDrawn()).toBe(0);
+    expect(panelsDrawn()).toBe(0); // no width yet
     width("10", "2");
-    expect(panelsDrawn()).toBe(0); // still solid
-    change("comm-sec-glass", "24x6");
     expect(panelsDrawn()).toBe(3);
-    expect(pressed()).toEqual([1, 2, 3]); // glass starts in every panel
+    expect(pressed()).toEqual([]); // solid to begin with
+    expect(screen.queryByTestId("comm-panel-2-size")).toBeNull();
     fireEvent.click(screen.getByTestId("comm-panel-2"));
-    expect(pressed()).toEqual([1, 3]);
+    expect(pressed()).toEqual([2]);
+    expect(glassWord(2)).toBe("Double Strength");
+    expect(options("comm-panel-2-size")).toEqual(["24x12", "24x6"]);
+    expect(sel("comm-panel-2-size").value).toBe("24x12");
     let body = await getPrice();
-    expect(body).toMatchObject({ order: "section", model: "524", manFt: 10, manIn: 2, secKind: "int", secHeight: "24", windowPanels: [1, 3], windowSize: "24x6" });
-    // Back to solid: nothing pressed, nothing sent.
-    change("comm-sec-glass", "");
-    expect(panelsDrawn()).toBe(0);
+    expect(body).toMatchObject({ order: "section", model: "524", manFt: 10, manIn: 2, secKind: "int", secHeight: "24", windowPanels: [2], windowSize: "24x12" });
+    // The size is the section's: picked in one panel, every window has it.
+    fireEvent.click(screen.getByTestId("comm-panel-3"));
+    change("comm-panel-3-size", "24x6");
+    expect(sel("comm-panel-2-size").value).toBe("24x6");
+    body = await getPrice();
+    expect(body).toMatchObject({ windowPanels: [2, 3], windowSize: "24x6" });
+    // Pressed again, the window comes out.
+    fireEvent.click(screen.getByTestId("comm-panel-2"));
+    fireEvent.click(screen.getByTestId("comm-panel-3"));
+    expect(pressed()).toEqual([]);
     body = await getPrice();
     expect(body).toMatchObject({ windowPanels: [] });
   });
 
-  it("names the glass by model: insulated on the vinyl and steel backs and the 3200, double strength on the 2415", () => {
-    configure("section", "Wayne Dalton", "2415V");
-    change("comm-sec-kind", "int");
-    expect(labels("comm-sec-glass")).toEqual(["Solid", "Insulated 24x12", "Insulated 24x6"]);
-    cleanup();
-    configure("section", "Wayne Dalton", "2415");
-    change("comm-sec-kind", "int");
-    expect(labels("comm-sec-glass")).toEqual(["Solid", "Double Strength 24x12", "Double Strength 24x6"]);
-    cleanup();
-    configure("section", "Clopay", "3200");
-    change("comm-sec-kind", "int");
-    expect(labels("comm-sec-glass")).toEqual(["Solid", "Insulated 24x8", "Insulated 24x12"]);
-    cleanup();
-    configure("section", "Clopay", "3720");
-    change("comm-sec-kind", "int");
-    expect(labels("comm-sec-glass")).toEqual(["Solid", "Insulated 24x12"]);
+  it("names the glass by model: insulated on the vinyl and steel backs and the 3200, double strength on the 2415 — 24x12 first on all", () => {
+    const check = (mfr: string, model: string, word: string, sizes: string[]) => {
+      configure("section", mfr, model);
+      change("comm-sec-kind", "int");
+      width("12");
+      fireEvent.click(screen.getByTestId("comm-panel-1"));
+      expect(glassWord(1)).toBe(word);
+      expect(options("comm-panel-1-size")).toEqual(sizes);
+      expect(sel("comm-panel-1-size").value).toBe("24x12");
+      cleanup();
+    };
+    check("Wayne Dalton", "2415V", "Insulated", ["24x12", "24x6"]);
+    check("Wayne Dalton", "2415", "Double Strength", ["24x12", "24x6"]);
+    check("Clopay", "3200", "Insulated", ["24x12", "24x8"]);
+    check("Clopay", "3720", "Insulated", ["24x12"]);
   });
 
-  it("redraws the panels as the width changes, a window in each again", async () => {
+  it("redraws the panels as the width changes, solid again", async () => {
     configure("section", "Clopay", "3200");
     change("comm-sec-kind", "int");
-    change("comm-sec-glass", "24x8");
-    expect(panelsDrawn()).toBe(0); // no width yet
     width("16");
     expect(panelsDrawn()).toBe(4);
     fireEvent.click(screen.getByTestId("comm-panel-4"));
-    expect(pressed()).toEqual([1, 2, 3]);
+    fireEvent.click(screen.getByTestId("comm-panel-1"));
+    expect(pressed()).toEqual([1, 4]);
     width("8");
     expect(panelsDrawn()).toBe(2);
-    expect(pressed()).toEqual([1, 2]);
+    expect(pressed()).toEqual([]);
     expect(stileRows()).toBe(0); // a 3200 never asks for stile locations
     expect(screen.queryByTestId("comm-stiles-needed")).toBeNull();
-    expect(await getPrice()).toMatchObject({ model: "3200", windowSize: "24x8", windowPanels: [1, 2] });
+    fireEvent.click(screen.getByTestId("comm-panel-2"));
+    change("comm-panel-2-size", "24x8");
+    expect(await getPrice()).toMatchObject({ model: "3200", windowSize: "24x8", windowPanels: [2] });
   });
 
-  it("sends no windows for a bottom section, whatever was pressed as an intermediate", async () => {
+  it("draws a bottom section too, but takes no windows on it, whatever was pressed as an intermediate", async () => {
     configure("section", "Clopay", "524");
     change("comm-sec-kind", "int");
-    width("8");
-    change("comm-sec-glass", "24x12");
+    width("12");
+    fireEvent.click(screen.getByTestId("comm-panel-1"));
     change("comm-sec-kind", "bt");
-    expect(panelsDrawn()).toBe(0);
-    expect(screen.queryByTestId("comm-sec-glass")).toBeNull();
-    expect(await getPrice()).toMatchObject({ secKind: "bt", windowPanels: [] });
+    expect(panelsDrawn()).toBe(3);
+    expect(pressed()).toEqual([]); // drawn, not pressable
+    expect(screen.getByTestId("comm-panel-1").tagName).not.toBe("BUTTON");
+    expect(screen.queryByText("If windows are needed, click on which panel you want windows in, and what size.")).toBeNull();
+    expect(await getPrice()).toMatchObject({ secKind: "bt", windowPanels: [], lock: "none" });
+  });
+
+  it("offers an inside slide lock on an intermediate section only", async () => {
+    configure("section", "Wayne Dalton", "2415V");
+    expect(screen.queryByTestId("comm-sec-lock")).toBeNull();
+    change("comm-sec-kind", "int");
+    expect(options("comm-sec-lock")).toEqual(["none", "slide"]);
+    change("comm-sec-lock", "slide");
+    width("8", "2");
+    expect(await getPrice()).toMatchObject({ secKind: "int", lock: "slide" });
+    change("comm-sec-kind", "bt");
+    expect(await getPrice()).toMatchObject({ secKind: "bt", lock: "none" });
   });
 });
 
@@ -180,21 +201,26 @@ describe("commercial tab — a complete door's windows, placed GL or SOL a panel
     configure("complete", "Clopay", "3200");
     change("comm-size", "12′2″ × 10′0″");
     change("comm-glass", "glass");
-    expect(options("comm-window-size")).toEqual(["24x8", "24x12"]);
+    expect(options("comm-window-size")).toEqual(["24x12", "24x8"]);
     expect(sel("comm-window-size").value).toBe("24x12");
     expect(options("comm-placement")).toHaveLength(7);
     expect(await getPrice()).toMatchObject({ model: "3200", windowSize: "24x12", windowPanels: [1, 2, 3] });
   });
 });
 
-describe("commercial tab — stile locations on a 524 or 2415 (15/10/2026)", () => {
-  it("shows one row a stile, by width, each its inches and quarter, and sends them written out", async () => {
+describe("commercial tab — stile locations on a 524 or 2415, under the stiles of the drawing (16/10/2026)", () => {
+  it("shows a box a stile under the drawing from 9'3\", each its inches and quarter, and sends them written out", async () => {
     configure("section", "Wayne Dalton", "2415V");
     expect(stileRows()).toBe(0);
     width("8", "2");
-    expect(stileRows()).toBe(1); // up to 9'2": one stile
+    expect(panelsDrawn()).toBe(2);
+    expect(stileRows()).toBe(0); // no stile input on an 8'2" or 9'2"
+    expect(screen.queryByTestId("comm-stiles-needed")).toBeNull();
+    width("9", "2");
+    expect(stileRows()).toBe(0);
     width("12");
     expect(stileRows()).toBe(2); // 9'3" to 13'2": two
+    expect(screen.getByTestId("comm-stiles").closest(".pdiag")).toBe(screen.getByTestId("comm-panels")); // under the panels
     width("16", "3");
     expect(stileRows()).toBe(4); // 16'3" to 20'2": four
     expect(options("comm-stile-1-frac")).toEqual(["0", "1/4", "1/2", "3/4"]);
@@ -205,37 +231,35 @@ describe("commercial tab — stile locations on a 524 or 2415 (15/10/2026)", () 
     stileFrac(3, "3/4"); // no inches: nothing written
     const body = await getPrice();
     expect(body).toMatchObject({ model: "2415V", secKind: "bt", stileLocations: ['39"', '78-1/2"', "", '156-1/4"'], stileLocationsNeeded: false });
+    expect(screen.getByText("Enter in stile measurements — measurements are taken left to right.")).toBeTruthy();
   });
 
-  it("lays a section out as Brandon drew it (15/10/2026): the section and colour, the window options, the drawing across both, the stile options across both", () => {
+  it("lays a section out as Brandon drew it (16/10/2026): the section beside colour, end stiles and lock, the drawing across both", () => {
     configure("section", "Clopay", "524S");
     change("comm-sec-kind", "int");
     width("14");
-    change("comm-sec-glass", "24x12");
+    fireEvent.click(screen.getByTestId("comm-panel-1"));
     expect(panelsDrawn()).toBe(4);
     expect(stileRows()).toBe(3);
     const groupOf = (id: string) => screen.getByTestId(id).closest(".ggroup")!;
     const groups = [...document.querySelectorAll(".cfg2 > .ggroup")];
-    expect(groups.map((g) => g.querySelector(".ghdr")?.textContent ?? "")).toEqual(["Replacement section", "Additional options", "", "Stile options"]);
-    expect(groupOf("comm-color")).toBe(groups[0]);
-    expect(groupOf("comm-sec-glass")).toBe(groups[1]);
-    expect(groupOf("comm-panel-1")).toBe(groups[2]);
+    expect(groups.map((g) => g.querySelector(".ghdr")?.textContent ?? "")).toEqual(["Replacement section", "Additional options", ""]);
+    expect([...groups[0].querySelectorAll(".grow > label")].map((l) => l.textContent)).toEqual(["Section type", "Section height", "Door width"]);
+    expect([...groups[1].querySelectorAll(".grow > label")].map((l) => l.textContent)).toEqual(["Color", "End stiles", "Lock"]);
+    for (const id of ["comm-color", "comm-end-stiles", "comm-sec-lock"]) expect(groupOf(id)).toBe(groups[1]);
+    for (const id of ["comm-panel-1", "comm-panel-1-size", "comm-stile-1", "comm-stile-3", "comm-stiles-needed"]) expect(groupOf(id)).toBe(groups[2]);
     expect(groups[2].classList.contains("span")).toBe(true);
-    for (const id of ["comm-end-stiles", "comm-stile-1", "comm-stile-3", "comm-add-stile", "comm-stiles-needed"]) expect(groupOf(id)).toBe(groups[3]);
-    expect(groups[3].classList.contains("span")).toBe(true);
-    // End stiles and the two buttons on the first row, then the stiles two to a row.
-    const order = [...groups[3].querySelectorAll("[data-testid]")].map((el) => el.getAttribute("data-testid"));
-    expect(order.slice(0, 3)).toEqual(["comm-end-stiles", "comm-add-stile", "comm-stiles-needed"]);
-    expect(order.indexOf("comm-stiles-needed")).toBeLessThan(order.indexOf("comm-stile-1"));
-    expect(order.indexOf("comm-stile-1")).toBeLessThan(order.indexOf("comm-stile-3"));
+    expect(screen.queryByTestId("comm-add-stile")).toBeNull();
     expect(screen.getByTestId("comm-stiles-needed").textContent).toBe("Stiles to be determined");
-    // Solid again: no drawing, and the stile options move up under the two.
-    change("comm-sec-glass", "");
-    expect([...document.querySelectorAll(".cfg2 > .ggroup .ghdr")].map((h) => h.textContent)).toEqual(["Replacement section", "Additional options", "Stile options"]);
-    // A bottom section has no window options at all.
+    expect(screen.getByText("If windows are needed, click on which panel you want windows in, and what size.")).toBeTruthy();
+    // A bottom section: no lock, and the drawing stays for its stiles.
     change("comm-sec-kind", "bt");
-    expect([...document.querySelectorAll(".cfg2 > .ggroup .ghdr")].map((h) => h.textContent)).toEqual(["Replacement section", "Stile options"]);
+    expect([...groups[1].querySelectorAll(".grow > label")].map((l) => l.textContent)).toEqual(["Color", "End stiles"]);
+    expect(panelsDrawn()).toBe(4);
     expect(stileRows()).toBe(3);
+    // No width, no drawing.
+    width("");
+    expect(screen.queryByTestId("comm-drawing")).toBeNull();
   });
 
   it("lays a complete door out with the track options under the door and its colour, the lock under the window options", () => {
@@ -249,21 +273,7 @@ describe("commercial tab — stile locations on a 524 or 2415 (15/10/2026)", () 
     expect(doorRows).toEqual(["Size", "Color"]);
   });
 
-  it("adds a stile past the sheet's count, and starts the count over on a new width", async () => {
-    configure("section", "Clopay", "524");
-    width("12");
-    expect(stileRows()).toBe(2);
-    fireEvent.click(screen.getByTestId("comm-add-stile"));
-    expect(stileRows()).toBe(3);
-    expect(screen.getByText("Stile # 3")).toBeTruthy();
-    stileInch(1, "48"); stileInch(2, "96"); stileInch(3, "120");
-    expect(await getPrice()).toMatchObject({ stileLocations: ['48"', '96"', '120"'] });
-    width("8", "2");
-    expect(stileRows()).toBe(1);
-    expect(await getPrice()).toMatchObject({ stileLocations: ['48"'] });
-  });
-
-  it("hides the rows and says they are needed when the button is pressed", async () => {
+  it("hides the boxes and says they are to be determined when the button is pressed", async () => {
     configure("section", "Clopay", "524");
     width("12");
     stileInch(1, "48");
@@ -272,7 +282,7 @@ describe("commercial tab — stile locations on a 524 or 2415 (15/10/2026)", () 
     fireEvent.click(needed);
     expect(needed.getAttribute("aria-pressed")).toBe("true");
     expect(stileRows()).toBe(0);
-    expect(screen.queryByTestId("comm-add-stile")).toBeNull();
+    expect(screen.queryByText("Enter in stile measurements — measurements are taken left to right.")).toBeNull();
     let body = await getPrice();
     expect(body).toMatchObject({ stileLocationsNeeded: true });
     fireEvent.click(needed);
@@ -290,6 +300,7 @@ describe("commercial tab — stile locations on a 524 or 2415 (15/10/2026)", () 
     change("comm-model", "3720");
     fireEvent.click(screen.getByTestId("comm-configure"));
     width("12");
+    expect(panelsDrawn()).toBe(3);
     expect(stileRows()).toBe(0);
     expect(screen.queryByTestId("comm-stiles-needed")).toBeNull();
     fireEvent.click(screen.getByText("‹ Back"));
