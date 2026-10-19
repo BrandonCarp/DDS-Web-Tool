@@ -133,8 +133,9 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const [gCdDesign, setGCdDesign] = useState("");
   const [gOverlay, setGOverlay] = useState("");
   // Every option starts blank and has to be chosen (Brandon, 19/10/2026):
-  // glass, framing, spring, track, mount, the surcharge, and the lock last —
-  // it opens once the rest are chosen, and the door prices once it is.
+  // glass, framing, spring, track, mount, and the lock last — it opens once
+  // the rest are chosen, and the door prices once it is. The homeowner
+  // surcharge is the one exception: No unless changed.
   const [gTrack, setGTrack] = useState("");
   const [gSpring, setGSpring] = useState("");
   const [gLock, setGLock] = useState("");
@@ -153,7 +154,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const [gMount, setGMount] = useState<TrackMount | "">("");
   const [gIncline, setGIncline] = useState<InclineStyle | "">("");
   const [gLift, setGLift] = useState(0);
-  const [homeowner, setHomeowner] = useState<"" | "no" | "single" | "double">("");
+  const [homeowner, setHomeowner] = useState<"no" | "single" | "double">("no");
   const [price, setPrice] = useState("");
   const [qty, setQty] = useState(1);
   const [saved, setSaved] = useState(false);
@@ -182,7 +183,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const resetGrid = () => {
     setGWidthFt(""); setGWidthIn("0"); setGHeightFt(""); setGHeightIn("0"); setGColor(""); setGCdDesign(""); setGOverlay("");
     setGGlass(""); setGFraming(""); setGVariant("");
-    setGSpring(""); setGTrack(""); setGMount(""); setGIncline(""); setGLift(0); setGLock(""); setHomeowner("");
+    setGSpring(""); setGTrack(""); setGMount(""); setGIncline(""); setGLift(0); setGLock(""); setHomeowner("no");
     setVinylOn(false); setVinylAsked(false);
   };
   const pickCommSeries = (v: string) => {
@@ -305,7 +306,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   // The lock opens once everything else is chosen; the door prices once the
   // lock is (Brandon, 19/10/2026).
   const gOptionsChosen = gOpen && gWindowsChosen && !!gSpringUsed && !!gTrackEff
-    && (!gIsLift || (gEffLift > 0 && !!gIncline)) && !!gMount && homeowner !== "";
+    && (!gIsLift || (gEffLift > 0 && !!gIncline)) && !!gMount;
   const gComplete = gOptionsChosen && !!gLock;
 
   // Looked up as soon as the size and colour are set, so a size or design the
@@ -338,14 +339,11 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
     scope === "residential"
       ? series ? soNumbers(series, modelGroup, kind, price) : null
       : cModel ? soCommercial(cMfr, kind, price) : null;
-  // Nothing prices until the surcharge is answered, and a configured door not
-  // until its lock is chosen (Brandon, 19/10/2026).
+  // A configured door prices once its lock is chosen (Brandon, 19/10/2026).
   const n =
-    homeowner === ""
-      ? null
-      : !manual && gComplete && gResult?.quote
-        ? { sell: gResult.quote.unitPrice, margin: null as number | null, doubled: false }
-        : manual;
+    !manual && gComplete && gResult?.quote
+      ? { sell: gResult.quote.unitPrice, margin: null as number | null, doubled: false }
+      : manual;
 
   // Homeowner markup, at the special-order rate. The width comes from the size
   // picker on a gridded door; on a typed-in total there is no width to read, so
@@ -357,7 +355,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   // special orders are a typed-in total with no size attached, so there is no
   // width to read — and where there is one, stating it is still unambiguous.
   const hoMarkup =
-    homeowner === "no" || homeowner === ""
+    homeowner === "no"
       ? 0
       : homeownerMarkupForBand(homeowner, kind === "section" ? "special_section" : "special_door");
   const total = n ? (n.sell + hoMarkup) * Math.max(1, qty) : 0;
@@ -769,7 +767,6 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                     <div className="ctl selectwrap">
                       <select data-testid="so-homeowner" disabled={gridded && !gOpen} value={homeowner}
                         onChange={(e) => { setHomeowner(e.target.value as "no" | "single" | "double"); setSaved(false); }}>
-                        {!homeowner && <option value="">Select…</option>}
                         <option value="no">No</option>
                         <option value="single">Single door</option>
                         <option value="double">Double door</option>
@@ -793,7 +790,6 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                 <div className="selectwrap">
                   <select data-testid="so-comm-homeowner" value={homeowner}
                     onChange={(e) => { setHomeowner(e.target.value as "no" | "single" | "double"); setSaved(false); }}>
-                    {!homeowner && <option value="">Select…</option>}
                     <option value="no">No</option>
                     <option value="single">Single door</option>
                     <option value="double">Double door</option>
@@ -853,7 +849,6 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
               <div className="ctl selectwrap">
                 <select data-testid="so-homeowner-quote" value={homeowner}
                   onChange={(e) => { setHomeowner(e.target.value as "no" | "single" | "double"); setSaved(false); }}>
-                  {!homeowner && <option value="">Select…</option>}
                   <option value="no">No</option>
                   <option value="single">Single door</option>
                   <option value="double">Double door</option>

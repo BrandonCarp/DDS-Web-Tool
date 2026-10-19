@@ -52,16 +52,15 @@ const pickFraming = (value?: string) => {
  * priced once it is (Brandon, 19/10/2026). Fills whatever a test does not
  * care about: Solid unless a glass was picked, the first framing on a glazed
  * door, extension (torsion where that is all there is), 12" radius, bracket
- * mount, no surcharge, no lock.
+ * mount, no lock. The homeowner surcharge is No on its own.
  */
-async function fillOptions(o: { spring?: string; track?: string; mount?: string; homeowner?: string; lock?: string } = {}) {
+async function fillOptions(o: { spring?: string; track?: string; mount?: string; lock?: string } = {}) {
   if (sel("so-glass").value === "") fireEvent.change(sel("so-glass"), { target: { value: "solid" } });
   if (!sel("so-framing").disabled && sel("so-framing").value === "") pickFraming();
   const spring = o.spring ?? (options("so-spring").some((x) => x.value === "extension") ? "extension" : "torsion");
   fireEvent.change(sel("so-spring"), { target: { value: spring } });
   fireEvent.change(sel("so-track"), { target: { value: o.track ?? "r12" } });
   fireEvent.change(sel("so-track-mount"), { target: { value: o.mount ?? "bracket" } });
-  fireEvent.change(sel("so-homeowner"), { target: { value: o.homeowner ?? "no" } });
   await settle();
   fireEvent.change(sel("so-lock"), { target: { value: o.lock ?? "none" } });
   await settle();
@@ -466,7 +465,7 @@ describe("special order — home owner surcharge", () => {
     await pickDoor();
     fireEvent.click(maybe("so-configure")!);
     await settle();
-    expect([...sel("so-homeowner").options].map((o) => o.value)).toEqual(["", "no", "single", "double"]);
+    expect([...sel("so-homeowner").options].map((o) => o.value)).toEqual(["no", "single", "double"]);
   });
 
   it("wraps the configurator so it can be tightened for a laptop screen", async () => {
@@ -1030,14 +1029,14 @@ describe("special order — vinyl molding on a configured door (Brandon, 14/10/2
 
   it("prices nothing until every option is chosen, the lock last (Brandon, 19/10/2026)", async () => {
     await configured("9", "7");
-    for (const id of ["so-glass", "so-spring", "so-track", "so-track-mount", "so-homeowner", "so-lock"]) expect(sel(id).value, id).toBe("");
+    for (const id of ["so-glass", "so-spring", "so-track", "so-track-mount", "so-lock"]) expect(sel(id).value, id).toBe("");
+    expect(sel("so-homeowner").value).toBe("no");                          // the one option with an answer of its own
     expect(sel("so-lock").disabled).toBe(true);
     expect(maybe("copy-qb")).toBeNull();
     fireEvent.change(sel("so-glass"), { target: { value: "dsb" } });
     fireEvent.change(sel("so-spring"), { target: { value: "extension" } });
     fireEvent.change(sel("so-track"), { target: { value: "r12" } });
     fireEvent.change(sel("so-track-mount"), { target: { value: "bracket" } });
-    fireEvent.change(sel("so-homeowner"), { target: { value: "no" } });
     await settle();
     // A glazed door needs its framing too.
     expect(sel("so-lock").disabled).toBe(true);
