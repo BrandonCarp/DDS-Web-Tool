@@ -14,7 +14,9 @@
  * is worked out from those choices here, so the component carries no
  * pricing knowledge and the mapping can be tested on its own.
  */
-import { glassOptionsFor, glassTakesInserts, isSheetGroup, panelStylesFor, type GlassOption, type PanelStyle, type WindowSeries } from "./so-glass";
+import {
+  glassOptionsFor, glassTakesInserts, isSheetGroup, panelStylesFor, windowSeriesFor, type GlassOption, type PanelStyle, type WindowSeries,
+} from "./so-glass";
 import { sectionDesignsAt, windowSectionGroup } from "./coachman-windows";
 import { specialPlainWindowsFor, specialWindowDesigns, takesInserts, type InsertDesign } from "./inserts";
 import type { WindowStyle } from "../types";
@@ -48,15 +50,23 @@ export const SINGLE_STRENGTH: GlassOption = { id: "ssb", label: "Single strength
 
 /**
  * The glass type list for a door at a width: Solid first, then what the
- * door prices. A sheet-priced door lists its sheet's types (double strength
- * first; single strength first on the Premium Steel sheets, in the series
- * chosen); everything else is single strength only, the grid's own column.
- * A width built solid only offers Solid alone.
+ * door prices. A sheet-priced door lists its sheet's types, double strength
+ * first — on a door with two window series (the Premium Steel doors) the
+ * standard list, then the glass only the architectural windows take, in one
+ * list (Brandon, 19/10/2026: no series control); everything else is single
+ * strength only, the grid's own column. A width built solid only offers
+ * Solid alone.
  */
-export function glassTypeOptions(group: string, width: string, windowsOk: boolean, series: WindowSeries = "standard"): GlassOption[] {
+export function glassTypeOptions(group: string, width: string, windowsOk: boolean): GlassOption[] {
   if (!windowsOk) return [SOLID];
-  const panels = panelStylesFor(group, width, series);
-  const named = panels.length ? glassOptionsFor(group, panels[0], width, series) : [];
+  const named: GlassOption[] = [];
+  for (const series of windowSeriesFor(group)) {
+    const panels = panelStylesFor(group, width, series);
+    if (!panels.length) continue;
+    for (const g of glassOptionsFor(group, panels[0], width, series)) {
+      if (!named.some((n) => n.id === g.id)) named.push(g);
+    }
+  }
   if (isSheetGroup(group)) return [SOLID, ...named];
   return [SOLID, SINGLE_STRENGTH, ...named];
 }
@@ -72,6 +82,8 @@ export interface FramingOption {
   plainWindow?: string;
   /** An insert design, or a Coachman window design or arched section. */
   design?: string;
+  /** The window series the window is from, on a door with two. */
+  series?: WindowSeries;
 }
 
 const panelLabel = (p: PanelStyle) => (p === "short" ? "Plain short windows" : "Plain long windows");
@@ -107,39 +119,59 @@ const plainDesign = (d: InsertDesign) => d.cat === "arch" && /\bPLAIN\b/i.test(d
  * their design goes in. The Coachman has one window layout: the
  * window designs and arched sections its sheet builds at the width, each
  * priced on its own, with any of its glass.
+ *
+ * A door with two window series (the Premium Steel doors) lists both in the
+ * one list, the plain windows of each and then the inserts of each, each
+ * entry saying its series; a series that does not price the glass chosen at
+ * the width — acrylic is a standard glass, seeded an architectural one — is
+ * left out (Brandon, 19/10/2026: the framing says which windows, not a
+ * control of its own).
  */
-export function framingOptions(group: string, member: string, width: string, glass: string, series: WindowSeries = "standard"): FramingOption[] {
+export function framingOptions(group: string, member: string, width: string, glass: string): FramingOption[] {
   if (!width || glass === "solid") return [];
   if (windowSectionGroup(group)) {
     return sectionDesignsAt(group, width).map((d) => ({
       value: `design:${d.id}`, label: d.cat === "arch" ? `${d.name} arch section` : d.name, kind: "design", design: d.id,
     }));
   }
+  const bySeries = windowSeriesFor(group)
+    .filter((series) => panelStylesFor(group, width, series).some((p) => glassOptionsFor(group, p, width, series).some((g) => g.id === glass)))
+    .map((series) => seriesFraming(group, member, width, glass, series));
+  // A sheet-priced door with no window priced at the width, or none at this
+  // glass, has nothing to frame — the architectural series at 10'2", say.
+  if (isSheetGroup(group) && bySeries.length === 0) return [];
+  if (!bySeries.length) return seriesFraming(group, member, width, glass, "standard");
+  return [...bySeries.flatMap((f) => f.filter((o) => o.kind === "plain")), ...bySeries.flatMap((f) => f.filter((o) => o.kind !== "plain"))];
+}
+
+/** One series' framing: its plain windows, then its inserts. */
+function seriesFraming(group: string, member: string, width: string, glass: string, series: WindowSeries): FramingOption[] {
   const panels = panelStylesFor(group, width, series);
-  // A sheet-priced door with no window of this series at the width has
-  // nothing to frame — the architectural series at 10'2", say.
-  if (isSheetGroup(group) && panels.length === 0) return [];
   const named = specialPlainWindowsFor(member, series);
   const designs = takesInserts(member) ? specialWindowDesigns(member, "inserts", width, series) : [];
+  // The standard windows keep the values they have always had; the
+  // architectural series' say so, so the two lists never share one.
+  const tag = series === "architectural" ? "arch:" : "";
+  const marked = windowSeriesFor(group).length > 1 ? { series } : {};
   if (panels.length) {
     const out: FramingOption[] = [];
     for (const p of panels) {
       // A named plain window goes by its order name; the Gallery's arch window
       // is a long window too.
       const names = named.filter((n) => (p === "long" ? /\bLONG\b|\bARCH\b/i : /\bSHORT\b/i).test(n));
-      if (names.length) names.forEach((n) => out.push({ value: `plain:${p}:${n}`, label: n, kind: "plain", panel: p, plainWindow: n }));
-      else out.push({ value: `plain:${p}`, label: panelLabel(p), kind: "plain", panel: p });
+      if (names.length) names.forEach((n) => out.push({ value: `${tag}plain:${p}:${n}`, label: n, kind: "plain", panel: p, plainWindow: n, ...marked }));
+      else out.push({ value: `${tag}plain:${p}`, label: panelLabel(p), kind: "plain", panel: p, ...marked });
       // The sheet doors' other plain windows (Arch 2 Plain at 8' and 9', Arch 3
       // Plain at 16'), less the ones the order names already cover.
       for (const d of designs.filter((x) => plainDesign(x) && designPanel(x) === p)) {
         if (names.some((n) => sameWindow(n, d.name)) || /^PLAIN (SHORT|LONG)$/i.test(d.name)) continue;
-        out.push({ value: `plain:${p}:${d.name}`, label: d.name, kind: "plain", panel: p, plainWindow: d.name });
+        out.push({ value: `${tag}plain:${p}:${d.name}`, label: d.name, kind: "plain", panel: p, plainWindow: d.name, ...marked });
       }
     }
     for (const p of panels) {
       if (!glassTakesInserts(group, p, width, glass, series)) continue;
       for (const d of designs.filter((x) => !plainDesign(x) && designPanel(x) === p)) {
-        out.push({ value: `insert:${p}:${d.id}`, label: `${d.name} inserts`, kind: "insert", panel: p, design: d.id });
+        out.push({ value: `${tag}insert:${p}:${d.id}`, label: `${d.name} inserts`, kind: "insert", panel: p, design: d.id, ...marked });
       }
     }
     return out;
@@ -170,14 +202,14 @@ export interface WindowChoice {
 
 /**
  * What the quote is asked for, from the glass type and framing chosen. Single
- * strength goes through as a glass type: a sheet that prices it (the Premium
- * Steel sheets) charges it, and a grid with no such table takes its own
- * GLASS column for it, as it always has.
+ * strength goes through as a glass type where a grid with no glass tables
+ * offers it: that grid takes its own GLASS column for it, as it always has.
+ * The window series is the framing's; a door with one series is standard.
  */
-export function windowChoice(glass: string, framing: FramingOption | undefined, series: WindowSeries = "standard"): WindowChoice {
+export function windowChoice(glass: string, framing: FramingOption | undefined): WindowChoice {
   if (glass === "solid") return { style: "solid" };
   const glassType = glass;
-  const windowSeries = series;
+  const windowSeries: WindowSeries = framing?.series ?? "standard";
   if (!framing) return { style: "glass", glassType, windowSeries };
   switch (framing.kind) {
     case "design": return { style: "glass", glassType, windesign: framing.design, windowSeries };

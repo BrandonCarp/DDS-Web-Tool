@@ -205,21 +205,28 @@ export const COLORS: Record<string, string[]> = {
 };
 
 /**
- * Colours that carry the Ultra Grain net adder (ULTRAGRAIN in addons.ts).
+ * Colours that carry the Ultra Grain net adder (ULTRAGRAIN in addons.ts on
+ * the stock tab; the sheet's or PREMIUM_COLOR_ADDER's figure on a special
+ * order).
  *
  * It is not just the wood finishes — Iron Ore takes the adder on every model
- * that offers it, and the 4300 family charges it on Charcoal as well. Listing
- * them per model rather than pattern-matching the name keeps that difference
- * visible instead of buried in a regex.
+ * that offers it. Charcoal does not, on any model (Brandon, 19/10/2026; the
+ * 4300 family charged it until then). Listing them per model rather than
+ * pattern-matching the name keeps the rule visible instead of buried in a
+ * regex.
  */
 export const PREMIUM_COLORS: Record<string, string[]> = {
   // 9130/9133 runs the same colours and the same adder rules as the 4300.
   "9130-9133": [
     "Iron Ore",
-    "Charcoal",
     "Ultra-Grain Classic Medium Finish",
     "Ultra-Grain Classic Cherry Finish",
     "Ultra-Grain Classic Walnut Finish"
+  ],
+  // The 9200 family carries the 9130's colours pending a list of its own
+  // (16/10/2026), and its adder rule with them.
+  "9200": [
+    "Iron Ore"
   ],
   "GD1LP-GD1SP": [
     "Iron Ore",
@@ -282,7 +289,6 @@ export const PREMIUM_COLORS: Record<string, string[]> = {
   ],
   "4300": [
     "Iron Ore",
-    "Charcoal",
     "Ultra-Grain Classic Medium Finish",
     "Ultra-Grain Classic Cherry Finish",
     "Ultra-Grain Classic Walnut Finish"

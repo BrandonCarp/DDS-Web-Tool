@@ -16,7 +16,9 @@
  * windows (19-1/2" x 12" and 40-1/2" x 12", plain or with inserts) or the
  * architectural series (19-1/2" x 16" and 42" x 16", plain or with grilles),
  * each on its own width bands with its own glass list (CJ's workbook of
- * 16/10/2026). Every other sheet-priced door has the one series.
+ * 16/10/2026). Every other sheet-priced door has the one series. The series
+ * is never a choice of its own (Brandon, 19/10/2026): the framing list names
+ * the windows of both, and the window picked says which series it is from.
  *
  * Every figure is DDS cost, before margin — the convention every sheet file
  * follows — lifted by the group's door margin at quote time.
@@ -39,10 +41,6 @@ export type { GlassOption } from "./sheet-band";
  * the architectural series is the Premium Steel doors' second list.
  */
 export type WindowSeries = "standard" | "architectural";
-export const WINDOW_SERIES: { id: WindowSeries; label: string }[] = [
-  { id: "standard", label: "Standard" },
-  { id: "architectural", label: "Architectural" },
-];
 
 /** Every glass type any sheet prices, for labels — the id is the same type on every sheet. */
 export const SO_GLASS_TYPES: GlassOption[] = [
@@ -126,9 +124,19 @@ export function windowSeriesFor(group: string): WindowSeries[] {
   return group in SHEET_ARCH_GLASS ? ["standard", "architectural"] : ["standard"];
 }
 
+/**
+ * The Premium Steel sheets (CJ's workbook of 16/10/2026) price no colour.
+ * Until they do, a premium colour on those doors carries the stock tab's
+ * adder (Brandon, 19/10/2026): 168 list at the 4300's multiplier, 120.28
+ * cost a single door and twice that a double, at every height — 211.02 and
+ * 422.04 sold at 43, as addons.ts has them. Which colours count is
+ * PREMIUM_COLORS: Iron Ore and the Ultra-Grain finishes, never Charcoal.
+ */
+const PREMIUM_COLOR_ADDER = { upTo8ft: { single: 120.28, double: 240.56 }, over8ft: { single: 120.28, double: 240.56 } };
+
 /** The premium-finish adder bands for a sheet-priced group, or null. */
 export function sheetUltraGrain(group: string) {
-  return SHEET_ULTRA_GRAIN[group] ?? null;
+  return SHEET_ULTRA_GRAIN[group] ?? ((PREMIUM_GROUPS as readonly string[]).includes(group) ? PREMIUM_COLOR_ADDER : null);
 }
 
 function tablesFor(group: string, series: WindowSeries) {
@@ -136,6 +144,15 @@ function tablesFor(group: string, series: WindowSeries) {
 }
 function typesFor(group: string, series: WindowSeries): GlassOption[] {
   return (series === "architectural" ? SHEET_ARCH_GLASS_TYPES[group] : SHEET_GLASS_TYPES[group]) ?? [];
+}
+/**
+ * The types the counter is offered: the sheet's, less single strength
+ * (Brandon, 19/10/2026) — the Premium Steel sheets price it, and the tables
+ * keep it, but a special order is quoted from double strength up, as the
+ * Gallery, Bridgeport and Coachman have always been.
+ */
+function offeredTypesFor(group: string, series: WindowSeries): GlassOption[] {
+  return typesFor(group, series).filter((g) => g.id !== "ssb");
 }
 
 function sheetBand(group: string, panel: PanelStyle, width: string, glassId: string, series: WindowSeries): SheetBand | null {
@@ -180,12 +197,10 @@ export function panelStylesFor(group: string, width: string, series: WindowSerie
 
 /**
  * The glass a sheet-priced door's windows are unless another is picked: the
- * first its sheet lists — double strength on the Gallery, Bridgeport and
- * Coachman sheets, single strength on the Premium Steel sheets (the grid's
- * own glass there, as it always was).
+ * first the counter is offered — double strength on every sheet.
  */
 export function baseGlassFor(group: string, series: WindowSeries = "standard"): string {
-  return typesFor(group, series)[0]?.id ?? "dsb";
+  return offeredTypesFor(group, series)[0]?.id ?? "dsb";
 }
 
 /** True when some series prices a window on this group at this width. */
@@ -193,11 +208,11 @@ export function windowsPricedAt(group: string, width: string): boolean {
   return windowSeriesFor(group).some((s) => panelStylesFor(group, width, s).length > 0);
 }
 
-/** The glass types priced for this combination, in display order. */
+/** The glass types offered for this combination, in display order. */
 export function glassOptionsFor(group: string, panel: PanelStyle, width: string, series: WindowSeries = "standard"): GlassOption[] {
   const b = bandFor(group, panel, width, series);
   if (!b) return [];
-  return typesFor(group, series).filter((g) => b.prices[g.id] != null);
+  return offeredTypesFor(group, series).filter((g) => b.prices[g.id] != null);
 }
 
 /** True where inserts are not offered on this glass (acrylic, on every sheet-priced group). */

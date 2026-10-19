@@ -41,9 +41,10 @@ describe("special order door grid", () => {
     expect(specialDoorQuote({ ...base, width: "8", style: "solid" }).quote?.unitPrice).toBe(747.62);
     expect(specialDoorQuote({ ...base, width: "18", style: "solid" }).quote?.unitPrice).toBe(sheet(1176));
     // Windows are the sheet's price a window times the windows the width
-    // carries, over the solid door: 16'0" takes eight short single strength
-    // windows with inserts at 49 list each.
-    expect(specialDoorQuote({ ...base, width: "16", style: "inserts" }).quote?.unitPrice).toBe(sheet(973) + windows(8, 49));
+    // carries, over the solid door: 16'0" takes eight short double strength
+    // windows with inserts at 51 list each (double strength is the glass
+    // unless another is picked — single strength is not offered, 19/10/2026).
+    expect(specialDoorQuote({ ...base, width: "16", style: "inserts" }).quote?.unitPrice).toBe(sheet(973) + windows(8, 51));
   });
 
   it("prices off CJ's sheet, which the stock tab's grid does not follow yet", () => {
@@ -158,7 +159,7 @@ describe("gridded door verbiage", () => {
   it("says NO INSERTS rather than trailing off, same as residential", () => {
     expect(d({ width: "9", style: "inserts" })).toContain("windows in the top section, no inserts");
     // Plain glass reads by its grade, as the stock tab writes it (8/10/2026).
-    expect(d({ width: "9", style: "glass" })).toContain("single strength b grade windows in the top section, no inserts");
+    expect(d({ width: "9", style: "glass" })).toContain("double strength b grade windows in the top section, no inserts");
   });
 
   it("writes ten-inch widths correctly", () => {
@@ -170,7 +171,7 @@ describe("gridded door verbiage", () => {
 
 describe("the 6'2\"-7'10\" band", () => {
   // One row on CJ's sheet: 625.5 list at 7FT, so one price, every style.
-  const BAND = { solid: sheet(625.5), glass: sheet(625.5) + windows(3, 33), inserts: sheet(625.5) + windows(3, 49) };
+  const BAND = { solid: sheet(625.5), glass: sheet(625.5) + windows(3, 35), inserts: sheet(625.5) + windows(3, 51) };
   const WIDTHS = ["6.2", "6.4", "6.6", "6.8", "6.10", "7", "7.2", "7.4", "7.6", "7.8", "7.10"];
 
   it("prices every width in the band identically, in all three styles", () => {
@@ -548,14 +549,14 @@ describe("restricted models keep the manual total as a first-class path", () => 
 
 describe("9ft and 10ft on CJ's sheet (16/10/2026)", () => {
   it("prices the torsion heights off the TORSION columns, glass over the solid door", () => {
-    // 15'6" x 9'0": 1813.55 list; seven short single strength windows at 33.
+    // 15'6" x 9'0": 1813.55 list; seven short double strength windows at 35.
     const r = specialDoorQuote({ model: M, width: "15.6", height: "9", color: "White",
       style: "glass", track: "r12", spring: "torsion", lock: "none" });
-    expect(r.quote?.base).toBeCloseTo(sheet(1813.55) + windows(7, 33), 2);
+    expect(r.quote?.base).toBeCloseTo(sheet(1813.55) + windows(7, 35), 2);
     expect(r.quote?.torsionIncluded).toBe(true);
     const ten = specialDoorQuote({ model: M, width: "10.6", height: "10", color: "White",
       style: "glass", track: "r12", spring: "torsion", lock: "none" });
-    expect(ten.quote?.base).toBeCloseTo(sheet(1637.6) + windows(5, 33), 2);
+    expect(ten.quote?.base).toBeCloseTo(sheet(1637.6) + windows(5, 35), 2);
   });
 });
 
@@ -689,9 +690,9 @@ describe("special order verbiage — Brandon's examples (8/10/2026)", () => {
     return r.quote.description.toUpperCase();
   };
 
-  it("2. a 4050 with single strength windows and 32\" track", () => {
+  it("2. a 4050 with double strength windows and 32\" track", () => {
     expect(line({ style: "glass", track: "r32", spring: "torsion" })).toBe(
-      'CLOPAY MODEL 4050, 8\'0" X 7\'0", IN THE COLOR BLACK, SINGLE STRENGTH B GRADE WINDOWS IN THE TOP SECTION, NO INSERTS, 32″ RADIUS TRACK, TORSION SPRINGS, NO LOCK',
+      'CLOPAY MODEL 4050, 8\'0" X 7\'0", IN THE COLOR BLACK, DOUBLE STRENGTH B GRADE WINDOWS IN THE TOP SECTION, NO INSERTS, 32″ RADIUS TRACK, TORSION SPRINGS, NO LOCK',
     );
   });
 

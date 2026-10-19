@@ -52,8 +52,8 @@ describe("9200 family — special order", () => {
   it("prices every style at every height off the sheet", () => {
     expect(sell("9", "7", "solid")).toBe(sheet(725));
     expect(sell("9", "7", "solid")).toBe(1118.87);
-    // 16'0" x 8'0" with inserts: eight short single strength windows with inserts, 49 list a window.
-    expect(sell("16", "8", "inserts")).toBe(sheet(1500) + windows(8, 49));
+    // 16'0" x 8'0" with inserts: eight short double strength windows with inserts, 51 list a window.
+    expect(sell("16", "8", "inserts")).toBe(sheet(1500) + windows(8, 51));
     expect(sell("18", "9", "solid")).toBe(sheet(2319));
     expect(sell("20", "10", "solid")).toBe(sheet(2753));
   });
@@ -101,9 +101,28 @@ describe("9200 family — special order", () => {
     expect(grilles.quote?.unitPrice).toBeCloseTo(sheet(725) + windows(4, 80), 2);
   });
 
-  it("offers the sheet's glass types, single strength first", () => {
+  it("carries the premium colour adder on Iron Ore and nothing on Charcoal (Brandon, 19/10/2026)", () => {
+    // The sheet prices no colour: the stock tab's adder stands in — 120.28 cost
+    // a single door, double from 10'2", at every height, lifted by the margin.
+    const at = (width: string, color: string, height = "7") =>
+      specialDoorQuote({ ...base, width, height, color, style: "solid" }).quote!.unitPrice;
+    expect(at("9", "Iron Ore") - at("9", "White")).toBeCloseTo(211.02, 2);
+    expect(at("10", "Iron Ore") - at("10", "White")).toBeCloseTo(211.02, 2);
+    expect(at("10.2", "Iron Ore") - at("10.2", "White")).toBeCloseTo(422.04, 2);
+    expect(at("16", "Iron Ore") - at("16", "White")).toBeCloseTo(422.04, 2);
+    expect(at("9", "Iron Ore", "9") - at("9", "White", "9")).toBeCloseTo(211.02, 2);
+    for (const c of ["Charcoal", "Mocha Brown", "Hunter Green", "Black"]) expect(at("9", c), c).toBe(at("9", "White"));
+    // The 9130 the same; the 4300 at its own 44.
+    const q = (model: string, color: string) =>
+      specialDoorQuote({ ...base, model, width: "9", height: "7", color, style: "solid" }).quote!.unitPrice;
+    expect(q("9130/9131/9132/9133", "Iron Ore") - q("9130/9131/9132/9133", "White")).toBeCloseTo(211.02, 2);
+    expect(q("4300/4301/4302/4305/4310", "Iron Ore") - q("4300/4301/4302/4305/4310", "White")).toBeCloseTo(Math.round(120.28 / 0.56 * 100) / 100, 2);
+    expect(q("4300/4301/4302/4305/4310", "Charcoal")).toBe(q("4300/4301/4302/4305/4310", "White"));
+  });
+
+  it("offers the sheet's glass types, double strength first — single strength is priced and not offered", () => {
     expect(glassOptionsFor(G, "short", "9").map((g) => g.id)).toEqual([
-      "ssb", "dsb", "acrylic", "obscure", "insulated", "insulated_obscure", "frosted", "insulated_frosted", "rain", "insulated_rain",
+      "dsb", "acrylic", "obscure", "insulated", "insulated_obscure", "frosted", "insulated_frosted", "rain", "insulated_rain",
     ]);
   });
 });

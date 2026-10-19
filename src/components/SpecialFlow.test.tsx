@@ -160,17 +160,17 @@ describe("special order — glass types reach the price", () => {
     setHeight("7");
     fireEvent.change(sel("so-color"), { target: { value: "White" } });
     await settle();
-    fireEvent.change(sel("so-glass"), { target: { value: "ssb" } });
+    fireEvent.change(sel("so-glass"), { target: { value: "dsb" } });
     await settle();
-    // CJ's sheet (16/10/2026): the 8'0" x 7'0" door 747.62, four short single strength windows at 33 list.
-    expect(await total()).toBeCloseTo(930.36, 1);
+    // CJ's sheet (16/10/2026): the 8'0" x 7'0" door 747.62, four short double strength windows at 35 list.
+    expect(await total()).toBeCloseTo(747.62 + Math.round(4 * 35 * 0.776 * (0.99 / (1 - 0.0265)) * 100) / 100 / 0.57, 1);
     fireEvent.change(sel("so-glass"), { target: { value: "insulated_rain" } });
     await settle();
     // Four insulated rain windows at 130 list, at .776 and 43.
     expect(await total()).toBeCloseTo(747.62 + Math.round(4 * 130 * 0.776 * (0.99 / (1 - 0.0265)) * 100) / 100 / 0.57, 0);
   });
 
-  it("offers the architectural series on a Premium Steel door, with its own glass and windows (16/10/2026)", async () => {
+  it("offers the architectural windows on a Premium Steel door in the one framing list, with their glass in the one glass list (19/10/2026)", async () => {
     await pickDoor();
     fireEvent.click(maybe("so-configure")!);
     await settle();
@@ -178,35 +178,32 @@ describe("special order — glass types reach the price", () => {
     setHeight("7");
     fireEvent.change(sel("so-color"), { target: { value: "White" } });
     await settle();
-    expect(options("so-window-series").map((o) => o.value)).toEqual(["standard", "architectural"]);
-    expect(sel("so-window-series").value).toBe("standard");
-    fireEvent.change(sel("so-window-series"), { target: { value: "architectural" } });
-    await settle();
+    // No series control: the window picked says which series it is from.
+    expect(maybe("so-window-series")).toBeNull();
     expect(sel("so-glass").value).toBe("solid");
-    expect(options("so-glass").map((o) => o.value).slice(0, 3)).toEqual(["solid", "dsb", "obscure"]);
-    expect(options("so-glass").map((o) => o.value)).not.toContain("ssb");
-    fireEvent.change(sel("so-glass"), { target: { value: "seeded" } });
+    fireEvent.change(sel("so-glass"), { target: { value: "dsb" } });
     await settle();
     const framing = options("so-framing").map((o) => o.textContent);
-    expect(framing.slice(0, 3)).toEqual(['PLAIN SHORT 19-1/2" X 16"', 'PLAIN LONG 42" X 16"', "PLAIN ARCH 1"]);
+    expect(framing.slice(0, 6)).toEqual([
+      'PLAIN SHORT 19-1/2" X 12"', 'PLAIN LONG 40-1/2" X 12"', 'PLAIN SHORT 19-1/2" X 16"', 'PLAIN LONG 42" X 16"', "PLAIN ARCH 1", "Arch 2 Plain",
+    ]);
+    expect(framing).toContain("Colonial 509 inserts");
     expect(framing).toContain("SQ24 inserts");
-    expect(framing).not.toContain("Colonial 509 inserts");
+    // A glass only the architectural windows take frames those alone.
+    fireEvent.change(sel("so-glass"), { target: { value: "seeded" } });
+    await settle();
+    const seeded = options("so-framing").map((o) => o.textContent);
+    expect(seeded.slice(0, 3)).toEqual(['PLAIN SHORT 19-1/2" X 16"', 'PLAIN LONG 42" X 16"', "PLAIN ARCH 1"]);
+    expect(seeded).toContain("SQ24 inserts");
+    expect(seeded).not.toContain("Colonial 509 inserts");
     // Four short seeded windows at 130 list over the solid door.
     expect(await total()).toBeCloseTo(747.62 + Math.round(4 * 130 * 0.776 * (0.99 / (1 - 0.0265)) * 100) / 100 / 0.57, 0);
-    fireEvent.change(sel("so-framing"), { target: { value: "insert:long:SQ24" } });
+    fireEvent.change(sel("so-framing"), { target: { value: "arch:insert:long:SQ24" } });
     await settle();
     expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/SEEDED DSB WINDOWS IN THE TOP SECTION, SQ24 INSERTS/i);
-    // Back to the standard windows: the list is the sheet's ten again.
-    fireEvent.change(sel("so-window-series"), { target: { value: "standard" } });
-    await settle();
-    expect(options("so-glass").map((o) => o.value)).toContain("ssb");
-    // No series control on a door with one list.
-    cleanup();
-    await pickDoor("9200");
-    expect(maybe("so-window-series")).toBeNull();
   });
 
-  it("offers thirteen types at a priced width", async () => {
+  it("offers sixteen types at a priced width", async () => {
     await pickDoor();
     fireEvent.click(maybe("so-configure")!);
     await settle();
@@ -214,8 +211,11 @@ describe("special order — glass types reach the price", () => {
     setHeight("7");
     fireEvent.change(sel("so-color"), { target: { value: "White" } });
     await settle();
-    // Solid, single strength, then the nine named types — one list, like the stock tab's.
-    expect(options("so-glass").map((o) => o.value)).toEqual(["solid", "ssb", "dsb", "acrylic", "obscure", "insulated", "insulated_obscure", "frosted", "insulated_frosted", "rain", "insulated_rain"]);
+    // Solid, then the nine standard types, then the six only the architectural windows take — one list, like the stock tab's; no single strength.
+    expect(options("so-glass").map((o) => o.value)).toEqual([
+      "solid", "dsb", "acrylic", "obscure", "insulated", "insulated_obscure", "frosted", "insulated_frosted", "rain", "insulated_rain",
+      "seeded", "insulated_seeded", "midnight_gray", "insulated_midnight_gray", "tempered_midnight_gray", "insulated_tempered_midnight_gray",
+    ]);
   });
 
   it("offers long windows in the framing only from 8 feet", async () => {
@@ -226,19 +226,20 @@ describe("special order — glass types reach the price", () => {
     setHeight("7");
     fireEvent.change(sel("so-color"), { target: { value: "White" } });
     await settle();
-    fireEvent.change(sel("so-glass"), { target: { value: "ssb" } });
+    fireEvent.change(sel("so-glass"), { target: { value: "dsb" } });
     await settle();
-    // Only short windows at 7'0": the plain short window, then the short inserts, each its own entry.
+    // Only short windows at 7'0": the plain short windows, then the short inserts, each its own entry.
     let framing = options("so-framing").map((o) => o.textContent);
     expect(framing[0]).toBe('PLAIN SHORT 19-1/2" X 12"');
-    expect(framing.slice(1, 4)).toEqual(["Colonial 509 inserts", "Charleston 508 inserts", "Prairie 510 inserts"]);
+    expect(framing[1]).toBe('PLAIN SHORT 19-1/2" X 16"');
+    expect(framing.slice(2, 5)).toEqual(["Colonial 509 inserts", "Charleston 508 inserts", "Prairie 510 inserts"]);
     expect(framing).not.toContain("Charleston 608 inserts");
     expect(maybe("so-windesign")).toBeNull();                                 // no second drop-down for the design
     setWidth("12");
     await settle();
     framing = options("so-framing").map((o) => o.textContent);
     expect(framing.slice(0, 2)).toEqual(['PLAIN SHORT 19-1/2" X 12"', 'PLAIN LONG 40-1/2" X 12"']);
-    expect(framing.slice(-5)).toEqual(["Charleston 608 inserts", "Prairie 610 inserts", "Stockton 612 inserts", "Madison 611 inserts", "Madison Arch 613 inserts"]);
+    expect(framing.filter((l) => /\b6\d\d inserts$/.test(l ?? ""))).toEqual(["Charleston 608 inserts", "Prairie 610 inserts", "Stockton 612 inserts", "Madison 611 inserts", "Madison Arch 613 inserts"]);
     // Picking an insert from the framing is the whole choice: the line names it.
     fireEvent.change(sel("so-framing"), { target: { value: "insert:long:608" } });
     await settle();
@@ -283,8 +284,7 @@ describe("special order — condensed layout", () => {
     expect(document.querySelectorAll(".row2").length).toBe(0);
   });
 
-  it("starts solid, and calls the grid's own glass single strength", async () => {
-    // It is not "standard" — it is the SSB column in Clopay's own book.
+  it("starts solid, then double strength — single strength is not offered (19/10/2026)", async () => {
     await pickDoor();
     fireEvent.click(maybe("so-configure")!);
     await settle();
@@ -295,8 +295,9 @@ describe("special order — condensed layout", () => {
     expect(sel("so-glass").value).toBe("solid");
     const [first, second] = options("so-glass");
     expect(first.text).toBe("Solid — no windows");
-    expect(second.text).toBe("Single strength");
-    expect(second.value).toBe("ssb");
+    expect(second.text).toBe("Double strength");
+    expect(second.value).toBe("dsb");
+    expect(options("so-glass").map((o) => o.value)).not.toContain("ssb");
   });
 });
 

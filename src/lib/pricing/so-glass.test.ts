@@ -21,12 +21,14 @@ const K = 0.99 / (1 - 0.0265);
 const cost = (n: number, list: number, mult = 0.776) => Math.round(n * list * mult * K * 100) / 100;
 
 describe("glass types", () => {
-  it("offers the sheet's ten standard types wherever standard windows are priced, single strength first", () => {
+  it("offers nine of the sheet's ten standard types wherever standard windows are priced, double strength first", () => {
+    // The sheet prices single strength too; it is not offered on a special
+    // order (Brandon, 19/10/2026), as on every other sheet-priced door.
     expect(glassOptionsFor(G, "short", "9").map((g) => g.id)).toEqual([
-      "ssb", "dsb", "acrylic", "obscure", "insulated", "insulated_obscure", "frosted", "insulated_frosted", "rain", "insulated_rain",
+      "dsb", "acrylic", "obscure", "insulated", "insulated_obscure", "frosted", "insulated_frosted", "rain", "insulated_rain",
     ]);
-    expect(glassOptionsFor(G, "long", "12")).toHaveLength(10);
-    expect(baseGlassFor(G)).toBe("ssb");
+    expect(glassOptionsFor(G, "long", "12")).toHaveLength(9);
+    expect(baseGlassFor(G)).toBe("dsb");
     expect(baseGlassFor("GD1LP/GD1SP")).toBe("dsb");
     expect(SO_GLASS_TYPES[0].id).toBe("ssb");
   });
@@ -165,9 +167,10 @@ describe("what is not priced", () => {
     expect(windowSeriesFor("T50S/T50L")).toEqual(["standard"]);
   });
 
-  it("prices the sheet's single strength when no type is chosen", () => {
-    expect(sell("8")).toBe(sell("8", "ssb"));
-    expect(sell("8")).toBeGreaterThan(747.62);
+  it("prices the sheet's double strength when no type is chosen", () => {
+    expect(sell("8")).toBe(sell("8", "dsb"));
+    expect(sell("8")).toBeGreaterThan(sell("8", "ssb"));
+    expect(sell("8", "ssb")).toBeGreaterThan(747.62);
   });
 
   it("refuses a glass the series does not price, and says which windows do", () => {
@@ -200,7 +203,7 @@ describe("single strength is the sheet's own type", () => {
   it("gives the same number whether or not the glass dropdown was touched", () => {
     for (const w of ["6.2", "8", "9", "12", "16", "18"]) {
       for (const st of ["glass", "inserts"] as const) {
-        expect(price(w, st, "ssb"), `${w} ${st}`).toBe(price(w, st));
+        expect(price(w, st, "dsb"), `${w} ${st}`).toBe(price(w, st));
       }
     }
   });

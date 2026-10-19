@@ -21,7 +21,7 @@ import {
 } from "@/lib/pricing/data/special-door-pricing";
 import { COLORS, specialOrderColors } from "@/lib/pricing/data/catalog-meta";
 import { designsBuilt, designLabel, designTakesWindows, hasDesigns, secondColorName, secondColors } from "@/lib/pricing/data/door-designs";
-import { isSheetGroup, windowSeriesFor, windowsPricedAt, WINDOW_SERIES, type WindowSeries } from "@/lib/pricing/data/so-glass";
+import { isSheetGroup, windowsPricedAt } from "@/lib/pricing/data/so-glass";
 import {
   splitSize, sizeKey, feetOptions, inchOptions, glassTypeOptions, framingOptions, windowChoice, GLAZED_SECTIONS,
 } from "@/lib/pricing/data/so-framing";
@@ -144,10 +144,6 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const [gGlass, setGGlass] = useState("solid");
   const [gFraming, setGFraming] = useState("");
   const [gSection, setGSection] = useState("4");
-  // The window series on a door with two (the Premium Steel doors, CJ's
-  // workbook of 16/10/2026): the standard windows unless the architectural
-  // series is picked. The glass list and the framing follow it.
-  const [gSeries, setGSeries] = useState<WindowSeries>("standard");
   // Track mount, high lift and incline. These live on special order rather than
   // residential: a stock door ships on standard track, and anything else is an
   // order Clopay builds to spec.
@@ -182,7 +178,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const [vinylAsked, setVinylAsked] = useState(false);
   const resetGrid = () => {
     setGWidthFt(""); setGWidthIn("0"); setGHeightFt(""); setGHeightIn("0"); setGColor(""); setGCdDesign(""); setGOverlay("");
-    setGGlass("solid"); setGFraming(""); setGSeries("standard"); setGVariant("");
+    setGGlass("solid"); setGFraming(""); setGVariant("");
     setVinylOn(false); setVinylAsked(false);
   };
   const pickCommSeries = (v: string) => {
@@ -243,15 +239,13 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const isSheet = isSheetGroup(modelGroup);
   const gWindowsOk = !gWidth || (windowsOfferedAt(modelMember || undefined, gWidth) && (!isSheet || windowsPricedAt(modelGroup, gWidth))
     && (!gDesigned || designTakesWindows(modelGroup, gDesignEff)));
-  const gSeriesOptions = gridded ? windowSeriesFor(modelGroup) : ["standard" as const];
-  const gSeriesEff: WindowSeries = gSeriesOptions.includes(gSeries) ? gSeries : "standard";
-  const gGlassOptions = gridded && gWidth ? glassTypeOptions(modelGroup, gWidth, gWindowsOk, gSeriesEff) : [];
+  const gGlassOptions = gridded && gWidth ? glassTypeOptions(modelGroup, gWidth, gWindowsOk) : [];
   const gGlassEff = gGlassOptions.some((g) => g.id === gGlass) ? gGlass : "solid";
-  const gFramings = gridded && gWidth ? framingOptions(modelGroup, member, gWidth, gGlassEff, gSeriesEff) : [];
+  const gFramings = gridded && gWidth ? framingOptions(modelGroup, member, gWidth, gGlassEff) : [];
   // The framing picked stays through a glass change where the new glass
   // offers it (a Coachman design, say); where it does not, the first is used.
   const gFramingEff = gFramings.find((f) => f.value === gFraming) ?? gFramings[0];
-  const choice = windowChoice(gGlassEff, gFramingEff, gSeriesEff);
+  const choice = windowChoice(gGlassEff, gFramingEff);
   const gStyleEff = choice.style;
 
   // High lift is the 4050 family's (Brandon, 13/10/2026), torsion only, and
@@ -620,16 +614,6 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                   </div>
                   <div className="ggroup">
                   <div className="ghdr">Window options</div>
-                  {gSeriesOptions.length > 1 && (
-                    <div className="grow"><label>Window series</label>
-                      <div className="ctl selectwrap">
-                        <select disabled={!gOpen} data-testid="so-window-series" value={gSeriesEff}
-                          onChange={(e) => { setGSeries(e.target.value as WindowSeries); setSaved(false); }}>
-                          {WINDOW_SERIES.filter((o) => gSeriesOptions.includes(o.id)).map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
-                        </select>
-                      </div>
-                    </div>
-                  )}
                   <div className="grow"><label>Glass type</label>
                     <div className="ctl selectwrap">
                       <select disabled={!gOpen} data-testid="so-glass" value={gGlassEff}

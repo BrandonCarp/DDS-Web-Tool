@@ -209,17 +209,21 @@ describe("quoteResidential — full quote with add-on upcharges", () => {
     expect(q.lines.some((l) => /torsion|included/i.test(l.name))).toBe(false);
   });
 
-  it("charges the premium adder on Iron Ore and, on 4300, Charcoal", () => {
+  it("charges the premium adder on Iron Ore and the Ultra-Grains, and not on Charcoal (Brandon, 19/10/2026)", () => {
     const base = priceResidential("4300", dim(9, 0, 7, 0), "solid").price!;
     const plain = quoteResidential("4300", dim(9, 0, 7, 0), opts({ color: "White" }));
     expect(plain.unitPrice).toBeCloseTo(base, 2);
-    for (const c of ["Iron Ore", "Charcoal", "Ultra-Grain Classic Walnut Finish"]) {
+    for (const c of ["Iron Ore", "Ultra-Grain Classic Walnut Finish"]) {
       const q = quoteResidential("4300", dim(9, 0, 7, 0), opts({ color: c }));
       expect(q.unitPrice, `${c} should carry the adder`).toBeCloseTo(base + 211.02, 2);
     }
+    // Charcoal carried it on the 4300 family until 19/10/2026; it is a standard colour.
+    expect(quoteResidential("4300", dim(9, 0, 7, 0), opts({ color: "Charcoal" })).unitPrice).toBeCloseTo(base, 2);
+    expect(quoteResidential("9130-9133", dim(9, 0, 7, 0), opts({ color: "Charcoal" })).unitPrice)
+      .toBeCloseTo(priceResidential("9130-9133", dim(9, 0, 7, 0), "solid").price!, 2);
   });
 
-  it("does NOT charge Charcoal on Gallery — that is a 4300-family rule", () => {
+  it("does NOT charge Charcoal on Gallery either", () => {
     const base = priceResidential("GD1LP-GD1SP", dim(9, 0, 7, 0), "solid").price!;
     const q = quoteResidential("GD1LP-GD1SP", dim(9, 0, 7, 0), opts({ color: "Charcoal" }));
     expect(q.unitPrice).toBeCloseTo(base, 2);
