@@ -37,7 +37,7 @@ describe("Bridgeport Steel special order grids (workbook of 12/10/2026)", () => 
   it("prices every group off its list and multiplier", () => {
     // BD1NU/BD1EU: list x .898. 8'0" x 7' is list 569.
     expect(price({})).toBe(sellAt("BD1EU/BD1NU", cost(569, 0.898)));
-    expect(price({ width: "8.2" })).toBe(sellAt("BD1EU/BD1NU", cost(712, 0.898)));         // 8'2" to 8'10"
+    expect(price({ width: "8.2" })).toBeCloseTo(price({}) + 200, 2);         // 8'2" to 8'10": the 8'0" door and 200 (19/10/2026)
     expect(price({ width: "18", height: "9" })).toBe(sellAt("BD1EU/BD1NU", cost(2174, 0.898)));
     // BD2NU/BD2EU: the same widths, list x .823, out to 20'0".
     expect(price({ model: "BD2EU/BD2NU", variant: "BD2NU" })).toBe(sellAt("BD2EU/BD2NU", cost(704, 0.823)));
@@ -89,15 +89,17 @@ describe("Bridgeport Steel special order grids (workbook of 12/10/2026)", () => 
     // The BD2 7FT list at 9'2"-9'10" read 882, the row above copied down; CJ
     // corrected it to 991.
     expect(q({ width: "12" }).quote?.unitPrice).toBe(sellAt("BD1EU/BD1NU", cost(816, 0.898)));
-    expect(q({ width: "11.6" }).quote?.unitPrice).toBe(sellAt("BD1EU/BD1NU", cost(944, 0.898)));
+    expect(q({ width: "11.6" }).quote?.unitPrice).toBeCloseTo(q({ width: "10" }).quote!.unitPrice + 200, 2);   // an odd width: the 10'0" door and 200
     expect(q({ width: "12", height: "8" }).quote?.unitPrice).toBe(sellAt("BD1EU/BD1NU", cost(1008, 0.898)));
     expect(q({ width: "12", height: "9" }).quote?.unitPrice).toBe(sellAt("BD1EU/BD1NU", cost(1452, 0.898)));
+    // The corrected row is loaded and, since 19/10/2026, never read: an odd
+    // width is the whole-foot door below it and 200.
     for (const w of ["9.2", "9.4", "9.10"]) {
       expect(q({ model: "BD2EU/BD2NU", variant: "BD2NU", width: w, height: "7" }).quote?.unitPrice, w)
-        .toBe(sellAt("BD2EU/BD2NU", cost(991, 0.823)));
+        .toBeCloseTo(sellAt("BD2EU/BD2NU", cost(763, 0.823)) + 200, 2);
     }
     expect(q({ model: "BD2EU/BD2NU", variant: "BD2NU", width: "9.4", height: "8" }).quote?.unitPrice)
-      .toBe(sellAt("BD2EU/BD2NU", cost(1224, 0.823)));
+      .toBeCloseTo(q({ model: "BD2EU/BD2NU", variant: "BD2NU", width: "9", height: "8" }).quote!.unitPrice + 200, 2);
   });
 
   it("is solid only at 14'10\" and 15'4\", on every design", () => {
@@ -106,7 +108,7 @@ describe("Bridgeport Steel special order grids (workbook of 12/10/2026)", () => 
       expect(windowsOfferedAt(m, "15.4"), m).toBe(false);
       expect(windowsOfferedAt(m, "15"), m).toBe(true);
     }
-    expect(q({ width: "14.10" }).quote?.unitPrice).toBe(sellAt("BD1EU/BD1NU", cost(1163, 0.898)));
+    expect(q({ width: "14.10" }).quote?.unitPrice).toBeCloseTo(q({ width: "14" }).quote!.unitPrice + 200, 2);
     expect(q({ width: "14.10", style: "glass" }).reason).toMatch(/solid only/);
   });
 });

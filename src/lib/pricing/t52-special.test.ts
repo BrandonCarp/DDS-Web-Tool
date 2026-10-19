@@ -56,8 +56,9 @@ describe("T52S / T52L — special order", () => {
     // One row came in at 44.73% — 14'0" glass, which the sheet had at 1375.54
     // where its own total implies 1357.54. Corrected on import.
     expect(sell("14", "glass")).toBeCloseTo(1357.54, 2);
-    expect(sell("13.10", "glass")).toBeCloseTo(1499.68, 2);
-    expect(sell("14.2", "glass")).toBeCloseTo(1565.98, 2);
+    // Odd widths are the whole-foot door below and 200 (19/10/2026), not their own rows.
+    expect(sell("13.10", "glass")).toBeCloseTo(sell("12", "glass") + 200, 2);
+    expect(sell("14.2", "glass")).toBeCloseTo(1357.54 + 200, 2);
   });
 
   it("offers the 4050's short-window designs, 507 excluded", () => {

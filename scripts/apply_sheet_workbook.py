@@ -18,6 +18,16 @@ architectural series):
 
     python scripts/apply_sheet_workbook.py pricing_10-16.xlsx --family premium
 
+…and the two Modern Steel sheets CJ added to it on 19/10/2026 (read_modern_sheet,
+below — the door grid at three columns, 9FT and 10FT sharing one, and the
+contemporary windows priced a window by glass and framing, which the app
+places on a drawing of the door):
+
+    python scripts/apply_sheet_workbook.py pricing_10-16.xlsx --family modern
+
+A sheet whose models are not a group of the family's collection is skipped,
+so one workbook can carry both families' sheets.
+
 A workbook of this shape (Brandon's coworker, 9/10/2026) carries, per sheet:
 
   A1          the group: "BD1NU/BD1EU", or a single model "BD1CU"
@@ -115,6 +125,18 @@ FAMILIES = {
         "out": ROOT / "src/lib/pricing/data/premium-glass.ts",
         "title": "Premium Steel",
         "layout": "premium",
+        "flat": 0.0,
+    },
+    # The Modern Steel sheets on the same workbook (CJ, 19/10/2026): the
+    # 9208/9209 and 4308/4309 pairs — see read_modern_sheet. The grid lands in
+    # special-doors.ts like every other; the windows, priced a window, in
+    # modern-windows.ts for the door drawing (modern-steel.ts).
+    "modern": {
+        "collection": "Modern Collection",
+        "const": "MODERN",
+        "out": ROOT / "src/lib/pricing/data/modern-windows.ts",
+        "title": "Modern Steel",
+        "layout": "modern",
         "flat": 0.0,
     },
 }
@@ -1210,7 +1232,7 @@ def read_premium_sheet(ws, wsf, margins):
 
     print(f"  note: {ws.title}: standard windows {[(lab, n) for _, _, lab, n in std_counts]}")
     print(f"  note: {ws.title}: architectural windows {[(lab, n) for _, _, lab, n in arch_counts]}")
-    ug = premium_ultra_color(ws, wsf, problems)
+    ug = ultra_color_block(ws, wsf, problems)
     return {
         "sheet": ws.title, "group": group, "members": members, "mult": mult, "glass_mult": mult, "flat": DOOR_FLAT,
         "min_width": {}, "ug": ug, "only_to_8": False, "unavailable": [],
@@ -1222,43 +1244,328 @@ def read_premium_sheet(ws, wsf, margins):
 
 # The ULTRA COLOR block on the revised Premium Steel sheets (CJ, 19/10/2026):
 # the premium colour adder — Iron Ore and the Ultra-Grain finishes — as four
-# lines beside the grid, label | | | list | cost: SINGLE DOOR UP TO 8FT, SINGLE
-# DOOR 8FT AND UP, DOUBLE DOOR UP TO 8FT, DOUBLE DOOR 8FT AND UP. The cost
-# multiplies by the finish's own figure (1.301), not A2's — the adder is
-# Clopay's flat figure for the finish, whatever the door's multiplier — so it
-# is read at the formula's figure, and the sheet says which. "8FT AND UP" is
-# over 8'0": the 8'0" door is "UP TO 8FT", as on the Gallery sheets.
+# lines under a heading that says ULTRA, label … list | cost: SINGLE DOOR UP
+# TO 8FT, SINGLE DOOR 8FT AND UP, DOUBLE DOOR UP TO 8FT, DOUBLE DOOR 8FT AND
+# UP. Beside the grid at T2 on the Premium Steel sheets, under it at A29 on
+# the Modern Steel sheets ("ULTRA COLOR AND PLANK" on the 9208-9209's: the
+# Ultra-Grain Plank finishes take the same adder). The cost multiplies by the
+# finish's own figure (1.301), not A2's — the adder is Clopay's flat figure
+# for the finish, whatever the door's multiplier — so it is read at the
+# formula's figure, and the sheet says which. "8FT AND UP" is over 8'0": the
+# 8'0" door is "UP TO 8FT", as on the Gallery sheets.
 ULTRA_LINES = {
     "SINGLE DOOR UP TO 8FT": ("low", "single"), "SINGLE DOOR 8FT AND UP": ("high", "single"),
     "DOUBLE DOOR UP TO 8FT": ("low", "double"), "DOUBLE DOOR 8FT AND UP": ("high", "double"),
 }
 
 
-def premium_ultra_color(ws, wsf, problems):
+def numbers_right_of(ws, r, c, span=6):
+    """The (column, value) of each numeric cell to the right of (r, c), nearest first, within span columns."""
+    return [(cc, ws.cell(r, cc).value) for cc in range(c + 1, c + 1 + span) if isinstance(ws.cell(r, cc).value, (int, float))]
+
+
+def ultra_color_block(ws, wsf, problems):
     """The ULTRA COLOR block as {"low": {single, double}, "high": {...}} in cost, or None where the sheet has none."""
-    head = next((c for c in range(1, ws.max_column + 1) if "ULTRA" in str(ws.cell(2, c).value or "").upper()), None)
-    if head is None:
+    at = next(((r, c) for r in range(1, 41) for c in range(1, ws.max_column + 1)
+               if "ULTRA" in str(ws.cell(r, c).value or "").upper()), None)
+    if at is None:
         return None
+    top, head = at
     ug = {"low": {}, "high": {}}
     mults = set()
-    for r in range(3, 7):
+    for r in range(top + 1, top + 5):
         label = str(ws.cell(r, head).value or "").strip().upper()
         where = ULTRA_LINES.get(label)
         if where is None:
             problems.add(f"{ws.title} ultra colour ({get_column_letter(head)}{r}): unexpected line {label!r}")
             continue
-        lst, cost = ws.cell(r, head + 3).value, ws.cell(r, head + 4).value
-        fm = mult_from_formula(wsf.cell(r, head + 4).value)
-        if not isinstance(lst, (int, float)) or fm is None or not isinstance(cost, (int, float)) or abs(lst * fm * K - cost) > 0.06:
-            problems.add(f"{ws.title} ultra colour {label}: list {lst!r}, cost {cost!r} — expected a list and a cost at the formula's multiplier")
+        nums = numbers_right_of(ws, r, head)
+        if len(nums) < 2:
+            problems.add(f"{ws.title} ultra colour {label}: expected a list and a cost on row {r}")
+            continue
+        (_, lst), (cc, cost) = nums[0], nums[1]
+        fm = mult_from_formula(wsf.cell(r, cc).value)
+        if fm is None or abs(lst * fm * K - cost) > 0.06:
+            problems.add(f"{ws.title} ultra colour {label}: list {lst!r}, cost {cost!r} — expected a cost at the formula's multiplier")
             continue
         mults.add(fm)
         ug[where[0]][where[1]] = money(lst * fm * K)
     if any(len(v) != 2 for v in ug.values()):
         problems.add(f"{ws.title} ultra colour: expected the four lines, got {ug}")
         return None
-    print(f"  note: {ws.title}: ultra colour at x{'/'.join(f'{m:g}' for m in sorted(mults))}: {ug}")
+    print(f"  note: {ws.title}: ultra colour ({ws.cell(top, head).value}) at x{'/'.join(f'{m:g}' for m in sorted(mults))}: {ug}")
     return ug
+
+
+# The Modern Steel sheets' windows (CJ, 19/10/2026): the contemporary glass,
+# a block a type — four lines under the name, SHORT, SHORT W/GRILLES, LONG and
+# LONG W/GRILLES, each list | cost PER window — laid out two blocks across,
+# and a SLIM WINDOWS block naming the glass the 37" x 8" slim window comes in,
+# one price for the three. The names are Clopay's, thickness and all — 1/8"
+# TEMPERED, 3/4" INSULATED TEMPERED MIDNIGHT GRAY, and the slim window's own
+# 9/16" INSULATED TEMPERED MIDNIGHT GRAY, a glass of its own on Clopay's list
+# (Brandon, 19/10/2026) — and the label keeps them. The id is the name less
+# the thickness, the 9/16" glass marked so it is not the 3/4".
+MODERN_NAME_TYPOS = {"INSUALTED": "INSULATED", "TEMPRED": "TEMPERED", "SLIVER": "SILVER"}
+MODERN_LINES = {"SHORT": "short", "SHORT W/GRILLES": "short_grilles", "LONG": "long", "LONG W/GRILLES": "long_grilles"}
+MODERN_GLASS_WORDS = {"TEMPERED", "INSULATED", "FROSTED", "OBSCURE", "NARROW", "REED", "MIDNIGHT", "GRAY"}
+# Clopay's order on the glass list (Brandon, 19/10/2026); a glass not here
+# follows, in the sheet's order.
+MODERN_GLASS_ORDER = [
+    "tempered", "insulated_tempered", "tempered_frosted", "insulated_tempered_frosted", "insulated_tempered_obscure",
+    "tempered_narrow_reed", "tempered_obscure", "insulated_tempered_narrow_reed", "tempered_midnight_gray",
+    "insulated_tempered_midnight_gray", "insulated_tempered_midnight_gray_916",
+]
+
+
+def modern_glass_name(raw, typos_used):
+    """A sheet name -> (id, label): '9/16" INSUALTED TEMPRED MIDNIGHT GRAY' -> ("insulated_tempered_midnight_gray_916", '9/16" insulated tempered midnight gray')."""
+    words = []
+    thickness = None
+    for w in str(raw).strip().upper().split():
+        if re.fullmatch(r'\d+/\d+"', w):
+            thickness = w
+            continue
+        if w in MODERN_NAME_TYPOS:
+            typos_used.add(w)
+            w = MODERN_NAME_TYPOS[w]
+        words.append(w)
+    if not words or any(w not in MODERN_GLASS_WORDS for w in words):
+        return None
+    gid = "_".join(words).lower() + ("_" + thickness.strip('"').replace("/", "") if thickness == '9/16"' else "")
+    label = " ".join(words).capitalize()
+    return gid, f"{thickness} {label[0].lower() + label[1:]}" if thickness else label
+
+
+def panels_wide(w, size):
+    """Clopay's PANELS/WINDOWS WIDE for the Modern Steel doors (modern-steel.ts: modernPanelsWide), by width in inches."""
+    if size == "short":
+        return None if w < 72 else 3 if w <= 90 else None if w < 92 else 4 if w <= 140 else 6 if w <= 178 else 8 if w <= 228 else 10 if w <= 240 else None
+    return None if w < 92 else 2 if w <= 140 else 3 if w <= 178 else 4 if w <= 228 else 5 if w <= 240 else None
+
+
+def read_modern_sheet(ws, wsf, margins):
+    """
+    CJ's Modern Steel sheets on the Premium Steel workbook (19/10/2026): one a
+    pair, laid out:
+
+      A1, B1          the models: 9208, 9209 (the 4138 sheet names the one)
+      A2              the multiplier, .865
+      row 3 / row 4   D EXT 7FT, F EXT 8FT, H TORSION "9FT 10FT" — LIST in
+                      C/E/G and COST in D/F/H, one row per width band from
+                      row 5 (6'2" to 7'10", 8'0", 8'2" to 8'10" … 20'0"); the
+                      9FT and 10FT doors share the one torsion column
+      L3              "ARCHITECTURAL WINDOWS": the contemporary glass, a block
+                      a type two across (L and P), a name then SHORT, SHORT
+                      W/GRILLES, LONG, LONG W/GRILLES — list | cost PER window
+      SLIM WINDOWS    the glass the 37" x 8" slim window comes in, one list |
+                      cost PER for the three; none on the 4138, which has no
+                      slim window
+      WINDOWS         SHORT and LONG counts by width band — CJ's; the drawing
+                      goes by Clopay's own panel chart, and the script says
+                      where the two differ
+      ULTRA COLOR     the premium colour adder, four lines (ultra_color_block)
+      rows 55 on      the 9200 sheet's architectural blocks, left over — not
+                      read on this layout
+
+    Every cost is list x multiplier x k. What lands in the app: the grid as
+    SELL in special-doors.ts, solid alone — a window on these doors is pressed
+    into the door drawing, not a column of the grid — and the per-window
+    costs and the colour adder in modern-windows.ts, lifted by the margin at
+    quote time.
+    """
+    problems = Problems()
+    members = [str(ws.cell(1, c).value).strip() for c in range(1, 12) if ws.cell(1, c).value not in (None, "")]
+    group = next((g for g in margins if set(g.split("/")) == set(members)), None)
+    if group is None:
+        sys.exit(f"{ws.title}: no margin group for {members} in {SPECIAL_ORDERS.name}")
+    try:
+        mult = float(str(ws["A2"].value).strip())
+    except ValueError:
+        sys.exit(f"{ws.title}: A2 should be the multiplier, got {ws['A2'].value!r}")
+    heads = tuple(ws.cell(3, c).value for c in (4, 6, 8)) + tuple(" ".join(str(ws.cell(4, c).value or "").split()) for c in (4, 6, 8))
+    if heads != ("EXT", "EXT", "TORSION", "7FT", "8FT", "9FT 10FT"):
+        sys.exit(f"{ws.title}: heading rows 3 and 4 read {heads}")
+    tiers = {"7": 4, "8": 6, "9": 8, "10": 8}
+
+    def cost_of(r, lc, cc, where):
+        """A (list, cost) pair -> cost at the sheet's multiplier, checked against the cell's formula."""
+        lst, cost = ws.cell(r, lc).value, ws.cell(r, cc).value
+        col = get_column_letter(cc)
+        if not isinstance(lst, (int, float)):
+            problems.add(f"{where} ({get_column_letter(lc)}{r}): list {lst!r} is not a number")
+            return None
+        fm = mult_from_formula(wsf.cell(r, cc).value)
+        if fm is None:
+            problems.add(f"{where} ({col}{r}): cost {cost!r} carries no formula")
+        elif abs(fm - mult) > 1e-9:
+            problems.add(f"{where} ({col}{r}): the formula multiplies by {fm}, not A2's {mult}")
+        elif not isinstance(cost, (int, float)) or abs(lst * mult * K - cost) > 0.06:
+            problems.add(f"{where} ({col}{r}): cost {cost!r} is not list {lst} x {mult} x k")
+        return float(lst * mult * K)
+
+    # The door grid. A row with no list at a height — the 4138's odd widths
+    # at 9FT and 10FT, blank on the sheet because the app prices an odd width
+    # as the whole-foot door below it and 200 (special-door-pricing.ts) — is
+    # not priced there; a row N/A at every height (the 4138 over 18'0") is a
+    # width the door is not built in, and is left off the grid.
+    bands = []
+    not_built = []
+    partial = []
+    r = 5
+    while True:
+        label = ws.cell(r, 1).value
+        if not (isinstance(label, str) and re.match(r"\s*\d+'", label)):
+            break
+        label = LABEL_TYPOS.get(label.strip(), label.strip())
+        lo, hi = band_range(label)
+        prices = {}
+        for tier, cc in tiers.items():
+            lst = ws.cell(r, cc - 1).value
+            if lst is None or (isinstance(lst, str) and lst.strip().upper() == "N/A"):
+                continue
+            c = cost_of(r, cc - 1, cc, f"{ws.title} {label} {tier}FT")
+            if c is not None:
+                prices[tier] = c + DOOR_FLAT
+        r += 1
+        if not prices:
+            not_built.append(label)
+            continue
+        if len(prices) != 4:
+            partial.append(f"{label} at {'/'.join(t + 'FT' for t in tiers if t not in prices)}")
+        bands.append((lo, hi, label, prices))
+    grid_end = r
+    if not bands:
+        sys.exit(f"{ws.title}: no width rows under the heading")
+    if not_built:
+        print(f"  note: {ws.title}: N/A at every height, left off the grid: {', '.join(not_built)}")
+    if partial:
+        print(f"  note: {ws.title}: no list price, so no grid cell, for {'; '.join(partial)} — an odd width there prices as the whole-foot door below it and 200")
+    covered = {}
+    for lo, hi, label, _ in bands:
+        for w in range(lo, hi + 1, 2):
+            if w in covered:
+                problems.add(f"{ws.title}: {label} overlaps {covered[w]} at {width_key(w)}")
+            covered[w] = label
+    first, last = bands[0][0], bands[-1][1]
+    gaps = [width_key(w) for w in range(first, last + 1, 2) if w not in covered]
+
+    # The window blocks: a glass name with PER two or three cells to its right,
+    # the four lines under it. Searched over the window columns above the
+    # leftover rows, so the 9200's architectural blocks down column A are
+    # never read.
+    typos_used = set()
+    windows = {}    # glass id -> framing -> cost a window
+    labels = {}     # glass id -> label, in sheet order
+    for top in range(3, 34):
+        for c in range(12, ws.max_column + 1):
+            raw = ws.cell(top, c).value
+            if not isinstance(raw, str) or not any(ws.cell(top, cc).value == "PER" for cc in range(c + 1, c + 4)):
+                continue
+            named = modern_glass_name(raw, typos_used)
+            if named is None:
+                problems.add(f"{ws.title} {get_column_letter(c)}{top}: no glass id for the window block {raw!r}")
+                continue
+            gid, label = named
+            if gid in windows:
+                problems.add(f"{ws.title}: the {label} window block appears twice")
+                continue
+            block = {}
+            for i, (line, framing) in enumerate(MODERN_LINES.items()):
+                rr = top + 1 + i
+                lab = " ".join(str(ws.cell(rr, c).value or "").split()).upper()
+                if lab != line:
+                    problems.add(f"{ws.title} {get_column_letter(c)}{rr}: line {i + 1} of {label} reads {ws.cell(rr, c).value!r}, not {line!r}")
+                    continue
+                nums = numbers_right_of(ws, rr, c, 3)
+                if len(nums) < 2:
+                    problems.add(f"{ws.title} {label} {line}: expected a list and a cost on row {rr}")
+                    continue
+                cost = cost_of(rr, nums[0][0], nums[1][0], f"{ws.title} {label} {line}")
+                if cost is not None:
+                    block[framing] = cost
+            windows[gid] = block
+            labels[gid] = label
+    if not windows:
+        problems.add(f"{ws.title}: no window blocks found")
+
+    # The slim window: its glass names stacked under SLIM WINDOWS, then one
+    # list | cost PER line for all of them.
+    slim_at = next(((r, c) for r in range(3, ws.max_row + 1) for c in range(12, ws.max_column + 1)
+                    if str(ws.cell(r, c).value or "").strip().upper() == "SLIM WINDOWS"), None)
+    slim_glass = []
+    if slim_at is None:
+        print(f"  note: {ws.title}: no SLIM WINDOWS block — no slim window on this door")
+    else:
+        r, c = slim_at[0] + 1, slim_at[1]
+        while isinstance(ws.cell(r, c).value, str):
+            named = modern_glass_name(ws.cell(r, c).value, typos_used)
+            if named is None:
+                problems.add(f"{ws.title} {get_column_letter(c)}{r}: no glass id for the slim window glass {ws.cell(r, c).value!r}")
+            else:
+                slim_glass.append(named)
+            r += 1
+        if isinstance(ws.cell(r, c).value, (int, float)) and ws.cell(r, c + 2).value == "PER":
+            cost = cost_of(r, c, c + 1, f"{ws.title} slim window")
+            if cost is not None:
+                for gid, label in slim_glass:
+                    # The 9/16" glass is the slim window's alone: no block of its own.
+                    windows.setdefault(gid, {})["slim"] = cost
+                    labels.setdefault(gid, label)
+        else:
+            problems.add(f"{ws.title}: no list | cost PER line under SLIM WINDOWS at row {r}")
+        if not slim_glass:
+            problems.add(f"{ws.title}: SLIM WINDOWS names no glass")
+    if typos_used:
+        print(f"  note: {ws.title}: read {', '.join(f'{t} as {MODERN_NAME_TYPOS[t]}' for t in sorted(typos_used))}")
+
+    # CJ's window counts against Clopay's panel chart, which the drawing goes by.
+    counts_at = next(((r, c) for r in range(3, ws.max_row + 1) for c in range(12, ws.max_column + 1)
+                      if str(ws.cell(r, c).value or "").strip().upper() == "WINDOWS"
+                      and str(ws.cell(r + 1, c + 1).value or "").strip().upper() == "SHORT"), None)
+    counts = []
+    if counts_at is None:
+        problems.add(f"{ws.title}: no WINDOWS / SHORT / LONG count table")
+    else:
+        r, c = counts_at[0] + 2, counts_at[1]
+        while isinstance(ws.cell(r, c).value, str) and re.match(r"\s*(UP TO|\d+')", ws.cell(r, c).value.strip().upper()):
+            lo, hi = band_range(ws.cell(r, c).value)
+            n = {}
+            for size, cc in (("short", c + 1), ("long", c + 2)):
+                v = str(ws.cell(r, cc).value or "").strip().upper()
+                if v and v != "N/A":
+                    n[size] = int(v)
+            counts.append((lo, hi, ws.cell(r, c).value.strip(), n))
+            r += 1
+        for lo, hi, lab, n in counts:
+            for size, k in n.items():
+                # The widths in the band the chart counts differently, as runs: "4 at 11'6"-11'8"".
+                runs = []
+                for w in range(max(lo, first), min(hi, last) + 1, 2):
+                    chart = panels_wide(w, size)
+                    if chart == k:
+                        continue
+                    if runs and runs[-1][0] == chart and runs[-1][2] == w - 2:
+                        runs[-1][2] = w
+                    else:
+                        runs.append([chart, w, w])
+                if runs:
+                    said = ", ".join(f"{c if c is not None else 'none'} at {width_label(a)}" + (f"-{width_label(b)}" if b != a else "") for c, a, b in runs)
+                    print(f"  note: {ws.title}: {lab} {size} windows {k} on the sheet; Clopay's chart {said} — the drawing goes by the chart")
+
+    leftover = next((rr for rr in range(grid_end, ws.max_row + 1) if ws.cell(rr, 2).value == "ADD"), None)
+    if leftover:
+        print(f"  note: {ws.title}: rows {leftover - 1} on carry glass blocks down column A (the 9200 sheet's architectural series) — not read on this layout")
+
+    ug = ultra_color_block(ws, wsf, problems)
+    print(f"  note: {ws.title}: windows {', '.join(f'{labels[g]} ({'/'.join(windows[g])})' for g in windows)}")
+    return {
+        "sheet": ws.title, "group": group, "members": members, "mult": mult, "glass_mult": mult, "flat": DOOR_FLAT,
+        "min_width": {}, "ug": ug, "only_to_8": False, "unavailable": [],
+        "tiers": list(tiers), "bands": bands, "gaps": gaps, "no_windows": {}, "glass": {},
+        "solid_grid_only": True, "windows": windows, "window_labels": labels, "slim_glass": [g for g, _ in slim_glass], "counts": counts,
+        "problems": problems,
+    }
 
 
 def grid_for(info, margin):
@@ -1267,7 +1574,9 @@ def grid_for(info, margin):
     # The grid's base glass: DSB on the Gallery, Bridgeport and Coachman
     # sheets; single strength on the Premium Steel sheets, which is what the
     # 4050 grid's GLASS column was always built from.
-    dsb = info["glass"][info.get("grid_glass", "dsb")]["short"]
+    # The Modern Steel doors grid solid alone: a window there is pressed into
+    # the door drawing and priced a window (modern-windows.ts), not a column.
+    dsb = [] if info.get("solid_grid_only") else info["glass"][info.get("grid_glass", "dsb")]["short"]
     held = [(t, lo, hi) for g, t, lo, hi, _ in HOLD if g == info["group"]]
     grid = {t: {} for t in info["tiers"]}
     for lo, hi, label, prices in info["bands"]:
@@ -1465,6 +1774,72 @@ def write_premium_glass(fam, infos, workbook_name):
     fam["out"].write_text("\n".join(out))
 
 
+def write_modern_windows(fam, infos, workbook_name):
+    """modern-windows.ts: the contemporary windows priced a window, and the colour adder, per group."""
+    const = fam["const"]
+    # Every glass any sheet prices, in Clopay's order, then any the sheets add.
+    order = []
+    labels = {}
+    for info in infos:
+        for gid, label in info["window_labels"].items():
+            if gid not in labels:
+                order.append(gid)
+                labels[gid] = label
+    sheet_order = list(order)
+    order.sort(key=lambda g: (MODERN_GLASS_ORDER.index(g) if g in MODERN_GLASS_ORDER else len(MODERN_GLASS_ORDER), sheet_order.index(g)))
+    out = [f"// AUTO-GENERATED by scripts/apply_sheet_workbook.py from the {fam['title']}",
+           f"// sheets of CJ's workbook ({workbook_name}). Do not edit by hand — re-run",
+           "// the script against a newer workbook.",
+           "//",
+           "// Everything here is DDS COST, before margin. The special order quote lifts",
+           "// it by the group's door margin at quote time (special-door-pricing.ts).",
+           "// The groups are keyed as special-orders.ts keys them.",
+           "//",
+           "// The Modern Steel doors' contemporary windows (CJ, 19/10/2026) are priced",
+           "// a window, by glass and framing — short or long, plain or with grilles, and",
+           "// the 37\" x 8\" slim window in the glass it comes in — and go where they are",
+           "// pressed into the door drawing (modern-steel.ts). A glass with no figure",
+           "// for a framing is not built that way.",
+           "",
+           'import type { GlassOption } from "./sheet-band";',
+           "",
+           "/** The groups these sheets price. */",
+           f"export const {const}_GROUPS = [" + ", ".join(f'"{i["group"]}"' for i in infos) + "] as const;",
+           "",
+           "/** The contemporary windows' glass, named and ordered as Clopay's list has it; the 9/16\" glass is the slim window's. */",
+           f"export const {const}_GLASS_TYPES: GlassOption[] = [",
+           *[f'  {{ id: "{gid}", label: {json.dumps(labels[gid])} }},' for gid in order],
+           "];",
+           "",
+           "/** A window's cost: group -> glass id -> framing (short, short_grilles, long, long_grilles, slim). */",
+           f"export const {const}_WINDOW_COST: Record<string, Record<string, Record<string, number>>> = {{"]
+    for info in infos:
+        out.append(f'  "{info["group"]}": {{')
+        for gid in order:
+            block = info["windows"].get(gid)
+            if not block:
+                continue
+            out.append(f'    "{gid}": {{ ' + ", ".join(f"{f}: {c:.2f}" for f, c in block.items()) + " },")
+        out.append("  },")
+    out += ["};", "",
+            "/**",
+            " * The premium colour adder — Iron Ore and the Ultra-Grain finishes, the",
+            " * Plank finishes with them on the 9208 and 9209 — from the sheet's ULTRA",
+            " * COLOR block: a flat adder by door, single or double (10'2\" and up), in",
+            " * two height bands — up to 8'0\", and over. Cost, before margin.",
+            " */",
+            f"export const {const}_ULTRA_GRAIN: Record<string, {{ upTo8ft: {{ single: number; double: number }}; over8ft: {{ single: number; double: number }} }}> = {{"]
+    for info in infos:
+        ug = info["ug"]
+        if ug is None:
+            out.append(f'  // "{info["group"]}": the sheet prices no premium colour.')
+            continue
+        out.append(f'  "{info["group"]}": {{ upTo8ft: {{ single: {ug["low"]["single"]:.2f}, double: {ug["low"]["double"]:.2f} }}, '
+                   f'over8ft: {{ single: {ug["high"]["single"]:.2f}, double: {ug["high"]["double"]:.2f} }} }},')
+    out += ["};", ""]
+    fam["out"].write_text("\n".join(out))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("workbook")
@@ -1477,22 +1852,31 @@ def main():
     margins = margins_for(fam["collection"])
     wb = load_workbook(args.workbook, data_only=True)
     wbf = load_workbook(args.workbook, data_only=False)
-    reader = {"coachman": read_coachman_sheet, "premium": read_premium_sheet}.get(fam["layout"], read_sheet)
+    reader = {"coachman": read_coachman_sheet, "premium": read_premium_sheet, "modern": read_modern_sheet}.get(fam["layout"], read_sheet)
+    bare_mult = fam["layout"] in ("premium", "modern")
     infos = []
     for ws in wb.worksheets:
         # A sheet without a multiplier in A2 is not a price page — the CHANGES
-        # sheet on a corrected workbook, say. The Premium Steel sheets carry
-        # the bare figure.
+        # sheet on a corrected workbook, say. The Premium Steel and Modern
+        # Steel sheets carry the bare figure.
         a2 = str(ws["A2"].value or "").strip()
-        if "MULTIPL" not in a2.upper() and not (fam["layout"] == "premium" and re.fullmatch(r"\.?\d*\.?\d+", a2)):
+        if "MULTIPL" not in a2.upper() and not (bare_mult and re.fullmatch(r"\.?\d*\.?\d+", a2)):
             print(f"  note: skipping sheet {ws.title!r} (no multiplier in A2)")
             continue
+        # CJ's workbook of 19/10/2026 carries the Premium Steel and the Modern
+        # Steel sheets together: a sheet whose models are not a group of this
+        # family's collection is the other family's.
+        if bare_mult:
+            members = {str(ws.cell(1, c).value).strip() for c in range(1, 12) if ws.cell(1, c).value not in (None, "")}
+            if not any(set(g.split("/")) == members for g in margins):
+                print(f"  note: skipping sheet {ws.title!r} ({'/'.join(sorted(members))} is not a {fam['collection']} group)")
+                continue
         # A sheet whose door grid carries no list price yet — the 9208-9209
         # sheet CJ started on the revised Premium Steel workbook of 19/10/2026,
-        # formulas and window prices in place over an empty grid — is not
-        # loaded: there is nothing to load, and the glass alone would price
-        # windows on a door with no price.
-        if fam["layout"] == "premium" and not any(
+        # formulas and window prices in place over an empty grid, filled since
+        # — is not loaded: there is nothing to load, and the glass alone would
+        # price windows on a door with no price.
+        if bare_mult and not any(
             isinstance(ws.cell(r, c).value, (int, float)) for r in range(5, 27) for c in (3, 5, 7, 9)
         ):
             print(f"  note: skipping sheet {ws.title!r} (no list prices in its door grid yet)")
@@ -1509,6 +1893,8 @@ def main():
             print(f"   solid only (no glass top section on the sheet): {info['solid_only']}")
         elif fam["layout"] == "premium":
             print(f"   standard glass {sorted(info['glass'])}; architectural glass {sorted(info['arch_glass'])}")
+        elif fam["layout"] == "modern":
+            print(f"   windows priced a window in {len(info['windows'])} glass types; slim in {info['slim_glass']}; solid grid")
         else:
             print(f"   minimums {info['min_width']}; not built {info['unavailable']}; solid only {info['no_windows']}")
         if info["gaps"]:
@@ -1529,8 +1915,9 @@ def main():
         write_grid(info["group"], grid)
         n = sum(len(t) for t in grid.values())
         print(f"wrote {n} grid cells for {info['group']} at {margins[info['group']]:g}% into {SPECIAL_DOORS.name}")
-    (write_premium_glass if fam["layout"] == "premium" else write_glass)(fam, infos, Path(args.workbook).name)
-    print(f"wrote glass and Ultra-Grain for {len(infos)} groups into {fam['out'].name}")
+    writer = {"premium": write_premium_glass, "modern": write_modern_windows}.get(fam["layout"], write_glass)
+    writer(fam, infos, Path(args.workbook).name)
+    print(f"wrote {'windows' if fam['layout'] == 'modern' else 'glass'} and Ultra-Grain for {len(infos)} groups into {fam['out'].name}")
 
 
 if __name__ == "__main__":

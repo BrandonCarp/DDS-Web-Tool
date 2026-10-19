@@ -31,6 +31,7 @@ import { COACHMAN_GLASS, COACHMAN_GLASS_TYPES, COACHMAN_GROUPS, COACHMAN_ULTRA_G
 import {
   PREMIUM_ARCH_GLASS, PREMIUM_ARCH_GLASS_TYPES, PREMIUM_GLASS, PREMIUM_GLASS_TYPES, PREMIUM_GROUPS, PREMIUM_ULTRA_GRAIN,
 } from "./premium-glass";
+import { MODERN_ULTRA_GRAIN } from "./modern-windows";
 import type { GlassOption, SheetBand } from "./sheet-band";
 
 export type PanelStyle = "short" | "long";
@@ -95,12 +96,17 @@ const SHEET_ARCH_GLASS: Record<string, Record<string, Record<PanelStyle, SheetBa
   ...PREMIUM_ARCH_GLASS,
 };
 
-/** Ultra-Grain and the other premium finishes, per sheet-priced group: cost, before margin. */
+/**
+ * Ultra-Grain and the other premium finishes, per sheet-priced group: cost,
+ * before margin. The Modern Steel pairs' too (CJ's sheets of 19/10/2026),
+ * whose windows are priced a window rather than by band (modern-steel.ts).
+ */
 const SHEET_ULTRA_GRAIN: Record<string, { upTo8ft: { single: number; double: number }; over8ft: { single: number; double: number } }> = {
   ...GALLERY_ULTRA_GRAIN,
   ...BRIDGEPORT_ULTRA_GRAIN,
   ...COACHMAN_ULTRA_GRAIN,
   ...PREMIUM_ULTRA_GRAIN,
+  ...MODERN_ULTRA_GRAIN,
 };
 
 /** The glass types each workbook prices, in the order the counter reads them. */
@@ -126,10 +132,11 @@ export function windowSeriesFor(group: string): WindowSeries[] {
 
 /**
  * The premium-finish adder bands for a sheet-priced group, or null. On the
- * Premium Steel sheets it is CJ's ULTRA COLOR block (19/10/2026) — the 9130,
- * 9200 and 4300 families; the 4050's has none, and its colours take none.
- * Which colours count is PREMIUM_COLORS: Iron Ore and the Ultra-Grain
- * finishes, never Charcoal.
+ * Premium Steel and Modern Steel sheets it is CJ's ULTRA COLOR block
+ * (19/10/2026) — the 9130, 9200 and 4300 families and the 9208/9209 and
+ * 4308/4309 pairs; the 4050's has none, and its colours take none. Which
+ * colours count is PREMIUM_COLORS: Iron Ore and the Ultra-Grain finishes,
+ * never Charcoal.
  */
 export function sheetUltraGrain(group: string) {
   return SHEET_ULTRA_GRAIN[group] ?? null;

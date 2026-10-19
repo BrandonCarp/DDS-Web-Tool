@@ -31,9 +31,9 @@ const price = (o: Record<string, unknown>) => {
 describe("Gallery GD1SP/GD1LP special order grid (8/10/2026)", () => {
   it("prices the solid door off the width band, by height tier", () => {
     expect(price({})).toBe(sell(door(569)));                       // 8'0" x 7'
-    expect(price({ width: "8.2" })).toBe(sell(door(712)));          // 8'2" to 8'10" band
+    expect(price({ width: "8.2" })).toBeCloseTo(sell(door(569)) + 200, 2);   // an odd width: the 8'0" door and 200 (19/10/2026), not the 8'2" to 8'10" row
     expect(price({ width: "16", height: "8" })).toBe(sell(door(1285)));
-    expect(price({ width: "15.6", height: "8" })).toBe(sell(door(1254))); // the corrected F22
+    expect(price({ width: "15.6", height: "8" })).toBeCloseTo(price({ width: "15", height: "8" }) + 200, 2);
     expect(price({ width: "9", height: "9" })).toBe(sell(door(1046)));
     expect(price({ width: "9", height: "10" })).toBe(sell(door(1046))); // 9 and 10 ft share a column
   });
@@ -197,7 +197,7 @@ describe("Gallery widths built solid only (Clopay's note, 9/10/2026)", () => {
   });
 
   it("sells the solid door there but refuses glass and inserts", () => {
-    expect(q({ width: "14.10" }).quote?.unitPrice).toBe(sell(door(1163)));
+    expect(q({ width: "14.10" }).quote?.unitPrice).toBeCloseTo(q({ width: "14" }).quote!.unitPrice + 200, 2);
     expect(q({ width: "14.10", style: "glass" }).reason).toMatch(/solid only/);
     expect(q({ width: "15.4", style: "inserts", variant: "GD1LP" }).reason).toMatch(/solid only/);
     expect(q({ width: "15.6", style: "glass" }).quote).toBeTruthy();
@@ -256,12 +256,14 @@ describe("the GD2SP/GD2LP, GD1SU/GD1LU and GD2SU/GD2LU pairs (12/10/2026)", () =
     // second workbook of the day corrected the GD2SU/GD2LU sheet (and the
     // BD2 sheet, whose list is the same cell for cell) to 991 and missed the
     // GD2SP/GD2LP sheet; the script loads that one as 991 too.
+    // …and since 19/10/2026 an odd width is the whole-foot door below it and
+    // 200, so the row is loaded corrected and never read: 9'2" to 9'10" is the 9'0" door and 200.
     for (const [g, v, m] of [["GD2LP/GD2SP", "GD2SP", 0.714], ["GD2LU/GD2SU", "GD2SU", 0.823]] as const) {
-      for (const w of ["9.2", "9.4", "9.10"]) expect(at(g, v, { width: w, height: "7" }).quote?.unitPrice, `${g} ${w}`).toBe(sellAt(g, door(991, m)));
-      expect(at(g, v, { width: "9.4", height: "8" }).quote?.unitPrice, g).toBe(sellAt(g, door(1224, m)));
+      for (const w of ["9.2", "9.4", "9.10"]) expect(at(g, v, { width: w, height: "7" }).quote?.unitPrice, `${g} ${w}`).toBeCloseTo(sellAt(g, door(763, m)) + 200, 2);
+      expect(at(g, v, { width: "9.4", height: "8" }).quote?.unitPrice, g).toBeCloseTo(at(g, v, { width: "9", height: "8" }).quote!.unitPrice + 200, 2);
       expect(at(g, v, { width: "9", height: "7" }).quote?.unitPrice, g).toBe(sellAt(g, door(763, m)));
     }
-    expect(at("GD1LU/GD1SU", "GD1SU", { width: "9.4", height: "7" }).quote?.unitPrice).toBe(sellAt("GD1LU/GD1SU", door(807, 0.898)));
+    expect(at("GD1LU/GD1SU", "GD1SU", { width: "9.4", height: "7" }).quote?.unitPrice).toBeCloseTo(at("GD1LU/GD1SU", "GD1SU", { width: "9", height: "7" }).quote!.unitPrice + 200, 2);
   });
 
   it("is solid only at the Clopay widths: the long list on the GD2SP/GD2LP, 14'10\" and 15'4\" on the Intellicore pairs", () => {

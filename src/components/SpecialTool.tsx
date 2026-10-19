@@ -10,7 +10,7 @@ import { vinylForDoor, vinylForDoorColor } from "@/lib/pricing/data/vinyl";
 import { VinylPrompt, YES_NO } from "./VinylPrompt";
 import {
   SPECIAL, SPECIAL_COMMERCIAL, SPECIAL_COMMERCIAL_PINNED, SPECIAL_COMMERCIAL_SERIES,
-  commercialSeriesOf, SO_MANUFACTURERS, seriesFor, hasSingleSeries,
+  commercialSeriesOf, SO_MANUFACTURERS, seriesFor, hasSingleSeries, modelGroupsOf,
 } from "@/lib/pricing/data/special-orders";
 import {
   specialDoorQuote, hasGrid, griddedWidths, griddedHeights,
@@ -32,6 +32,8 @@ import {
 import { dataKey } from "@/lib/pricing/model-groups";
 import { homeownerMarkupForBand } from "@/lib/pricing/engine";
 import { OptionButtons, type ButtonOption } from "./OptionButtons";
+import { DoorDiagram } from "./DoorDiagram";
+import { modernFramings, modernGlassOptions, modernPanelsWide, modernPickerModel, modernStack, placeKey, type WindowPlace } from "@/lib/pricing/data/modern-steel";
 import { QtyStepper } from "./QtyStepper";
 
 const fmt = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -148,6 +150,10 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const [gGlass, setGGlass] = useState("");
   const [gFraming, setGFraming] = useState("");
   const [gSection, setGSection] = useState("4");
+  // A Modern Steel door's windows: where they were pressed in on the door
+  // drawing, and their framing (Brandon, 19/10/2026).
+  const [gWinPlaces, setGWinPlaces] = useState<ReadonlySet<string>>(new Set());
+  const [gModernFraming, setGModernFraming] = useState("");
   // Track mount, high lift and incline. These live on special order rather than
   // residential: a stock door ships on standard track, and anything else is an
   // order Clopay builds to spec.
@@ -182,7 +188,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const [vinylAsked, setVinylAsked] = useState(false);
   const resetGrid = () => {
     setGWidthFt(""); setGWidthIn("0"); setGHeightFt(""); setGHeightIn("0"); setGColor(""); setGCdDesign(""); setGOverlay("");
-    setGGlass(""); setGFraming(""); setGVariant("");
+    setGGlass(""); setGFraming(""); setGVariant(""); setGWinPlaces(new Set()); setGModernFraming("");
     setGSpring(""); setGTrack(""); setGMount(""); setGIncline(""); setGLift(0); setGLock(""); setHomeowner("no");
     setVinylOn(false); setVinylAsked(false);
   };
@@ -244,14 +250,32 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const isSheet = isSheetGroup(modelGroup);
   const gWindowsOk = !gWidth || (windowsOfferedAt(modelMember || undefined, gWidth) && (!isSheet || windowsPricedAt(modelGroup, gWidth))
     && (!gDesigned || designTakesWindows(modelGroup, gDesignEff)));
-  const gGlassOptions = gridded && gWidth ? glassTypeOptions(modelGroup, gWidth, gWindowsOk) : [];
+  // A Modern Steel door (9208, 4308, 4138…): its glass is the contemporary
+  // windows' own list, its framing the window's size, and the windows go
+  // where they are pressed in on the door drawing below (Brandon,
+  // 19/10/2026) — each as CJ's sheet prices the pair, a window at a time.
+  const gModern = gridded && modernPickerModel(member);
+  const gGlassOptions = gridded && gWidth
+    ? gModern ? [{ id: "solid", label: "Solid — no windows" }, ...(gWindowsOk ? modernGlassOptions(modelGroup) : [])] : glassTypeOptions(modelGroup, gWidth, gWindowsOk)
+    : [];
   const gGlassEff = gGlassOptions.some((g) => g.id === gGlass) ? gGlass : "";
   const gGlazed = !!gGlassEff && gGlassEff !== "solid";
-  const gFramings = gridded && gWidth && gGlazed ? framingOptions(modelGroup, member, gWidth, gGlassEff) : [];
+  const gFramings = gridded && gWidth && gGlazed && !gModern ? framingOptions(modelGroup, member, gWidth, gGlassEff) : [];
   // The framing picked stays through a glass change where the new glass
   // offers it (a Coachman design, say); where it does not, one has to be chosen.
   const gFramingEff = gFramings.find((f) => f.value === gFraming);
-  const gWindowsChosen = !!gGlassEff && (!gGlazed || gFramings.length === 0 || !!gFramingEff);
+  const [vwf0, vwi0] = gWidth.split(".").map(Number); const [vhf0, vhi0] = gHeight.split(".").map(Number);
+  // The drawing for the size: Clopay's section stack and panel count, by the window's size.
+  const gModernFramings = gModern && gWidth && gGlazed
+    ? modernFramings(modelGroup, member, gGlassEff).filter((f) => modernPanelsWide(vwf0, vwi0 ?? 0, f.size) != null) : [];
+  const gModernFramingEff = gModernFramings.find((f) => f.value === gModernFraming) ?? null;
+  const gStack = gModern && gHeight ? modernStack(vhf0, vhi0 ?? 0) : null;
+  const gPanelsWide = gModern && gWidth && gModernFramingEff ? modernPanelsWide(vwf0, vwi0 ?? 0, gModernFramingEff.size) : null;
+  // Windows pressed in that still fit the drawing — a size or framing change can shrink it.
+  const gPlaces: WindowPlace[] = gModern && gStack && gPanelsWide
+    ? [...gWinPlaces].map((k) => k.split(":").map(Number)).filter(([s, p]) => s >= 1 && s <= gStack.length && p >= 1 && p <= gPanelsWide).map(([section, panel]) => ({ section, panel }))
+    : [];
+  const gWindowsChosen = !!gGlassEff && (!gGlazed || (gModern ? !!gModernFramingEff && gPlaces.length > 0 : gFramings.length === 0 || !!gFramingEff));
   // Until the windows are chosen the door is looked up solid — for the
   // reasons a size or design may carry; it is not priced before then.
   const choice = gWindowsChosen ? windowChoice(gGlassEff, gFramingEff) : windowChoice("solid", undefined);
@@ -317,6 +341,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
         design: gDesignEff || undefined, overlayColor: gSecondName ? gOverlayEff : undefined,
         style: choice.style, glassType: choice.glassType, panelStyle: choice.panelStyle, windesign: choice.windesign, plainWindow: choice.plainWindow,
         windowSeries: choice.windowSeries,
+        windowsAt: gModern ? gPlaces : undefined, modernFraming: gModern ? gModernFramingEff?.value : undefined,
         variant: (modelMember || gVariant) || undefined,
         track: (gTrackEff || "r12") as never, spring: (gSpringUsed || (gTorsionOnly ? "torsion" : "extension")) as never, lock: (gLock || "none") as never,
         trackMount: gMount || "bracket", incline: gIncline || "straight_incline", highLiftInches: gIsLift ? gEffLift : 0 })
@@ -517,7 +542,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                   <div className="selectwrap">
                     <select data-testid="so-model" value={model} onChange={(e) => { setModel(e.target.value); resetGrid(); setSaved(false); }}>
                       <option value="">Select…</option>
-                      {Object.keys(ser.models).flatMap((g) =>
+                      {modelGroupsOf(ser.models).flatMap((g) =>
                         shouldSplitGroup(g)
                           ? groupMembers(g).map((m) => (
                               <option key={`${g}:${m}`} value={modelSelectionValue(g, m)}>{m}{ser.models![g].new ? " (new)" : ""}</option>
@@ -646,21 +671,29 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                       </div>
                     )}
                   </div>
-                  <div className="grow"><label>Section glazed</label>
+                  {!gModern && <div className="grow"><label>Section glazed</label>
                     <div className="ctl selectwrap">
                       <select disabled={!gOpen || !gGlazed} data-testid="so-section" value={gSection}
                         onChange={(e) => { setGSection(e.target.value); setSaved(false); }}>
                         {GLAZED_SECTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                       </select>
                     </div>
-                  </div>
+                  </div>}
                   <div className="grow"><label>Framing</label>
                     <div className="ctl selectwrap">
-                      <select disabled={!gOpen || !gGlazed} data-testid="so-framing" value={gFramingEff?.value ?? ""}
-                        onChange={(e) => { setGFraming(e.target.value); setSaved(false); }}>
-                        {!gFramingEff && <option value="">{gGlazed && gFramings.length === 0 ? "Plain (no insert)" : "Select…"}</option>}
-                        {gFramings.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
-                      </select>
+                      {gModern ? (
+                        <select disabled={!gOpen || !gGlazed} data-testid="so-framing" value={gModernFramingEff?.value ?? ""}
+                          onChange={(e) => { setGModernFraming(e.target.value); setGWinPlaces(new Set()); setSaved(false); }}>
+                          {!gModernFramingEff && <option value="">Select…</option>}
+                          {gModernFramings.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
+                        </select>
+                      ) : (
+                        <select disabled={!gOpen || !gGlazed} data-testid="so-framing" value={gFramingEff?.value ?? ""}
+                          onChange={(e) => { setGFraming(e.target.value); setSaved(false); }}>
+                          {!gFramingEff && <option value="">{gGlazed && gFramings.length === 0 ? "Plain (no insert)" : "Select…"}</option>}
+                          {gFramings.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
+                        </select>
+                      )}
                     </div>
                   </div>
                   </div>
@@ -752,6 +785,19 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                   </div>
                   </div>
                   </div>
+                  {gModern && gGlazed && gModernFramingEff && gStack && gPanelsWide && (
+                    <div className="ggroup gwide">
+                      <div className="ghdr">Windows</div>
+                      <DoorDiagram stack={gStack} panels={gPanelsWide} widthIn={vwf0 * 12 + (vwi0 ?? 0)}
+                        windows={new Set(gPlaces.map(placeKey))}
+                        onToggle={(place) => {
+                          const k = placeKey(place);
+                          const next = new Set(gPlaces.map(placeKey));
+                          if (next.has(k)) next.delete(k); else next.add(k);
+                          setGWinPlaces(next); setSaved(false);
+                        }} />
+                    </div>
+                  )}
                   {gResult?.reason && (
                     <div className="muted-note" style={{ marginTop: 6 }}>{gResult.reason}</div>
                   )}

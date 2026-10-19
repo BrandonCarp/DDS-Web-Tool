@@ -1629,3 +1629,36 @@ html, body { margin: 0; padding: 0; }
 /* A group across both columns of the configuration; a column of groups stacked with no row to line up with. */
 .tool-shell .cfg2 > .span { grid-column: 1 / -1; }
 .tool-shell .cfgcol { display: grid; gap: 14px; align-content: start; min-width: 0; }
+
+/* The door as configured, on the quote card: a thumbnail and Download picture
+   (DoorPreview.tsx, 19/10/2026); click the thumbnail for a larger look. */
+.tool-shell .doorrow { justify-content: flex-start; gap: 14px; }
+.tool-shell .doorthumb-btn { padding: 0; border: 1px solid var(--line-strong); border-radius: 4px; background: var(--surface-3); cursor: zoom-in; line-height: 0; }
+.tool-shell .doorthumb-btn img { width: 120px; height: auto; display: block; border-radius: 3px; }
+.tool-shell .doorrow .btn { margin-left: auto; white-space: nowrap; }
+.tool-shell .modal.doorlb { max-width: min(92vw, 1000px); width: auto; }
+.tool-shell .modal.doorlb img { width: 100%; height: auto; display: block; border-radius: 4px; }
+.tool-shell .doorlb-foot { display: flex; align-items: center; gap: 10px; margin-top: 12px; font-size: 12.5px; color: var(--muted); }
+.tool-shell .doorlb-foot span { margin-right: auto; font-weight: 700; letter-spacing: .02em; }
+
+/* The whole door, for a Modern Steel door's windows (19/10/2026): sections
+   top to bottom at their own heights, each split into the door's panels; a
+   press puts a window in a panel, drawn as glass with an x to take it out. */
+.tool-shell .ddiag { padding: 12px 16px 10px; }
+.tool-shell .ddiag-door {
+  display: flex; flex-direction: column; width: 100%; margin: 0 auto;
+  border: 2px solid var(--ink); border-radius: 3px; background: var(--surface-2); overflow: hidden;
+}
+.tool-shell .dsec { display: flex; min-height: 0; border-bottom: 2px solid var(--ink); }
+.tool-shell .dsec:last-child { border-bottom: 0; }
+.tool-shell .dpanel { position: relative; flex: 1 1 0; min-width: 0; border-right: 2px solid var(--ink); }
+.tool-shell .dpanel:last-child { border-right: 0; }
+.tool-shell .dpanel:not(.static):hover { background: var(--surface-3); }
+.tool-shell .dpanel.on { background: var(--surface-3); }
+.tool-shell .dpanel .phint { font-size: 11px; padding: 4px 6px; }
+.tool-shell .dpanel .premove { top: 3px; width: 24px; height: 20px; font-size: 14px; }
+.tool-shell .dglass {
+  position: absolute; inset: 26px 10% 10%; border: 2px solid var(--accent); border-radius: 3px;
+  background: linear-gradient(135deg, rgba(255,255,255,.14), rgba(255,255,255,.03));
+}
+.tool-shell .ggroup.gwide { grid-column: 1 / -1; }

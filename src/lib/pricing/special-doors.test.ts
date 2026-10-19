@@ -1,4 +1,4 @@
-import { SPECIAL } from "./data/special-orders";
+import { SPECIAL, modelGroupsOf } from "./data/special-orders";
 import { windowDesigns } from "./data/inserts";
 import { describe, it, expect } from "vitest";
 import {
@@ -101,13 +101,23 @@ describe("special order door grid", () => {
     // $936.05 against $808.54 for a 9'0" — the odd size costs MORE than the
     // next standard size UP. Asserting "wider is dearer" would be wrong, and
     // asserting nothing would let a transposed row through.
+    // …which is how CJ's sheet lists them, and not how they are sold: an odd
+    // width is the whole-foot door below it plus a flat $200 on the sell
+    // price (Brandon, 19/10/2026), so the sheet's odd rows are never read.
     const solid = (w: string) =>
       specialDoorQuote({ ...base, width: w, style: "solid" }).quote!.unitPrice;
-    for (const [std, odd] of [["8", "8.2"], ["9", "9.2"], ["10", "10.2"], ["12", "12.2"]]) {
-      expect(solid(std), `${std} should undercut ${odd}`).toBeLessThan(solid(odd));
+    for (const [std, odd] of [["8", "8.2"], ["8", "8.10"], ["9", "9.2"], ["9", "9.6"], ["10", "10.2"], ["10", "11"], ["10", "11.10"], ["12", "12.2"], ["12", "13"], ["14", "14.10"], ["15", "15.6"], ["16", "16.6"], ["17", "17.2"]]) {
+      expect(solid(odd), `${odd} is the ${std} and 200`).toBeCloseTo(solid(std) + 200, 2);
     }
-    expect(solid("8.2")).toBe(sheet(676.1));
-    expect(solid("8.2")).toBeGreaterThan(solid("9"));
+    expect(solid("8.2")).toBe(747.62 + 200);
+    expect(solid("8.2")).not.toBe(sheet(676.1));
+    // Whole feet with a row of their own are their own price; under 8'0" the
+    // sheet's one band stands, there being no whole foot below it.
+    expect(solid("9")).toBe(sheet(584));
+    expect(solid("10")).toBe(sheet(663));
+    expect(solid("12")).toBe(sheet(804));
+    expect(solid("7.10")).toBe(sheet(625.5));
+    expect(solid("7")).toBe(sheet(625.5));
   });
 
   it("prices every odd width in a band the same", () => {
@@ -549,14 +559,20 @@ describe("restricted models keep the manual total as a first-class path", () => 
 
 describe("9ft and 10ft on CJ's sheet (16/10/2026)", () => {
   it("prices the torsion heights off the TORSION columns, glass over the solid door", () => {
-    // 15'6" x 9'0": 1813.55 list; seven short single strength windows at 33.
-    const r = specialDoorQuote({ model: M, width: "15.6", height: "9", color: "White",
+    // 15'0" x 9'0": 1577 list; seven short single strength windows at 33 —
+    // and 15'6" is that door and $200 (19/10/2026).
+    const r = specialDoorQuote({ model: M, width: "15", height: "9", color: "White",
       style: "glass", track: "r12", spring: "torsion", lock: "none" });
-    expect(r.quote?.base).toBeCloseTo(sheet(1813.55) + windows(7, 33), 2);
+    expect(r.quote?.base).toBeCloseTo(sheet(1577) + windows(7, 33), 2);
     expect(r.quote?.torsionIncluded).toBe(true);
-    const ten = specialDoorQuote({ model: M, width: "10.6", height: "10", color: "White",
+    const odd = specialDoorQuote({ model: M, width: "15.6", height: "9", color: "White",
       style: "glass", track: "r12", spring: "torsion", lock: "none" });
-    expect(ten.quote?.base).toBeCloseTo(sheet(1637.6) + windows(5, 33), 2);
+    expect(odd.quote?.unitPrice).toBeCloseTo(r.quote!.unitPrice + 200, 2);
+    const ten = specialDoorQuote({ model: M, width: "10", height: "10", color: "White",
+      style: "glass", track: "r12", spring: "torsion", lock: "none" });
+    expect(ten.quote?.base).toBeCloseTo(sheet(1187) + windows(5, 33), 2);
+    expect(specialDoorQuote({ model: M, width: "10.6", height: "10", color: "White",
+      style: "glass", track: "r12", spring: "torsion", lock: "none" }).quote?.unitPrice).toBeCloseTo(ten.quote!.unitPrice + 200, 2);
   });
 });
 
@@ -583,8 +599,9 @@ describe("special order grids, checked against the 9/30 workbook", () => {
         const keys = Object.keys(widths);
         expect(keys.filter((k) => !good.test(k)), `${group} ${tier}ft keys`).toEqual([]);
         // The Coachman is built in 26 set widths, not every two inches; its
-        // own test pins the list.
-        if (group === "CD") continue;
+        // own test pins the list. The 4138's sheet prices 9FT and 10FT at the
+        // whole feet alone (19/10/2026); its own test pins those too.
+        if (group === "CD" || (group === "4138" && (tier === "9" || tier === "10"))) continue;
         const run = keys.map(inches).sort((a, b) => a - b);
         for (let i = 1; i < run.length; i++) {
           const hole = KNOWN_HOLES.find((h) => h.group === group && h.tiers.includes(tier) && h.from === run[i - 1] && h.to === run[i]);
@@ -596,15 +613,16 @@ describe("special order grids, checked against the 9/30 workbook", () => {
     for (const h of KNOWN_HOLES) for (const t of h.tiers) expect(seen.has(`${h.group} ${t}`), `${h.group} ${t}ft hole closed (${h.why}) — take it off KNOWN_HOLES`).toBe(true);
   });
 
-  it("quotes the T52S at 11'0\" to 11'8\", which sat under broken keys", () => {
-    for (const w of ["11", "11.2", "11.4", "11.6", "11.8"]) expect(q("T52S/T52L", w, "7", "solid")?.unitPrice, w).toBe(1255.84);
+  it("quotes the T52S at 11'0\" to 11'8\", which sat under broken keys — the 10'0\" door and 200", () => {
+    for (const w of ["11", "11.2", "11.4", "11.6", "11.8"]) expect(q("T52S/T52L", w, "7", "solid")?.unitPrice, w).toBe(834.71 + 200);
   });
 
   it("takes the 4300 family out to 20'0\" at every height (CJ's sheet, 16/10/2026)", () => {
     for (const h of ["7", "8", "9", "10"]) expect(griddedWidths("4300/4301/4302/4305/4310", h).slice(-1)[0], h).toBe("20");
     expect(q("4300/4301/4302/4305/4310", "15", "8", "solid")?.unitPrice).toBe(sheet(1444, 0.704, 44));
     expect(q("4300/4301/4302/4305/4310", "19", "8", "solid")?.unitPrice).toBe(sheet(1871, 0.704, 44));
-    expect(q("4300/4301/4302/4305/4310", "19.10", "10", "solid")?.unitPrice).toBe(sheet(3165.95, 0.704, 44)); // the row labelled 19'2" to 1910"
+    // 19'10" is the 19'0" door and 200, not the row labelled 19'2" to 1910".
+    expect(q("4300/4301/4302/4305/4310", "19.10", "10", "solid")?.unitPrice).toBeCloseTo(q("4300/4301/4302/4305/4310", "19", "10", "solid")!.unitPrice + 200, 2);
   });
 
   it("keeps the app's price where the workbook disagrees with its own TOTAL", () => {
@@ -612,48 +630,55 @@ describe("special order grids, checked against the 9/30 workbook", () => {
   });
 });
 
-describe("4308 and 4138, priced from Clopay's total at the Modern Collection margin (2/10/2026)", () => {
-  const q = (model: string, width: string, height: string, style: "solid" | "glass" | "inserts") =>
-    specialDoorQuote({ model, width, height, style, color: "White", track: "r12", spring: "extension", lock: "none" });
+describe("the Modern Steel doors: the 9208/9209 and 4308/4309 pairs and the 4138 off CJ's sheets (19/10/2026)", () => {
+  const q = (model: string, width: string, height: string, style: "solid" | "glass" | "inserts", variant?: string) =>
+    specialDoorQuote({ model, variant, width, height, style, color: "White", track: "r12", spring: "extension", lock: "none" });
   const modern = SPECIAL["Modern Collection"].models!;
 
-  it("sells at TOTAL / (1 - the catalog's door margin): what a typed total gives today", () => {
-    expect(modern["4308"].door).toBe(45);
-    expect(modern["4138"].door).toBe(45);
-    // [model, width, height, style, Clopay TOTAL on the 9/2 sheet]
-    const samples: [string, string, string, "solid" | "glass" | "inserts", number][] = [
-      ["4138", "6.2", "7", "solid", 436.54], ["4138", "6.2", "8", "solid", 527.83], ["4138", "6.2", "9", "glass", 893.78],
-      ["4308", "6.2", "7", "inserts", 656.99], ["4308", "6.2", "8", "solid", 588.78],
-    ];
-    for (const [model, w, h, style, total] of samples) {
-      const margin = modern[model].door;
-      expect(q(model, w, h, style).quote?.unitPrice, `${model} ${w}x${h} ${style}`).toBeCloseTo(total / (1 - margin / 100), 2);
+  it("keys the pairs as their sheets do, at the Modern Collection's 45%", () => {
+    expect(modelGroupsOf(modern)).toEqual(["4138", "4308/4309", "9138", "9139", "9208/9209"]);
+    for (const g of Object.keys(modern)) expect(modern[g].door, g).toBe(45);
+    expect(hasGrid("9208/9209") && hasGrid("4308/4309") && hasGrid("4138")).toBe(true);
+    expect(hasGrid("4308")).toBe(false);
+  });
+
+  it("grids the pairs 6'0\" to 20'0\" at every height, solid alone, the 9FT and 10FT doors at the sheet's one torsion column", () => {
+    for (const g of ["9208/9209", "4308/4309"]) {
+      for (const h of ["7", "8", "9", "10"]) {
+        const widths = griddedWidths(g, h);
+        expect([widths.length, widths[0], widths.slice(-1)[0]], `${g} ${h}ft`).toEqual([85, "6", "20"]);
+      }
+      expect(q(g, "12", "9", "solid").quote?.unitPrice).toBe(q(g, "12", "10", "solid").quote?.unitPrice);
+      expect(q(g, "12", "9", "solid").quote?.unitPrice).toBeGreaterThan(q(g, "12", "8", "solid").quote!.unitPrice);
     }
+    // The same list on both sheets (704 the 8'0" 7FT door), each at its own multiplier: .865 and .704.
+    expect(q("9208/9209", "8", "7", "solid", "9208").quote?.unitPrice).toBe(sheet(704, 0.865, 45));
+    expect(q("4308/4309", "8", "7", "solid", "4309").quote?.unitPrice).toBe(sheet(704, 0.704, 45));
+    expect(q("9208/9209", "16", "8", "solid").quote?.unitPrice).toBe(sheet(1577, 0.865, 45));
+    expect(q("9208/9209", "12", "8", "solid").quote?.unitPrice).toBe(sheet(1240, 0.865, 45));
+    expect(q("4308/4309", "20", "10", "solid").quote?.unitPrice).toBe(sheet(2813, 0.704, 45));
+    expect(q("4308/4309", "6", "7", "solid").quote?.unitPrice).toBe(sheet(814, 0.704, 45));
+    // No window off the grid: the grid's GLASS column is gone, the windows are pressed into the drawing.
+    expect(q("4308/4309", "8", "7", "glass").reason).toMatch(/none are placed yet/);
   });
 
-  it("covers 6'2\" to 18'0\" for the 4138 at every height and the 4308 at 7ft", () => {
-    for (const [model, h] of [["4138", "7"], ["4138", "8"], ["4138", "9"], ["4308", "7"]]) {
-      const widths = griddedWidths(model, h);
-      expect([widths.length, widths[0], widths.slice(-1)[0]], `${model} ${h}ft`).toEqual([72, "6.2", "18"]);
+  it("grids the 4138 6'2\" to 18'0\" at 7FT and 8FT, the whole feet from 8'0\" at 9FT and 10FT, at its own .776", () => {
+    for (const h of ["7", "8"]) {
+      const widths = griddedWidths("4138", h);
+      expect([widths.length, widths[0], widths.slice(-1)[0]], `4138 ${h}ft`).toEqual([72, "6.2", "18"]);
     }
-    expect(hasGrid("4308") && hasGrid("4138")).toBe(true);
+    for (const h of ["9", "10"]) expect(griddedWidths("4138", h)).toEqual(["8", "9", "10", "12", "14", "15", "16", "17", "18"]);
+    expect(q("4138", "6.2", "7", "solid").quote?.unitPrice).toBe(sheet(659, 0.776, 45));
+    expect(q("4138", "18", "10", "solid").quote?.unitPrice).toBe(sheet(2174, 0.776, 45));
+    expect(q("4138", "8", "7", "glass").reason).toMatch(/none are placed yet/);
   });
 
-  it("has the 4308 at 8ft only to 8'2\" so far; wider goes to the typed total", () => {
-    expect(griddedWidths("4308", "8").slice(-1)[0]).toBe("8.2");
-    expect(q("4308", "10", "8", "solid").quote).toBeUndefined();
-  });
-
-  it("holds the 4308 8'6\" x 7' glass off the grid: its row carries the solid price", () => {
-    // Sheet row 50: TOTAL $613.85, the 8'6" solid's, against $794.80 for every
-    // glass width around it. Until the sheet is fixed it asks for the total.
-    expect(q("4308", "8.6", "7", "glass").quote).toBeUndefined();
-    expect(q("4308", "8.6", "7", "solid").quote?.unitPrice).toBe(1116.09);
-    expect(q("4308", "8.6", "7", "inserts").quote?.unitPrice).toBe(1521.02);
-  });
-
-  it("keeps the 4138 9ft 10'6\" glass, whose row has a height typo on the sheet", () => {
-    expect(q("4138", "10.6", "9", "glass").quote?.unitPrice).toBe(2692.16);
+  it("prices an odd width as the whole-foot door and 200 on every one of them (19/10/2026)", () => {
+    expect(q("4308/4309", "8.6", "7", "solid").quote?.unitPrice).toBeCloseTo(q("4308/4309", "8", "7", "solid").quote!.unitPrice + 200, 2);
+    expect(q("4308/4309", "8.6", "7", "solid").quote?.unitPrice).toBeCloseTo(sheet(704, 0.704, 45) + 200, 2);
+    expect(q("9208/9209", "19.10", "10", "solid").quote?.unitPrice).toBeCloseTo(q("9208/9209", "19", "10", "solid").quote!.unitPrice + 200, 2);
+    expect(q("4138", "10.6", "9", "solid").quote?.unitPrice).toBeCloseTo(q("4138", "10", "9", "solid").quote!.unitPrice + 200, 2);
+    expect(q("4138", "10.6", "7", "solid").quote?.unitPrice).toBeCloseTo(q("4138", "10", "7", "solid").quote!.unitPrice + 200, 2);
   });
 });
 

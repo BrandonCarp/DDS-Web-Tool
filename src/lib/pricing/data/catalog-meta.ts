@@ -201,6 +201,75 @@ export const COLORS: Record<string, string[]> = {
     "Almond",
     "Desert Tan",
     "Sandtone"
+  ],
+  // Modern Steel (special order only; CJ's sheets of 19/10/2026): the paint
+  // colours Clopay's Modern Steel brochure lists, keyed a model since the
+  // pairs are gridded as pairs but coloured alike. The Ultra-Grain finishes
+  // are in PREMIUM_COLORS, where the sheet's ULTRA COLOR block prices them.
+  "9208": [
+    "White",
+    "Almond",
+    "Desert Tan",
+    "Sandtone",
+    "Chocolate Brown",
+    "Hunter Green",
+    "Bronze",
+    "Mocha Brown",
+    "Charcoal",
+    "Iron Ore",
+    "Black"
+  ],
+  "9209": [
+    "White",
+    "Almond",
+    "Desert Tan",
+    "Sandtone",
+    "Chocolate Brown",
+    "Hunter Green",
+    "Bronze",
+    "Mocha Brown",
+    "Charcoal",
+    "Iron Ore",
+    "Black"
+  ],
+  "4308": [
+    "White",
+    "Almond",
+    "Desert Tan",
+    "Sandtone",
+    "Chocolate Brown",
+    "Hunter Green",
+    "Bronze",
+    "Mocha Brown",
+    "Charcoal",
+    "Iron Ore",
+    "Black"
+  ],
+  "4309": [
+    "White",
+    "Almond",
+    "Desert Tan",
+    "Sandtone",
+    "Chocolate Brown",
+    "Hunter Green",
+    "Bronze",
+    "Mocha Brown",
+    "Charcoal",
+    "Iron Ore",
+    "Black"
+  ],
+  "4138": [
+    "White",
+    "Almond",
+    "Desert Tan",
+    "Sandtone",
+    "Chocolate Brown",
+    "Hunter Green",
+    "Bronze",
+    "Mocha Brown",
+    "Charcoal",
+    "Iron Ore",
+    "Black"
   ]
 };
 
@@ -295,6 +364,46 @@ export const PREMIUM_COLORS: Record<string, string[]> = {
     "Ultra-Grain Classic Medium Finish",
     "Ultra-Grain Classic Cherry Finish",
     "Ultra-Grain Classic Walnut Finish"
+  ],
+  // Modern Steel (CJ's sheets of 19/10/2026): Iron Ore and, on the 9208 and
+  // 9209, the Ultra-Grain Cypress and Plank finishes Clopay's Modern Steel
+  // brochure lists, all at the sheet's ULTRA COLOR (AND PLANK) block. The
+  // 4308, 4309 and 4138 come in the paint colours alone, so Iron Ore is
+  // their one premium colour.
+  "9208": [
+    "Iron Ore",
+    "Ultra-Grain Cypress Medium Finish",
+    "Ultra-Grain Cypress Cherry Finish",
+    "Ultra-Grain Cypress Walnut Finish",
+    "Ultra-Grain Cypress Slate Finish",
+    "Ultra-Grain Plank Coastal Gray Finish",
+    "Ultra-Grain Plank Natural Finish",
+    "Ultra-Grain Plank Cedar Finish",
+    "Ultra-Grain Plank Kona Finish",
+    "Ultra-Grain Plank Barnwood Finish",
+    "Ultra-Grain Plank Espresso Finish"
+  ],
+  "9209": [
+    "Iron Ore",
+    "Ultra-Grain Cypress Medium Finish",
+    "Ultra-Grain Cypress Cherry Finish",
+    "Ultra-Grain Cypress Walnut Finish",
+    "Ultra-Grain Cypress Slate Finish",
+    "Ultra-Grain Plank Coastal Gray Finish",
+    "Ultra-Grain Plank Natural Finish",
+    "Ultra-Grain Plank Cedar Finish",
+    "Ultra-Grain Plank Kona Finish",
+    "Ultra-Grain Plank Barnwood Finish",
+    "Ultra-Grain Plank Espresso Finish"
+  ],
+  "4308": [
+    "Iron Ore"
+  ],
+  "4309": [
+    "Iron Ore"
+  ],
+  "4138": [
+    "Iron Ore"
   ]
 };
 
@@ -314,6 +423,7 @@ const SHEET_PRICED_KEYS = new Set([
   "GD1LP-GD1SP", "GD2LP-GD2SP", "GD1LU-GD1SU", "GD2LU-GD2SU",
   "BD1EU-BD1NU", "BD1CU", "BD2EU-BD2NU", "BD2CU",
   "9130-9133", "9200", "4300",
+  "9208", "9209", "4308", "4309", "4138",
 ]);
 export function specialOrderColors(catalogKey: string): string[] {
   const stock = COLORS[catalogKey] ?? [];

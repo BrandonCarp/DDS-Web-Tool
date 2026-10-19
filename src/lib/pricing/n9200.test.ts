@@ -46,7 +46,9 @@ describe("9200 family — special order", () => {
     expect(w).toContain("11");
     expect(w).toContain("11.2");
     expect(w.filter((x) => x.startsWith("11.0"))).toEqual([]);
-    expect(sell("11")).toBe(sheet(1140.9));
+    // 11'0" sits in the sheet's 10'2" to 11'10" row: an odd width, the 10'0" door and 200 (19/10/2026).
+    expect(sell("11")).toBeCloseTo(sell("10") + 200, 2);
+    expect(sell("11")).not.toBe(sheet(1140.9));
     expect(sell("11.4")).toBe(sell("11"));
   });
 

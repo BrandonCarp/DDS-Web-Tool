@@ -22,7 +22,7 @@ import { dataKey } from "@/lib/pricing/model-groups";
 import { SECTION_ONLY_MODELS } from "@/lib/pricing/data/res-section-meta";
 import { commMfrs, commModelsFor, SLAB_LABEL } from "@/lib/pricing/data/commercial-meta";
 import {
-  SPECIAL, SO_MANUFACTURERS, seriesFor, SPECIAL_COMMERCIAL, SPECIAL_COMMERCIAL_SERIES, SPECIAL_COMMERCIAL_PINNED,
+  SPECIAL, SO_MANUFACTURERS, seriesFor, SPECIAL_COMMERCIAL, SPECIAL_COMMERCIAL_SERIES, SPECIAL_COMMERCIAL_PINNED, modelGroupsOf,
 } from "@/lib/pricing/data/special-orders";
 import { shouldSplitGroup, groupMembers, modelSelectionValue } from "@/lib/pricing/data/special-door-pricing";
 
@@ -116,7 +116,7 @@ function doorEntries(open: Set<string>, residentialModels: readonly string[]): E
             { kind: "sodoor", scope: "residential", mfr, series, model: "" }));
           continue;
         }
-        for (const g of Object.keys(models)) {
+        for (const g of modelGroupsOf(models)) {
           const choices = shouldSplitGroup(g)
             ? groupMembers(g).map((m) => [m, modelSelectionValue(g, m)] as const)
             : [[g, g] as const];

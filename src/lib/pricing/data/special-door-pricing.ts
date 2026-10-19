@@ -31,9 +31,10 @@ import { highLiftPrice, mountPhrase, type TrackMount, type InclineStyle } from "
 import { ADDONS, GRADE_RES, COLLECTIONS_RES } from "./addons";
 import { dataKey } from "../model-groups";
 import { designName, specialPlainWindowsFor, specialWindowDesigns } from "./inserts";
+import { describeWindowPlaces, modernFraming, modernGlassLabel, modernPickerModel, modernWindowCost, type WindowPlace } from "./modern-steel";
 import { designBuilt, designTakesWindows, hasDesigns, modelWithDesign, secondColorName, secondColorPricedAs } from "./door-designs";
 import { SPECIAL_DOORS } from "./special-doors";
-import type { LockKey, SpringKey, TrackKey, WindowStyle } from "../types";
+import type { LockKey, PriceTriple, SpringKey, TrackKey, WindowStyle } from "../types";
 
 export interface SpecialDoorInput {
   model: string;
@@ -67,6 +68,10 @@ export interface SpecialDoorInput {
   trackMount?: string;
   incline?: string;
   highLiftInches?: number;
+  /** A Modern Steel door's windows, where they were pressed in on the drawing: section from the top, panel from the left. */
+  windowsAt?: WindowPlace[];
+  /** The Modern Steel window's framing — its size, plain or with grilles (modern-steel.ts). */
+  modernFraming?: string;
 }
 
 export interface SpecialDoorQuote {
@@ -150,6 +155,41 @@ export function springRatesFor(member: string): SpringRates {
 const NINE_FOOT_GLASS = { widths: new Set(["8.2", "8.6", "9"]), pricedAs: "8", flat: 200 };
 function nineFootGlass(group: string, width: string, style: WindowStyle): boolean {
   return windowSectionGroup(group) && NINE_FOOT_GLASS.widths.has(width) && style !== "solid";
+}
+
+/**
+ * An odd width — any width between the whole-foot sizes Clopay lists, 8'2"
+ * to 8'10", 9'2" to 9'10", 10'2" to 11'10" and so on — is priced as the
+ * whole-foot door below it, the same build, plus a flat $200 on the sell
+ * price (Brandon, 19/10/2026: an 8'0" 9130 with four windows at $1,093.41
+ * makes every width up to 8'10" $1,293.41, and 9'2" to 9'10" the 9'0" door
+ * and $200). The sheets list those widths on their own rows, some 16% over
+ * the next whole foot, which put an 8'6" above a 10'0"; those rows are not
+ * used. Every gridded door prices this way but the Coachman, whose sheet
+ * prices its odd widths and whose glazed 9'0" has NINE_FOOT_GLASS.
+ *
+ * Which whole feet are Clopay's own sizes is read off the grid: a whole foot
+ * priced the same as the width 2" under it sits inside an odd band (11'0" in
+ * 10'2" to 11'10", 13'0" in 12'2" to 13'10") and is odd itself; one priced
+ * differently is a size of its own (8'0", 9'0", 10'0", 12'0", 14'0", 15'0"…).
+ * Under 8'0" the sheets price one band and nothing is a whole foot below
+ * it, so those widths stay as the sheet has them.
+ */
+const ODD_WIDTH_FLAT = 200;
+function oddWidthBase(tier: Record<string, Partial<PriceTriple>>, width: string): string | null {
+  const [ft, inch] = width.split(".").map(Number);
+  const solid = (w: string) => tier[w]?.solid;
+  const ownSize = (f: number) => {
+    const here = solid(String(f));
+    if (typeof here !== "number") return false;
+    const under = solid(`${f - 1}.10`);
+    return typeof under !== "number" || under !== here;
+  };
+  if ((inch ?? 0) === 0 && ownSize(ft)) return null;
+  for (let f = ft; f >= 8; f--) {
+    if (ownSize(f)) return String(f);
+  }
+  return null;
 }
 
 /**
@@ -429,11 +469,20 @@ export function specialDoorQuote(
   // inserts, so a window asked for as "inserts" is the same window.
   const sectioned = windowSectionGroup(input.model);
   const style: WindowStyle = sectioned && input.style === "inserts" ? "glass" : input.style;
-  // The width the door is priced at: its own, except a Coachman with windows
-  // over 8'0" up to 9'0", priced as the 8'0" door (NINE_FOOT_GLASS). The line,
-  // the design and window checks all go by the width asked for.
+  // The width the door is priced at: its own, except an odd width, priced as
+  // the whole-foot door below it (oddWidthBase), and a Coachman with windows
+  // over 8'0" up to 9'0", priced as the 8'0" door (NINE_FOOT_GLASS) — each
+  // with its flat $200. The line, the design and window checks all go by the
+  // width asked for.
+  // A width the grid lists at some height but not this one — the 4138's odd
+  // widths at 9FT and 10FT, blank on CJ's sheet (19/10/2026) — is still the
+  // whole-foot door below it and 200; a width the grid never lists is off it.
+  if (!tier[input.width] && !griddedWidths(input.model).includes(input.width)) {
+    return { reason: "That width is not on the grid — enter the Clopay total below." };
+  }
   const asEight = nineFootGlass(input.model, input.width, style);
-  const priceWidth = asEight ? NINE_FOOT_GLASS.pricedAs : input.width;
+  const oddBase = sectioned ? null : oddWidthBase(tier, input.width);
+  const priceWidth = asEight ? NINE_FOOT_GLASS.pricedAs : oddBase ?? input.width;
   const triple = tier[priceWidth];
   if (!triple) return { reason: "That width is not on the grid — enter the Clopay total below." };
 
@@ -465,14 +514,20 @@ export function specialDoorQuote(
     return { reason: `Clopay prices no windows on the ${name} at ${heightLabel(input.width)} — solid only at this width.` };
   }
 
+  const member = input.variant || input.model.split("/")[0];
+  // A Modern Steel door's windows are where they were pressed in on the
+  // drawing (Brandon, 19/10/2026), a window at a time over the solid door, at
+  // what CJ's sheet prices the glass and framing a window — and until a
+  // model's windows are priced, the Clopay total typed below.
+  const modern = modernPickerModel(member);
   // A sheet-priced door's windows are added to the solid door below, so its
   // grid's GLASS column is never the base — a 19'0" 9200 has architectural
-  // windows and no standard ones, and its grid carries solid alone there.
-  let base = triple[sectioned || sheet ? "solid" : style];
+  // windows and no standard ones, and its grid carries solid alone there. A
+  // Modern Steel door's grid is solid alone.
+  let base = triple[sectioned || sheet || modern ? "solid" : style];
   if (typeof base !== "number") {
     return { reason: "Clopay does not grid that style at this size — enter the total below." };
   }
-  const member = input.variant || input.model.split("/")[0];
   // A design is validated against what the model offers for the style: inserts
   // everywhere, and plain glass on the Coachman (its window sections).
   const designId = (() => {
@@ -497,7 +552,22 @@ export function specialDoorQuote(
   // that go on them, at the long band; short at the short band. The grid's own
   // glass columns are the short figures, so every such glass door re-prices here.
   const sheetPanel: PanelStyle = input.panelStyle ?? "short";
-  if (sectioned && style !== "solid" && typeof triple.solid === "number") {
+  const modernPlaces = modern && style !== "solid" ? input.windowsAt ?? [] : [];
+  const modernFramed = modern && style !== "solid" ? modernFraming(input.model, member, input.glassType, input.modernFraming) : null;
+  if (modern && style !== "solid") {
+    const glassId = input.glassType ?? "";
+    if (!modernPlaces.length) return { reason: "Press the windows into the door drawing — none are placed yet." };
+    if (!modernFramed) return { reason: "Pick the windows' framing." };
+    const each = modernWindowCost(input.model, glassId, modernFramed.price);
+    if (each == null || typeof triple.solid !== "number") {
+      return { reason: `Windows are not priced on the ${member} yet — enter the Clopay total below.` };
+    }
+    // The windows' cost lifted by the margin as one figure, so the rounding
+    // happens once.
+    const margin = doorMargin(input.model) ?? 0;
+    base = triple.solid + Math.round((each * modernPlaces.length / (1 - margin / 100)) * 100) / 100;
+    glassName = modernGlassLabel(glassId);
+  } else if (sectioned && style !== "solid" && typeof triple.solid === "number") {
     // The Coachman (CJ's workbook of 13/10/2026): the design's section over
     // the solid door, then the glass over the double strength door, by window
     // count — both from the sheet, lifted by the margin together.
@@ -511,9 +581,12 @@ export function specialDoorQuote(
     glassName = input.glassType && input.glassType !== "dsb" ? glassLabel(input.glassType) : null;
   } else if (sheet && style !== "solid" && typeof triple.solid === "number") {
     const glassId = input.glassType || baseGlassFor(input.model, series);
-    const add = glassAdderSell(input.model, sheetPanel, input.width, glassId, style === "inserts", series);
+    // The windows of the door priced — the whole-foot door's on an odd width —
+    // and the asked width's own where that door has none of this series.
+    const glassWidth = glassAdderSell(input.model, sheetPanel, priceWidth, glassId, false, series) == null ? input.width : priceWidth;
+    const add = glassAdderSell(input.model, sheetPanel, glassWidth, glassId, style === "inserts", series);
     if (add == null) {
-      return { reason: glassAdderSell(input.model, sheetPanel, input.width, glassId, false, series) == null
+      return { reason: glassAdderSell(input.model, sheetPanel, glassWidth, glassId, false, series) == null
         ? `That glass is not priced on the ${sheetPanel} ${series} windows at this width — pick another glass.`
         : "Inserts are not offered on that glass — pick another glass, or plain glass." };
     }
@@ -524,7 +597,8 @@ export function specialDoorQuote(
   } else if (style !== "solid" && input.glassType && input.glassType !== "ssb") {
     const panel = input.panelStyle ?? "short";
     const withInserts = style === "inserts";
-    const add = glassAdderSell(input.model, panel, input.width, input.glassType, withInserts);
+    const add = glassAdderSell(input.model, panel, priceWidth, input.glassType, withInserts)
+      ?? glassAdderSell(input.model, panel, input.width, input.glassType, withInserts);
     if (add != null && typeof triple.solid === "number") {
       base = triple.solid + add;
       glassName = glassLabel(input.glassType);
@@ -597,7 +671,8 @@ export function specialDoorQuote(
     springAdder(springPriced, torsionOnly, parseInt(input.width, 10) >= 12, springRatesFor(member)) +
     (LOCK[input.lock] ?? 0) +
     lift.value +
-    (asEight ? NINE_FOOT_GLASS.flat : 0);
+    (asEight ? NINE_FOOT_GLASS.flat : 0) +
+    (oddBase ? ODD_WIDTH_FLAT : 0);
 
   // Worded the way a residential door is worded, because it lands in the same
   // QuickBooks description column and the counter reads both. The one thing
@@ -626,9 +701,21 @@ export function specialDoorQuote(
   ];
   const plain = style === "glass" && input.plainWindow && plainNames.includes(input.plainWindow)
     ? `${input.plainWindow.toLowerCase()}, ` : "";
+  // A Modern Steel door names its windows where they are, then the window as
+  // Clopay's order names it and the other doors' lines read (Brandon,
+  // 19/10/2026): "1/8" tempered windows in section 1 panels 1-4 and section
+  // 3 panels 2, 3, plain short 19 1/2 x 16, no inserts" — a grille design
+  // as an insert, "…, REC12 inserts" — and "insulated tempered windows in
+  // section 1 panels 1-4, 37 x 8 black slim window, no inserts".
+  const modernWin = modernFramed
+    ? `${(glassName ?? "").toLowerCase()} windows in ${describeWindowPlaces(modernPlaces)}, `
+      + (modernFramed.design ? `${modernFramed.design} inserts` : `${modernFramed.window}, no inserts`)
+    : null;
   const winText =
     style === "solid"
       ? "solid no windows"
+      : modernWin
+      ? modernWin
       : glassDesign
       ? `${glassName ? glassName.toLowerCase() : grade || "single strength b grade"} windows in the top section${glassDesign}`
       : `${glassName ? glassName.toLowerCase() : grade || "single strength b grade"} windows in the top section, ${plain}` +

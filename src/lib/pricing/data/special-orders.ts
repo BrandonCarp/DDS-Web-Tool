@@ -248,16 +248,14 @@ export const SPECIAL: Record<string, SpecialSeries> = {
     "section": 49
   },
   // The 4305, 4132, 9132, 9201, 9202 and 9205 moved to the Premium Steel
-  // Collection on 16/10/2026, where CJ's workbook prices them.
+  // Collection on 16/10/2026, where CJ's workbook prices them. The 9208/9209
+  // and 4308/4309 pairs and the 4138 are gridded off CJ's sheets of
+  // 19/10/2026, a sheet a pair, so each pair is one group here as the
+  // Premium Steel families are; the 9138 and 9139 take the typed total.
   "Modern Collection": {
     "type": "margin",
     "models": {
-      "4308": {
-        "door": 45,
-        "section": 49
-      },
-      // Missing from the dropdown until 12/10/2026 (Brandon); the 4308's terms.
-      "4309": {
+      "4308/4309": {
         "door": 45,
         "section": 49
       },
@@ -273,11 +271,7 @@ export const SPECIAL: Record<string, SpecialSeries> = {
         "door": 45,
         "section": 49
       },
-      "9208": {
-        "door": 45,
-        "section": 49
-      },
-      "9209": {
+      "9208/9209": {
         "door": 45,
         "section": 49
       }
@@ -300,6 +294,19 @@ export const SPECIAL: Record<string, SpecialSeries> = {
 export interface CommercialSeries {
   name: string;
   models: string[];
+}
+
+/**
+ * A collection's model groups in dropdown order: as listed, except where
+ * every key is a model number — the Modern and Premium Steel collections —
+ * by number, so the 4308/4309 pair sits between the 4138 and the 9138. (A
+ * key like "4138" is integer-like, and the engine lists those before any
+ * other key whatever the order written.)
+ */
+export function modelGroupsOf(models: Record<string, SpecialModel>): string[] {
+  const keys = Object.keys(models);
+  if (!keys.every((k) => /^\d/.test(k))) return keys;
+  return [...keys].sort((a, b) => parseInt(a, 10) - parseInt(b, 10) || a.localeCompare(b));
 }
 
 export const SPECIAL_COMMERCIAL_PINNED = ["3720", "3200", "3150", "524", "524V"];

@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { cleanup, render, screen, fireEvent } from "@testing-library/react";
 import { SpecialTool } from "./SpecialTool";
 import { copiedQbLine, copyFrom } from "./test-clipboard";
+import { MODERN_GLASS_TYPES } from "@/lib/pricing/data/modern-windows";
 import { QB_VINYL } from "@/lib/pricing/data/quickbooks";
 
 /**
@@ -1060,5 +1061,156 @@ describe("special order — vinyl molding on a configured door (Brandon, 14/10/2
     await pickDoor();
     expect(screen.queryByTestId("vinyl-prompt")).toBeNull();
     expect(screen.queryByTestId("so-vinyl-row")).toBeNull();
+  });
+});
+
+describe("special order — a Modern Steel door's windows on the door drawing (Brandon, 19/10/2026)", () => {
+  async function pickModern(model: string) {
+    render(<SpecialTool />);
+    fireEvent.change(sel("so-scope"), { target: { value: "residential" } });
+    fireEvent.change(sel("so-mfr"), { target: { value: "Clopay" } });
+    fireEvent.change(sel("so-series"), { target: { value: "Modern Collection" } });
+    const m = sel("so-model");
+    fireEvent.change(m, { target: { value: [...m.options].map((o) => o.value).find((x) => x === model || x.endsWith(`:${model}`)) } });
+    await settle();
+    fireEvent.click(maybe("so-configure")!);
+    await settle();
+  }
+
+  it("draws the door as Clopay stacks it, takes a window per press, and prices each at CJ's rate", async () => {
+    await pickModern("4308");
+    setWidth("8");
+    setHeight("7");
+    fireEvent.change(sel("so-color"), { target: { value: "White" } });
+    await settle();
+    // The contemporary glass as the 4308-4309 sheet lists it, no section-glazed question, and no drawing until the windows' framing is chosen.
+    expect(options("so-glass").map((o) => o.value)).toEqual(["", "solid", ...MODERN_GLASS_TYPES.map((g) => g.id)]);
+    expect(maybe("so-section")).toBeNull();
+    expect(maybe("door-diagram")).toBeNull();
+    fireEvent.change(sel("so-glass"), { target: { value: "tempered" } });
+    await settle();
+    // Tempered comes short or long, plain or in a grille design, as Clopay's list names them; the slim window is the insulated glass's.
+    expect(options("so-framing").map((o) => o.value)).toEqual(["", "short", "long", "short_grilles:REC12", "long_grilles:REC14", "short_grilles:SQ22", "long_grilles:SQ24"]);
+    expect(options("so-framing").map((o) => o.text).slice(1, 3)).toEqual(["PLAIN SHORT 19 1/2 X 16", "PLAIN LONG 42 X 16"]);
+    expect(maybe("door-diagram")).toBeNull();
+    fireEvent.change(sel("so-framing"), { target: { value: "short" } });
+    await settle();
+    // 8'0" x 7'0": four 21" sections, four short windows across.
+    expect(document.querySelectorAll(".dsec")).toHaveLength(4);
+    expect(document.querySelectorAll("[data-testid='door-section-1'] .dpanel")).toHaveLength(4);
+    await fillOptions({ lock: "" });
+    // Nothing priced until a window is pressed in and the lock chosen.
+    expect(maybe("copy-qb")).toBeNull();
+    expect(sel("so-lock").disabled).toBe(true);
+    fireEvent.click(screen.getByTestId("door-panel-1-1-add"));
+    fireEvent.click(screen.getByTestId("door-panel-1-2-add"));
+    fireEvent.click(screen.getByTestId("door-panel-3-4-add"));
+    await settle();
+    expect(sel("so-lock").disabled).toBe(false);
+    expect(screen.getByTestId("door-panel-1-1").getAttribute("data-on")).toBe("true");
+    fireEvent.change(sel("so-lock"), { target: { value: "none" } });
+    await settle();
+    // The 8'0" x 7'0" 4308 solid (704 list at .704, at 45%) and three short tempered windows (65 list each).
+    const solid = 916.39;
+    const window = (list: number) => Math.round(list * 0.704 * (0.99 / (1 - 0.0265)) * 100) / 100;
+    const lift = (c: number) => Math.round((c / 0.55) * 100) / 100;
+    let line = await copiedQbLine(screen.getByTestId("copy-qb"));
+    expect(line.rate).toBeCloseTo(solid + lift(window(65) * 3), 2);
+    expect(line.description).toMatch(/MODEL 4308, 8'0" X 7'0", IN THE COLOR WHITE, 1\/8" TEMPERED WINDOWS IN SECTION 1 PANELS 1, 2 AND SECTION 3 PANEL 4, PLAIN SHORT 19 1\/2 X 16, NO INSERTS/i);
+    // The x takes one out again, and the price follows.
+    fireEvent.click(screen.getByTestId("door-panel-1-2-remove"));
+    await settle();
+    expect(screen.getByTestId("door-panel-1-2").getAttribute("data-on")).toBe("false");
+    line = await copiedQbLine(screen.getByTestId("copy-qb"));
+    expect(line.rate).toBeCloseTo(solid + lift(window(65) * 2), 2);
+    // Long windows: two across; the places pressed in are cleared with the framing.
+    fireEvent.change(sel("so-framing"), { target: { value: "long_grilles:SQ24" } });
+    await settle();
+    expect(document.querySelectorAll("[data-testid='door-section-1'] .dpanel")).toHaveLength(2);
+    expect(document.querySelectorAll(".dpanel.on")).toHaveLength(0);
+    expect(maybe("copy-qb")).toBeNull();
+    fireEvent.click(screen.getByTestId("door-panel-2-1-add"));
+    await settle();
+    line = await copiedQbLine(screen.getByTestId("copy-qb"));
+    expect(line.rate).toBeCloseTo(solid + lift(window(160)), 2);
+    expect(line.description).toMatch(/1\/8" TEMPERED WINDOWS IN SECTION 2 PANEL 1, SQ24 INSERTS/i);
+    // Insulated glass offers the slim window, which takes the long window's places.
+    fireEvent.change(sel("so-glass"), { target: { value: "insulated_tempered_frosted" } });
+    await settle();
+    expect(options("so-framing").map((o) => o.value)).toEqual(["short", "long", "short_grilles:REC12", "long_grilles:REC14", "short_grilles:SQ22", "long_grilles:SQ24", "slim:black", "slim:silver"]);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).rate).toBeCloseTo(solid + lift(window(272)), 2);
+    fireEvent.change(sel("so-framing"), { target: { value: "slim:black" } });
+    await settle();
+    fireEvent.click(screen.getByTestId("door-panel-1-1-add"));
+    fireEvent.click(screen.getByTestId("door-panel-1-2-add"));
+    await settle();
+    line = await copiedQbLine(screen.getByTestId("copy-qb"));
+    expect(line.rate).toBeCloseTo(solid + lift(window(180) * 2), 2);
+    expect(line.description).toMatch(/INSULATED TEMPERED FROSTED WINDOWS IN SECTION 1 PANELS 1, 2, 37 X 8 BLACK SLIM WINDOW, NO INSERTS/i);
+    // The slim window's own 9/16" glass offers the slim window alone.
+    fireEvent.change(sel("so-glass"), { target: { value: "insulated_tempered_midnight_gray_916" } });
+    await settle();
+    expect(options("so-framing").map((o) => o.value)).toEqual(["slim:black", "slim:silver"]);
+    // Solid prices off the grid as before.
+    fireEvent.change(sel("so-glass"), { target: { value: "solid" } });
+    await settle();
+    expect(maybe("door-diagram")).toBeNull();
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).rate).toBe(solid);
+  });
+
+  it("lists the pairs a model each, in number order; the 9208 in the Cypress and Plank finishes at the sheet's adder", async () => {
+    render(<SpecialTool />);
+    fireEvent.change(sel("so-scope"), { target: { value: "residential" } });
+    fireEvent.change(sel("so-mfr"), { target: { value: "Clopay" } });
+    fireEvent.change(sel("so-series"), { target: { value: "Modern Collection" } });
+    expect(options("so-model").map((o) => o.textContent)).toEqual(["Select…", "4138", "4308", "4309", "9138", "9139", "9208", "9209"]);
+    fireEvent.change(sel("so-model"), { target: { value: "9208/9209:9208" } });
+    await settle();
+    fireEvent.click(maybe("so-configure")!);
+    await settle();
+    setWidth("16");
+    setHeight("7");
+    expect(options("so-color").map((o) => o.value)).toContain("Ultra-Grain Plank Kona Finish");
+    expect(options("so-color").map((o) => o.value)).toContain("Charcoal");
+    fireEvent.change(sel("so-color"), { target: { value: "Ultra-Grain Plank Kona Finish" } });
+    await settle();
+    await fillOptions();
+    const line = await copiedQbLine(screen.getByTestId("copy-qb"));
+    // 16'0" x 7'0" 9208: 1272 list at .865 at 45%, and the double door's up-to-8ft adder, 240 list at 1.301, lifted.
+    expect(line.rate).toBeCloseTo(2034.42 + Math.round((317.53 / 0.55) * 100) / 100, 2);
+    expect(line.description).toMatch(/MODEL 9208, 16'0" X 7'0", IN THE COLOR ULTRA-GRAIN PLANK KONA FINISH, SOLID NO WINDOWS/i);
+  });
+
+  it("offers short windows alone under 7'8\", and a 9'0\" door five sections; the 4138 off its own sheet", async () => {
+    await pickModern("4138");
+    setWidth("7.6");
+    setHeight("9");
+    fireEvent.change(sel("so-color"), { target: { value: "White" } });
+    await settle();
+    fireEvent.change(sel("so-glass"), { target: { value: "tempered_frosted" } });
+    await settle();
+    expect(options("so-framing").map((o) => o.value)).toEqual(["", "short", "short_grilles:REC12", "short_grilles:SQ22"]);
+    fireEvent.change(sel("so-framing"), { target: { value: "short_grilles:REC12" } });
+    await settle();
+    expect(document.querySelectorAll(".dsec")).toHaveLength(5);
+    expect(document.querySelectorAll("[data-testid='door-section-5'] .dpanel")).toHaveLength(3);
+    fireEvent.click(screen.getByTestId("door-panel-5-1-add"));
+    await fillOptions();
+    // CJ's 4138 sheet prices no 9FT or 10FT door under 8'0", so this one is typed.
+    expect(maybe("copy-qb")).toBeNull();
+    expect(document.body.textContent).toMatch(/That width is not on the grid/);
+    // At 8'0" high it prices: 796 list at .776, and the window 96 list.
+    setHeight("8");
+    await settle();
+    expect(document.querySelectorAll(".dsec")).toHaveLength(4);
+    fireEvent.click(screen.getByTestId("door-panel-2-2-add"));
+    fireEvent.change(sel("so-spring"), { target: { value: "extension" } });
+    await settle();
+    const k = 0.99 / (1 - 0.0265);
+    const grid = (list: number) => Math.round((list * 0.776 * k / 0.55) * 100) / 100;
+    const window = (list: number) => Math.round(list * 0.776 * k * 100) / 100;
+    const line = await copiedQbLine(screen.getByTestId("copy-qb"));
+    expect(line.rate).toBeCloseTo(grid(796) + Math.round((window(96) / 0.55) * 100) / 100, 2);
+    expect(line.description).toMatch(/MODEL 4138, 7'6" X 8'0", IN THE COLOR WHITE, 1\/8" TEMPERED FROSTED WINDOWS IN SECTION 2 PANEL 2, REC12 INSERTS/i);
   });
 });
