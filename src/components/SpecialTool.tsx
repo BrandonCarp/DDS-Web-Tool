@@ -132,25 +132,28 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   // chosen; the second colour follows the door's until one is picked.
   const [gCdDesign, setGCdDesign] = useState("");
   const [gOverlay, setGOverlay] = useState("");
-  const [gTrack, setGTrack] = useState("r12");
-  const [gSpring, setGSpring] = useState("extension");
-  const [gLock, setGLock] = useState("none");
+  // Every option starts blank and has to be chosen (Brandon, 19/10/2026):
+  // glass, framing, spring, track, mount, the surcharge, and the lock last —
+  // it opens once the rest are chosen, and the door prices once it is.
+  const [gTrack, setGTrack] = useState("");
+  const [gSpring, setGSpring] = useState("");
+  const [gLock, setGLock] = useState("");
   const [gVariant, setGVariant] = useState("");
   // Two steps, the same shape as the stock tabs: choose the door, then build it.
   const [step, setStep] = useState(1);
   // The window choices read like the stock tab's: a glass type (Solid first),
   // the section glazed and the framing (plain windows, then each insert) —
   // so-framing.ts turns them into what the quote needs.
-  const [gGlass, setGGlass] = useState("solid");
+  const [gGlass, setGGlass] = useState("");
   const [gFraming, setGFraming] = useState("");
   const [gSection, setGSection] = useState("4");
   // Track mount, high lift and incline. These live on special order rather than
   // residential: a stock door ships on standard track, and anything else is an
   // order Clopay builds to spec.
-  const [gMount, setGMount] = useState<TrackMount>("bracket");
-  const [gIncline, setGIncline] = useState<InclineStyle>("straight_incline");
+  const [gMount, setGMount] = useState<TrackMount | "">("");
+  const [gIncline, setGIncline] = useState<InclineStyle | "">("");
   const [gLift, setGLift] = useState(0);
-  const [homeowner, setHomeowner] = useState<"no" | "single" | "double">("no");
+  const [homeowner, setHomeowner] = useState<"" | "no" | "single" | "double">("");
   const [price, setPrice] = useState("");
   const [qty, setQty] = useState(1);
   const [saved, setSaved] = useState(false);
@@ -178,7 +181,8 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const [vinylAsked, setVinylAsked] = useState(false);
   const resetGrid = () => {
     setGWidthFt(""); setGWidthIn("0"); setGHeightFt(""); setGHeightIn("0"); setGColor(""); setGCdDesign(""); setGOverlay("");
-    setGGlass("solid"); setGFraming(""); setGVariant("");
+    setGGlass(""); setGFraming(""); setGVariant("");
+    setGSpring(""); setGTrack(""); setGMount(""); setGIncline(""); setGLift(0); setGLock(""); setHomeowner("");
     setVinylOn(false); setVinylAsked(false);
   };
   const pickCommSeries = (v: string) => {
@@ -240,12 +244,16 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const gWindowsOk = !gWidth || (windowsOfferedAt(modelMember || undefined, gWidth) && (!isSheet || windowsPricedAt(modelGroup, gWidth))
     && (!gDesigned || designTakesWindows(modelGroup, gDesignEff)));
   const gGlassOptions = gridded && gWidth ? glassTypeOptions(modelGroup, gWidth, gWindowsOk) : [];
-  const gGlassEff = gGlassOptions.some((g) => g.id === gGlass) ? gGlass : "solid";
-  const gFramings = gridded && gWidth ? framingOptions(modelGroup, member, gWidth, gGlassEff) : [];
+  const gGlassEff = gGlassOptions.some((g) => g.id === gGlass) ? gGlass : "";
+  const gGlazed = !!gGlassEff && gGlassEff !== "solid";
+  const gFramings = gridded && gWidth && gGlazed ? framingOptions(modelGroup, member, gWidth, gGlassEff) : [];
   // The framing picked stays through a glass change where the new glass
-  // offers it (a Coachman design, say); where it does not, the first is used.
-  const gFramingEff = gFramings.find((f) => f.value === gFraming) ?? gFramings[0];
-  const choice = windowChoice(gGlassEff, gFramingEff);
+  // offers it (a Coachman design, say); where it does not, one has to be chosen.
+  const gFramingEff = gFramings.find((f) => f.value === gFraming);
+  const gWindowsChosen = !!gGlassEff && (!gGlazed || gFramings.length === 0 || !!gFramingEff);
+  // Until the windows are chosen the door is looked up solid — for the
+  // reasons a size or design may carry; it is not priced before then.
+  const choice = gWindowsChosen ? windowChoice(gGlassEff, gFramingEff) : windowChoice("solid", undefined);
   const gStyleEff = choice.style;
 
   // High lift is the 4050 family's (Brandon, 13/10/2026), torsion only, and
@@ -256,14 +264,14 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const gSpringUsed = gTorsionOnly && gSpring === "extension" ? "torsion" : gSpring;
   const gLiftOffered = gridded && highLiftOffered(modelGroup);
   const gLiftAllowed = gLiftOffered && canTakeHighLift(gSpringUsed);
-  // A high lift chosen on a door that then stops offering it is 12" radius.
-  const gTrackEff = gTrack === "high_lift" && !gLiftAllowed ? "r12" : gTrack;
+  // A high lift chosen on a door that then stops offering it has to be chosen again.
+  const gTrackEff = gTrack === "high_lift" && !gLiftAllowed ? "" : gTrack;
   const gIsLift = gTrackEff === "high_lift";
   const gHeightFtN = Number(gHeightFt || "0");
   const gHeightInN = Number(gHeightIn || "0");
   const gLiftSteps = highLiftChoices(gHeightFtN, gHeightInN);
   const gEffLift = gLiftSteps.length && gLift > gLiftSteps[gLiftSteps.length - 1] ? 0 : gLift;
-  const gLiftNote = gIsLift && gEffLift
+  const gLiftNote = gIsLift && gEffLift && gMount && gIncline
     ? highLiftPrice({ mount: gMount, incline: gIncline, heightFt: gHeightFtN, heightIn: gHeightInN, inches: gEffLift }).reason ?? ""
     : "";
 
@@ -294,20 +302,28 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const gSecondColors = gSecondName ? secondColors(modelGroup, gColors) : [];
   const gOverlayEff = gSecondColors.includes(gOverlay) ? gOverlay : gColor;
   const gOpen = gSizeSet && gColorChosen && gDesignChosen;
+  // The lock opens once everything else is chosen; the door prices once the
+  // lock is (Brandon, 19/10/2026).
+  const gOptionsChosen = gOpen && gWindowsChosen && !!gSpringUsed && !!gTrackEff
+    && (!gIsLift || (gEffLift > 0 && !!gIncline)) && !!gMount && homeowner !== "";
+  const gComplete = gOptionsChosen && !!gLock;
 
+  // Looked up as soon as the size and colour are set, so a size or design the
+  // model is not built in says so at once; the options still blank stand in
+  // at no charge until chosen, and nothing is priced before gComplete.
   const gResult = gridded && gWidth && gHeight && gColorChosen && gDesignChosen
     ? specialDoorQuote({ model: modelGroup, width: gWidth, height: gHeight, color: gColor,
         design: gDesignEff || undefined, overlayColor: gSecondName ? gOverlayEff : undefined,
         style: choice.style, glassType: choice.glassType, panelStyle: choice.panelStyle, windesign: choice.windesign, plainWindow: choice.plainWindow,
         windowSeries: choice.windowSeries,
         variant: (modelMember || gVariant) || undefined,
-        track: gTrackEff as never, spring: gSpringUsed as never, lock: gLock as never,
-        trackMount: gMount, incline: gIncline, highLiftInches: gIsLift ? gEffLift : 0 })
+        track: (gTrackEff || "r12") as never, spring: (gSpringUsed || (gTorsionOnly ? "torsion" : "extension")) as never, lock: (gLock || "none") as never,
+        trackMount: gMount || "bracket", incline: gIncline || "straight_incline", highLiftInches: gIsLift ? gEffLift : 0 })
     : null;
 
   // The door's vinyl stop molding, in the vinyl that matches its colour and cut
   // to its opening, exactly as the stock tab works it out — whole doors only.
-  const vinylColor = gridded && kind === "door" && gResult?.quote ? vinylForDoorColor(gColor) : null;
+  const vinylColor = gridded && kind === "door" && gComplete && gResult?.quote ? vinylForDoorColor(gColor) : null;
   const [vwf, vwi] = gWidth.split("."); const [vhf, vhi] = gHeight.split(".");
   const vinyl = vinylColor
     ? vinylForDoor(vinylColor, Number(vwf) + (Number(vwi ?? 0)) / 12, Number(vhf) + (Number(vhi ?? 0)) / 12, Math.max(1, qty))
@@ -322,10 +338,14 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
     scope === "residential"
       ? series ? soNumbers(series, modelGroup, kind, price) : null
       : cModel ? soCommercial(cMfr, kind, price) : null;
+  // Nothing prices until the surcharge is answered, and a configured door not
+  // until its lock is chosen (Brandon, 19/10/2026).
   const n =
-    !manual && gResult?.quote
-      ? { sell: gResult.quote.unitPrice, margin: null as number | null, doubled: false }
-      : manual;
+    homeowner === ""
+      ? null
+      : !manual && gComplete && gResult?.quote
+        ? { sell: gResult.quote.unitPrice, margin: null as number | null, doubled: false }
+        : manual;
 
   // Homeowner markup, at the special-order rate. The width comes from the size
   // picker on a gridded door; on a typed-in total there is no width to read, so
@@ -337,7 +357,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   // special orders are a typed-in total with no size attached, so there is no
   // width to read — and where there is one, stating it is still unambiguous.
   const hoMarkup =
-    homeowner === "no"
+    homeowner === "no" || homeowner === ""
       ? 0
       : homeownerMarkupForBand(homeowner, kind === "section" ? "special_section" : "special_door");
   const total = n ? (n.sell + hoMarkup) * Math.max(1, qty) : 0;
@@ -618,6 +638,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                     <div className="ctl selectwrap">
                       <select disabled={!gOpen} data-testid="so-glass" value={gGlassEff}
                         onChange={(e) => { setGGlass(e.target.value); setSaved(false); }}>
+                        {!gGlassEff && <option value="">Select…</option>}
                         {(gGlassOptions.length ? gGlassOptions : [{ id: "solid", label: "Solid — no windows" }]).map((g) => <option key={g.id} value={g.id}>{g.label}</option>)}
                       </select>
                     </div>
@@ -629,7 +650,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                   </div>
                   <div className="grow"><label>Section glazed</label>
                     <div className="ctl selectwrap">
-                      <select disabled={!gOpen || gStyleEff === "solid"} data-testid="so-section" value={gSection}
+                      <select disabled={!gOpen || !gGlazed} data-testid="so-section" value={gSection}
                         onChange={(e) => { setGSection(e.target.value); setSaved(false); }}>
                         {GLAZED_SECTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                       </select>
@@ -637,9 +658,9 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                   </div>
                   <div className="grow"><label>Framing</label>
                     <div className="ctl selectwrap">
-                      <select disabled={!gOpen || gStyleEff === "solid"} data-testid="so-framing" value={gFramingEff?.value ?? ""}
+                      <select disabled={!gOpen || !gGlazed} data-testid="so-framing" value={gFramingEff?.value ?? ""}
                         onChange={(e) => { setGFraming(e.target.value); setSaved(false); }}>
-                        {gFramings.length === 0 && <option value="">Plain (no insert)</option>}
+                        {!gFramingEff && <option value="">{gGlazed && gFramings.length === 0 ? "Plain (no insert)" : "Select…"}</option>}
                         {gFramings.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
                       </select>
                     </div>
@@ -657,9 +678,10 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                       <select data-testid="so-spring" value={gSpringUsed} disabled={!gOpen}
                         onChange={(e) => {
                           setGSpring(e.target.value);
-                          if (e.target.value === "extension" && gTrack === "high_lift") { setGTrack("r12"); setGLift(0); }
+                          if (e.target.value === "extension" && gTrack === "high_lift") { setGTrack(""); setGLift(0); }
                           setSaved(false);
                         }}>
+                        {!gSpringUsed && <option value="">Select…</option>}
                         {!gTorsionOnly && <option value="extension">Extension</option>}
                         <option value="torsion">Torsion</option>
                         <option value="galvanized">Galvanized torsion</option>
@@ -670,6 +692,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                     <div className="ctl selectwrap">
                       <select disabled={!gOpen} data-testid="so-track" value={gTrackEff}
                         onChange={(e) => { setGTrack(e.target.value); if (e.target.value !== "high_lift") setGLift(0); setSaved(false); }}>
+                        {!gTrackEff && <option value="">Select…</option>}
                         <option value="r10">10&quot; radius</option>
                         <option value="r12">12&quot; radius</option>
                         <option value="r15">15&quot; radius</option>
@@ -684,6 +707,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                     <div className="ctl selectwrap">
                       <select disabled={!gOpen} data-testid="so-track-mount" value={gMount}
                         onChange={(e) => { setGMount(e.target.value as TrackMount); setSaved(false); }}>
+                        {!gMount && <option value="">Select…</option>}
                         {TRACK_MOUNTS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
                       </select>
                     </div>
@@ -704,6 +728,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                       <div className="ctl selectwrap">
                         <select disabled={!gOpen} data-testid="so-incline" value={gIncline}
                           onChange={(e) => { setGIncline(e.target.value as InclineStyle); setSaved(false); }}>
+                          {!gIncline && <option value="">Select…</option>}
                           {INCLINE_STYLES.map((i) => <option key={i.value} value={i.value}>{i.label}</option>)}
                         </select>
                       </div>
@@ -717,7 +742,8 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                   <div className="grow">
                     <label>Lock</label>
                     <div className="ctl selectwrap">
-                      <select disabled={!gOpen} value={gLock} onChange={(e) => { setGLock(e.target.value); setSaved(false); }}>
+                      <select disabled={!gOptionsChosen} data-testid="so-lock" value={gLock} onChange={(e) => { setGLock(e.target.value); setSaved(false); }}>
+                        {!gLock && <option value="">Select…</option>}
                         <option value="none">No lock</option>
                         <option value="slide">Inside slide lock</option>
                         <option value="lockbar">Lockbar assembly</option>
@@ -743,6 +769,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                     <div className="ctl selectwrap">
                       <select data-testid="so-homeowner" disabled={gridded && !gOpen} value={homeowner}
                         onChange={(e) => { setHomeowner(e.target.value as "no" | "single" | "double"); setSaved(false); }}>
+                        {!homeowner && <option value="">Select…</option>}
                         <option value="no">No</option>
                         <option value="single">Single door</option>
                         <option value="double">Double door</option>
@@ -766,6 +793,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                 <div className="selectwrap">
                   <select data-testid="so-comm-homeowner" value={homeowner}
                     onChange={(e) => { setHomeowner(e.target.value as "no" | "single" | "double"); setSaved(false); }}>
+                    {!homeowner && <option value="">Select…</option>}
                     <option value="no">No</option>
                     <option value="single">Single door</option>
                     <option value="double">Double door</option>
@@ -825,6 +853,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
               <div className="ctl selectwrap">
                 <select data-testid="so-homeowner-quote" value={homeowner}
                   onChange={(e) => { setHomeowner(e.target.value as "no" | "single" | "double"); setSaved(false); }}>
+                  {!homeowner && <option value="">Select…</option>}
                   <option value="no">No</option>
                   <option value="single">Single door</option>
                   <option value="double">Double door</option>

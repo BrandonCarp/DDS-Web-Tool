@@ -28,16 +28,16 @@ describe("special order sizes as feet and inches", () => {
 });
 
 describe("glass type", () => {
-  it("is Solid, then the sheet's types on the 4050 family — the standard list, then the glass only the architectural windows take (19/10/2026)", () => {
+  it("is Solid, then the sheet's types on the 4050 family — the standard list, single strength first, then the glass only the architectural windows take (19/10/2026)", () => {
     const ids = glassTypeOptions("4050/4051/4053/4132", "8", true).map((g) => g.id);
     expect(ids).toEqual([
-      "solid", "dsb", "acrylic", "obscure", "insulated", "insulated_obscure", "frosted", "insulated_frosted", "rain", "insulated_rain",
+      "solid", "ssb", "dsb", "acrylic", "obscure", "insulated", "insulated_obscure", "frosted", "insulated_frosted", "rain", "insulated_rain",
       "seeded", "insulated_seeded", "midnight_gray", "insulated_midnight_gray", "tempered_midnight_gray", "insulated_tempered_midnight_gray",
     ]);
-    // Single strength is on the sheet and not on the list: a special order is quoted from double strength up.
-    expect(ids).not.toContain("ssb");
+    // Single strength is worded as the grid's own glass is on the Value Steel and Modern doors.
+    expect(glassTypeOptions("4050/4051/4053/4132", "8", true)[1].label).toBe("Single strength B grade");
     // A width one series prices lists that series' glass: 10'2" the standard's, 19'0" the architectural's.
-    expect(glassTypeOptions("4050/4051/4053/4132", "10.2", true).map((g) => g.id)).toHaveLength(10);
+    expect(glassTypeOptions("4050/4051/4053/4132", "10.2", true).map((g) => g.id)).toHaveLength(11);
     expect(glassTypeOptions("4050/4051/4053/4132", "10.2", true).map((g) => g.id)).not.toContain("seeded");
     expect(glassTypeOptions("9200/9201/9202/9203/9205", "19", true).map((g) => g.id)).toHaveLength(15);
     expect(glassTypeOptions("9200/9201/9202/9203/9205", "19", true).map((g) => g.id)).not.toContain("acrylic");
@@ -81,8 +81,9 @@ describe("framing", () => {
     const at15 = framingOptions("4050/4051/4053/4132", "4050", "15", "dsb");
     expect(at15.filter((o) => o.series === "standard").every((o) => o.panel === "short")).toBe(true);
     expect(at15.some((o) => o.series === "architectural" && o.panel === "long")).toBe(true);
-    // Single strength is not offered, so it frames nothing.
-    expect(framingOptions("4050/4051/4053/4132", "4050", "8", "ssb")).toEqual([]);
+    // Single strength frames the standard windows alone — the architectural series prices none.
+    expect(framingOptions("4050/4051/4053/4132", "4050", "8", "ssb").every((o) => o.series === "standard")).toBe(true);
+    expect(framingOptions("4050/4051/4053/4132", "4050", "8", "ssb").length).toBeGreaterThan(0);
   });
 
   it("lists both series in the one list on a Premium Steel door — the plain windows of each, then the inserts of each (19/10/2026)", () => {
@@ -244,7 +245,7 @@ describe("what the quote is asked for", () => {
       track: "r12", spring: "extension", lock: "none", ...o,
     } as never);
     expect(q({ style: "glass", plainWindow: 'PLAIN SHORT 19-1/2" X 12"' }).quote?.description)
-      .toContain('double strength b grade windows in the top section, plain short 19-1/2" x 12", no inserts');
+      .toContain('single strength b grade windows in the top section, plain short 19-1/2" x 12", no inserts');
     expect(q({ style: "glass" }).quote?.description).toContain("windows in the top section, no inserts");
     // Unknown names are left off; the price does not move either way.
     expect(q({ style: "glass", plainWindow: "PLAIN WHATEVER" }).quote?.description).not.toContain("whatever");

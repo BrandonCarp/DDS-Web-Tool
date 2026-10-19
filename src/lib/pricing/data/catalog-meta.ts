@@ -224,9 +224,12 @@ export const PREMIUM_COLORS: Record<string, string[]> = {
     "Ultra-Grain Classic Walnut Finish"
   ],
   // The 9200 family carries the 9130's colours pending a list of its own
-  // (16/10/2026), and its adder rule with them.
+  // (16/10/2026), and its adder rule and finishes with them.
   "9200": [
-    "Iron Ore"
+    "Iron Ore",
+    "Ultra-Grain Classic Medium Finish",
+    "Ultra-Grain Classic Cherry Finish",
+    "Ultra-Grain Classic Walnut Finish"
   ],
   "GD1LP-GD1SP": [
     "Iron Ore",
@@ -298,18 +301,23 @@ export const PREMIUM_COLORS: Record<string, string[]> = {
 /** Does this colour carry the Ultra Grain adder on this model? */
 /**
  * Colours a SPECIAL ORDER of the model offers: the stock list, plus the
- * finishes that are special order only. The Gallery's Ultra-Grain Oak finishes
- * came off the stock list on 10/9/2026 for exactly that reason; the Gallery
- * sheet (8/10/2026) prices them, so the special order tab lists them again.
+ * premium colours and finishes that are special order only. The Gallery's
+ * Ultra-Grain Oak finishes came off the stock list on 10/9/2026 for exactly
+ * that reason; the Gallery sheet (8/10/2026) prices them, so the special
+ * order tab lists them again. The Premium Steel sheets price their premium
+ * colours from 19/10/2026 (CJ's ULTRA COLOR block), so the 9130, 9200 and
+ * 4300 families list Iron Ore and the Ultra-Grain Classic finishes on a
+ * special order — the 4300 does not stock them (Brandon, 19/10/2026).
  */
-/** Catalogue keys whose special orders list the Ultra-Grain finishes their sheets price. */
+/** Catalogue keys whose special orders list the premium colours their sheets price. */
 const SHEET_PRICED_KEYS = new Set([
   "GD1LP-GD1SP", "GD2LP-GD2SP", "GD1LU-GD1SU", "GD2LU-GD2SU",
   "BD1EU-BD1NU", "BD1CU", "BD2EU-BD2NU", "BD2CU",
+  "9130-9133", "9200", "4300",
 ]);
 export function specialOrderColors(catalogKey: string): string[] {
   const stock = COLORS[catalogKey] ?? [];
-  const extra = (PREMIUM_COLORS[catalogKey] ?? []).filter((c) => /Ultra-Grain/.test(c) && !stock.includes(c));
+  const extra = (PREMIUM_COLORS[catalogKey] ?? []).filter((c) => !stock.includes(c));
   return SHEET_PRICED_KEYS.has(catalogKey) ? [...stock, ...extra] : stock;
 }
 

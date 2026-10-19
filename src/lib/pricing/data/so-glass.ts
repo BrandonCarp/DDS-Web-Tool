@@ -44,7 +44,7 @@ export type WindowSeries = "standard" | "architectural";
 
 /** Every glass type any sheet prices, for labels — the id is the same type on every sheet. */
 export const SO_GLASS_TYPES: GlassOption[] = [
-  { id: "ssb", label: "Single strength" },
+  { id: "ssb", label: "Single strength B grade" },
   ...GALLERY_GLASS_TYPES,
 ];
 
@@ -125,18 +125,14 @@ export function windowSeriesFor(group: string): WindowSeries[] {
 }
 
 /**
- * The Premium Steel sheets (CJ's workbook of 16/10/2026) price no colour.
- * Until they do, a premium colour on those doors carries the stock tab's
- * adder (Brandon, 19/10/2026): 168 list at the 4300's multiplier, 120.28
- * cost a single door and twice that a double, at every height — 211.02 and
- * 422.04 sold at 43, as addons.ts has them. Which colours count is
- * PREMIUM_COLORS: Iron Ore and the Ultra-Grain finishes, never Charcoal.
+ * The premium-finish adder bands for a sheet-priced group, or null. On the
+ * Premium Steel sheets it is CJ's ULTRA COLOR block (19/10/2026) — the 9130,
+ * 9200 and 4300 families; the 4050's has none, and its colours take none.
+ * Which colours count is PREMIUM_COLORS: Iron Ore and the Ultra-Grain
+ * finishes, never Charcoal.
  */
-const PREMIUM_COLOR_ADDER = { upTo8ft: { single: 120.28, double: 240.56 }, over8ft: { single: 120.28, double: 240.56 } };
-
-/** The premium-finish adder bands for a sheet-priced group, or null. */
 export function sheetUltraGrain(group: string) {
-  return SHEET_ULTRA_GRAIN[group] ?? ((PREMIUM_GROUPS as readonly string[]).includes(group) ? PREMIUM_COLOR_ADDER : null);
+  return SHEET_ULTRA_GRAIN[group] ?? null;
 }
 
 function tablesFor(group: string, series: WindowSeries) {
@@ -146,13 +142,14 @@ function typesFor(group: string, series: WindowSeries): GlassOption[] {
   return (series === "architectural" ? SHEET_ARCH_GLASS_TYPES[group] : SHEET_GLASS_TYPES[group]) ?? [];
 }
 /**
- * The types the counter is offered: the sheet's, less single strength
- * (Brandon, 19/10/2026) — the Premium Steel sheets price it, and the tables
- * keep it, but a special order is quoted from double strength up, as the
- * Gallery, Bridgeport and Coachman have always been.
+ * The types the counter is offered: every type the sheet prices, in its
+ * order — single strength first on the Premium Steel sheets, the grade the
+ * Value Steel and Modern grids carry as their own glass (Brandon,
+ * 19/10/2026), double strength first on the Gallery, Bridgeport and Coachman
+ * sheets, which price no single strength.
  */
 function offeredTypesFor(group: string, series: WindowSeries): GlassOption[] {
-  return typesFor(group, series).filter((g) => g.id !== "ssb");
+  return typesFor(group, series);
 }
 
 function sheetBand(group: string, panel: PanelStyle, width: string, glassId: string, series: WindowSeries): SheetBand | null {
@@ -197,7 +194,8 @@ export function panelStylesFor(group: string, width: string, series: WindowSerie
 
 /**
  * The glass a sheet-priced door's windows are unless another is picked: the
- * first the counter is offered — double strength on every sheet.
+ * first the counter is offered — single strength on the Premium Steel
+ * sheets, double strength on the rest.
  */
 export function baseGlassFor(group: string, series: WindowSeries = "standard"): string {
   return offeredTypesFor(group, series)[0]?.id ?? "dsb";

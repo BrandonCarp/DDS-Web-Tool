@@ -23,7 +23,7 @@ export const PREMIUM_GROUPS = ["9130/9131/9132/9133", "9200/9201/9202/9203/9205"
 
 /** The standard series' glass types, in the order the counter reads them. */
 export const PREMIUM_GLASS_TYPES: GlassOption[] = [
-  { id: "ssb", label: "Single strength" },
+  { id: "ssb", label: "Single strength B grade" },
   { id: "dsb", label: "Double strength" },
   { id: "acrylic", label: "Acrylic" },
   { id: "obscure", label: "Obscure" },
@@ -1558,7 +1558,15 @@ export const PREMIUM_ARCH_GLASS: Record<string, Record<string, Record<"short" | 
 };
 
 /**
- * Ultra-Grain and the other premium finishes: the workbook prices none, so
- * a colour adds nothing on these doors until a sheet says what it costs.
+ * The premium colour adder — Iron Ore and the Ultra-Grain finishes — from
+ * the sheet's ULTRA COLOR block (CJ, 19/10/2026): a flat adder by door,
+ * single or double (10'2" and up), in two height bands — up to 8'0", and
+ * over. Cost, before margin. A group whose sheet has no block adds nothing
+ * for a colour.
  */
-export const PREMIUM_ULTRA_GRAIN: Record<string, { upTo8ft: { single: number; double: number }; over8ft: { single: number; double: number } }> = {};
+export const PREMIUM_ULTRA_GRAIN: Record<string, { upTo8ft: { single: number; double: number }; over8ft: { single: number; double: number } }> = {
+  "9130/9131/9132/9133": { upTo8ft: { single: 158.77, double: 317.53 }, over8ft: { single: 264.61, double: 529.22 } },
+  "9200/9201/9202/9203/9205": { upTo8ft: { single: 158.77, double: 317.53 }, over8ft: { single: 264.61, double: 529.22 } },
+  // "4050/4051/4053/4132": the sheet prices no premium colour.
+  "4300/4301/4302/4305/4310": { upTo8ft: { single: 158.77, double: 317.53 }, over8ft: { single: 264.61, double: 529.22 } },
+};

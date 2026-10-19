@@ -4,6 +4,7 @@ import {
 } from "./data/special-door-pricing";
 import { SPECIAL } from "./data/special-orders";
 import { glassOptionsFor } from "./data/so-glass";
+import { specialOrderColors } from "./data/catalog-meta";
 
 const G = "9200/9201/9202/9203/9205";
 const base = {
@@ -52,8 +53,8 @@ describe("9200 family — special order", () => {
   it("prices every style at every height off the sheet", () => {
     expect(sell("9", "7", "solid")).toBe(sheet(725));
     expect(sell("9", "7", "solid")).toBe(1118.87);
-    // 16'0" x 8'0" with inserts: eight short double strength windows with inserts, 51 list a window.
-    expect(sell("16", "8", "inserts")).toBe(sheet(1500) + windows(8, 51));
+    // 16'0" x 8'0" with inserts: eight short single strength windows with inserts, 49 list a window.
+    expect(sell("16", "8", "inserts")).toBe(sheet(1500) + windows(8, 49));
     expect(sell("18", "9", "solid")).toBe(sheet(2319));
     expect(sell("20", "10", "solid")).toBe(sheet(2753));
   });
@@ -101,28 +102,38 @@ describe("9200 family — special order", () => {
     expect(grilles.quote?.unitPrice).toBeCloseTo(sheet(725) + windows(4, 80), 2);
   });
 
-  it("carries the premium colour adder on Iron Ore and nothing on Charcoal (Brandon, 19/10/2026)", () => {
-    // The sheet prices no colour: the stock tab's adder stands in — 120.28 cost
-    // a single door, double from 10'2", at every height, lifted by the margin.
+  it("carries the sheet's ULTRA COLOR adder on Iron Ore and the Ultra-Grains, and nothing on Charcoal (CJ, 19/10/2026)", () => {
+    // 120 / 200 / 240 / 400 list at the finish's own 1.301: 158.77 cost a
+    // single door up to 8'0", 264.61 over; double from 10'2" — lifted by the margin.
+    const lift = (cost: number, margin = 0.57) => Math.round(cost / margin * 100) / 100;
     const at = (width: string, color: string, height = "7") =>
       specialDoorQuote({ ...base, width, height, color, style: "solid" }).quote!.unitPrice;
-    expect(at("9", "Iron Ore") - at("9", "White")).toBeCloseTo(211.02, 2);
-    expect(at("10", "Iron Ore") - at("10", "White")).toBeCloseTo(211.02, 2);
-    expect(at("10.2", "Iron Ore") - at("10.2", "White")).toBeCloseTo(422.04, 2);
-    expect(at("16", "Iron Ore") - at("16", "White")).toBeCloseTo(422.04, 2);
-    expect(at("9", "Iron Ore", "9") - at("9", "White", "9")).toBeCloseTo(211.02, 2);
+    expect(at("9", "Iron Ore") - at("9", "White")).toBeCloseTo(lift(158.77), 2);
+    expect(at("9", "Ultra-Grain Classic Walnut Finish") - at("9", "White")).toBeCloseTo(lift(158.77), 2);
+    expect(at("10", "Iron Ore") - at("10", "White")).toBeCloseTo(lift(158.77), 2);
+    expect(at("10.2", "Iron Ore") - at("10.2", "White")).toBeCloseTo(lift(317.53), 2);
+    expect(at("16", "Iron Ore") - at("16", "White")).toBeCloseTo(lift(317.53), 2);
+    expect(at("9", "Iron Ore", "8") - at("9", "White", "8")).toBeCloseTo(lift(158.77), 2);
+    expect(at("9", "Iron Ore", "9") - at("9", "White", "9")).toBeCloseTo(lift(264.61), 2);
+    expect(at("16", "Iron Ore", "10") - at("16", "White", "10")).toBeCloseTo(lift(529.22), 2);
     for (const c of ["Charcoal", "Mocha Brown", "Hunter Green", "Black"]) expect(at("9", c), c).toBe(at("9", "White"));
-    // The 9130 the same; the 4300 at its own 44.
+    // The 9130 the same; the 4300 at its own 44; the 4050's sheet has no block and its colours take none.
     const q = (model: string, color: string) =>
       specialDoorQuote({ ...base, model, width: "9", height: "7", color, style: "solid" }).quote!.unitPrice;
-    expect(q("9130/9131/9132/9133", "Iron Ore") - q("9130/9131/9132/9133", "White")).toBeCloseTo(211.02, 2);
-    expect(q("4300/4301/4302/4305/4310", "Iron Ore") - q("4300/4301/4302/4305/4310", "White")).toBeCloseTo(Math.round(120.28 / 0.56 * 100) / 100, 2);
+    expect(q("9130/9131/9132/9133", "Iron Ore") - q("9130/9131/9132/9133", "White")).toBeCloseTo(lift(158.77), 2);
+    expect(q("4300/4301/4302/4305/4310", "Iron Ore") - q("4300/4301/4302/4305/4310", "White")).toBeCloseTo(lift(158.77, 0.56), 2);
     expect(q("4300/4301/4302/4305/4310", "Charcoal")).toBe(q("4300/4301/4302/4305/4310", "White"));
+    expect(q("4050/4051/4053/4132", "Black")).toBe(q("4050/4051/4053/4132", "White"));
+    // The premium colours are offered on a special order of all three families.
+    for (const k of ["9130-9133", "9200", "4300"]) {
+      expect(specialOrderColors(k), k).toEqual(expect.arrayContaining(["Iron Ore", "Ultra-Grain Classic Medium Finish", "Ultra-Grain Classic Cherry Finish", "Ultra-Grain Classic Walnut Finish"]));
+    }
+    expect(specialOrderColors("4050-4051-4053")).not.toContain("Iron Ore");
   });
 
-  it("offers the sheet's glass types, double strength first — single strength is priced and not offered", () => {
+  it("offers the sheet's glass types, single strength first", () => {
     expect(glassOptionsFor(G, "short", "9").map((g) => g.id)).toEqual([
-      "dsb", "acrylic", "obscure", "insulated", "insulated_obscure", "frosted", "insulated_frosted", "rain", "insulated_rain",
+      "ssb", "dsb", "acrylic", "obscure", "insulated", "insulated_obscure", "frosted", "insulated_frosted", "rain", "insulated_rain",
     ]);
   });
 });

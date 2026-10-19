@@ -50,9 +50,9 @@ export const SINGLE_STRENGTH: GlassOption = { id: "ssb", label: "Single strength
 
 /**
  * The glass type list for a door at a width: Solid first, then what the
- * door prices. A sheet-priced door lists its sheet's types, double strength
- * first — on a door with two window series (the Premium Steel doors) the
- * standard list, then the glass only the architectural windows take, in one
+ * door prices. A sheet-priced door lists its sheet's types — on a door with
+ * two window series (the Premium Steel doors) the standard list, single
+ * strength first, then the glass only the architectural windows take, in one
  * list (Brandon, 19/10/2026: no series control); everything else is single
  * strength only, the grid's own column. A width built solid only offers
  * Solid alone.

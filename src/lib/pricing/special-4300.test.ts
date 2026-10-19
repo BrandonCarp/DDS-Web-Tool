@@ -3,7 +3,7 @@ import {
   hasGrid, griddedHeights, griddedWidths, groupMembers, shouldSplitGroup,
   specialDoorQuote,
 } from "./data/special-door-pricing";
-import { COLORS } from "./data/catalog-meta";
+import { COLORS, specialOrderColors } from "./data/catalog-meta";
 import { windowDesigns } from "./data/inserts";
 import { SPECIAL } from "./data/special-orders";
 
@@ -91,10 +91,13 @@ describe("4300 family — options", () => {
     ]);
   });
 
-  it("drops Iron Ore and the Ultra-Grains", () => {
-    // Catalogue finishes DDS does not sell on this family.
+  it("stocks no Iron Ore or Ultra-Grain, and offers them on a special order (CJ's ULTRA COLOR block, 19/10/2026)", () => {
+    // Catalogue finishes DDS does not stock on this family.
     expect(COLORS["4300"]).not.toContain("Iron Ore");
     expect(COLORS["4300"].some((c) => c.includes("Ultra-Grain"))).toBe(false);
+    expect(specialOrderColors("4300").slice(10)).toEqual([
+      "Iron Ore", "Ultra-Grain Classic Medium Finish", "Ultra-Grain Classic Cherry Finish", "Ultra-Grain Classic Walnut Finish",
+    ]);
   });
 
   it("offers exactly the 4050's window designs at every width", () => {

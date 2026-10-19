@@ -933,7 +933,9 @@ PREMIUM_GLASS_NAMES = {
     '1/8" TEMPERED MIDNIGHT GRAY': "tempered_midnight_gray",
     "INSULATED TEMPERED MIDNIGHT GRAY": "insulated_tempered_midnight_gray",
 }
-PREMIUM_GLASS_LABELS = {"ssb": "Single strength"} | {gid: label for _, gid, label in GLASS_IDS}
+# Single strength is worded as the grid's own glass is on every other door
+# ("Single strength B grade", so-framing.ts) — Brandon, 19/10/2026.
+PREMIUM_GLASS_LABELS = {"ssb": "Single strength B grade"} | {gid: label for _, gid, label in GLASS_IDS}
 PREMIUM_GLASS_ORDER = ["ssb"] + [gid for _, gid, _ in GLASS_IDS]
 # The four lines of a glass block: the short and the long window, plain, then
 # with inserts (standard) or grilles (architectural).
@@ -1208,13 +1210,55 @@ def read_premium_sheet(ws, wsf, margins):
 
     print(f"  note: {ws.title}: standard windows {[(lab, n) for _, _, lab, n in std_counts]}")
     print(f"  note: {ws.title}: architectural windows {[(lab, n) for _, _, lab, n in arch_counts]}")
+    ug = premium_ultra_color(ws, wsf, problems)
     return {
         "sheet": ws.title, "group": group, "members": members, "mult": mult, "glass_mult": mult, "flat": DOOR_FLAT,
-        "min_width": {}, "ug": None, "only_to_8": False, "unavailable": [],
+        "min_width": {}, "ug": ug, "only_to_8": False, "unavailable": [],
         "tiers": list(tiers), "bands": bands, "gaps": gaps, "no_windows": {}, "glass": glass, "arch_glass": arch_glass,
         "grid_glass": "ssb",
         "problems": problems,
     }
+
+
+# The ULTRA COLOR block on the revised Premium Steel sheets (CJ, 19/10/2026):
+# the premium colour adder — Iron Ore and the Ultra-Grain finishes — as four
+# lines beside the grid, label | | | list | cost: SINGLE DOOR UP TO 8FT, SINGLE
+# DOOR 8FT AND UP, DOUBLE DOOR UP TO 8FT, DOUBLE DOOR 8FT AND UP. The cost
+# multiplies by the finish's own figure (1.301), not A2's — the adder is
+# Clopay's flat figure for the finish, whatever the door's multiplier — so it
+# is read at the formula's figure, and the sheet says which. "8FT AND UP" is
+# over 8'0": the 8'0" door is "UP TO 8FT", as on the Gallery sheets.
+ULTRA_LINES = {
+    "SINGLE DOOR UP TO 8FT": ("low", "single"), "SINGLE DOOR 8FT AND UP": ("high", "single"),
+    "DOUBLE DOOR UP TO 8FT": ("low", "double"), "DOUBLE DOOR 8FT AND UP": ("high", "double"),
+}
+
+
+def premium_ultra_color(ws, wsf, problems):
+    """The ULTRA COLOR block as {"low": {single, double}, "high": {...}} in cost, or None where the sheet has none."""
+    head = next((c for c in range(1, ws.max_column + 1) if "ULTRA" in str(ws.cell(2, c).value or "").upper()), None)
+    if head is None:
+        return None
+    ug = {"low": {}, "high": {}}
+    mults = set()
+    for r in range(3, 7):
+        label = str(ws.cell(r, head).value or "").strip().upper()
+        where = ULTRA_LINES.get(label)
+        if where is None:
+            problems.add(f"{ws.title} ultra colour ({get_column_letter(head)}{r}): unexpected line {label!r}")
+            continue
+        lst, cost = ws.cell(r, head + 3).value, ws.cell(r, head + 4).value
+        fm = mult_from_formula(wsf.cell(r, head + 4).value)
+        if not isinstance(lst, (int, float)) or fm is None or not isinstance(cost, (int, float)) or abs(lst * fm * K - cost) > 0.06:
+            problems.add(f"{ws.title} ultra colour {label}: list {lst!r}, cost {cost!r} — expected a list and a cost at the formula's multiplier")
+            continue
+        mults.add(fm)
+        ug[where[0]][where[1]] = money(lst * fm * K)
+    if any(len(v) != 2 for v in ug.values()):
+        problems.add(f"{ws.title} ultra colour: expected the four lines, got {ug}")
+        return None
+    print(f"  note: {ws.title}: ultra colour at x{'/'.join(f'{m:g}' for m in sorted(mults))}: {ug}")
+    return ug
 
 
 def grid_for(info, margin):
@@ -1403,11 +1447,21 @@ def write_premium_glass(fam, infos, workbook_name):
     out += type_list(f"{const}_ARCH_GLASS_TYPES", "arch_glass", "/** The architectural series' glass types, in the order the counter reads them. */")
     out += table(f"{const}_ARCH_GLASS", "arch_glass", "/** The architectural series: group -> glass id -> short or long windows -> bands, narrowest first. */")
     out += ["/**",
-            " * Ultra-Grain and the other premium finishes: the workbook prices none, so",
-            " * a colour adds nothing on these doors until a sheet says what it costs.",
+            " * The premium colour adder — Iron Ore and the Ultra-Grain finishes — from",
+            " * the sheet's ULTRA COLOR block (CJ, 19/10/2026): a flat adder by door,",
+            " * single or double (10'2\" and up), in two height bands — up to 8'0\", and",
+            " * over. Cost, before margin. A group whose sheet has no block adds nothing",
+            " * for a colour.",
             " */",
-            f"export const {const}_ULTRA_GRAIN: Record<string, {{ upTo8ft: {{ single: number; double: number }}; over8ft: {{ single: number; double: number }} }}> = {{}};",
-            ""]
+            f"export const {const}_ULTRA_GRAIN: Record<string, {{ upTo8ft: {{ single: number; double: number }}; over8ft: {{ single: number; double: number }} }}> = {{"]
+    for info in infos:
+        ug = info["ug"]
+        if ug is None:
+            out.append(f'  // "{info["group"]}": the sheet prices no premium colour.')
+            continue
+        out.append(f'  "{info["group"]}": {{ upTo8ft: {{ single: {ug["low"]["single"]:.2f}, double: {ug["low"]["double"]:.2f} }}, '
+                   f'over8ft: {{ single: {ug["high"]["single"]:.2f}, double: {ug["high"]["double"]:.2f} }} }},')
+    out += ["};", ""]
     fam["out"].write_text("\n".join(out))
 
 
