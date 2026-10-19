@@ -31,7 +31,7 @@ import { highLiftPrice, mountPhrase, type TrackMount, type InclineStyle } from "
 import { ADDONS, GRADE_RES, COLLECTIONS_RES } from "./addons";
 import { dataKey } from "../model-groups";
 import { designName, specialPlainWindowsFor, specialWindowDesigns } from "./inserts";
-import { describeWindowPlaces, modernFraming, modernGlassLabel, modernPickerModel, modernWindowCost, type WindowPlace } from "./modern-steel";
+import { describeModernWindows, modernFraming, modernGlassLabel, modernPanelsWide, modernPickerModel, modernStack, modernWindowCost, type WindowPlace } from "./modern-steel";
 import { designBuilt, designTakesWindows, hasDesigns, modelWithDesign, secondColorName, secondColorPricedAs } from "./door-designs";
 import { SPECIAL_DOORS } from "./special-doors";
 import type { LockKey, PriceTriple, SpringKey, TrackKey, WindowStyle } from "../types";
@@ -96,7 +96,7 @@ const TRACK_TEXT: Record<string, string> = {
   r32: '32\u2033 radius track',
 };
 /** Collections named on the line: "Clopay Gallery Collection, Model GD1SP, ...". */
-const NAMED_COLLECTIONS = new Set(["Gallery Collection", "Bridgeport Collection", "Coachman Collection"]);
+const NAMED_COLLECTIONS = new Set(["Gallery Collection", "Bridgeport Collection", "Coachman Collection", "Modern Collection"]);
 
 /**
  * Groups whose sheet prices every height with torsion springs — "ALL TORSION
@@ -701,16 +701,22 @@ export function specialDoorQuote(
   ];
   const plain = style === "glass" && input.plainWindow && plainNames.includes(input.plainWindow)
     ? `${input.plainWindow.toLowerCase()}, ` : "";
-  // A Modern Steel door names its windows where they are, then the window as
-  // Clopay's order names it and the other doors' lines read (Brandon,
-  // 19/10/2026): "1/8" tempered windows in section 1 panels 1-4 and section
-  // 3 panels 2, 3, plain short 19 1/2 x 16, no inserts" — a grille design
-  // as an insert, "…, REC12 inserts" — and "insulated tempered windows in
-  // section 1 panels 1-4, 37 x 8 black slim window, no inserts".
-  const modernWin = modernFramed
-    ? `${(glassName ?? "").toLowerCase()} windows in ${describeWindowPlaces(modernPlaces)}, `
-      + (modernFramed.design ? `${modernFramed.design} inserts` : `${modernFramed.window}, no inserts`)
-    : null;
+  // A Modern Steel door's windows as DDS's estimates word them (Brandon,
+  // 19/10/2026): the glass, the window, where they are and the row looking
+  // out — "9/16" insulated tempered midnight gray black slim 37x8 windows in
+  // all sections, GL-SOL, left side looking out" — then the inserts clause
+  // the other doors carry, "no inserts" or "REC12 inserts"; the slim window
+  // takes none and says nothing.
+  const modernWin = (() => {
+    if (!modernFramed) return null;
+    const [hf, hi] = input.height.split(".").map(Number);
+    const [wf, wi] = input.width.split(".").map(Number);
+    const sections = modernStack(hf, hi ?? 0)?.length ?? 0;
+    const across = modernPanelsWide(wf, wi ?? 0, modernFramed.size) ?? 0;
+    const where = describeModernWindows(modernPlaces, sections, across);
+    const inserts = modernFramed.design ? `, ${modernFramed.design} inserts` : modernFramed.size === "slim" ? "" : ", no inserts";
+    return `${(glassName ?? "").toLowerCase()} ${modernFramed.window} windows in ${where}${inserts}`;
+  })();
   const winText =
     style === "solid"
       ? "solid no windows"

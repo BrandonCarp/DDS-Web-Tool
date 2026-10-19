@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { describeWindowPlaces, modernFramings, modernGlassOptions, modernPanelsWide, modernPickerModel, modernStack, modernWindowCost } from "./data/modern-steel";
+import { describeModernWindows, describeWindowPlaces, modernFramings, modernGlassOptions, modernPanelsWide, modernPickerModel, modernStack, modernWindowCost } from "./data/modern-steel";
 import { MODERN_GLASS_TYPES, MODERN_ULTRA_GRAIN, MODERN_WINDOW_COST } from "./data/modern-windows";
 import { specialDoorQuote } from "./data/special-door-pricing";
 import { specialOrderColors } from "./data/catalog-meta";
@@ -71,10 +71,29 @@ describe("Modern Steel — Clopay's stacking chart and panel counts (19/10/2026)
     ]);
   });
 
+  it("words the windows as the estimates do: where, the row looking out, and the side (19/10/2026)", () => {
+    // The estimate of 16/10/2026: an 8'0" x 7'0" 4308, a slim window in every section on the drawing's right — the left looking out.
+    const right = [1, 2, 3, 4].map((section) => ({ section, panel: 2 }));
+    expect(describeModernWindows(right, 4, 2)).toBe("all sections, GL-SOL, left side looking out");
+    expect(describeModernWindows([1, 2, 3, 4].map((section) => ({ section, panel: 1 })), 4, 2)).toBe("all sections, SOL-GL, right side looking out");
+    // A full row says only where; a section short of the row says its row.
+    expect(describeModernWindows([{ section: 1, panel: 1 }, { section: 1, panel: 2 }], 4, 2)).toBe("section 1");
+    expect(describeModernWindows([1, 3].flatMap((section) => [1, 2, 3, 4].map((panel) => ({ section, panel }))), 4, 4)).toBe("sections 1 and 3");
+    expect(describeModernWindows([{ section: 1, panel: 1 }, { section: 1, panel: 2 }, { section: 3, panel: 1 }, { section: 3, panel: 2 }], 5, 4))
+      .toBe("sections 1 and 3, SOL-SOL-GL-GL, right side looking out");
+    expect(describeModernWindows([{ section: 2, panel: 2 }, { section: 2, panel: 3 }], 4, 4)).toBe("section 2, SOL-GL-GL-SOL, looking out");
+    // Sections glazed differently each say their row.
+    expect(describeModernWindows([{ section: 1, panel: 1 }, { section: 1, panel: 2 }, { section: 1, panel: 3 }, { section: 1, panel: 4 }, { section: 3, panel: 4 }], 4, 4))
+      .toBe("section 1 GL-GL-GL-GL and section 3 GL-SOL-SOL-SOL, looking out");
+    expect(describeModernWindows([{ section: 1, panel: 4 }, { section: 2, panel: 4 }, { section: 4, panel: 3 }], 4, 4))
+      .toBe("section 1 GL-SOL-SOL-SOL, section 2 GL-SOL-SOL-SOL and section 4 SOL-GL-SOL-SOL, left side looking out");
+  });
+
   it("names the windows where they are, panels in a run as a range", () => {
     expect(describeWindowPlaces([{ section: 1, panel: 1 }, { section: 1, panel: 2 }, { section: 1, panel: 3 }, { section: 1, panel: 4 }])).toBe("section 1 panels 1-4");
     expect(describeWindowPlaces([{ section: 3, panel: 2 }, { section: 1, panel: 4 }, { section: 3, panel: 3 }])).toBe("section 1 panel 4 and section 3 panels 2, 3");
     expect(describeWindowPlaces([{ section: 2, panel: 1 }, { section: 2, panel: 3 }, { section: 2, panel: 4 }, { section: 2, panel: 5 }])).toBe("section 2 panels 1, 3-5");
+    expect(describeWindowPlaces([{ section: 1, panel: 1 }, { section: 2, panel: 1 }, { section: 2, panel: 2 }, { section: 4, panel: 3 }])).toBe("section 1 panel 1, section 2 panels 1, 2 and section 4 panel 3");
   });
 
   it("prices a window at CJ's rate over the solid door — the 9208-9209 and 4308-4309 sheets (19/10/2026)", () => {
@@ -120,17 +139,17 @@ describe("Modern Steel — Clopay's stacking chart and panel counts (19/10/2026)
     const three = specialDoorQuote({ ...base, style: "glass", glassType: "tempered", modernFraming: "short_grilles:REC12",
       windowsAt: [{ section: 1, panel: 1 }, { section: 1, panel: 2 }, { section: 2, panel: 4 }] });
     expect(three.quote?.unitPrice).toBeCloseTo(solid + sell(cost(80, 0.865) * 3), 2);
-    expect(three.quote?.description).toContain('1/8" tempered windows in section 1 panels 1, 2 and section 2 panel 4, REC12 inserts');
+    expect(three.quote?.description).toContain('Clopay Modern Collection, Model 9208, 8\'0" x 7\'0", in the color White, 1/8" tempered short 19 1/2x16 windows in section 1 SOL-SOL-GL-GL and section 2 GL-SOL-SOL-SOL, looking out, REC12 inserts, 12″ radius track');
     // Slim windows, in the glass the sheet prices them in; 16'0" takes four across.
     const slim = specialDoorQuote({ ...base, width: "16", style: "glass", glassType: "insulated_tempered", modernFraming: "slim:black",
       windowsAt: [{ section: 1, panel: 1 }, { section: 1, panel: 2 }, { section: 1, panel: 3 }, { section: 1, panel: 4 }] });
     expect(slim.quote?.unitPrice).toBeCloseTo(grid(1272, 0.865) + sell(cost(180, 0.865) * 4), 2);
-    expect(slim.quote?.description).toContain("insulated tempered windows in section 1 panels 1-4, 37 x 8 black slim window, no inserts");
+    expect(slim.quote?.description).toContain("in the color White, insulated tempered black slim 37x8 windows in section 1, 12″ radius track");
     // The slim window's 9/16" glass, in a silver frame.
     const gray = specialDoorQuote({ ...base, width: "16", style: "glass", glassType: "insulated_tempered_midnight_gray_916", modernFraming: "slim:silver",
       windowsAt: [{ section: 1, panel: 2 }, { section: 1, panel: 3 }] });
     expect(gray.quote?.unitPrice).toBeCloseTo(grid(1272, 0.865) + sell(cost(180, 0.865) * 2), 2);
-    expect(gray.quote?.description).toContain('9/16" insulated tempered midnight gray windows in section 1 panels 2, 3, 37 x 8 silver slim window, no inserts');
+    expect(gray.quote?.description).toContain('9/16" insulated tempered midnight gray silver slim 37x8 windows in section 1, SOL-GL-GL-SOL, looking out, 12″ radius track');
     // A framing the sheet does not price in that glass has to be chosen again.
     expect(specialDoorQuote({ ...base, style: "glass", glassType: "tempered", modernFraming: "slim:black", windowsAt: [{ section: 1, panel: 1 }] }).reason).toBe("Pick the windows' framing.");
     expect(specialDoorQuote({ ...base, style: "glass", glassType: "insulated_tempered_midnight_gray_916", modernFraming: "short", windowsAt: [{ section: 1, panel: 1 }] }).reason).toBe("Pick the windows' framing.");
@@ -140,7 +159,7 @@ describe("Modern Steel — Clopay's stacking chart and panel counts (19/10/2026)
     const b4 = { ...base, model: "4308/4309", variant: "4309" };
     expect(specialDoorQuote({ ...b4, style: "solid" }).quote?.unitPrice).toBe(grid(704, 0.704));
     expect(specialDoorQuote({ ...b4, width: "8.6", style: "glass", glassType: "tempered_obscure", modernFraming: "long", windowsAt: [{ section: 1, panel: 1 }] }).quote?.description)
-      .toContain('1/8" tempered obscure windows in section 1 panel 1, plain long 42 x 16, no inserts');
+      .toContain('1/8" tempered obscure long 42x16 windows in section 1, SOL-GL, right side looking out, no inserts');
     expect(specialDoorQuote({ ...b4, width: "8.6", style: "glass", glassType: "tempered_obscure", modernFraming: "long", windowsAt: [{ section: 1, panel: 1 }] }).quote?.unitPrice)
       .toBeCloseTo(grid(704, 0.704) + sell(cost(150, 0.704)) + 200, 2);
     expect(specialDoorQuote({ ...b4, width: "8.6", style: "solid" }).quote?.description).toContain("Model 4309, 8'6\" x 7'0\"");
@@ -151,7 +170,7 @@ describe("Modern Steel — Clopay's stacking chart and panel counts (19/10/2026)
     expect(specialDoorQuote({ ...base, style: "solid" }).quote?.unitPrice).toBe(grid(569, 0.776));
     const r = specialDoorQuote({ ...base, style: "glass", glassType: "tempered", modernFraming: "short_grilles:SQ22", windowsAt: [{ section: 1, panel: 1 }, { section: 2, panel: 4 }] });
     expect(r.quote?.unitPrice).toBeCloseTo(grid(569, 0.776) + sell(cost(80, 0.776) * 2), 2);
-    expect(r.quote?.description).toContain('Model 4138, 8\'0" x 7\'0", in the color White, 1/8" tempered windows in section 1 panel 1 and section 2 panel 4, SQ22 inserts');
+    expect(r.quote?.description).toContain('Clopay Modern Collection, Model 4138, 8\'0" x 7\'0", in the color White, 1/8" tempered short 19 1/2x16 windows in section 1 SOL-SOL-SOL-GL and section 2 GL-SOL-SOL-SOL, looking out, SQ22 inserts');
     // 9FT and 10FT are priced at the whole feet; an odd width there is the whole-foot door below it and 200, as everywhere.
     expect(specialDoorQuote({ ...base, height: "9", style: "solid" }).quote?.unitPrice).toBe(grid(970, 0.776));
     expect(specialDoorQuote({ ...base, width: "8.6", height: "9", style: "solid" }).quote?.unitPrice).toBeCloseTo(grid(970, 0.776) + 200, 2);

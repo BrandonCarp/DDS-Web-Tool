@@ -106,5 +106,9 @@ export const COLLECTIONS_RES: Record<string, string> = {
   "T52S": "Value Steel Collection",
   "4050-4051-4053": "Premium Steel Collection",
   "9130-9133": "Premium Steel Collection",
-  "4300": "Premium Steel Collection"
+  "4300": "Premium Steel Collection",
+  // The Modern Steel doors (special order only): named on the line as the
+  // estimates read, "CLOPAY MODERN COLLECTION, MODEL 4308" (Brandon, 19/10/2026).
+  "9208": "Modern Collection", "9209": "Modern Collection", "9138": "Modern Collection", "9139": "Modern Collection",
+  "4308": "Modern Collection", "4309": "Modern Collection", "4138": "Modern Collection"
 };

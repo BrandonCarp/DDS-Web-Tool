@@ -1116,13 +1116,21 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     const lift = (c: number) => Math.round((c / 0.55) * 100) / 100;
     let line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(solid + lift(window(65) * 3), 2);
-    expect(line.description).toMatch(/MODEL 4308, 8'0" X 7'0", IN THE COLOR WHITE, 1\/8" TEMPERED WINDOWS IN SECTION 1 PANELS 1, 2 AND SECTION 3 PANEL 4, PLAIN SHORT 19 1\/2 X 16, NO INSERTS/i);
+    expect(line.description).toMatch(/CLOPAY MODERN COLLECTION, MODEL 4308, 8'0" X 7'0", IN THE COLOR WHITE, 1\/8" TEMPERED SHORT 19 1\/2X16 WINDOWS IN SECTION 1 SOL-SOL-GL-GL AND SECTION 3 GL-SOL-SOL-SOL, LOOKING OUT, NO INSERTS/i);
     // The x takes one out again, and the price follows.
     fireEvent.click(screen.getByTestId("door-panel-1-2-remove"));
     await settle();
     expect(screen.getByTestId("door-panel-1-2").getAttribute("data-on")).toBe("false");
     line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(solid + lift(window(65) * 2), 2);
+    // ALL fills the section's row, and clears it once it is full.
+    fireEvent.click(screen.getByTestId("door-section-2-all"));
+    await settle();
+    expect(document.querySelectorAll(".dpanel.on")).toHaveLength(6);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS IN SECTION 1 SOL-SOL-SOL-GL, SECTION 2 GL-GL-GL-GL AND SECTION 3 GL-SOL-SOL-SOL, LOOKING OUT/i);
+    fireEvent.click(screen.getByTestId("door-section-2-all"));
+    await settle();
+    expect(document.querySelectorAll(".dpanel.on")).toHaveLength(2);
     // Long windows: two across; the places pressed in are cleared with the framing.
     fireEvent.change(sel("so-framing"), { target: { value: "long_grilles:SQ24" } });
     await settle();
@@ -1133,7 +1141,7 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     await settle();
     line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(solid + lift(window(160)), 2);
-    expect(line.description).toMatch(/1\/8" TEMPERED WINDOWS IN SECTION 2 PANEL 1, SQ24 INSERTS/i);
+    expect(line.description).toMatch(/1\/8" TEMPERED LONG 42X16 WINDOWS IN SECTION 2, SOL-GL, RIGHT SIDE LOOKING OUT, SQ24 INSERTS/i);
     // Insulated glass offers the slim window, which takes the long window's places.
     fireEvent.change(sel("so-glass"), { target: { value: "insulated_tempered_frosted" } });
     await settle();
@@ -1146,7 +1154,7 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     await settle();
     line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(solid + lift(window(180) * 2), 2);
-    expect(line.description).toMatch(/INSULATED TEMPERED FROSTED WINDOWS IN SECTION 1 PANELS 1, 2, 37 X 8 BLACK SLIM WINDOW, NO INSERTS/i);
+    expect(line.description).toMatch(/INSULATED TEMPERED FROSTED BLACK SLIM 37X8 WINDOWS IN SECTION 1, 12/i);
     // The slim window's own 9/16" glass offers the slim window alone.
     fireEvent.change(sel("so-glass"), { target: { value: "insulated_tempered_midnight_gray_916" } });
     await settle();
@@ -1178,7 +1186,7 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     const line = await copiedQbLine(screen.getByTestId("copy-qb"));
     // 16'0" x 7'0" 9208: 1272 list at .865 at 45%, and the double door's up-to-8ft adder, 240 list at 1.301, lifted.
     expect(line.rate).toBeCloseTo(2034.42 + Math.round((317.53 / 0.55) * 100) / 100, 2);
-    expect(line.description).toMatch(/MODEL 9208, 16'0" X 7'0", IN THE COLOR ULTRA-GRAIN PLANK KONA FINISH, SOLID NO WINDOWS/i);
+    expect(line.description).toMatch(/CLOPAY MODERN COLLECTION, MODEL 9208, 16'0" X 7'0", IN THE COLOR ULTRA-GRAIN PLANK KONA FINISH, SOLID NO WINDOWS/i);
   });
 
   it("offers short windows alone under 7'8\", and a 9'0\" door five sections; the 4138 off its own sheet", async () => {
@@ -1211,6 +1219,6 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     const window = (list: number) => Math.round(list * 0.776 * k * 100) / 100;
     const line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(grid(796) + Math.round((window(96) / 0.55) * 100) / 100, 2);
-    expect(line.description).toMatch(/MODEL 4138, 7'6" X 8'0", IN THE COLOR WHITE, 1\/8" TEMPERED FROSTED WINDOWS IN SECTION 2 PANEL 2, REC12 INSERTS/i);
+    expect(line.description).toMatch(/CLOPAY MODERN COLLECTION, MODEL 4138, 7'6" X 8'0", IN THE COLOR WHITE, 1\/8" TEMPERED FROSTED SHORT 19 1\/2X16 WINDOWS IN SECTION 2, SOL-GL-SOL, LOOKING OUT, REC12 INSERTS/i);
   });
 });

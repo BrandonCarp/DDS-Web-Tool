@@ -795,6 +795,11 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                           const next = new Set(gPlaces.map(placeKey));
                           if (next.has(k)) next.delete(k); else next.add(k);
                           setGWinPlaces(next); setSaved(false);
+                        }}
+                        onSetSection={(section, panels, on) => {
+                          const next = new Set(gPlaces.map(placeKey));
+                          for (const panel of panels) { const k = placeKey({ section, panel }); if (on) next.add(k); else next.delete(k); }
+                          setGWinPlaces(next); setSaved(false);
                         }} />
                     </div>
                   )}

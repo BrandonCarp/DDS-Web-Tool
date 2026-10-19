@@ -117,7 +117,7 @@ export interface ModernFraming {
   price: string;
   /** The grille design, where the window has one. */
   design?: string;
-  /** The window as the line names it: 'plain short 19 1/2 x 16', '37 x 8 black slim window'. */
+  /** The window as the line names it, after the glass: "short 19 1/2x16", "black slim 37x8" (the estimates' wording). */
   window: string;
 }
 
@@ -132,14 +132,14 @@ const SLIM_MODELS: ReadonlySet<string> = new Set(["9208", "9209", "4308", "4309"
  * black or a silver frame, one price.
  */
 const CLOPAY_FRAMINGS: readonly ModernFraming[] = [
-  { value: "short", label: "PLAIN SHORT 19 1/2 X 16", size: "short", grilles: false, price: "short", window: "plain short 19 1/2 x 16" },
-  { value: "long", label: "PLAIN LONG 42 X 16", size: "long", grilles: false, price: "long", window: "plain long 42 x 16" },
-  { value: "short_grilles:REC12", label: "REC12-RECTANGULAR 1 HIGH / 2 ACROSS", size: "short", grilles: true, price: "short_grilles", design: "REC12", window: "short 19 1/2 x 16" },
-  { value: "long_grilles:REC14", label: "REC14-RECTANGULAR 1 HIGH / 4 ACROSS", size: "long", grilles: true, price: "long_grilles", design: "REC14", window: "long 42 x 16" },
-  { value: "short_grilles:SQ22", label: "SQ22-SQUARE 2 HIGH / 2 ACROSS", size: "short", grilles: true, price: "short_grilles", design: "SQ22", window: "short 19 1/2 x 16" },
-  { value: "long_grilles:SQ24", label: "SQ24-SQUARE 2 HIGH / 4 ACROSS", size: "long", grilles: true, price: "long_grilles", design: "SQ24", window: "long 42 x 16" },
-  { value: "slim:black", label: "37 X 8 BLACK SLIM WINDOW", size: "slim", grilles: false, price: "slim", window: "37 x 8 black slim window" },
-  { value: "slim:silver", label: "37 X 8 SILVER SLIM WINDOW", size: "slim", grilles: false, price: "slim", window: "37 x 8 silver slim window" },
+  { value: "short", label: "PLAIN SHORT 19 1/2 X 16", size: "short", grilles: false, price: "short", window: "short 19 1/2x16" },
+  { value: "long", label: "PLAIN LONG 42 X 16", size: "long", grilles: false, price: "long", window: "long 42x16" },
+  { value: "short_grilles:REC12", label: "REC12-RECTANGULAR 1 HIGH / 2 ACROSS", size: "short", grilles: true, price: "short_grilles", design: "REC12", window: "short 19 1/2x16" },
+  { value: "long_grilles:REC14", label: "REC14-RECTANGULAR 1 HIGH / 4 ACROSS", size: "long", grilles: true, price: "long_grilles", design: "REC14", window: "long 42x16" },
+  { value: "short_grilles:SQ22", label: "SQ22-SQUARE 2 HIGH / 2 ACROSS", size: "short", grilles: true, price: "short_grilles", design: "SQ22", window: "short 19 1/2x16" },
+  { value: "long_grilles:SQ24", label: "SQ24-SQUARE 2 HIGH / 4 ACROSS", size: "long", grilles: true, price: "long_grilles", design: "SQ24", window: "long 42x16" },
+  { value: "slim:black", label: "37 X 8 BLACK SLIM WINDOW", size: "slim", grilles: false, price: "slim", window: "black slim 37x8" },
+  { value: "slim:silver", label: "37 X 8 SILVER SLIM WINDOW", size: "slim", grilles: false, price: "slim", window: "silver slim 37x8" },
 ];
 
 /**
@@ -174,9 +174,46 @@ export function modernWindowCost(group: string, glass: string, framing: string):
   return MODERN_WINDOW_COST[group]?.[glass]?.[framing] ?? null;
 }
 
+/** Two items with AND, more with commas and AND before the last, as the vinyl pieces are listed. */
+function listed(parts: readonly string[]): string {
+  return parts.length <= 2 ? parts.join(" and ") : `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
+}
+
+/**
+ * The windows on the line, as DDS's estimates word a Modern Steel door
+ * (Brandon, 19/10/2026): where they are — "all sections", "section 1",
+ * "sections 1 and 3" — then, where a section is not glazed across, the
+ * row as GL and SOL a panel, written LOOKING OUT (the drawing is the door
+ * from outside, so its right-hand panel is the left looking out), and the
+ * side the glass sits on: "all sections, GL-SOL, left side looking out".
+ * Sections glazed differently are each written with their row.
+ */
+export function describeModernWindows(places: readonly WindowPlace[], sections: number, across: number): string {
+  const has = new Set(places.map(placeKey));
+  const glazed = [...new Set(places.map((p) => p.section))].filter((s) => s >= 1 && s <= sections).sort((a, b) => a - b);
+  if (!glazed.length) return "no sections";
+  // A section's row looking out: the drawing's last panel first.
+  const row = (s: number) => Array.from({ length: across }, (_, i) => across - i).map((panel) => has.has(placeKey({ section: s, panel })) ? "GL" : "SOL");
+  const full = (s: number) => row(s).every((x) => x === "GL");
+  const where = glazed.length === sections ? "all sections" : `section${glazed.length > 1 ? "s" : ""} ${listed(glazed.map(String))}`;
+  const rows = new Set(glazed.map((s) => row(s).join("-")));
+  const partial = glazed.some((s) => !full(s));
+  // Which side the glass is on, looking out: every window in the left half, or every one in the right.
+  const half = Math.floor(across / 2);
+  const outIndex = (panel: number) => across + 1 - panel;
+  const seats = places.filter((p) => glazed.includes(p.section)).map((p) => outIndex(p.panel));
+  const side = !partial ? "" : seats.every((j) => j <= half) ? "left side looking out" : seats.every((j) => j > across - half) ? "right side looking out" : "looking out";
+  const text = rows.size === 1
+    ? `${where}${partial ? `, ${[...rows][0]}` : ""}`
+    : listed(glazed.map((s) => `section ${s} ${row(s).join("-")}`));
+  return side ? `${text}, ${side}` : text;
+}
+
 /**
  * The windows on the line, by section from the top: "section 1 panels 1-4
- * and section 3 panels 2, 3". Panels in a run are written as a range.
+ * and section 3 panels 2, 3" — three or more sections with commas and AND
+ * before the last, as the vinyl pieces are listed. Panels in a run are
+ * written as a range.
  */
 export function describeWindowPlaces(places: readonly WindowPlace[]): string {
   const bySection = new Map<number, number[]>();
@@ -193,5 +230,5 @@ export function describeWindowPlaces(places: readonly WindowPlace[]): string {
     }
     parts.push(`section ${section} panel${sorted.length > 1 ? "s" : ""} ${runs.join(", ")}`);
   }
-  return parts.join(" and ");
+  return listed(parts);
 }
