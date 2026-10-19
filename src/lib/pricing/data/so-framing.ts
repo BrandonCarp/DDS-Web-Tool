@@ -14,7 +14,7 @@
  * is worked out from those choices here, so the component carries no
  * pricing knowledge and the mapping can be tested on its own.
  */
-import { glassOptionsFor, glassTakesInserts, isSheetGroup, panelStylesFor, type GlassOption, type PanelStyle } from "./so-glass";
+import { glassOptionsFor, glassTakesInserts, isSheetGroup, panelStylesFor, type GlassOption, type PanelStyle, type WindowSeries } from "./so-glass";
 import { sectionDesignsAt, windowSectionGroup } from "./coachman-windows";
 import { specialPlainWindowsFor, specialWindowDesigns, takesInserts, type InsertDesign } from "./inserts";
 import type { WindowStyle } from "../types";
@@ -49,14 +49,14 @@ export const SINGLE_STRENGTH: GlassOption = { id: "ssb", label: "Single strength
 /**
  * The glass type list for a door at a width: Solid first, then what the
  * door prices. A sheet-priced door lists its sheet's types (double strength
- * first); the 4050 family lists single strength (the grid's own column) then
- * its named types; everything else is single strength only. A width built
- * solid only offers Solid alone.
+ * first; single strength first on the Premium Steel sheets, in the series
+ * chosen); everything else is single strength only, the grid's own column.
+ * A width built solid only offers Solid alone.
  */
-export function glassTypeOptions(group: string, width: string, windowsOk: boolean): GlassOption[] {
+export function glassTypeOptions(group: string, width: string, windowsOk: boolean, series: WindowSeries = "standard"): GlassOption[] {
   if (!windowsOk) return [SOLID];
-  const panels = panelStylesFor(group, width);
-  const named = panels.length ? glassOptionsFor(group, panels[0], width) : [];
+  const panels = panelStylesFor(group, width, series);
+  const named = panels.length ? glassOptionsFor(group, panels[0], width, series) : [];
   if (isSheetGroup(group)) return [SOLID, ...named];
   return [SOLID, SINGLE_STRENGTH, ...named];
 }
@@ -108,16 +108,19 @@ const plainDesign = (d: InsertDesign) => d.cat === "arch" && /\bPLAIN\b/i.test(d
  * window designs and arched sections its sheet builds at the width, each
  * priced on its own, with any of its glass.
  */
-export function framingOptions(group: string, member: string, width: string, glass: string): FramingOption[] {
+export function framingOptions(group: string, member: string, width: string, glass: string, series: WindowSeries = "standard"): FramingOption[] {
   if (!width || glass === "solid") return [];
   if (windowSectionGroup(group)) {
     return sectionDesignsAt(group, width).map((d) => ({
       value: `design:${d.id}`, label: d.cat === "arch" ? `${d.name} arch section` : d.name, kind: "design", design: d.id,
     }));
   }
-  const panels = panelStylesFor(group, width);
-  const named = specialPlainWindowsFor(member);
-  const designs = takesInserts(member) ? specialWindowDesigns(member, "inserts", width) : [];
+  const panels = panelStylesFor(group, width, series);
+  // A sheet-priced door with no window of this series at the width has
+  // nothing to frame — the architectural series at 10'2", say.
+  if (isSheetGroup(group) && panels.length === 0) return [];
+  const named = specialPlainWindowsFor(member, series);
+  const designs = takesInserts(member) ? specialWindowDesigns(member, "inserts", width, series) : [];
   if (panels.length) {
     const out: FramingOption[] = [];
     for (const p of panels) {
@@ -134,7 +137,7 @@ export function framingOptions(group: string, member: string, width: string, gla
       }
     }
     for (const p of panels) {
-      if (!glassTakesInserts(group, p, width, glass === "ssb" ? "dsb" : glass)) continue;
+      if (!glassTakesInserts(group, p, width, glass, series)) continue;
       for (const d of designs.filter((x) => !plainDesign(x) && designPanel(x) === p)) {
         out.push({ value: `insert:${p}:${d.id}`, label: `${d.name} inserts`, kind: "insert", panel: p, design: d.id });
       }
@@ -162,17 +165,24 @@ export interface WindowChoice {
   panelStyle?: PanelStyle;
   windesign?: string;
   plainWindow?: string;
+  windowSeries?: WindowSeries;
 }
 
-/** What the quote is asked for, from the glass type and framing chosen. */
-export function windowChoice(glass: string, framing: FramingOption | undefined): WindowChoice {
+/**
+ * What the quote is asked for, from the glass type and framing chosen. Single
+ * strength goes through as a glass type: a sheet that prices it (the Premium
+ * Steel sheets) charges it, and a grid with no such table takes its own
+ * GLASS column for it, as it always has.
+ */
+export function windowChoice(glass: string, framing: FramingOption | undefined, series: WindowSeries = "standard"): WindowChoice {
   if (glass === "solid") return { style: "solid" };
-  const glassType = glass === "ssb" ? undefined : glass;
-  if (!framing) return { style: "glass", glassType };
+  const glassType = glass;
+  const windowSeries = series;
+  if (!framing) return { style: "glass", glassType, windowSeries };
   switch (framing.kind) {
-    case "design": return { style: "glass", glassType, windesign: framing.design };
-    case "insert": return { style: "inserts", glassType, panelStyle: framing.panel, windesign: framing.design };
-    default: return { style: "glass", glassType, panelStyle: framing.panel, plainWindow: framing.plainWindow };
+    case "design": return { style: "glass", glassType, windesign: framing.design, windowSeries };
+    case "insert": return { style: "inserts", glassType, panelStyle: framing.panel, windesign: framing.design, windowSeries };
+    default: return { style: "glass", glassType, panelStyle: framing.panel, plainWindow: framing.plainWindow, windowSeries };
   }
 }
 

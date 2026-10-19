@@ -80,7 +80,7 @@ describe("quick search: doors", () => {
     expect(second).toMatchObject({ tab: "special", label: "4050" });
     expect(second.pick).toEqual({
       kind: "sodoor", scope: "residential", mfr: "Clopay", series: "Premium Steel Collection",
-      model: modelSelectionValue("4050/4051/4053", "4050"),
+      model: modelSelectionValue("4050/4051/4053/4132", "4050"),
     });
   });
 

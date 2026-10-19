@@ -7,11 +7,15 @@ import { COLORS } from "./data/catalog-meta";
 import { windowDesigns } from "./data/inserts";
 import { SPECIAL } from "./data/special-orders";
 
-const G = "4300/4301/4310";
+const G = "4300/4301/4302/4305/4310";
+const MEMBERS = ["4300", "4301", "4302", "4305", "4310"];
 const base = {
   model: G, color: "White", style: "solid" as const,
   track: "r12" as const, spring: "extension" as const, lock: "none" as const,
 };
+// CJ's Premium Steel workbook (16/10/2026): list x .704 x 0.99 / (1 - 0.0265), sold at 44.
+const K = 0.99 / (1 - 0.0265);
+const sheet = (list: number) => Math.round((list * 0.704 * K) / 0.56 * 100) / 100;
 
 describe("4300 family — special order configurator", () => {
   it("is gridded, so the size picker opens", () => {
@@ -19,28 +23,24 @@ describe("4300 family — special order configurator", () => {
     expect(shouldSplitGroup(G)).toBe(true);
   });
 
-  it("lists its three members separately", () => {
-    expect(groupMembers(G)).toEqual(["4300", "4301", "4310"]);
+  it("lists its five members separately, as CJ's sheet groups them", () => {
+    expect(groupMembers(G)).toEqual(MEMBERS);
   });
 
-  it("carries the two heights the sheets cover", () => {
-    // 7'0" and 8'0" only. A 9'0" sheet does not exist yet, so that height must
-    // not appear as though it could be priced.
-    expect(griddedHeights(G)).toEqual(["7", "8"]);
+  it("carries the four heights the sheet covers", () => {
+    // 7FT and 8FT extension, 9FT and 10FT torsion.
+    expect(griddedHeights(G)).toEqual(["7", "8", "9", "10"]);
   });
 
-  it("carries the widths each sheet actually holds", () => {
-    // Both sheets run 6'2" to 20'0" since the 9/30 workbook filled in the 8ft
-    // sheet past 14'10".
-    expect(griddedWidths(G, "7")).toHaveLength(84);
-    expect(griddedWidths(G, "8")).toHaveLength(84);
-    expect(griddedWidths(G, "7")).toContain("20");
-    expect(griddedWidths(G, "8")).toContain("20");
+  it("carries 6'2\" to 20'0\" at every height", () => {
+    for (const t of ["7", "8", "9", "10"]) {
+      expect(griddedWidths(G, t), t).toHaveLength(84);
+      expect(griddedWidths(G, t)[0], t).toBe("6.2");
+      expect(griddedWidths(G, t), t).toContain("20");
+    }
   });
 
   it("keys 11-foot widths the same way as every other foot", () => {
-    // The sheet writes 11'0" as "11.00" and 11'2" as "11.02". Left alone those
-    // sort and match wrongly against "11" and "11.2".
     for (const t of ["7", "8"]) {
       const w = griddedWidths(G, t);
       expect(w, t).toContain("11");
@@ -52,19 +52,25 @@ describe("4300 family — special order configurator", () => {
 
 describe("4300 family — pricing", () => {
   it("prices every member off the one grid", () => {
-    for (const v of ["4300", "4301", "4310"]) {
+    for (const v of MEMBERS.filter((m) => m !== "4310")) {
       const r = specialDoorQuote({ ...base, width: "9", height: "7", variant: v });
-      expect(r.quote?.unitPrice, v).toBeCloseTo(898.38, 2);
+      expect(r.quote?.unitPrice, v).toBe(sheet(725));
     }
+    // The 4310 is built from 8'0".
+    expect(specialDoorQuote({ ...base, width: "9", height: "7", variant: "4310" }).quote?.unitPrice).toBe(sheet(725));
+    expect(specialDoorQuote({ ...base, width: "7.6", height: "7", variant: "4310" }).quote).toBeUndefined();
   });
 
-  it("prices both tiers", () => {
-    expect(specialDoorQuote({ ...base, width: "9", height: "7" }).quote?.unitPrice).toBeCloseTo(898.38, 2);
-    expect(specialDoorQuote({ ...base, width: "9", height: "8" }).quote?.unitPrice).toBeCloseTo(1083.02, 2);
+  it("prices every tier off the sheet's columns", () => {
+    expect(specialDoorQuote({ ...base, width: "9", height: "7" }).quote?.unitPrice).toBe(sheet(725));
+    expect(specialDoorQuote({ ...base, width: "9", height: "8" }).quote?.unitPrice).toBe(sheet(874));
+    expect(specialDoorQuote({ ...base, width: "9", height: "9" }).quote?.unitPrice).toBe(sheet(1130));
+    expect(specialDoorQuote({ ...base, width: "9", height: "10" }).quote?.unitPrice).toBe(sheet(1180));
+    expect(specialDoorQuote({ ...base, width: "9", height: "7" }).quote?.unitPrice).toBe(926.88);
   });
 
-  it("sends an 8ft width past the sheet to the manual total", () => {
-    // Past 20'0" there is no sheet at either height. It must decline rather
+  it("sends a width past the sheet to the manual total", () => {
+    // Past 20'0" there is no sheet at any height. It must decline rather
     // than reach for another width's price.
     const r = specialDoorQuote({ ...base, width: "20.2", height: "8" });
     expect(r.quote).toBeUndefined();
@@ -91,12 +97,12 @@ describe("4300 family — options", () => {
     expect(COLORS["4300"].some((c) => c.includes("Ultra-Grain"))).toBe(false);
   });
 
-  it("offers exactly the 4050's short-window designs at every width", () => {
-    // The 4050 took the long-panel inserts on 5/10/2026 because it takes long
-    // windows; the 4300 family takes short windows only, so it keeps the
-    // short list — the 4050's designs minus the long ones.
+  it("offers exactly the 4050's window designs at every width", () => {
+    // The same window and insert options as the 4050 (Brandon, 12/9/2026):
+    // the long-panel inserts too since the 4050 took them (5/10/2026), CJ's
+    // sheet pricing the family's long windows (16/10/2026).
     for (const w of ["7", "9", "12", "16", "18"]) {
-      const want = windowDesigns("4050", "inserts", w).filter((d) => d.cat !== "long").map((d) => d.id);
+      const want = windowDesigns("4050", "inserts", w).map((d) => d.id);
       for (const m of ["4300", "4301", "4310"]) {
         expect(windowDesigns(m, "inserts", w).map((d) => d.id), `${m} @ ${w}`).toEqual(want);
       }

@@ -162,11 +162,48 @@ describe("special order — glass types reach the price", () => {
     await settle();
     fireEvent.change(sel("so-glass"), { target: { value: "ssb" } });
     await settle();
-    expect(await total()).toBeCloseTo(897.37, 1);
+    // CJ's sheet (16/10/2026): the 8'0" x 7'0" door 747.62, four short single strength windows at 33 list.
+    expect(await total()).toBeCloseTo(930.36, 1);
     fireEvent.change(sel("so-glass"), { target: { value: "insulated_rain" } });
     await settle();
-    // Book: 8' short band, 4 windows, insulated rain 392.08, at 43 margin.
-    expect(await total()).toBeCloseTo(723.25 + 392.08 / 0.57, 0);
+    // Four insulated rain windows at 130 list, at .776 and 43.
+    expect(await total()).toBeCloseTo(747.62 + Math.round(4 * 130 * 0.776 * (0.99 / (1 - 0.0265)) * 100) / 100 / 0.57, 0);
+  });
+
+  it("offers the architectural series on a Premium Steel door, with its own glass and windows (16/10/2026)", async () => {
+    await pickDoor();
+    fireEvent.click(maybe("so-configure")!);
+    await settle();
+    setWidth("8");
+    setHeight("7");
+    fireEvent.change(sel("so-color"), { target: { value: "White" } });
+    await settle();
+    expect(options("so-window-series").map((o) => o.value)).toEqual(["standard", "architectural"]);
+    expect(sel("so-window-series").value).toBe("standard");
+    fireEvent.change(sel("so-window-series"), { target: { value: "architectural" } });
+    await settle();
+    expect(sel("so-glass").value).toBe("solid");
+    expect(options("so-glass").map((o) => o.value).slice(0, 3)).toEqual(["solid", "dsb", "obscure"]);
+    expect(options("so-glass").map((o) => o.value)).not.toContain("ssb");
+    fireEvent.change(sel("so-glass"), { target: { value: "seeded" } });
+    await settle();
+    const framing = options("so-framing").map((o) => o.textContent);
+    expect(framing.slice(0, 3)).toEqual(['PLAIN SHORT 19-1/2" X 16"', 'PLAIN LONG 42" X 16"', "PLAIN ARCH 1"]);
+    expect(framing).toContain("SQ24 inserts");
+    expect(framing).not.toContain("Colonial 509 inserts");
+    // Four short seeded windows at 130 list over the solid door.
+    expect(await total()).toBeCloseTo(747.62 + Math.round(4 * 130 * 0.776 * (0.99 / (1 - 0.0265)) * 100) / 100 / 0.57, 0);
+    fireEvent.change(sel("so-framing"), { target: { value: "insert:long:SQ24" } });
+    await settle();
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/SEEDED DSB WINDOWS IN THE TOP SECTION, SQ24 INSERTS/i);
+    // Back to the standard windows: the list is the sheet's ten again.
+    fireEvent.change(sel("so-window-series"), { target: { value: "standard" } });
+    await settle();
+    expect(options("so-glass").map((o) => o.value)).toContain("ssb");
+    // No series control on a door with one list.
+    cleanup();
+    await pickDoor("9200");
+    expect(maybe("so-window-series")).toBeNull();
   });
 
   it("offers thirteen types at a priced width", async () => {
@@ -258,7 +295,7 @@ describe("special order — condensed layout", () => {
     expect(sel("so-glass").value).toBe("solid");
     const [first, second] = options("so-glass");
     expect(first.text).toBe("Solid — no windows");
-    expect(second.text).toBe("Single strength B grade");
+    expect(second.text).toBe("Single strength");
     expect(second.value).toBe("ssb");
   });
 });

@@ -21,7 +21,7 @@ import {
 } from "@/lib/pricing/data/special-door-pricing";
 import { COLORS, specialOrderColors } from "@/lib/pricing/data/catalog-meta";
 import { designsBuilt, designLabel, designTakesWindows, hasDesigns, secondColorName, secondColors } from "@/lib/pricing/data/door-designs";
-import { panelStylesFor, isSheetGroup } from "@/lib/pricing/data/so-glass";
+import { isSheetGroup, windowSeriesFor, windowsPricedAt, WINDOW_SERIES, type WindowSeries } from "@/lib/pricing/data/so-glass";
 import {
   splitSize, sizeKey, feetOptions, inchOptions, glassTypeOptions, framingOptions, windowChoice, GLAZED_SECTIONS,
 } from "@/lib/pricing/data/so-framing";
@@ -144,6 +144,10 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const [gGlass, setGGlass] = useState("solid");
   const [gFraming, setGFraming] = useState("");
   const [gSection, setGSection] = useState("4");
+  // The window series on a door with two (the Premium Steel doors, CJ's
+  // workbook of 16/10/2026): the standard windows unless the architectural
+  // series is picked. The glass list and the framing follow it.
+  const [gSeries, setGSeries] = useState<WindowSeries>("standard");
   // Track mount, high lift and incline. These live on special order rather than
   // residential: a stock door ships on standard track, and anything else is an
   // order Clopay builds to spec.
@@ -178,7 +182,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const [vinylAsked, setVinylAsked] = useState(false);
   const resetGrid = () => {
     setGWidthFt(""); setGWidthIn("0"); setGHeightFt(""); setGHeightIn("0"); setGColor(""); setGCdDesign(""); setGOverlay("");
-    setGGlass("solid"); setGFraming(""); setGVariant("");
+    setGGlass("solid"); setGFraming(""); setGSeries("standard"); setGVariant("");
     setVinylOn(false); setVinylAsked(false);
   };
   const pickCommSeries = (v: string) => {
@@ -237,15 +241,17 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   // and a sheet-priced door with no glass band at a width has no window price:
   // the glass list is Solid alone there.
   const isSheet = isSheetGroup(modelGroup);
-  const gWindowsOk = !gWidth || (windowsOfferedAt(modelMember || undefined, gWidth) && (!isSheet || panelStylesFor(modelGroup, gWidth).length > 0)
+  const gWindowsOk = !gWidth || (windowsOfferedAt(modelMember || undefined, gWidth) && (!isSheet || windowsPricedAt(modelGroup, gWidth))
     && (!gDesigned || designTakesWindows(modelGroup, gDesignEff)));
-  const gGlassOptions = gridded && gWidth ? glassTypeOptions(modelGroup, gWidth, gWindowsOk) : [];
+  const gSeriesOptions = gridded ? windowSeriesFor(modelGroup) : ["standard" as const];
+  const gSeriesEff: WindowSeries = gSeriesOptions.includes(gSeries) ? gSeries : "standard";
+  const gGlassOptions = gridded && gWidth ? glassTypeOptions(modelGroup, gWidth, gWindowsOk, gSeriesEff) : [];
   const gGlassEff = gGlassOptions.some((g) => g.id === gGlass) ? gGlass : "solid";
-  const gFramings = gridded && gWidth ? framingOptions(modelGroup, member, gWidth, gGlassEff) : [];
+  const gFramings = gridded && gWidth ? framingOptions(modelGroup, member, gWidth, gGlassEff, gSeriesEff) : [];
   // The framing picked stays through a glass change where the new glass
   // offers it (a Coachman design, say); where it does not, the first is used.
   const gFramingEff = gFramings.find((f) => f.value === gFraming) ?? gFramings[0];
-  const choice = windowChoice(gGlassEff, gFramingEff);
+  const choice = windowChoice(gGlassEff, gFramingEff, gSeriesEff);
   const gStyleEff = choice.style;
 
   // High lift is the 4050 family's (Brandon, 13/10/2026), torsion only, and
@@ -283,8 +289,10 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   // 12/9/2026.
   // Special order groups are slash-separated ("T50S/T50L"); the colour table is
   // keyed by catalogue group. Resolve through the first member.
-  const gColorKey = COLORS[dataKey((modelMember || modelGroup).split("/")[0])]
-    ? dataKey((modelMember || modelGroup).split("/")[0]) : dataKey(modelGroup);
+  // A member with no colour list of its own (the 4132, the 9201…) takes its
+  // group's first member's, which is the family's.
+  const colorKeyFor = (m: string) => (COLORS[dataKey(m)] ? dataKey(m) : null);
+  const gColorKey = colorKeyFor(modelMember || modelGroup.split("/")[0]) ?? colorKeyFor(modelGroup.split("/")[0]) ?? dataKey(modelGroup);
   const gColors = COLORS[gColorKey] ? specialOrderColors(gColorKey) : ["White"];
   // The configurator opens in order: size, then color (and the Coachman's
   // design), then everything else.
@@ -297,6 +305,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
     ? specialDoorQuote({ model: modelGroup, width: gWidth, height: gHeight, color: gColor,
         design: gDesignEff || undefined, overlayColor: gSecondName ? gOverlayEff : undefined,
         style: choice.style, glassType: choice.glassType, panelStyle: choice.panelStyle, windesign: choice.windesign, plainWindow: choice.plainWindow,
+        windowSeries: choice.windowSeries,
         variant: (modelMember || gVariant) || undefined,
         track: gTrackEff as never, spring: gSpringUsed as never, lock: gLock as never,
         trackMount: gMount, incline: gIncline, highLiftInches: gIsLift ? gEffLift : 0 })
@@ -611,6 +620,16 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                   </div>
                   <div className="ggroup">
                   <div className="ghdr">Window options</div>
+                  {gSeriesOptions.length > 1 && (
+                    <div className="grow"><label>Window series</label>
+                      <div className="ctl selectwrap">
+                        <select disabled={!gOpen} data-testid="so-window-series" value={gSeriesEff}
+                          onChange={(e) => { setGSeries(e.target.value as WindowSeries); setSaved(false); }}>
+                          {WINDOW_SERIES.filter((o) => gSeriesOptions.includes(o.id)).map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  )}
                   <div className="grow"><label>Glass type</label>
                     <div className="ctl selectwrap">
                       <select disabled={!gOpen} data-testid="so-glass" value={gGlassEff}

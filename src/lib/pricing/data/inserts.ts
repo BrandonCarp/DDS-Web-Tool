@@ -96,10 +96,26 @@ export const INSERT_RULES: Record<string, "short" | "shortlong" | "all"> = {
   "4050": "shortlong", "9130": "shortlong",
   "4051": "shortlong", "4053": "all", "9133": "all",
   // The 4300 family takes the same window and insert options as the 4050 —
-  // Brandon, 12/9/2026. 4301 and 4310 are listed so a member selected on the
-  // special order tab resolves without falling back to "all".
-  "4300": "short", "4301": "short", "4310": "short",
+  // Brandon, 12/9/2026 — so the long-panel inserts too since the 4050 took
+  // them (CJ's sheet of 16/10/2026 prices its long windows). 4301 and 4310
+  // are listed so a member selected on the special order tab resolves without
+  // falling back to "all".
+  "4300": "shortlong", "4301": "shortlong", "4310": "shortlong",
 };
+
+/**
+ * The Premium Steel doors CJ's workbook of 16/10/2026 prices: the 9130,
+ * 9200, 4300 and 4050 families as it groups them. Every one takes the
+ * standard windows by their order names (PLAIN_WINDOWS, or the short and
+ * the long window where it lists neither) and the architectural series on
+ * its own names — special order only; the stock tab is unchanged.
+ */
+export const PREMIUM_STEEL_MEMBERS: ReadonlySet<string> = new Set([
+  "9130", "9131", "9132", "9133",
+  "9200", "9201", "9202", "9203", "9205",
+  "4300", "4301", "4302", "4305", "4310",
+  "4050", "4051", "4053", "4132",
+]);
 
 /**
  * The designs a SPECIAL ORDER door takes at a width (a size key, "11.6").
@@ -112,9 +128,16 @@ export const INSERT_RULES: Record<string, "short" | "shortlong" | "all"> = {
  * 16'); every other model keeps its own list.
  */
 const ARCH3_FROM_INCHES = 11 * 12 + 6;
-export function specialWindowDesigns(unit: string, style: string, width: string | null): InsertDesign[] {
+/**
+ * `series` is the Premium Steel doors' choice (16/10/2026): their standard
+ * windows take the decorative inserts the model's rule allows, and their
+ * architectural series takes the architectural windows exactly as the Gallery
+ * and Bridgeport do, grilles and plain arches alike.
+ */
+export function specialWindowDesigns(unit: string, style: string, width: string | null, series: "standard" | "architectural" = "standard"): InsertDesign[] {
   const [wf, wi] = (width ?? "").split(".");
-  if (style !== "inserts" || !/^(GD|BD)/.test(String(unit))) {
+  const architectural = /^(GD|BD)/.test(String(unit)) || (series === "architectural" && PREMIUM_STEEL_MEMBERS.has(String(unit)));
+  if (style !== "inserts" || !architectural) {
     return windowDesigns(unit, style, width ? designWidthCode(Number(wf), Number(wi ?? 0)) : null);
   }
   const inches = width ? Number(wf) * 12 + Number(wi ?? 0) : null;
@@ -244,10 +267,23 @@ export function plainWindowsFor(model: string): readonly string[] {
  */
 const SHEET_PLAIN_SHORT = 'PLAIN SHORT 19-1/2" X 16"';
 export const SPECIAL_PLAIN_WINDOWS: readonly string[] = [SHEET_PLAIN_SHORT, GALLERY_LONG, "PLAIN ARCH 1"];
+/** The standard windows every Premium Steel door takes, where PLAIN_WINDOWS does not say otherwise. */
+const PREMIUM_PLAIN_WINDOWS: readonly string[] = [PLAIN_SHORT, PLAIN_LONG];
 
-/** The plain windows a model names on a special order: the Gallery and Bridgeport list, or the model's own. */
-export function specialPlainWindowsFor(model: string): readonly string[] {
-  return /^(GD|BD)/.test(model) ? SPECIAL_PLAIN_WINDOWS : plainWindowsFor(model);
+/**
+ * The plain windows a model names on a special order: the Gallery and
+ * Bridgeport list, or the model's own. A Premium Steel door's architectural
+ * series (16/10/2026) names the same 16" windows the Gallery does, and its
+ * standard series the short and the long window unless the model lists its
+ * own (the flush 4053 and 9133 take the long alone).
+ */
+export function specialPlainWindowsFor(model: string, series: "standard" | "architectural" = "standard"): readonly string[] {
+  if (/^(GD|BD)/.test(model)) return SPECIAL_PLAIN_WINDOWS;
+  if (PREMIUM_STEEL_MEMBERS.has(model)) {
+    if (series === "architectural") return SPECIAL_PLAIN_WINDOWS;
+    return PLAIN_WINDOWS[model] ?? PREMIUM_PLAIN_WINDOWS;
+  }
+  return plainWindowsFor(model);
 }
 
 export function takesInserts(model: string): boolean {

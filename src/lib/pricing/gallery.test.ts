@@ -174,7 +174,7 @@ describe("Gallery Ultra-Grain", () => {
 
   it("charges nothing for a standard colour, and only on the Gallery", () => {
     expect(price({ color: "Almond" })).toBe(price({}));
-    const r4050 = (c: string) => specialDoorQuote({ model: "4050/4051/4053", variant: "4050", width: "8", height: "7", color: c,
+    const r4050 = (c: string) => specialDoorQuote({ model: "4050/4051/4053/4132", variant: "4050", width: "8", height: "7", color: c,
       style: "solid", track: "r12", spring: "extension", lock: "none" } as never).quote!.unitPrice;
     expect(r4050("Ultra-Grain Oak Medium Finish")).toBe(r4050("White")); // the 4050's own premium colours are not gridded this way
   });

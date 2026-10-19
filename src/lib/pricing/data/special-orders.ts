@@ -194,13 +194,17 @@ export const SPECIAL: Record<string, SpecialSeries> = {
       "T52S/T52L": { "door": 44, "section": 49 }
     }
   },
+  // Grouped as CJ's Premium Steel workbook of 16/10/2026 groups them, one
+  // sheet a group: the 9132, 9201, 9202, 9205, 4132 and 4305 price off these
+  // sheets now (they were the Modern Collection's, at 45), and the 4302 is
+  // new. Each group keeps the margin its family carried.
   "Premium Steel Collection": {
     "type": "margin",
     "models": {
-      "4050/4051/4053": { "door": 43, "section": 49 },
-      "4300/4301/4310": { "door": 44, "section": 49 },
-      "9130/9131/9133": { "door": 43, "section": 49 },
-      "9200/9203": { "door": 43, "section": 49 }
+      "4050/4051/4053/4132": { "door": 43, "section": 49 },
+      "4300/4301/4302/4305/4310": { "door": 44, "section": 49 },
+      "9130/9131/9132/9133": { "door": 43, "section": 49 },
+      "9200/9201/9202/9203/9205": { "door": 43, "section": 49 }
     }
   },
   // Outside manufacturers. Flat 45 on a complete door, 49 on sections.
@@ -243,6 +247,8 @@ export const SPECIAL: Record<string, SpecialSeries> = {
     "door": 45,
     "section": 49
   },
+  // The 4305, 4132, 9132, 9201, 9202 and 9205 moved to the Premium Steel
+  // Collection on 16/10/2026, where CJ's workbook prices them.
   "Modern Collection": {
     "type": "margin",
     "models": {
@@ -255,19 +261,7 @@ export const SPECIAL: Record<string, SpecialSeries> = {
         "door": 45,
         "section": 49
       },
-      "4305": {
-        "door": 45,
-        "section": 49
-      },
-      "4132": {
-        "door": 45,
-        "section": 49
-      },
       "4138": {
-        "door": 45,
-        "section": 49
-      },
-      "9132": {
         "door": 45,
         "section": 49
       },
@@ -279,19 +273,7 @@ export const SPECIAL: Record<string, SpecialSeries> = {
         "door": 45,
         "section": 49
       },
-      "9202": {
-        "door": 45,
-        "section": 49
-      },
-      "9201": {
-        "door": 43,
-        "section": 49
-      },
       "9208": {
-        "door": 45,
-        "section": 49
-      },
-      "9205": {
         "door": 45,
         "section": 49
       },
@@ -299,7 +281,6 @@ export const SPECIAL: Record<string, SpecialSeries> = {
         "door": 45,
         "section": 49
       }
-
     }
   }
 };

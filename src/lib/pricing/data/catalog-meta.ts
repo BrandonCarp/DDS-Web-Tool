@@ -79,6 +79,21 @@ export const COLORS: Record<string, string[]> = {
     "Charcoal",
     "Black"
   ],
+  // The 9200 family (special order only; CJ's workbook of 16/10/2026): the
+  // 9130's colours, pending a list of its own.
+  "9200": [
+    "White",
+    "Almond",
+    "Desert Tan",
+    "Sandtone",
+    "Chocolate Brown",
+    "Hunter Green",
+    "Bronze",
+    "Mocha Brown",
+    "Charcoal",
+    "Iron Ore",
+    "Black"
+  ],
   "GD1LP-GD1SP": [
     "White",
     "Almond",

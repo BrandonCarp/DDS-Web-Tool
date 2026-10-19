@@ -28,10 +28,18 @@ describe("special order sizes as feet and inches", () => {
 });
 
 describe("glass type", () => {
-  it("is Solid, single strength, then the named types on the 4050 family", () => {
-    const ids = glassTypeOptions("4050/4051/4053", "8", true).map((g) => g.id);
+  it("is Solid, single strength, then the sheet's types on the 4050 family — and the architectural series' own list", () => {
+    const ids = glassTypeOptions("4050/4051/4053/4132", "8", true).map((g) => g.id);
     expect(ids.slice(0, 3)).toEqual(["solid", "ssb", "dsb"]);
     expect(ids).toHaveLength(11);
+    const arch = glassTypeOptions("4050/4051/4053/4132", "8", true, "architectural").map((g) => g.id);
+    expect(arch.slice(0, 2)).toEqual(["solid", "dsb"]);
+    expect(arch).not.toContain("ssb");
+    expect(arch).toHaveLength(15);
+    // A width the series does not price is Solid alone in that series.
+    expect(glassTypeOptions("4050/4051/4053/4132", "10.2", true, "architectural").map((g) => g.id)).toEqual(["solid"]);
+    expect(glassTypeOptions("9200/9201/9202/9203/9205", "19", true).map((g) => g.id)).toEqual(["solid"]);
+    expect(glassTypeOptions("9200/9201/9202/9203/9205", "19", true, "architectural")).toHaveLength(15);
   });
 
   it("is Solid then the sheet's types on a sheet-priced door, double strength first", () => {
@@ -50,11 +58,11 @@ describe("glass type", () => {
 
 describe("framing", () => {
   it("is empty on a solid door", () => {
-    expect(framingOptions("4050/4051/4053", "4050", "8", "solid")).toEqual([]);
+    expect(framingOptions("4050/4051/4053/4132", "4050", "8", "solid")).toEqual([]);
   });
 
   it("lists the 4050's plain windows by their order names, then each insert in the window it goes in", () => {
-    const f = framingOptions("4050/4051/4053", "4050", "8", "ssb");
+    const f = framingOptions("4050/4051/4053/4132", "4050", "8", "ssb");
     expect(f.slice(0, 2).map((o) => o.label)).toEqual(['PLAIN SHORT 19-1/2" X 12"', 'PLAIN LONG 40-1/2" X 12"']);
     expect(f[0]).toMatchObject({ kind: "plain", panel: "short", plainWindow: 'PLAIN SHORT 19-1/2" X 12"' });
     const inserts = f.slice(2);
@@ -64,11 +72,38 @@ describe("framing", () => {
     expect(inserts.filter((o) => o.panel === "long").map((o) => o.design)).toEqual(["608", "610", "612", "611", "613"]);
     expect(inserts.find((o) => o.design === "608")).toMatchObject({ value: "insert:long:608", label: "Charleston 608 inserts", kind: "insert", panel: "long" });
     // Under 8'0" there are no long windows, so no long inserts either.
-    const at7 = framingOptions("4050/4051/4053", "4050", "7", "ssb");
+    const at7 = framingOptions("4050/4051/4053/4132", "4050", "7", "ssb");
     expect(at7[0].label).toBe('PLAIN SHORT 19-1/2" X 12"');
     expect(at7.filter((o) => o.kind === "plain")).toHaveLength(1);
     expect(at7.every((o) => o.panel === "short")).toBe(true);
     expect(at7.map((o) => o.design)).not.toContain("608");
+    // Nor at 14'0" to 15'10", where the sheet prices no long window (16/10/2026).
+    expect(framingOptions("4050/4051/4053/4132", "4050", "15", "ssb").every((o) => o.panel === "short")).toBe(true);
+  });
+
+  it("lists the architectural series' windows on a Premium Steel door as the Gallery names them (16/10/2026)", () => {
+    const f = framingOptions("4050/4051/4053/4132", "4050", "8", "dsb", "architectural");
+    expect(f.filter((o) => o.kind === "plain").map((o) => o.label)).toEqual(['PLAIN SHORT 19-1/2" X 16"', 'PLAIN LONG 42" X 16"', "PLAIN ARCH 1", "Arch 2 Plain"]);
+    const inserts = f.filter((o) => o.kind === "insert");
+    expect(inserts.filter((o) => o.panel === "short").map((o) => o.label)).toEqual(["SQ22 inserts", "REC12 inserts"]);
+    expect(inserts.filter((o) => o.panel === "long").map((o) => o.label)).toEqual([
+      "SQ24 inserts", "REC14 inserts", "Arch 1 Grille inserts", "Arch 1 Vertical Grille inserts", "Arch 2 Grille inserts", "Arch 2 Vertical Grille inserts",
+    ]);
+    // The Arch 3s on double doors, 11'6" and wider, as on the Gallery.
+    expect(framingOptions("4050/4051/4053/4132", "4050", "16", "dsb", "architectural").map((o) => o.label)).toContain("Arch 3 Grille inserts");
+    expect(framingOptions("4050/4051/4053/4132", "4050", "10", "dsb", "architectural").map((o) => o.label)).not.toContain("Arch 3 Plain");
+    // No decorative inserts in the architectural series, and no architectural windows in the standard.
+    expect(f.map((o) => o.label)).not.toContain("Colonial 509 inserts");
+    expect(framingOptions("4050/4051/4053/4132", "4050", "8", "ssb").map((o) => o.label)).not.toContain("SQ22 inserts");
+    // Up to 7'6" the series has short windows only; 10'2" to 11'4" none.
+    expect(framingOptions("4050/4051/4053/4132", "4050", "7", "dsb", "architectural").every((o) => o.panel === "short")).toBe(true);
+    expect(framingOptions("4050/4051/4053/4132", "4050", "10.2", "dsb", "architectural")).toEqual([]);
+    // Every member of every family the same way; the flush 4053 and 9133 keep the long standard window alone.
+    expect(framingOptions("9200/9201/9202/9203/9205", "9201", "8", "ssb").filter((o) => o.kind === "plain").map((o) => o.label))
+      .toEqual(['PLAIN SHORT 19-1/2" X 12"', 'PLAIN LONG 40-1/2" X 12"']);
+    expect(framingOptions("4050/4051/4053/4132", "4053", "8", "ssb").filter((o) => o.kind === "plain").map((o) => o.label))
+      .toEqual(["Plain short windows", 'PLAIN LONG 40-1/2" X 12"']);
+    expect(framingOptions("4300/4301/4302/4305/4310", "4302", "8", "dsb", "architectural").filter((o) => o.kind === "plain")).toHaveLength(4);
   });
 
   it("names the Gallery's plain windows — short, long, arch — its other plain arches, then the inserts by window", () => {
@@ -118,6 +153,10 @@ describe("framing", () => {
     expect(plainWindowsFor("GD1SP")).toEqual(['PLAIN LONG 42" X 16"', "PLAIN ARCH 1"]);
     expect(specialPlainWindowsFor("GD1SP")).toEqual(['PLAIN SHORT 19-1/2" X 16"', 'PLAIN LONG 42" X 16"', "PLAIN ARCH 1"]);
     expect(specialPlainWindowsFor("4050")).toEqual(['PLAIN SHORT 19-1/2" X 12"', 'PLAIN LONG 40-1/2" X 12"']);
+    expect(specialPlainWindowsFor("4050", "architectural")).toEqual(['PLAIN SHORT 19-1/2" X 16"', 'PLAIN LONG 42" X 16"', "PLAIN ARCH 1"]);
+    expect(specialPlainWindowsFor("9202")).toEqual(['PLAIN SHORT 19-1/2" X 12"', 'PLAIN LONG 40-1/2" X 12"']);
+    expect(specialWindowDesigns("4050", "inserts", "16", "architectural").map((d) => d.id)).toContain("ARCH3GRILLE");
+    expect(specialWindowDesigns("4050", "inserts", "8", "architectural").map((d) => d.id)).not.toContain("509");
   });
 
   it("lists the T50S's one plain window and each insert, with no panel to choose", () => {
@@ -126,7 +165,7 @@ describe("framing", () => {
     expect(f[0].panel).toBeUndefined();
     expect(f.slice(1).every((o) => o.kind === "insert" && o.panel === undefined)).toBe(true);
     expect(f.slice(1).map((o) => o.design)).not.toContain("608");
-    const g = framingOptions("9200/9203", "9200", "8", "ssb");
+    const g = framingOptions("4308", "4308", "8", "ssb");
     expect(g[0].label).toBe("Plain (no insert)");
     expect(g.slice(1).map((o) => o.label)).toContain("Charleston 608 inserts");
   });
@@ -157,29 +196,33 @@ describe("what the quote is asked for", () => {
   const f = (group: string, member: string, width: string, glass: string, label: string) =>
     framingOptions(group, member, width, glass).find((o) => o.label === label);
 
-  it("maps the choices to style, glass, panel, design and plain window", () => {
+  it("maps the choices to style, glass, panel, design, plain window and series", () => {
+    const G = "4050/4051/4053/4132";
     expect(windowChoice("solid", undefined)).toEqual({ style: "solid" });
-    expect(windowChoice("ssb", f("4050/4051/4053", "4050", "8", "ssb", 'PLAIN SHORT 19-1/2" X 12"')))
-      .toEqual({ style: "glass", glassType: undefined, panelStyle: "short", plainWindow: 'PLAIN SHORT 19-1/2" X 12"' });
-    expect(windowChoice("insulated", f("4050/4051/4053", "4050", "8", "insulated", "Charleston 608 inserts")))
-      .toEqual({ style: "inserts", glassType: "insulated", panelStyle: "long", windesign: "608" });
-    expect(windowChoice("ssb", f("4050/4051/4053", "4050", "8", "ssb", "Colonial 509 inserts")))
-      .toEqual({ style: "inserts", glassType: undefined, panelStyle: "short", windesign: "509" });
+    // Single strength goes through as the glass: the Premium Steel sheets price it.
+    expect(windowChoice("ssb", f(G, "4050", "8", "ssb", 'PLAIN SHORT 19-1/2" X 12"')))
+      .toEqual({ style: "glass", glassType: "ssb", panelStyle: "short", plainWindow: 'PLAIN SHORT 19-1/2" X 12"', windowSeries: "standard" });
+    expect(windowChoice("insulated", f(G, "4050", "8", "insulated", "Charleston 608 inserts")))
+      .toEqual({ style: "inserts", glassType: "insulated", panelStyle: "long", windesign: "608", windowSeries: "standard" });
+    expect(windowChoice("ssb", f(G, "4050", "8", "ssb", "Colonial 509 inserts")))
+      .toEqual({ style: "inserts", glassType: "ssb", panelStyle: "short", windesign: "509", windowSeries: "standard" });
+    expect(windowChoice("seeded", framingOptions(G, "4050", "8", "seeded", "architectural").find((o) => o.label === "SQ24 inserts"), "architectural"))
+      .toEqual({ style: "inserts", glassType: "seeded", panelStyle: "long", windesign: "SQ24", windowSeries: "architectural" });
     expect(windowChoice("dsb", f("GD1LP/GD1SP", "GD1SP", "8", "dsb", "PLAIN ARCH 1")))
-      .toEqual({ style: "glass", glassType: "dsb", panelStyle: "long", plainWindow: "PLAIN ARCH 1" });
+      .toEqual({ style: "glass", glassType: "dsb", panelStyle: "long", plainWindow: "PLAIN ARCH 1", windowSeries: "standard" });
     expect(windowChoice("dsb", f("GD1LP/GD1SP", "GD1SP", "8", "dsb", "Arch 2 Plain")))
-      .toEqual({ style: "glass", glassType: "dsb", panelStyle: "long", plainWindow: "Arch 2 Plain" });
+      .toEqual({ style: "glass", glassType: "dsb", panelStyle: "long", plainWindow: "Arch 2 Plain", windowSeries: "standard" });
     expect(windowChoice("dsb", f("GD1LP/GD1SP", "GD1SP", "8", "dsb", "SQ22 inserts")))
-      .toEqual({ style: "inserts", glassType: "dsb", panelStyle: "short", windesign: "SQ22" });
-    expect(windowChoice("dsb", f("CD", "CD", "8", "dsb", "REC13"))).toEqual({ style: "glass", glassType: "dsb", windesign: "REC13" });
-    expect(windowChoice("rain", f("CD", "CD", "16", "rain", "ARC1A arch section"))).toEqual({ style: "glass", glassType: "rain", windesign: "ARC1A" });
+      .toEqual({ style: "inserts", glassType: "dsb", panelStyle: "short", windesign: "SQ22", windowSeries: "standard" });
+    expect(windowChoice("dsb", f("CD", "CD", "8", "dsb", "REC13"))).toEqual({ style: "glass", glassType: "dsb", windesign: "REC13", windowSeries: "standard" });
+    expect(windowChoice("rain", f("CD", "CD", "16", "rain", "ARC1A arch section"))).toEqual({ style: "glass", glassType: "rain", windesign: "ARC1A", windowSeries: "standard" });
     // Rain with a framing not yet chosen is plain rain glass.
-    expect(windowChoice("rain", undefined)).toEqual({ style: "glass", glassType: "rain" });
+    expect(windowChoice("rain", undefined)).toEqual({ style: "glass", glassType: "rain", windowSeries: "standard" });
   });
 
   it("names the plain window on the line, as the stock tab does", () => {
     const q = (o: Record<string, unknown>) => specialDoorQuote({
-      model: "4050/4051/4053", variant: "4050", width: "8", height: "7", color: "White",
+      model: "4050/4051/4053/4132", variant: "4050", width: "8", height: "7", color: "White",
       track: "r12", spring: "extension", lock: "none", ...o,
     } as never);
     expect(q({ style: "glass", plainWindow: 'PLAIN SHORT 19-1/2" X 12"' }).quote?.description)

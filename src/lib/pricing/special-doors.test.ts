@@ -10,38 +10,49 @@ import { SPECIAL_DOORS } from "./data/special-doors";
 import { ADDONS } from "./data/addons";
 import { priceResidential, quoteResidential } from "./engine";
 
-const M = "4050/4051/4053";
+const M = "4050/4051/4053/4132";
 const base = { model: M, height: "7", color: "White", track: "r12" as const, spring: "extension" as const, lock: "none" as const };
 
+/**
+ * CJ's Premium Steel workbook of 16/10/2026 prices the 4050 family at list x
+ * .776 x 0.99 / (1 - 0.0265), and the app sells that at the family's 43:
+ * the figures below are the sheet's list cells put through that.
+ */
+const K = 0.99 / (1 - 0.0265);
+const sheet = (list: number, mult = 0.776, margin = 43) => Math.round((list * mult * K) / (1 - margin / 100) * 100) / 100;
+/** The windows: the count times the sheet's price a window, kept in cents as cost (premium-glass.ts), then lifted. */
+const windows = (n: number, list: number, mult = 0.776, margin = 43) =>
+  Math.round(Math.round(n * list * mult * K * 100) / 100 / (1 - margin / 100) * 100) / 100;
+
 describe("special order door grid", () => {
-  it("grids the 4050 at 7'0\", 8'0\" and 9'0\", 73 widths each", () => {
+  it("grids the 4050 family at 7'0\", 8'0\", 9'0\" and 10'0\", 72 widths each, from 6'2\" (CJ's workbook, 16/10/2026)", () => {
     expect(hasGrid(M)).toBe(true);
-    expect(griddedHeights(M)).toEqual(["7", "8", "9"]);
+    expect(griddedHeights(M)).toEqual(["7", "8", "9", "10"]);
     const w = griddedWidths(M, "7");
-    expect(w).toHaveLength(73);
-    expect(w[0]).toBe("6");
+    expect(w).toHaveLength(72);
+    expect(w[0]).toBe("6.2");
     expect(w[w.length - 1]).toBe("18");
   });
 
   it("quotes the SELL column straight, with no further margin", () => {
     // The grid is already at 43M. Applying the margin again here would be the
     // single most expensive mistake available in this file.
-    expect(specialDoorQuote({ ...base, width: "8", style: "solid" }).quote?.unitPrice).toBe(723.25);
-    expect(specialDoorQuote({ ...base, width: "16", style: "inserts" }).quote?.unitPrice).toBe(1817.47);
-    expect(specialDoorQuote({ ...base, width: "18", style: "solid" }).quote?.unitPrice).toBe(1575.05);
+    expect(specialDoorQuote({ ...base, width: "8", style: "solid" }).quote?.unitPrice).toBe(sheet(540));
+    expect(specialDoorQuote({ ...base, width: "8", style: "solid" }).quote?.unitPrice).toBe(747.62);
+    expect(specialDoorQuote({ ...base, width: "18", style: "solid" }).quote?.unitPrice).toBe(sheet(1176));
+    // Windows are the sheet's price a window times the windows the width
+    // carries, over the solid door: 16'0" takes eight short single strength
+    // windows with inserts at 49 list each.
+    expect(specialDoorQuote({ ...base, width: "16", style: "inserts" }).quote?.unitPrice).toBe(sheet(973) + windows(8, 49));
   });
 
-  it("agrees with the residential grid wherever both carry a size", () => {
-    // The ALL and STOCK tabs are the same book, so a stocked size must quote
-    // the same either way. A drift here means one of the two was applied from
-    // a stale sheet.
-    const stocked: [string, "solid" | "glass" | "inserts", number][] = [
-      ["8", "solid", 723.25], ["9", "glass", 956.32], ["12", "inserts", 1462.58],
-      ["16", "solid", 1303.18], ["18", "inserts", 2089.35],
-    ];
-    for (const [width, style, expected] of stocked) {
-      expect(specialDoorQuote({ ...base, width, style }).quote?.unitPrice, `${width} ${style}`).toBe(expected);
-    }
+  it("prices off CJ's sheet, which the stock tab's grid does not follow yet", () => {
+    // The stock tab (residential-prices.ts) still carries the older book: a
+    // stocked 8'0" x 7'0" 4050 is $723.25 there and $747.62 here. The two
+    // grids come from different sheets now, deliberately — the special order
+    // follows what Clopay charges today.
+    expect(priceResidential("4050", { widthFt: 8, widthIn: 0, heightFt: 7, heightIn: 0 }, "solid").price).toBe(723.25);
+    expect(specialDoorQuote({ ...base, width: "8", style: "solid" }).quote?.unitPrice).toBe(747.62);
   });
 
   it("adds the same option money a stock door pays", () => {
@@ -54,12 +65,12 @@ describe("special order door grid", () => {
     expect(loaded.unitPrice - plain.unitPrice).toBeCloseTo(
       ADDONS.track.low_headroom + ADDONS.torsion + ADDONS.lockbar_installed, 2,
     );
-    expect(loaded.unitPrice).toBeCloseTo(878.20, 2); // 873.25 before the lockbar went to 74.95
+    expect(loaded.unitPrice).toBeCloseTo(747.62 + ADDONS.track.low_headroom + ADDONS.torsion + ADDONS.lockbar_installed, 2);
   });
 
   it("refuses anything off the grid, and says to use the manual total", () => {
     for (const off of [
-      { ...base, height: "10", width: "8", style: "solid" as const },
+      { ...base, height: "10.6", width: "8", style: "solid" as const },
       { ...base, width: "19", style: "solid" as const },
       // The Gallery was the no-grid example until its sheet landed (8/10/2026),
       // the Coachman until its own did (12/10/2026); the Coachman's CG still
@@ -86,7 +97,7 @@ describe("special order door grid", () => {
   it("prices a standard width below the odd sizes in its band", () => {
     // Clopay's structure, and it is not intuitive: standard widths are stocked
     // and cheap, while any odd width prices at the band above. An 8'2" door is
-    // $905.53 against $782.19 for a 9'0" — the odd size costs MORE than the
+    // $936.05 against $808.54 for a 9'0" — the odd size costs MORE than the
     // next standard size UP. Asserting "wider is dearer" would be wrong, and
     // asserting nothing would let a transposed row through.
     const solid = (w: string) =>
@@ -94,13 +105,14 @@ describe("special order door grid", () => {
     for (const [std, odd] of [["8", "8.2"], ["9", "9.2"], ["10", "10.2"], ["12", "12.2"]]) {
       expect(solid(std), `${std} should undercut ${odd}`).toBeLessThan(solid(odd));
     }
+    expect(solid("8.2")).toBe(sheet(676.1));
     expect(solid("8.2")).toBeGreaterThan(solid("9"));
   });
 
   it("prices every odd width in a band the same", () => {
     const solid = (w: string) =>
       specialDoorQuote({ ...base, width: w, style: "solid" }).quote!.unitPrice;
-    for (const band of [["8.2", "8.4", "8.6", "8.8", "8.10"], ["9.2", "9.4", "9.6", "9.8", "9.10"]]) {
+    for (const band of [["8.2", "8.4", "8.6", "8.8", "8.10"], ["9.2", "9.4", "9.6", "9.8", "9.10"], ["10.2", "10.6", "11", "11.6", "11.10"]]) {
       const prices = new Set(band.map(solid));
       expect([...prices], `band ${band[0]}–${band[band.length - 1]}`).toHaveLength(1);
     }
@@ -131,7 +143,7 @@ describe("gridded door verbiage", () => {
     // Both land in the same QuickBooks column and the counter reads both, so a
     // difference in phrasing between them is a difference with no meaning.
     expect(d()).toBe(
-      `Clopay Model 4050/4051/4053, 8'0" x 7'0", in the color White, solid no windows, ` +
+      `Clopay Model 4050/4051/4053/4132, 8'0" x 7'0", in the color White, solid no windows, ` +
       `12\u2033 radius track, extension springs, no lock`,
     );
   });
@@ -156,14 +168,12 @@ describe("gridded door verbiage", () => {
   });
 });
 
-describe("the 6'4\"-7'10\" band", () => {
-  const BAND = { solid: 837.75, glass: 968.32, inserts: 1030.6 };
-  // 6'0" and 6'2" sit in the band below, per UPDATED_PRICING_9-8.
-  const WIDTHS = ["6.4", "6.6", "6.8", "6.10", "7", "7.2", "7.4", "7.6", "7.8", "7.10"];
+describe("the 6'2\"-7'10\" band", () => {
+  // One row on CJ's sheet: 625.5 list at 7FT, so one price, every style.
+  const BAND = { solid: sheet(625.5), glass: sheet(625.5) + windows(3, 33), inserts: sheet(625.5) + windows(3, 49) };
+  const WIDTHS = ["6.2", "6.4", "6.6", "6.8", "6.10", "7", "7.2", "7.4", "7.6", "7.8", "7.10"];
 
   it("prices every width in the band identically, in all three styles", () => {
-    // The 4050 at 7'0" tall is flat from 6'0" to 7'10". The sheet's 6'0" and
-    // 6'2" rows carried the band below and are corrected in the generator.
     for (const width of WIDTHS) {
       for (const [style, expected] of Object.entries(BAND)) {
         expect(
@@ -174,29 +184,23 @@ describe("the 6'4\"-7'10\" band", () => {
     }
   });
 
-  it("agrees with what the residential tab quotes for the same door", () => {
-    // Same door, two tabs, one number — whether it lands on the stock grid or
-    // the standard one.
-    for (const width of WIDTHS) {
-      const [ft, inch] = width.split(".");
-      const r = priceResidential("4050", { widthFt: +ft, widthIn: +(inch ?? 0), heightFt: 7, heightIn: 0 }, "solid");
-      expect(r.price, `${width} residential`).toBe(BAND.solid);
-    }
+  it("has no 6'0\" row: the sheet starts at 6'2\"", () => {
+    expect(griddedWidths(M)).not.toContain("6");
+    expect(specialDoorQuote({ ...base, width: "6", style: "solid" }).quote).toBeUndefined();
   });
 
   it("drops back down at 8'0\", where the stocked size takes over", () => {
-    expect(specialDoorQuote({ ...base, width: "8", style: "solid" }).quote?.unitPrice).toBe(723.25);
+    expect(specialDoorQuote({ ...base, width: "8", style: "solid" }).quote?.unitPrice).toBe(747.62);
+    expect(BAND.solid).toBeGreaterThan(747.62);
   });
 });
 
 describe("offered heights", () => {
   it("offers the residential heights, filtered by what each model grids", () => {
-    // The T50S has a 9ft grid as of UPDATED_PRICING_9-8; the 4050 does not, and
-    // must not offer a height it cannot price.
-    // Both models grid 9'0" now, so both offer the full nine.
-    for (const m of ["4050/4051/4053", "T50S/T50L"]) {
-      expect(offeredHeights(m), m).toEqual(["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8", "8.3", "8.6", "8.9", "9"]);
-    }
+    // The T50S grids 7, 8 and 9ft (UPDATED_PRICING_9-8); the 4050 family goes
+    // to 10ft on CJ's sheet, so it offers 9'6" and 10'0" as well.
+    expect(offeredHeights("T50S/T50L")).toEqual(["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8", "8.3", "8.6", "8.9", "9"]);
+    expect(offeredHeights(M)).toEqual(["6", "6.3", "6.6", "6.9", "7", "7.6", "7.9", "8", "8.3", "8.6", "8.9", "9", "9.6", "10"]);
   });
 
   it("bands an in-between height to its tier, like residential", () => {
@@ -205,22 +209,13 @@ describe("offered heights", () => {
     const at = (h: string) =>
       specialDoorQuote({ model: M, width: "9", height: h, color: "White", style: "solid",
         track: "r12", spring: "extension", lock: "none" }).quote!.unitPrice;
-    for (const h of ["6", "6.3", "6.6", "6.9", "7"]) expect(at(h), h).toBe(782.19);
-    for (const h of ["7.6", "7.9", "8"]) expect(at(h), h).toBe(954.95);
-    // 8'3" to 8'9" price as 9'0" (28/9/2026).
+    for (const h of ["6", "6.3", "6.6", "6.9", "7"]) expect(at(h), h).toBe(sheet(584));
+    for (const h of ["7.6", "7.9", "8"]) expect(at(h), h).toBe(sheet(713));
+    // 8'3" to 8'9" price as 9'0" (28/9/2026); 9'6" as 10'0".
     for (const h of ["8.3", "8.6", "8.9"]) expect(at(h), h).toBe(at("9"));
-  });
-
-  it("agrees with the residential tab at every offered height", () => {
-    // Same door, two tabs, one number — the whole point of banding rather than
-    // inventing prices for the heights Clopay does not grid.
-    for (const h of offeredHeights(M)) {
-      const [ft, inch] = h.split(".");
-      const so = specialDoorQuote({ model: M, width: "9", height: h, color: "White",
-        style: "solid", track: "r12", spring: "extension", lock: "none" }).quote!.unitPrice;
-      const res = priceResidential("4050", { widthFt: 9, widthIn: 0, heightFt: +ft, heightIn: +(inch ?? 0) }, "solid").price;
-      expect(so, h).toBe(res);
-    }
+    expect(at("9")).toBe(sheet(965));
+    expect(at("9.6")).toBe(at("10"));
+    expect(at("10")).toBe(sheet(1028));
   });
 
   it("writes the height ordered, not the tier it priced from", () => {
@@ -231,10 +226,10 @@ describe("offered heights", () => {
   });
 
   it("quotes every gridded height on both models", () => {
-    for (const model of ["4050/4051/4053", "T50S/T50L"]) {
-      expect(griddedHeights(model), model).toEqual(["7", "8", "9"]);
-      for (const height of ["7", "8", "9"]) {
-        expect(griddedWidths(model, height), `${model} ${height}`).toHaveLength(73);
+    for (const [model, heights, widths] of [[M, ["7", "8", "9", "10"], 72], ["T50S/T50L", ["7", "8", "9"], 73]] as const) {
+      expect(griddedHeights(model), model).toEqual(heights);
+      for (const height of heights) {
+        expect(griddedWidths(model, height), `${model} ${height}`).toHaveLength(widths);
         const q = specialDoorQuote({
           model, width: "9", height, color: "White", style: "solid",
           track: "r12", spring: "extension", lock: "none",
@@ -249,20 +244,24 @@ describe("offered heights", () => {
       specialDoorQuote({ model: M, width: "9", height, color: "White", style: "solid",
         track: "r12", spring: "extension", lock: "none" }).quote!.unitPrice;
     expect(at("8")).toBeGreaterThan(at("7"));
-    expect(at("7")).toBe(782.19);
-    expect(at("8")).toBe(954.95);
+    expect(at("7")).toBe(808.54);
+    expect(at("8")).toBe(987.13);
   });
 
   it("names every gridded height when refusing one that is not", () => {
     // The message is what sends the counter to the manual box, so it has to
     // list what IS available rather than a hardcoded 7'0".
-    // 10'0" is past every gridded tier; 9'0" is on the grid now.
-    const r = specialDoorQuote({ model: M, width: "9", height: "10", color: "White",
+    // 10'0" is the T50S's limit; 10'6" is past the 4050 family's.
+    const r = specialDoorQuote({ model: "T50S/T50L", width: "9", height: "10", color: "White",
       style: "solid", track: "r12", spring: "extension", lock: "none" });
     expect(r.quote).toBeUndefined();
     expect(r.reason).toContain(`6'0"`);
     expect(r.reason).toContain(`9'0"`);
     expect(r.reason).toMatch(/total below/);
+    const tall = specialDoorQuote({ model: M, width: "9", height: "10.6", color: "White",
+      style: "solid", track: "r12", spring: "extension", lock: "none" });
+    expect(tall.quote).toBeUndefined();
+    expect(tall.reason).toContain(`10'0"`);
   });
 });
 
@@ -271,25 +270,25 @@ describe("per-model width limits", () => {
     specialDoorQuote({ model: M, width, height: "7", color: "White", style: "solid",
       track: "r12", spring: "extension", lock: "none", variant });
 
-  it("starts the 4053 at 8'0\", not 6'0\" like its group", () => {
+  it("starts the 4053 at 8'0\", not 6'2\" like its group", () => {
     // The grid is keyed by margin group, but Clopay does not build a 4053
-    // narrower than 8'0". Offering 6'0" would quote a door nobody can order.
+    // narrower than 8'0". Offering 6'2" would quote a door nobody can order.
     expect(griddedWidths(M, "7", "4053")[0]).toBe("8");
-    expect(griddedWidths(M, "7", "4053")).toHaveLength(55); // 73 less 12 narrow, less 15'0" and 15'2"
-    expect(q("6", "4053").quote).toBeUndefined();
+    expect(griddedWidths(M, "7", "4053")).toHaveLength(55); // 72 less 11 narrow, less the 15' band
+    expect(q("6.2", "4053").quote).toBeUndefined();
     expect(q("7.6", "4053").quote).toBeUndefined();
-    expect(q("8", "4053").quote?.unitPrice).toBe(723.25);
+    expect(q("8", "4053").quote?.unitPrice).toBe(747.62);
   });
 
-  it("leaves the 4050 and 4051 on the full range", () => {
-    for (const v of ["4050", "4051"]) {
-      expect(griddedWidths(M, "7", v), v).toHaveLength(73);
-      expect(q("6", v).quote?.unitPrice, v).toBe(723.25);
+  it("leaves the 4050, 4051 and 4132 on the full range", () => {
+    for (const v of ["4050", "4051", "4132"]) {
+      expect(griddedWidths(M, "7", v), v).toHaveLength(72);
+      expect(q("6.2", v).quote?.unitPrice, v).toBe(sheet(625.5));
     }
   });
 
   it("says why, and points at the manual box", () => {
-    const r = q("6", "4053");
+    const r = q("6.2", "4053");
     expect(r.reason).toContain("4053");
     expect(r.reason).toContain(`8'0"`);
     expect(r.reason).toMatch(/total below/);
@@ -300,7 +299,7 @@ describe("per-model width limits", () => {
     // right answer, which is a question not worth asking.
     expect(groupHasWidthLimits(M)).toBe(true);
     expect(groupHasWidthLimits("T50S/T50L")).toBe(false);
-    expect(groupMembers(M)).toEqual(["4050", "4051", "4053"]);
+    expect(groupMembers(M)).toEqual(["4050", "4051", "4053", "4132"]);
     expect(groupMembers("T50S/T50L")).toEqual(["T50S", "T50L"]);
   });
 
@@ -308,7 +307,7 @@ describe("per-model width limits", () => {
     expect(q("8", "4053").quote?.description).toContain("Model 4053,");
     expect(q("8", "4053").quote?.description).not.toContain("4050/4051/4053");
     // With none chosen the group name stands, as before.
-    expect(q("8").quote?.description).toContain("Model 4050/4051/4053,");
+    expect(q("8").quote?.description).toContain("Model 4050/4051/4053/4132,");
   });
 
   it("prices identically whichever member is chosen, where both are built", () => {
@@ -357,13 +356,13 @@ describe("the 8'0\" minimum applies to all four models", () => {
   });
 
   it("leaves their group-mates alone", () => {
-    for (const m of ["4050", "4051", "4300", "4301", "9130", "9200", "T50S", "T50L"]) {
+    for (const m of ["4050", "4051", "4132", "4300", "4301", "4302", "4305", "9130", "9131", "9132", "9200", "9201", "9202", "9205", "T50S", "T50L"]) {
       expect(minWidthFor(m), m).toBeNull();
     }
   });
 
   it("puts a model picker on every group that now has a limit", () => {
-    for (const g of ["4050/4051/4053", "4300/4301/4310", "9130/9133", "9200/9203"]) {
+    for (const g of ["4050/4051/4053/4132", "4300/4301/4302/4305/4310", "9130/9131/9132/9133", "9200/9201/9202/9203/9205"]) {
       expect(groupHasWidthLimits(g), g).toBe(true);
     }
     expect(groupHasWidthLimits("T50S/T50L")).toBe(false);
@@ -375,7 +374,7 @@ describe("width and height are independent", () => {
     // The counter often knows the opening width before the height. Making the
     // width dropdown wait on a height asked for information in an order the
     // data does not require.
-    expect(griddedWidths(M)).toHaveLength(73);
+    expect(griddedWidths(M)).toHaveLength(72);
     expect(griddedWidths("T50S/T50L")).toHaveLength(73);
   });
 
@@ -394,7 +393,7 @@ describe("width and height are independent", () => {
   it("still narrows by model where the members differ", () => {
     expect(griddedWidths(M, undefined, "4053")).toHaveLength(55);
     expect(griddedWidths(M, undefined, "4053")[0]).toBe("8");
-    expect(griddedWidths(M, undefined, "4050")).toHaveLength(73);
+    expect(griddedWidths(M, undefined, "4050")).toHaveLength(72);
   });
 
   it("still refuses a width the chosen height does not carry", () => {
@@ -431,7 +430,7 @@ describe("4053 skips 15'0\"", () => {
   it("words the floor and the hole differently", () => {
     // "not built narrower than 8'0\"" and "not built at 15'0\"" are different
     // facts and the counter should be able to tell them apart.
-    expect(q("6", "4053").reason).toContain("narrower than");
+    expect(q("6.2", "4053").reason).toContain("narrower than");
     expect(q("15", "4053").reason).not.toContain("narrower than");
   });
 
@@ -446,7 +445,7 @@ describe("4053 skips 15'0\"", () => {
 
 describe("split model dropdown", () => {
   it("splits groups whose members are not interchangeable", () => {
-    for (const g of ["4050/4051/4053", "4300/4301/4310", "9130/9133", "9200/9203", "T50S/T50L"]) {
+    for (const g of ["4050/4051/4053/4132", "4300/4301/4302/4305/4310", "9130/9131/9132/9133", "9200/9201/9202/9203/9205", "T50S/T50L"]) {
       expect(shouldSplitGroup(g), g).toBe(true);
     }
   });
@@ -467,23 +466,23 @@ describe("split model dropdown", () => {
       style: "solid", track: "r12", spring: "extension", lock: "none" });
     expect(asMember.quote?.unitPrice).toBe(asGroup.quote?.unitPrice);
     expect(asMember.quote?.description).toContain("Model 4051,");
-    expect(asGroup.quote?.description).toContain("Model 4050/4051/4053,");
+    expect(asGroup.quote?.description).toContain("Model 4050/4051/4053/4132,");
   });
 });
 
 describe("model selection parsing", () => {
   it("splits a group:member value", () => {
-    expect(parseModelSelection("4050/4051/4053:4051")).toEqual({ group: "4050/4051/4053", member: "4051" });
+    expect(parseModelSelection("4050/4051/4053/4132:4051")).toEqual({ group: "4050/4051/4053/4132", member: "4051" });
     expect(parseModelSelection("T50S/T50L:T50L")).toEqual({ group: "T50S/T50L", member: "T50L" });
   });
 
   it("leaves a plain group key alone", () => {
-    expect(parseModelSelection("9130/9133")).toEqual({ group: "9130/9133", member: "" });
+    expect(parseModelSelection("9130/9131/9132/9133")).toEqual({ group: "9130/9131/9132/9133", member: "" });
     expect(parseModelSelection("")).toEqual({ group: "", member: "" });
   });
 
   it("round-trips through the value builder", () => {
-    for (const [g, m] of [["4050/4051/4053", "4053"], ["T50S/T50L", ""]] as const) {
+    for (const [g, m] of [["4050/4051/4053/4132", "4053"], ["T50S/T50L", ""]] as const) {
       const v = modelSelectionValue(g, m || undefined);
       expect(parseModelSelection(v)).toEqual({ group: g, member: m });
     }
@@ -493,7 +492,7 @@ describe("model selection parsing", () => {
     // The bug this exists to prevent: the raw "group:member" value was passed
     // where a grid key was expected, so SPECIAL_DOORS had no entry and the
     // width dropdown rendered empty with no error anywhere.
-    for (const model of ["4050/4051/4053", "T50S/T50L"]) {
+    for (const model of [M, "T50S/T50L"]) {
       const values = shouldSplitGroup(model)
         ? groupMembers(model).map((m) => modelSelectionValue(model, m))
         : [model];
@@ -505,8 +504,8 @@ describe("model selection parsing", () => {
   });
 
   it("does not treat a raw selection value as a grid key", () => {
-    expect(griddedWidths("4050/4051/4053:4051")).toEqual([]);
-    expect(griddedWidths(parseModelSelection("4050/4051/4053:4051").group)).toHaveLength(73);
+    expect(griddedWidths("4050/4051/4053/4132:4051")).toEqual([]);
+    expect(griddedWidths(parseModelSelection("4050/4051/4053/4132:4051").group)).toHaveLength(72);
   });
 });
 
@@ -518,12 +517,12 @@ describe("restricted models keep the manual total as a first-class path", () => 
     for (const m of ["4050", "4051", "T50S", "T50L"]) expect(restricted(m), m).toBe(false);
   });
 
-  it("leaves the 4053 short of its group by 18 widths", () => {
-    // 73 in the grid, less 12 below 8'0", less the six-wide 15' band. Enough
+  it("leaves the 4053 short of its group by 17 widths", () => {
+    // 72 in the grid, less 11 below 8'0", less the six-wide 15' band. Enough
     // real orders land outside it that the total entry should not read as an
     // afterthought below the configurator.
     expect(griddedWidths(M, undefined, "4053")).toHaveLength(55);
-    expect(griddedWidths(M, undefined, "4050")).toHaveLength(73);
+    expect(griddedWidths(M, undefined, "4050")).toHaveLength(72);
   });
 
   it("quotes every width the 4053 does cover", () => {
@@ -537,7 +536,7 @@ describe("restricted models keep the manual total as a first-class path", () => 
   it("routes every width it does not to the manual total", () => {
     const covered = new Set(griddedWidths(M, undefined, "4053"));
     const missed = griddedWidths(M, undefined, "4050").filter((w) => !covered.has(w));
-    expect(missed).toHaveLength(18);
+    expect(missed).toHaveLength(17);
     for (const w of missed) {
       const r = specialDoorQuote({ model: M, width: w, height: "7", color: "White",
         style: "solid", track: "r12", spring: "extension", lock: "none", variant: "4053" });
@@ -547,21 +546,16 @@ describe("restricted models keep the manual total as a first-class path", () => 
   });
 });
 
-describe("the corrected 9ft sheet", () => {
-  it("prices the 15' glass band at its own margin", () => {
-    // 15'6" and 15'8" glass arrived $56.30 under 43M on the first cut; the TOTAL
-    // was right and the SELL was wrong, so the re-cut moved only the sell.
-    for (const w of ["15.6", "15.8"]) {
-      const r = specialDoorQuote({ model: M, width: w, height: "9", color: "White",
-        style: "glass", track: "r12", spring: "torsion", lock: "none" });
-      expect(r.quote?.base, w).toBeCloseTo(2533.35, 2);
-    }
-  });
-
-  it("carries 10'6\" glass at 9'0\", the row that went missing twice", () => {
-    const r = specialDoorQuote({ model: M, width: "10.6", height: "9", color: "White",
+describe("9ft and 10ft on CJ's sheet (16/10/2026)", () => {
+  it("prices the torsion heights off the TORSION columns, glass over the solid door", () => {
+    // 15'6" x 9'0": 1813.55 list; seven short single strength windows at 33.
+    const r = specialDoorQuote({ model: M, width: "15.6", height: "9", color: "White",
       style: "glass", track: "r12", spring: "torsion", lock: "none" });
-    expect(r.quote?.base).toBeCloseTo(2283.09, 2);
+    expect(r.quote?.base).toBeCloseTo(sheet(1813.55) + windows(7, 33), 2);
+    expect(r.quote?.torsionIncluded).toBe(true);
+    const ten = specialDoorQuote({ model: M, width: "10.6", height: "10", color: "White",
+      style: "glass", track: "r12", spring: "torsion", lock: "none" });
+    expect(ten.quote?.base).toBeCloseTo(sheet(1637.6) + windows(5, 33), 2);
   });
 });
 
@@ -605,14 +599,14 @@ describe("special order grids, checked against the 9/30 workbook", () => {
     for (const w of ["11", "11.2", "11.4", "11.6", "11.8"]) expect(q("T52S/T52L", w, "7", "solid")?.unitPrice, w).toBe(1255.84);
   });
 
-  it("takes the 4300 at 8ft out to 20'0\"", () => {
-    expect(griddedWidths("4300/4301/4310", "8").slice(-1)[0]).toBe("20");
-    expect(q("4300/4301/4310", "15", "8", "solid")?.unitPrice).toBe(1789.32);
-    expect(q("4300/4301/4310", "19", "8", "solid")?.unitPrice).toBe(2318.41); // its own TOTAL at 44M, not the $2266.63 typed
+  it("takes the 4300 family out to 20'0\" at every height (CJ's sheet, 16/10/2026)", () => {
+    for (const h of ["7", "8", "9", "10"]) expect(griddedWidths("4300/4301/4302/4305/4310", h).slice(-1)[0], h).toBe("20");
+    expect(q("4300/4301/4302/4305/4310", "15", "8", "solid")?.unitPrice).toBe(sheet(1444, 0.704, 44));
+    expect(q("4300/4301/4302/4305/4310", "19", "8", "solid")?.unitPrice).toBe(sheet(1871, 0.704, 44));
+    expect(q("4300/4301/4302/4305/4310", "19.10", "10", "solid")?.unitPrice).toBe(sheet(3165.95, 0.704, 44)); // the row labelled 19'2" to 1910"
   });
 
   it("keeps the app's price where the workbook disagrees with its own TOTAL", () => {
-    expect(q("4300/4301/4310", "9.2", "8", "inserts")?.unitPrice).toBe(1679.91); // sheet: 1326.27
     expect(q("T52S/T52L", "14", "7", "glass")?.unitPrice).toBe(1357.54); // sheet: 1375.54
   });
 });
@@ -664,7 +658,7 @@ describe("4308 and 4138, priced from Clopay's total at the Modern Collection mar
 
 describe("galvanized torsion springs on special orders (5/10/2026)", () => {
   const q = (width: string, height: string, spring: "extension" | "torsion" | "galvanized") =>
-    specialDoorQuote({ model: "4050/4051/4053", width, height, style: "solid", color: "White", track: "r12", spring, lock: "none" }).quote!;
+    specialDoorQuote({ model: M, width, height, style: "solid", color: "White", track: "r12", spring, lock: "none" }).quote!;
 
   it("adds $40 on a single door and $45 on a double, and says so in the description", () => {
     expect(q("8", "7", "galvanized").unitPrice).toBeCloseTo(q("8", "7", "extension").unitPrice + 40, 2);
@@ -689,7 +683,7 @@ describe("long-panel inserts on the 4050 and 9130 (5/10/2026)", () => {
 
 describe("special order verbiage — Brandon's examples (8/10/2026)", () => {
   const line = (o: Record<string, unknown>) => {
-    const r = specialDoorQuote({ model: "4050/4051/4053", variant: "4050", width: "8", height: "7", color: "Black", style: "solid",
+    const r = specialDoorQuote({ model: M, variant: "4050", width: "8", height: "7", color: "Black", style: "solid",
       track: "r12", spring: "extension", lock: "none", ...o } as never);
     if (!r.quote) throw new Error(r.reason);
     return r.quote.description.toUpperCase();
@@ -702,7 +696,7 @@ describe("special order verbiage — Brandon's examples (8/10/2026)", () => {
   });
 
   it("3. a solid 9200", () => {
-    expect(line({ model: "9200/9203", variant: "9200", width: "18", color: "White", track: "r15" })).toBe(
+    expect(line({ model: "9200/9201/9202/9203/9205", variant: "9200", width: "18", color: "White", track: "r15" })).toBe(
       'CLOPAY MODEL 9200, 18\'0" X 7\'0", IN THE COLOR WHITE, SOLID NO WINDOWS, 15″ RADIUS TRACK, EXTENSION SPRINGS, NO LOCK',
     );
   });

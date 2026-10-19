@@ -21,7 +21,10 @@
 // that reason and points at the manual box; it must never fall through to a
 // guessed price.
 
-import { glassAdderSell, glassLabel, doorMargin, isSheetGroup, sheetUltraGrain, panelStylesFor, type PanelStyle } from "./so-glass";
+import {
+  baseGlassFor, glassAdderSell, glassLabel, doorMargin, isSheetGroup, sheetUltraGrain, panelStylesFor, windowSeriesFor, windowsPricedAt,
+  type PanelStyle, type WindowSeries,
+} from "./so-glass";
 import { sectionCost, windowSectionGroup, windowSectionSell } from "./coachman-windows";
 import { colorTakesPremium } from "./catalog-meta";
 import { highLiftPrice, mountPhrase, type TrackMount, type InclineStyle } from "./track-lift";
@@ -52,6 +55,8 @@ export interface SpecialDoorInput {
   glassType?: string;
   /** Short or long panel. Changes the window count, and so the glass price. */
   panelStyle?: "short" | "long";
+  /** The window series on a door with two (the Premium Steel doors): standard unless said. */
+  windowSeries?: WindowSeries;
   /** A plain window by its order name (PLAIN SHORT 19-1/2" X 12"), named on the line as the stock tab does. */
   plainWindow?: string;
   /** The door's design — the Coachman's 11…43, the Bridgeport Inlay's A, V, X — named on the line after the model. */
@@ -100,7 +105,7 @@ const TORSION_INCLUDED = new Set(["CD"]);
  * only (Brandon, 13/10/2026). Every other door takes the radius and low
  * headroom tracks alone, and a high lift asked for on one is 12" radius.
  */
-const HIGH_LIFT_GROUPS = new Set(["4050/4051/4053"]);
+const HIGH_LIFT_GROUPS = new Set(["4050/4051/4053/4132"]);
 
 /** True when a group's special order configurator offers high lift track. */
 export function highLiftOffered(group: string): boolean {
@@ -159,6 +164,9 @@ const GALVANIZED_PRICED = new Set(["CD"]);
 export function galvanizedPriced(group: string): boolean {
   return GALVANIZED_PRICED.has(group);
 }
+
+/** The grades as the stock tab words them; every other glass goes by its label. */
+const GRADE_WORDS: Record<string, string> = { ssb: "Single strength b grade", dsb: "Double strength b grade" };
 
 const LOCK_TEXT: Record<string, string> = {
   none: "no lock",
@@ -443,13 +451,24 @@ export function specialDoorQuote(
     return { reason: `Clopay does not build the ${input.variant} with windows at ${heightLabel(input.width)} — solid only at this width.` };
   }
   // A sheet-priced door with no glass band at this width has no window price
-  // at all — a BD2NU under 7'8", say — so it is solid only there too.
+  // at all — a BD2NU under 7'8", say — so it is solid only there too. A door
+  // with two window series (the Premium Steel doors, 16/10/2026) may have one
+  // and not the other at a width: the standard windows stop at 18'0" and the
+  // architectural skip 10'2" to 11'4" and 14'8".
   const sheet = isSheetGroup(input.model);
-  if (sheet && input.style !== "solid" && panelStylesFor(input.model, input.width).length === 0) {
-    return { reason: `Clopay prices no windows on the ${input.variant || input.model} at ${heightLabel(input.width)} — solid only at this width.` };
+  const series: WindowSeries = input.windowSeries && windowSeriesFor(input.model).includes(input.windowSeries) ? input.windowSeries : "standard";
+  if (sheet && input.style !== "solid" && panelStylesFor(input.model, input.width, series).length === 0) {
+    const name = input.variant || input.model;
+    if (windowsPricedAt(input.model, input.width)) {
+      return { reason: `Clopay prices no ${series} windows on the ${name} at ${heightLabel(input.width)} — pick the ${series === "standard" ? "architectural" : "standard"} windows, or solid.` };
+    }
+    return { reason: `Clopay prices no windows on the ${name} at ${heightLabel(input.width)} — solid only at this width.` };
   }
 
-  let base = triple[sectioned ? "solid" : style];
+  // A sheet-priced door's windows are added to the solid door below, so its
+  // grid's GLASS column is never the base — a 19'0" 9200 has architectural
+  // windows and no standard ones, and its grid carries solid alone there.
+  let base = triple[sectioned || sheet ? "solid" : style];
   if (typeof base !== "number") {
     return { reason: "Clopay does not grid that style at this size — enter the total below." };
   }
@@ -458,7 +477,7 @@ export function specialDoorQuote(
   // everywhere, and plain glass on the Coachman (its window sections).
   const designId = (() => {
     if (style === "solid" || !input.windesign) return null;
-    const valid = specialWindowDesigns(member, style, input.width).map((d) => d.id);
+    const valid = specialWindowDesigns(member, style, input.width, series).map((d) => d.id);
     return valid.includes(input.windesign) ? input.windesign : null;
   })();
 
@@ -491,12 +510,17 @@ export function specialDoorQuote(
     base = triple.solid + add;
     glassName = input.glassType && input.glassType !== "dsb" ? glassLabel(input.glassType) : null;
   } else if (sheet && style !== "solid" && typeof triple.solid === "number") {
-    const add = glassAdderSell(input.model, sheetPanel, input.width, input.glassType || "dsb", style === "inserts");
-    if (add == null) return { reason: "Inserts are not offered on that glass — pick another glass, or plain glass." };
+    const glassId = input.glassType || baseGlassFor(input.model, series);
+    const add = glassAdderSell(input.model, sheetPanel, input.width, glassId, style === "inserts", series);
+    if (add == null) {
+      return { reason: glassAdderSell(input.model, sheetPanel, input.width, glassId, false, series) == null
+        ? `That glass is not priced on the ${sheetPanel} ${series} windows at this width — pick another glass.`
+        : "Inserts are not offered on that glass — pick another glass, or plain glass." };
+    }
     base = triple.solid + add;
-    // Double strength is these doors' own grade, so the line keeps the grade
-    // words ("double strength b grade windows"); a special glass is named.
-    glassName = input.glassType && input.glassType !== "dsb" ? glassLabel(input.glassType) : null;
+    // The glass is named as the stock tab names a grade — "single strength b
+    // grade", "double strength b grade" — and a special glass by its name.
+    glassName = GRADE_WORDS[glassId] ?? glassLabel(glassId);
   } else if (style !== "solid" && input.glassType && input.glassType !== "ssb") {
     const panel = input.panelStyle ?? "short";
     const withInserts = style === "inserts";
@@ -597,8 +621,8 @@ export function specialDoorQuote(
   // here). The Gallery's and Bridgeport's other plain arch windows (Arch 2
   // Plain, Arch 3 Plain) are named from the window list the same way.
   const plainNames = [
-    ...specialPlainWindowsFor(member),
-    ...specialWindowDesigns(member, "inserts", input.width).filter((d) => d.cat === "arch" && /\bPLAIN\b/i.test(d.name)).map((d) => d.name),
+    ...specialPlainWindowsFor(member, series),
+    ...specialWindowDesigns(member, "inserts", input.width, series).filter((d) => d.cat === "arch" && /\bPLAIN\b/i.test(d.name)).map((d) => d.name),
   ];
   const plain = style === "glass" && input.plainWindow && plainNames.includes(input.plainWindow)
     ? `${input.plainWindow.toLowerCase()}, ` : "";

@@ -30,12 +30,12 @@ describe("Clopay margins (RES_CLOPAY_MARGINS, 31/8/2026)", () => {
     };
     expect(door("Gallery Collection", "GD5LV/GD5SV")).toBe(52); // was 51
     expect(door("Gallery Collection", "GD4LV/GD4SV")).toBe(51); // was 55
-    expect(door("Premium Steel Collection", "9200/9203")).toBe(43); // was 47
+    expect(door("Premium Steel Collection", "9200/9201/9202/9203/9205")).toBe(43); // was 47 as 9200/9203
     // Unchanged, but pinned because they sit beside the ones that moved.
     expect(door("Gallery Collection", "GD4L/GD4S")).toBe(56);
     expect(door("Gallery Collection", "GD5L/GD5S")).toBe(52);
     expect(door("Value Steel Collection", "T50S/T50L")).toBe(49);
-    expect(door("Premium Steel Collection", "4050/4051/4053")).toBe(43);
+    expect(door("Premium Steel Collection", "4050/4051/4053/4132")).toBe(43);
   });
 
   it("keeps the reference table in step with the pricing table", () => {
