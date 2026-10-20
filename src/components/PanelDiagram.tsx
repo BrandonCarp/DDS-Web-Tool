@@ -13,8 +13,8 @@ export interface StileValue { inch: string; frac: string }
  * says where to press; a press puts a window in it, shown as its size, 24x12
  * first, with the smaller size in the dropdown, and an x at the top to take
  * it out again. The window panels are the width's; the stiles are their own
- * lines over them, white and dotted, spaced out across the section — the
- * double end stile's a little in from the right end, as the real one sits —
+ * lines over them, white and dotted, spaced out across the section — a
+ * double end stile's a little in from either end, as the real ones sit —
  * a 524 or 2415's stile locations go in the boxes under each, left to
  * right, typed or picked, sized to their spacing so they never touch, with
  * a − and + under the row (ADD STILE) that take a stile out or put one in.
@@ -37,7 +37,7 @@ export function PanelDiagram({
   stiles?: readonly StileValue[] | null;
   /** The stile lines spaced across the section, the double end stile's aside — one a box unless said. */
   stileLines?: number;
-  /** A double end stile: its line 5% in from the right end, its box the last. */
+  /** A double end stile: a line 5% in from each end, their boxes the first and the last. */
   doubleEnd?: boolean;
   onStile?: (index: number, patch: Partial<StileValue>) => void;
   onAddStile?: () => void;
@@ -55,22 +55,24 @@ export function PanelDiagram({
   const sizeUsed = size && sizes.includes(size) ? size : sizes[0];
   const lines = Math.max(0, stileLines ?? stiles?.length ?? 0);
   // Where the stile lines sit, in percent of the width: spaced out evenly
-  // across the section, and the double end stile's 5% in from the right.
-  const spread = doubleEnd ? Math.max(0, lines - 1) : lines;
-  const at = [...Array.from({ length: spread }, (_, i) => ((i + 1) / (spread + 1)) * 100), ...(doubleEnd && lines > 0 ? [95] : [])];
-  // A box sits centred under its line — the double end stile's against the
-  // right end — as wide as the room between them allows, so none touch;
-  // past six they run left to right in a row instead.
-  const underLines = !!stiles && stiles.length === at.length && at.length <= 6;
-  const centred = doubleEnd ? at.slice(0, -1) : at;
+  // across the section, and a double end stile's 5% in from either end.
+  const ends = doubleEnd && lines >= 2;
+  const spread = ends ? lines - 2 : lines;
+  const at = [...(ends ? [5] : []), ...Array.from({ length: spread }, (_, i) => ((i + 1) / (spread + 1)) * 100), ...(ends ? [95] : [])];
+  // A box sits centred under its line — the end stiles' against their ends
+  // — as wide as the room between them allows, so none touch; past seven
+  // they run left to right in a row instead.
+  const underLines = !!stiles && stiles.length === at.length && at.length <= 7;
+  const centred = ends ? at.slice(1, -1) : at;
   const limits = centred.flatMap((x, i) => [
-    i > 0 ? x - centred[i - 1] : 2 * x,
-    i < centred.length - 1 ? centred[i + 1] - x : doubleEnd ? ((100 - x) * 2) / 3 : 2 * (100 - x),
+    i > 0 ? x - centred[i - 1] : ends ? (x * 2) / 3 : 2 * x,
+    i < centred.length - 1 ? centred[i + 1] - x : ends ? ((100 - x) * 2) / 3 : 2 * (100 - x),
   ]);
-  if (doubleEnd && !centred.length) limits.push(100);
+  if (ends && !centred.length) limits.push(50);
   const room = Math.min(...limits);
   const boxWidth = underLines && Number.isFinite(room) ? `calc(${room.toFixed(2)}% - 8px)` : undefined;
-  const boxAt = (i: number) => (doubleEnd && i === at.length - 1 ? { right: 0, transform: "none" } : { left: `${at[i]}%` });
+  const boxAt = (i: number) =>
+    ends && i === 0 ? { left: 0, transform: "none" } : ends && i === at.length - 1 ? { right: 0, transform: "none" } : { left: `${at[i]}%` };
   return (
     <div className="pdiag" data-testid={testId}>
       <div className="pdiag-sec">

@@ -71,6 +71,10 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const [stileVals, setStileVals] = useState<StileValue[]>([]);
   // Stiles added by hand with ADD STILE, past the sheet's count (20/10/2026).
   const [extraStiles, setExtraStiles] = useState(0);
+  // A double end stile's two measurements, the left end's and the right's,
+  // kept apart from the ones across so a change of end stile moves nothing.
+  const BLANK: StileValue = { inch: "", frac: "0" };
+  const [endVals, setEndVals] = useState<[StileValue, StileValue]>([BLANK, BLANK]);
   // Windows go in only after Add windows is pressed (16/10/2026).
   const [addingWindows, setAddingWindows] = useState(false);
   const [secColor, setSecColor] = useState<"White" | "Brown">("White");
@@ -111,12 +115,15 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const panels = widthIn > 0 ? panelCount(0, widthIn) : 0;
   const glassOn = order === "complete" ? glass === "glass" : secKind === "int" && addingWindows;
   const winPanelsUsed = glassOn ? winPanels.filter((n) => n >= 1 && n <= panels) : [];
-  // The stile lines, a box under each: the sheet's count, one more for a
-  // double end stile, and any added by hand.
+  // The stile lines, a box under each: the sheet's count and any added by
+  // hand across the section, and one at either end for a double end stile —
+  // the left end's first, the right end's last.
   const extras = stileCount > 0 ? extraStiles : 0;
-  const stileTotal = stileCount > 0 ? stileCount + (stile === "double" ? 1 : 0) + extras : 0;
-  const stileLines = stileTotal;
-  const stileValsUsed = Array.from({ length: stileTotal }, (_, i) => stileVals[i] ?? { inch: "", frac: "0" });
+  const stileAcross = stileCount > 0 ? stileCount + extras : 0;
+  const doubleEnd = stileCount > 0 && stile === "double";
+  const stileLines = stileAcross + (doubleEnd ? 2 : 0);
+  const acrossVals = Array.from({ length: stileAcross }, (_, i) => stileVals[i] ?? BLANK);
+  const stileValsUsed = doubleEnd ? [endVals[0], ...acrossVals, endVals[1]] : acrossVals;
   // A lock goes on an intermediate section with no windows in it.
   const lockOffered = secKind === "int" && winPanelsUsed.length === 0;
   const lockUsed = lockOffered ? lock : "none";
@@ -126,16 +133,21 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   }
   const allPanels = (n: number) => Array.from({ length: n }, (_, i) => i + 1);
   function setStileVal(i: number, patch: Partial<StileValue>) {
+    if (doubleEnd && (i === 0 || i === stileLines - 1)) {
+      setEndVals(([l, r]) => (i === 0 ? [{ ...l, ...patch }, r] : [l, { ...r, ...patch }]));
+      return;
+    }
+    const k = doubleEnd ? i - 1 : i;
     setStileVals((cur) => {
-      const next = Array.from({ length: Math.max(stileTotal, i + 1) }, (_, k) => cur[k] ?? { inch: "", frac: "0" });
-      next[i] = { ...next[i], ...patch };
+      const next = Array.from({ length: Math.max(stileAcross, k + 1) }, (_, j) => cur[j] ?? BLANK);
+      next[k] = { ...next[k], ...patch };
       return next;
     });
   }
   /** Take out the last stile added by hand, and what was typed in it. */
   function removeStile() {
     if (extras <= 0) return;
-    setStileVals((cur) => cur.slice(0, stileTotal - 1));
+    setStileVals((cur) => cur.slice(0, stileAcross - 1));
     setExtraStiles((n) => Math.max(0, n - 1));
   }
 
@@ -168,7 +180,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   function pickModel(m: string) {
     setModel(m);
     setSize(""); setManFt(""); setManIn("0");
-    setWinPanels([]); setAddingWindows(false); setWindowSize(""); setStile("single"); setSecColor("White"); setStileVals([]); setExtraStiles(0); setLock("none");
+    setWinPanels([]); setAddingWindows(false); setWindowSize(""); setStile("single"); setSecColor("White"); setStileVals([]); setExtraStiles(0); setEndVals([BLANK, BLANK]); setLock("none");
   }
   /** The order type, as the first two buttons ask it: it decides which models are listed. */
   function pickOrder(o: "complete" | "section") {
@@ -191,7 +203,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
     setSize(""); setGlass("solid"); setTrack("15R"); setMount("continuous"); setCspring("torsion"); setClock("none");
     setManFt(""); setManIn("0");
     setSecKind("bt"); setSecHeight("24"); setWinPanels([]); setAddingWindows(false); setWindowSize(""); setStile("single"); setSecColor("White");
-    setStileVals([]); setExtraStiles(0); setLock("none");
+    setStileVals([]); setExtraStiles(0); setEndVals([BLANK, BLANK]); setLock("none");
     setQty(1); setResult(null); setError(null); setSaved(false);
   }
   function onBack() { resetConfig(); setStep(1); }
@@ -573,7 +585,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
                     <div className="ggroup span" data-testid="comm-drawing">
                       <PanelDiagram panels={panels} windows={glassOn ? new Set(winPanelsUsed) : null} onToggle={togglePanel}
                         sizes={winSizes} size={winSizeUsed} onSize={setWindowSize}
-                        stiles={stileCount > 0 ? stileValsUsed : null} stileLines={stileLines} doubleEnd={stile === "double"} onStile={setStileVal}
+                        stiles={stileCount > 0 ? stileValsUsed : null} stileLines={stileLines} doubleEnd={doubleEnd} onStile={setStileVal}
                         onAddStile={stileCount > 0 ? () => setExtraStiles((k) => k + 1) : undefined} onRemoveStile={removeStile} canRemoveStile={extras > 0}
                         widthIn={widthIn} heightIn={Number(secHeight)} />
                       {(secKind === "int" || stileCount > 0) && (

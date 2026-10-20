@@ -288,26 +288,33 @@ describe("commercial tab — stile locations on a 524 or 2415, under the stiles 
     expect(panelsDrawn()).toBe(3);
     expect((screen.getByTestId("comm-remove-stile") as HTMLButtonElement).disabled).toBe(true);
     change("comm-end-stiles", "double");
-    expect(stileRows()).toBe(3);
-    expect(stileLines()).toBe(3);   // the double end stile is a line and a box too
-    fireEvent.click(screen.getByTestId("comm-add-stile"));
     expect(stileRows()).toBe(4);
-    expect(stileLines()).toBe(4);
+    expect(stileLines()).toBe(4);   // a double end stile is a line and a box at either end
+    expect([1, 2, 3, 4].map((i) => screen.getByTestId(`comm-stile-line-${i}`).style.left)).toEqual(["5%", "33.33333333333333%", "66.66666666666666%", "95%"]);
+    fireEvent.click(screen.getByTestId("comm-add-stile"));
+    expect(stileRows()).toBe(5);
+    expect(stileLines()).toBe(5);
     expect(panelsDrawn()).toBe(3);  // the window panels are the width's
     expect((screen.getByTestId("comm-remove-stile") as HTMLButtonElement).disabled).toBe(false);
-    stileInch(1, "39"); stileInch(3, "117"); stileInch(4, "140");
-    expect(await getPrice()).toMatchObject({ stile: "double", stileLocations: ['39"', "", '117"', '140"'] });
+    stileInch(1, "8"); stileInch(2, "39"); stileInch(4, "117"); stileInch(5, "140");
+    expect(await getPrice()).toMatchObject({ stile: "double", stileLocations: ['8"', '39"', "", '117"', '140"'] });
     expect(await getPrice()).not.toHaveProperty("extraStiles");
+    // − takes out the one added by hand (117), not the right end stile's (140).
     fireEvent.click(screen.getByTestId("comm-remove-stile"));
-    expect(stileRows()).toBe(3);
-    expect(stileLines()).toBe(3);
-    expect(await getPrice()).toMatchObject({ stileLocations: ['39"', "", '117"'] });
+    expect(stileRows()).toBe(4);
+    expect(stileLines()).toBe(4);
+    expect(await getPrice()).toMatchObject({ stileLocations: ['8"', '39"', "", '140"'] });
+    // Back to a single end stile: the end boxes go, the ones across keep what was typed.
     change("comm-end-stiles", "single");
     expect(stileRows()).toBe(2);
+    expect(await getPrice()).toMatchObject({ stileLocations: ['39"', ""] });
     // The inches can be picked as well as typed.
     change("comm-stile-2-pick", "78");
     expect((screen.getByTestId("comm-stile-2") as HTMLInputElement).value).toBe("78");
     expect(await getPrice()).toMatchObject({ stileLocations: ['39"', '78"'] });
+    // And the end stiles' measurements come back with them.
+    change("comm-end-stiles", "double");
+    expect(await getPrice()).toMatchObject({ stileLocations: ['8"', '39"', '78"', '140"'] });
   });
 
   it("lays a section out as Brandon drew it (16/10/2026): the section beside colour, end stiles and lock, the drawing across both with its notes and Add windows under it", () => {
