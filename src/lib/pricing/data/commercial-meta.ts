@@ -381,8 +381,8 @@ export function sectionGlassLabel(model: string): string {
   return model === "524" || model === "2415" ? "Double Strength" : "Insulated";
 }
 
-/** A stile location's parts: whole inches, then the quarter (15/10/2026). */
-export const STILE_FRACTIONS = ["0", "1/4", "1/2", "3/4"] as const;
+/** A stile location's parts: whole inches, then the eighth (15/10/2026; eighths from 20/10/2026). */
+export const STILE_FRACTIONS = ["0", "1/8", "1/4", "3/8", "1/2", "5/8", "3/4"] as const;
 /** `59"`, `82-1/4"`; blank where no inches are typed. */
 export function stileLocationText(inches: string, fraction: string): string {
   const whole = inches.trim();

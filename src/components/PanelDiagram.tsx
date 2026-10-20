@@ -116,7 +116,7 @@ export function PanelDiagram({
                     value={v.inch} onChange={(inch) => onStile?.(i, { inch })} />
                   <div className="selectwrap">
                     <select data-testid={`comm-stile-${i + 1}-frac`} aria-label={`Stile ${i + 1} fraction`} value={v.frac} onChange={(e) => onStile?.(i, { frac: e.target.value })}>
-                      {STILE_FRACTIONS.map((f) => <option key={f} value={f}>{f}</option>)}
+                      {STILE_FRACTIONS.map((f) => <option key={f} value={f}>{f === "0" ? "0" : `${f}"`}</option>)}
                     </select>
                   </div>
                 </div>

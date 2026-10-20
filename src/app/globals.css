@@ -530,6 +530,11 @@ html, body { margin: 0; padding: 0; }
 .tool-shell .pickin > input { width: 100%; padding-right: 26px; }
 .tool-shell .dimrow .pickin { width: 88px; flex: none; }
 .tool-shell .dimrow .pickin > input { width: 88px; }
+/* A section's width boxes, wider to read (Brandon, 20/10/2026). */
+.tool-shell .dimrow.wide .pickin, .tool-shell .dimrow.wide .pickin > input { width: 116px; }
+.tool-shell .dimrow.wide .pickin > input { font-size: 16px; font-weight: 700; }
+.tool-shell .dimrow.wide .inpick { width: 108px; }
+.tool-shell .dimrow.wide .inpick select { font-size: 16px; font-weight: 700; }
 .tool-shell .pickin-arrow {
   position: absolute; top: 50%; right: 11px; width: 7px; height: 7px; pointer-events: none;
   border-right: 1.75px solid var(--muted); border-bottom: 1.75px solid var(--muted); transform: translateY(-70%) rotate(45deg);

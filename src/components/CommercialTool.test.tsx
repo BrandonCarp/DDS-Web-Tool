@@ -263,7 +263,8 @@ describe("commercial tab — stile locations on a 524 or 2415, under the stiles 
     expect(screen.getByTestId("comm-stiles").closest(".pdiag")).toBe(screen.getByTestId("comm-panels")); // under the panels
     width("16", "3");
     expect(stileRows()).toBe(4); // 16'3" to 20'2": four
-    expect(options("comm-stile-1-frac")).toEqual(["0", "1/4", "1/2", "3/4"]);
+    expect(options("comm-stile-1-frac")).toEqual(["0", "1/8", "1/4", "3/8", "1/2", "5/8", "3/4"]);
+    expect([...sel("comm-stile-1-frac").options].map((o) => o.textContent)).toEqual(["0", '1/8"', '1/4"', '3/8"', '1/2"', '5/8"', '3/4"']);
     expect(sel("comm-stile-1-frac").value).toBe("0");
     // Left blank, the engine writes "stile locations needed": nothing else is sent for it.
     let body = await getPrice();

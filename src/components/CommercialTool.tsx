@@ -492,7 +492,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
                     <div className="grow">
                       <label>Door width</label>
                       <div className="ctl dimstack">
-                        <div className="dimrow">
+                        <div className="dimrow wide">
                           <PickInput testId="comm-width-ft" label="Door width feet" min={0} max={maxFt ?? undefined} placeholder="ft" value={manFt}
                             options={range(6, maxFt ?? 24)} onChange={(v) => { if (v === "" || Number(v) >= 0) pickWidth(v, manIn); }} />
                           <span className="u">ft</span>

@@ -183,6 +183,8 @@ describe("ribbed steel verbiage", () => {
     expect(complete("524", { glass: "glass", winSection: 3, windowPanels: placementPanels("GL,SOL,SOL") })).toContain("one 24x12 window in the left panel of the third section");
     expect(stileLocationText("59", "0")).toBe('59"');
     expect(stileLocationText("82", "1/4")).toBe('82-1/4"');
+    expect(stileLocationText("82", "3/8")).toBe('82-3/8"');
+    expect(stileLocationText("82", "5/8")).toBe('82-5/8"');
     expect(stileLocationText(" 90 ", "1/2")).toBe('90-1/2"');
     expect(stileLocationText("", "3/4")).toBe("");
     expect(stileLocationText("48", "x")).toBe('48"');
