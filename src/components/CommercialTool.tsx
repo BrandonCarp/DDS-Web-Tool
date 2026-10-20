@@ -573,7 +573,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
                     <div className="ggroup span" data-testid="comm-drawing">
                       <PanelDiagram panels={panels} windows={glassOn ? new Set(winPanelsUsed) : null} onToggle={togglePanel}
                         sizes={winSizes} size={winSizeUsed} onSize={setWindowSize}
-                        stiles={stileCount > 0 ? stileValsUsed : null} stileLines={stileLines} onStile={setStileVal}
+                        stiles={stileCount > 0 ? stileValsUsed : null} stileLines={stileLines} doubleEnd={stile === "double"} onStile={setStileVal}
                         onAddStile={stileCount > 0 ? () => setExtraStiles((k) => k + 1) : undefined} onRemoveStile={removeStile} canRemoveStile={extras > 0}
                         widthIn={widthIn} heightIn={Number(secHeight)} />
                       {(secKind === "int" || stileCount > 0) && (

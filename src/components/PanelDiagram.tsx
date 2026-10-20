@@ -13,15 +13,17 @@ export interface StileValue { inch: string; frac: string }
  * says where to press; a press puts a window in it, shown as its size, 24x12
  * first, with the smaller size in the dropdown, and an x at the top to take
  * it out again. The window panels are the width's; the stiles are their own
- * lines over them, white and dotted, spaced out across the section — a 524 or
- * 2415's stile locations go in the boxes under each, left to right, typed or
- * picked, with a − and + under the row (ADD STILE) that take a stile out or
- * put one in. Adding a stile — by hand, or the double end stile — adds a
- * line and a box, never a window.
+ * lines over them, white and dotted, spaced out across the section — the
+ * double end stile's a little in from the right end, as the real one sits —
+ * a 524 or 2415's stile locations go in the boxes under each, left to
+ * right, typed or picked, sized to their spacing so they never touch, with
+ * a − and + under the row (ADD STILE) that take a stile out or put one in.
+ * Adding a stile — by hand, or the double end stile — adds a line and a
+ * box, never a window.
  */
 export function PanelDiagram({
   panels, windows, onToggle, sizes = ["24x12"], size, onSize,
-  stiles, stileLines, onStile, onAddStile, onRemoveStile, canRemoveStile, widthIn, heightIn = 24, testId = "comm-panels",
+  stiles, stileLines, doubleEnd, onStile, onAddStile, onRemoveStile, canRemoveStile, widthIn, heightIn = 24, testId = "comm-panels",
 }: {
   /** The window panels across, from the width. */
   panels: number;
@@ -33,8 +35,10 @@ export function PanelDiagram({
   onSize?: (size: string) => void;
   /** One a stile, left to right; null where none are asked. */
   stiles?: readonly StileValue[] | null;
-  /** The stile lines drawn across the section — one a box unless said. */
+  /** The stile lines spaced across the section, the double end stile's aside — one a box unless said. */
   stileLines?: number;
+  /** A double end stile: its line 5% in from the right end, its box the last. */
+  doubleEnd?: boolean;
   onStile?: (index: number, patch: Partial<StileValue>) => void;
   onAddStile?: () => void;
   /** Takes out the last stile added by hand. */
@@ -50,13 +54,26 @@ export function PanelDiagram({
   // As tall as 110px, and no wider than keeps it in proportion.
   const sizeUsed = size && sizes.includes(size) ? size : sizes[0];
   const lines = Math.max(0, stileLines ?? stiles?.length ?? 0);
-  // Where a stile line sits: spaced out evenly across the section.
-  const lineAt = (i: number) => `${((i + 1) / (lines + 1)) * 100}%`;
-  // The boxes sit under their lines while they fit — up to four; more run left to right in a row.
-  const underLines = !!stiles && stiles.length === lines && lines <= 4;
+  // Where the stile lines sit, in percent of the width: spaced out evenly
+  // across the section, and the double end stile's 5% in from the right.
+  const spread = doubleEnd ? Math.max(0, lines - 1) : lines;
+  const at = [...Array.from({ length: spread }, (_, i) => ((i + 1) / (spread + 1)) * 100), ...(doubleEnd && lines > 0 ? [95] : [])];
+  // A box sits centred under its line — the double end stile's against the
+  // right end — as wide as the room between them allows, so none touch;
+  // past six they run left to right in a row instead.
+  const underLines = !!stiles && stiles.length === at.length && at.length <= 6;
+  const centred = doubleEnd ? at.slice(0, -1) : at;
+  const limits = centred.flatMap((x, i) => [
+    i > 0 ? x - centred[i - 1] : 2 * x,
+    i < centred.length - 1 ? centred[i + 1] - x : doubleEnd ? ((100 - x) * 2) / 3 : 2 * (100 - x),
+  ]);
+  if (doubleEnd && !centred.length) limits.push(100);
+  const room = Math.min(...limits);
+  const boxWidth = underLines && Number.isFinite(room) ? `calc(${room.toFixed(2)}% - 8px)` : undefined;
+  const boxAt = (i: number) => (doubleEnd && i === at.length - 1 ? { right: 0, transform: "none" } : { left: `${at[i]}%` });
   return (
     <div className="pdiag" data-testid={testId}>
-      <div className="pdiag-sec" style={{ maxWidth: `${Math.round(ratio * 110)}px` }}>
+      <div className="pdiag-sec">
         <div className="plook" data-testid="comm-looking-out">Inside looking out</div>
         <div className="pdiag-panels" role={windows ? "group" : undefined} aria-label={windows ? "Windows by panel" : undefined} style={{ aspectRatio: `${ratio} / 1` }}>
           {Array.from({ length: n }, (_, i) => i + 1).map((p) => {
@@ -84,14 +101,14 @@ export function PanelDiagram({
               </div>
             );
           })}
-          {stiles && Array.from({ length: lines }, (_, i) => (
-            <div key={`line-${i}`} className="pstile-line" data-testid={`comm-stile-line-${i + 1}`} style={{ left: lineAt(i) }} aria-hidden="true" />
+          {stiles && at.map((x, i) => (
+            <div key={`line-${i}`} className="pstile-line" data-testid={`comm-stile-line-${i + 1}`} style={{ left: `${x}%` }} aria-hidden="true" />
           ))}
         </div>
         {stiles && (stiles.length > 0 || onAddStile) && (
           <div className={`pdiag-stiles${underLines ? "" : " row"}`} data-testid="comm-stiles">
             {stiles.map((v, i) => (
-              <div key={i} className="pstile" style={underLines ? { left: lineAt(i) } : undefined}>
+              <div key={i} className="pstile" style={underLines ? { ...boxAt(i), width: boxWidth } : undefined}>
                 <div className="pstile-boxes">
                   <PickInput testId={`comm-stile-${i + 1}`} label={`Stile ${i + 1} inches`} min={0} inputMode="numeric" options={range(1, 240)}
                     value={v.inch} onChange={(inch) => onStile?.(i, { inch })} />

@@ -1652,16 +1652,14 @@ html, body { margin: 0; padding: 0; }
    past one a stile (a double end stile, ADD STILE) they run in a row. */
 .tool-shell .pdiag-stiles { position: relative; height: 58px; }
 .tool-shell .pdiag-stiles.row { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: center; gap: 10px 12px; height: auto; min-height: 58px; padding-top: 8px; }
-.tool-shell .pdiag-stiles.row .pickin { width: 70px; }
-.tool-shell .pdiag-stiles.row .pickin > input { width: 70px; }
-.tool-shell .pdiag-stiles.row .selectwrap { width: 58px; }
-.tool-shell .pstile { position: absolute; top: 10px; transform: translateX(-50%); }
+.tool-shell .pdiag-stiles.row .pstile { width: 132px; }
+.tool-shell .pstile { position: absolute; top: 10px; transform: translateX(-50%); max-width: 150px; }
 .tool-shell .pdiag-stiles.row .pstile { position: static; transform: none; }
-.tool-shell .pstile-boxes { display: flex; gap: 3px; }
-.tool-shell .pstile .pickin { width: 76px; }
-.tool-shell .pstile .pickin > input { width: 76px; min-height: 42px; padding: 4px 22px 4px 6px; text-align: center; font-size: 17px; font-weight: 800; border: 2px solid var(--line-strong); }
+.tool-shell .pstile-boxes { display: flex; gap: 3px; width: 100%; }
+.tool-shell .pstile .pickin { flex: 1 1 76px; min-width: 0; width: 76px; }
+.tool-shell .pstile .pickin > input { width: 100%; min-height: 42px; padding: 4px 22px 4px 6px; text-align: center; font-size: 17px; font-weight: 800; border: 2px solid var(--line-strong); }
 .tool-shell .pstile .pickin-arrow { right: 8px; }
-.tool-shell .pstile .selectwrap { width: 64px; }
+.tool-shell .pstile .selectwrap { flex: 0 1 64px; min-width: 50px; width: 64px; }
 .tool-shell .pstile select { width: 100%; min-height: 42px; padding: 4px 20px 4px 6px; font-size: 14px; font-weight: 700; border: 2px solid var(--line-strong); }
 .tool-shell .pstile .selectwrap::after { right: 7px; }
 .tool-shell .pdiag-stiles.row .pstile { position: relative; }
