@@ -9,9 +9,9 @@ import { placeKey, type WindowPlace } from "@/lib/pricing/data/modern-steel";
  * a joint between them, the panels marked by their seams (Brandon,
  * 19/10/2026: the commercial section's picker, for the entire door, looking
  * like a door), read from inside looking out, which the label over it says
- * (20/10/2026). A press on a panel puts a window in it, drawn as glass, and
- * the x at its corner takes it out; ALL beside a section fills the row, or
- * clears it when it is full.
+ * (20/10/2026), each section's height off the chart at its right. A press on
+ * a panel puts a window in it, drawn as glass, and the x at its corner takes
+ * it out; ALL beside a section fills the row, or clears it when it is full.
  */
 export function DoorDiagram({
   stack, panels, windows, onToggle, onSetSection, widthIn, testId = "door-diagram",
@@ -50,6 +50,8 @@ export function DoorDiagram({
                   ALL
                 </button>
               )}
+              {/* The section's height, off Clopay's stacking chart, at its right (Brandon, 20/10/2026). */}
+              <span className="dheight" data-testid={`door-section-${section}-height`}>{h}″</span>
               <div className="dface">
                 {across.map((panel) => {
                   const key = placeKey({ section, panel });

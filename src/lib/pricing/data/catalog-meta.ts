@@ -258,18 +258,18 @@ export const COLORS: Record<string, string[]> = {
     "Iron Ore",
     "Black"
   ],
+  // The 4138's own list, as Clopay's order form has it (Brandon, 20/10/2026):
+  // no Hunter Green; the Cypress finishes and Iron Ore are its premium colours.
   "4138": [
     "White",
-    "Almond",
-    "Desert Tan",
-    "Sandtone",
     "Chocolate Brown",
-    "Hunter Green",
+    "Almond",
+    "Sandtone",
+    "Desert Tan",
     "Bronze",
+    "Black",
     "Mocha Brown",
-    "Charcoal",
-    "Iron Ore",
-    "Black"
+    "Charcoal"
   ]
 };
 
@@ -368,10 +368,14 @@ export const PREMIUM_COLORS: Record<string, string[]> = {
   // Modern Steel (CJ's sheets of 19/10/2026): Iron Ore and, on the 9208 and
   // 9209, the Ultra-Grain Cypress and Plank finishes Clopay's Modern Steel
   // brochure lists, all at the sheet's ULTRA COLOR (AND PLANK) block. The
-  // 4308, 4309 and 4138 come in the paint colours alone, so Iron Ore is
-  // their one premium colour.
+  // 4308 and 4309 come in the paint colours alone, so Iron Ore is their one
+  // premium colour; the 4138's list is Clopay's order form's (20/10/2026).
+  // The Lustra finishes on the 9208 take the same adder as Iron Ore (Brandon, 20/10/2026).
   "9208": [
     "Iron Ore",
+    "Lustra Black",
+    "Lustra Charcoal",
+    "Lustra Silver",
     "Ultra-Grain Cypress Medium Finish",
     "Ultra-Grain Cypress Cherry Finish",
     "Ultra-Grain Cypress Walnut Finish",
@@ -403,6 +407,10 @@ export const PREMIUM_COLORS: Record<string, string[]> = {
     "Iron Ore"
   ],
   "4138": [
+    "Ultra-Grain Cypress Medium Finish",
+    "Ultra-Grain Cypress Walnut Finish",
+    "Ultra-Grain Cypress Cherry Finish",
+    "Ultra-Grain Cypress Slate Finish",
     "Iron Ore"
   ]
 };

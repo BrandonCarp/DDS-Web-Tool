@@ -184,6 +184,18 @@ describe("Modern Steel — Clopay's stacking chart and panel counts (19/10/2026)
     expect(modernPickerModel("9138")).toBe(true);
   });
 
+  it("springs the 4138 at its own rates: torsion 45 single and 55 double, galvanized 50 and 70 (Brandon, 20/10/2026)", () => {
+    const q = (width: string, spring: "extension" | "torsion" | "galvanized", model = "4138", variant?: string) =>
+      specialDoorQuote({ model, variant, width, height: "7", style: "solid", color: "White", track: "r12", spring, lock: "none" }).quote!.unitPrice;
+    expect(q("8", "torsion")).toBeCloseTo(q("8", "extension") + 45, 2);
+    expect(q("8", "galvanized")).toBeCloseTo(q("8", "extension") + 50, 2);
+    expect(q("16", "torsion")).toBeCloseTo(q("16", "extension") + 55, 2);
+    expect(q("16", "galvanized")).toBeCloseTo(q("16", "extension") + 70, 2);
+    // The other Modern Steel doors keep the stock adders.
+    expect(q("8", "torsion", "9208/9209", "9208")).toBeCloseTo(q("8", "extension", "9208/9209", "9208") + 35, 2);
+    expect(q("16", "galvanized", "4308/4309", "4308")).toBeCloseTo(q("16", "extension", "4308/4309", "4308") + 45, 2);
+  });
+
   it("carries the sheet's ULTRA COLOR block: Iron Ore and the Ultra-Grain finishes a flat adder, lifted by the 45%", () => {
     for (const g of ["9208/9209", "4308/4309", "4138"]) {
       expect(MODERN_ULTRA_GRAIN[g]).toEqual({ upTo8ft: { single: 158.77, double: 317.53 }, over8ft: { single: 264.61, double: 529.22 } });
@@ -200,7 +212,20 @@ describe("Modern Steel — Clopay's stacking chart and panel counts (19/10/2026)
     // The 4308 and 4309 come in the paint colours and Iron Ore; the 9208 and 9209 in the Cypress and Plank finishes too.
     expect(specialOrderColors("4308")).toContain("Iron Ore");
     expect(specialOrderColors("4308")).not.toContain("Ultra-Grain Plank Kona Finish");
-    expect(specialOrderColors("4138")).toEqual(specialOrderColors("4308"));
+    // The 4138's list is Clopay's order form's (20/10/2026): no Hunter Green, the Cypress finishes and Iron Ore at the adder.
+    expect(specialOrderColors("4138")).toEqual([
+      "White", "Chocolate Brown", "Almond", "Sandtone", "Desert Tan", "Bronze", "Black", "Mocha Brown", "Charcoal",
+      "Ultra-Grain Cypress Medium Finish", "Ultra-Grain Cypress Walnut Finish", "Ultra-Grain Cypress Cherry Finish", "Ultra-Grain Cypress Slate Finish", "Iron Ore",
+    ]);
+    const b41 = { model: "4138", width: "8", height: "7", style: "solid" as const, track: "r12" as const, spring: "extension" as const, lock: "none" as const };
+    expect(specialDoorQuote({ ...b41, color: "Ultra-Grain Cypress Slate Finish" }).quote?.unitPrice)
+      .toBeCloseTo(specialDoorQuote({ ...b41, color: "White" }).quote!.unitPrice + sell(158.77), 2);
+    // The 9208's Lustra finishes take the adder as Iron Ore does (20/10/2026); the 9209 has none.
+    for (const c of ["Lustra Black", "Lustra Charcoal", "Lustra Silver"]) {
+      expect(specialOrderColors("9208")).toContain(c);
+      expect(specialOrderColors("9209")).not.toContain(c);
+      expect(specialDoorQuote({ ...base, color: c }).quote?.unitPrice, c).toBeCloseTo(white + sell(158.77), 2);
+    }
     expect(specialOrderColors("9208")).toContain("Ultra-Grain Plank Kona Finish");
     expect(specialOrderColors("9209")).toContain("Ultra-Grain Cypress Slate Finish");
     expect(specialDoorQuote({ ...base, model: "4308/4309", variant: "4308", color: "Iron Ore" }).quote?.unitPrice)

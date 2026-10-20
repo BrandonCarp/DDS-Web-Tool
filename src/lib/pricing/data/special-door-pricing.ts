@@ -138,10 +138,18 @@ const STOCK_SPRING_RATES: SpringRates = {
   torsion: { single: ADDONS.torsion, double: ADDONS.torsion },
   galvanized: { single: ADDONS.galvanized.single, double: ADDONS.galvanized.double },
 };
+/**
+ * Spring rates a model carries on its own, ahead of its collection's: the
+ * 4138 (Brandon, 20/10/2026) — torsion 45 on a single door and 55 on a
+ * double, galvanized torsion 50 and 70.
+ */
+const MODEL_SPRING_RATES: Record<string, SpringRates> = {
+  "4138": { torsion: { single: 45, double: 55 }, galvanized: { single: 50, double: 70 } },
+};
 
-/** The spring rates a member's collection carries. */
+/** The spring rates a member carries: its own, else its collection's, else the stock adders. */
 export function springRatesFor(member: string): SpringRates {
-  return SPRING_RATES[COLLECTIONS_RES[dataKey(member)] ?? ""] ?? STOCK_SPRING_RATES;
+  return MODEL_SPRING_RATES[member] ?? SPRING_RATES[COLLECTIONS_RES[dataKey(member)] ?? ""] ?? STOCK_SPRING_RATES;
 }
 
 /**

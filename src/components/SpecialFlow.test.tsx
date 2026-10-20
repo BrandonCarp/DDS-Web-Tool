@@ -1079,6 +1079,7 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     expect(sel("so-framing").value).toBe("short");
     expect(document.querySelectorAll(".dsec")).toHaveLength(4);
     expect(document.querySelectorAll("[data-testid='door-section-1'] .dpanel")).toHaveLength(4);
+    expect([1, 2, 3, 4].map((i) => screen.getByTestId(`door-section-${i}-height`).textContent)).toEqual(["21″", "21″", "21″", "21″"]);
     // Nothing priced until a window is pressed in.
     expect(maybe("copy-qb")).toBeNull();
     expect(document.body.textContent).toMatch(/none are placed yet/);
@@ -1179,6 +1180,7 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     await settle();
     expect(document.querySelectorAll(".dsec")).toHaveLength(5);
     expect(document.querySelectorAll("[data-testid='door-section-5'] .dpanel")).toHaveLength(3);
+    expect([1, 2, 3, 4, 5].map((i) => screen.getByTestId(`door-section-${i}-height`).textContent)).toEqual(["24″", "21″", "21″", "21″", "21″"]);
     fireEvent.click(screen.getByTestId("door-panel-5-1-add"));
     await settle();
     // CJ's 4138 sheet prices no 9FT or 10FT door under 8'0", so this one is typed.
