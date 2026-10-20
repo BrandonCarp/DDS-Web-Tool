@@ -26,7 +26,7 @@ import {
   type PanelStyle, type WindowSeries,
 } from "./so-glass";
 import { sectionCost, windowSectionGroup, windowSectionSell } from "./coachman-windows";
-import { colorTakesPremium } from "./catalog-meta";
+import { colorKeyFor, colorTakesPremium } from "./catalog-meta";
 import { highLiftPrice, mountPhrase, trackMountFor, type InclineStyle } from "./track-lift";
 import { ADDONS, GRADE_RES, COLLECTIONS_RES } from "./addons";
 import { dataKey } from "../model-groups";
@@ -663,8 +663,12 @@ export function specialDoorQuote(
   // A door with a second colour (the Bridgeport Inlay's inlay) is priced at
   // the dearer of the two: a premium inlay on a standard door carries the
   // adder (Brandon, 12/10/2026).
-  const premiumColor = colorTakesPremium(dataKey(member), input.color)
-    || (!!secondColorName(input.model) && !!input.overlayColor && colorTakesPremium(dataKey(member), secondColorPricedAs(input.overlayColor)));
+  // Keyed the member's own way where it has colours of its own (the 4301, the
+  // 9202), else its group's first member's, which is the list the tool offers
+  // it (the 9203 the 9200's) — so a premium colour offered is a premium colour charged.
+  const colorKey = colorKeyFor(member) ?? colorKeyFor(input.model.split("/")[0]) ?? dataKey(member);
+  const premiumColor = colorTakesPremium(colorKey, input.color)
+    || (!!secondColorName(input.model) && !!input.overlayColor && colorTakesPremium(colorKey, secondColorPricedAs(input.overlayColor)));
   const premium = (() => {
     if (!ug || !premiumColor) return 0;
     const [hf, hi] = [Number(input.height.split(".")[0]), Number(input.height.split(".")[1] ?? 0)];

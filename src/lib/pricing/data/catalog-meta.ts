@@ -1,3 +1,4 @@
+import { dataKey } from "../model-groups";
 // AUTO-GENERATED residential metadata (margins, colors, collections) from the catalog.
 export const MARGINS: Record<string, { door: number; section: number }> = {
   "T50S": {
@@ -270,6 +271,130 @@ export const COLORS: Record<string, string[]> = {
     "Black",
     "Mocha Brown",
     "Charcoal"
+  ],
+  // The 9138 and 9139 (special order on a typed Clopay total): the 4138's paint colours.
+  "9138": [
+    "White",
+    "Chocolate Brown",
+    "Almond",
+    "Sandtone",
+    "Desert Tan",
+    "Bronze",
+    "Black",
+    "Mocha Brown",
+    "Charcoal"
+  ],
+  "9139": [
+    "White",
+    "Chocolate Brown",
+    "Almond",
+    "Sandtone",
+    "Desert Tan",
+    "Bronze",
+    "Black",
+    "Mocha Brown",
+    "Charcoal"
+  ],
+  // Members whose paid colours differ from their family's (Brandon's list,
+  // 20/10/2026) carry the family's paint colours under their own key, so the
+  // premium list can be their own: the 9201, 9202 and 9205 the 9200's; the
+  // 9131 and 9132 the 9130's; the 4301 and 4305 the 4300's; the 4132 the 4050's.
+  "9201": [
+    "White",
+    "Almond",
+    "Desert Tan",
+    "Sandtone",
+    "Chocolate Brown",
+    "Hunter Green",
+    "Bronze",
+    "Mocha Brown",
+    "Charcoal",
+    "Iron Ore",
+    "Black"
+  ],
+  "9202": [
+    "White",
+    "Almond",
+    "Desert Tan",
+    "Sandtone",
+    "Chocolate Brown",
+    "Hunter Green",
+    "Bronze",
+    "Mocha Brown",
+    "Charcoal",
+    "Iron Ore",
+    "Black"
+  ],
+  "9205": [
+    "White",
+    "Almond",
+    "Desert Tan",
+    "Sandtone",
+    "Chocolate Brown",
+    "Hunter Green",
+    "Bronze",
+    "Mocha Brown",
+    "Charcoal",
+    "Iron Ore",
+    "Black"
+  ],
+  "9131": [
+    "White",
+    "Almond",
+    "Desert Tan",
+    "Sandtone",
+    "Chocolate Brown",
+    "Hunter Green",
+    "Bronze",
+    "Mocha Brown",
+    "Charcoal",
+    "Iron Ore",
+    "Black"
+  ],
+  "9132": [
+    "White",
+    "Almond",
+    "Desert Tan",
+    "Sandtone",
+    "Chocolate Brown",
+    "Hunter Green",
+    "Bronze",
+    "Mocha Brown",
+    "Charcoal",
+    "Iron Ore",
+    "Black"
+  ],
+  "4301": [
+    "White",
+    "Almond",
+    "Desert Tan",
+    "Sandtone",
+    "Chocolate Brown",
+    "Hunter Green",
+    "Bronze",
+    "Mocha Brown",
+    "Charcoal",
+    "Black"
+  ],
+  "4305": [
+    "White",
+    "Almond",
+    "Desert Tan",
+    "Sandtone",
+    "Chocolate Brown",
+    "Hunter Green",
+    "Bronze",
+    "Mocha Brown",
+    "Charcoal",
+    "Black"
+  ],
+  "4132": [
+    "White",
+    "Almond",
+    "Sandtone",
+    "Chocolate Brown",
+    "Black",
+    "Bronze"
   ]
 };
 
@@ -389,6 +514,9 @@ export const PREMIUM_COLORS: Record<string, string[]> = {
   ],
   "9209": [
     "Iron Ore",
+    "Lustra Black",
+    "Lustra Charcoal",
+    "Lustra Silver",
     "Ultra-Grain Cypress Medium Finish",
     "Ultra-Grain Cypress Cherry Finish",
     "Ultra-Grain Cypress Walnut Finish",
@@ -400,8 +528,15 @@ export const PREMIUM_COLORS: Record<string, string[]> = {
     "Ultra-Grain Plank Barnwood Finish",
     "Ultra-Grain Plank Espresso Finish"
   ],
+  // The paid colours by model, Brandon's list of 20/10/2026: the 4308 (and the
+  // 9202, 9205, 4301 and 4305) Iron Ore and the Cypress finishes; the 4132 the
+  // Cypress finishes alone; the 9201, 9131, 9132, 9138 and 9139 Iron Ore alone.
   "4308": [
-    "Iron Ore"
+    "Iron Ore",
+    "Ultra-Grain Cypress Medium Finish",
+    "Ultra-Grain Cypress Cherry Finish",
+    "Ultra-Grain Cypress Walnut Finish",
+    "Ultra-Grain Cypress Slate Finish"
   ],
   "4309": [
     "Iron Ore"
@@ -411,6 +546,55 @@ export const PREMIUM_COLORS: Record<string, string[]> = {
     "Ultra-Grain Cypress Walnut Finish",
     "Ultra-Grain Cypress Cherry Finish",
     "Ultra-Grain Cypress Slate Finish",
+    "Iron Ore"
+  ],
+  "9202": [
+    "Iron Ore",
+    "Ultra-Grain Cypress Medium Finish",
+    "Ultra-Grain Cypress Cherry Finish",
+    "Ultra-Grain Cypress Walnut Finish",
+    "Ultra-Grain Cypress Slate Finish"
+  ],
+  "9205": [
+    "Iron Ore",
+    "Ultra-Grain Cypress Medium Finish",
+    "Ultra-Grain Cypress Cherry Finish",
+    "Ultra-Grain Cypress Walnut Finish",
+    "Ultra-Grain Cypress Slate Finish"
+  ],
+  "4301": [
+    "Iron Ore",
+    "Ultra-Grain Cypress Medium Finish",
+    "Ultra-Grain Cypress Cherry Finish",
+    "Ultra-Grain Cypress Walnut Finish",
+    "Ultra-Grain Cypress Slate Finish"
+  ],
+  "4305": [
+    "Iron Ore",
+    "Ultra-Grain Cypress Medium Finish",
+    "Ultra-Grain Cypress Cherry Finish",
+    "Ultra-Grain Cypress Walnut Finish",
+    "Ultra-Grain Cypress Slate Finish"
+  ],
+  "4132": [
+    "Ultra-Grain Cypress Medium Finish",
+    "Ultra-Grain Cypress Cherry Finish",
+    "Ultra-Grain Cypress Walnut Finish",
+    "Ultra-Grain Cypress Slate Finish"
+  ],
+  "9201": [
+    "Iron Ore"
+  ],
+  "9131": [
+    "Iron Ore"
+  ],
+  "9132": [
+    "Iron Ore"
+  ],
+  "9138": [
+    "Iron Ore"
+  ],
+  "9139": [
     "Iron Ore"
   ]
 };
@@ -426,17 +610,32 @@ export const PREMIUM_COLORS: Record<string, string[]> = {
  * 4300 families list Iron Ore and the Ultra-Grain Classic finishes on a
  * special order — the 4300 does not stock them (Brandon, 19/10/2026).
  */
-/** Catalogue keys whose special orders list the premium colours their sheets price. */
+/**
+ * Catalogue keys whose special orders list the premium colours their sheets
+ * price — and the 9138 and 9139, priced on a typed Clopay total, where the
+ * colour is wording the total already covers.
+ */
 const SHEET_PRICED_KEYS = new Set([
   "GD1LP-GD1SP", "GD2LP-GD2SP", "GD1LU-GD1SU", "GD2LU-GD2SU",
   "BD1EU-BD1NU", "BD1CU", "BD2EU-BD2NU", "BD2CU",
-  "9130-9133", "9200", "4300",
-  "9208", "9209", "4308", "4309", "4138",
+  "9130-9133", "9131", "9132", "9200", "9201", "9202", "9205", "4300", "4301", "4305", "4132",
+  "9208", "9209", "4308", "4309", "4138", "9138", "9139",
 ]);
 export function specialOrderColors(catalogKey: string): string[] {
   const stock = COLORS[catalogKey] ?? [];
   const extra = (PREMIUM_COLORS[catalogKey] ?? []).filter((c) => !stock.includes(c));
   return SHEET_PRICED_KEYS.has(catalogKey) ? [...stock, ...extra] : stock;
+}
+
+/**
+ * The colour tables' key for a model: its own entry where it has one (the
+ * 4301, which the 4300's tables otherwise cover; the 9202), else its
+ * catalogue key (the 4310's is "4300"), else null where no table lists it.
+ */
+export function colorKeyFor(model: string): string | null {
+  if (COLORS[model]) return model;
+  const k = dataKey(model);
+  return COLORS[k] ? k : null;
 }
 
 export function colorTakesPremium(catalogKey: string, color: string): boolean {

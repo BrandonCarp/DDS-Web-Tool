@@ -134,12 +134,15 @@ export function windowSeriesFor(group: string): WindowSeries[] {
  * The premium-finish adder bands for a sheet-priced group, or null. On the
  * Premium Steel and Modern Steel sheets it is CJ's ULTRA COLOR block
  * (19/10/2026) — the 9130, 9200 and 4300 families and the 9208/9209 and
- * 4308/4309 pairs; the 4050's has none, and its colours take none. Which
- * colours count is PREMIUM_COLORS: Iron Ore and the Ultra-Grain finishes,
- * never Charcoal.
+ * 4308/4309 pairs; the 4050's has none, so the 4132's Cypress finishes take
+ * the block the other Premium Steel sheets share. Which colours count is
+ * PREMIUM_COLORS: Iron Ore and the Ultra-Grain finishes, never Charcoal.
  */
 export function sheetUltraGrain(group: string) {
-  return SHEET_ULTRA_GRAIN[group] ?? null;
+  // CJ's 4050 sheet has no block; the 4132's Ultra-Grain Cypress finishes
+  // (Brandon, 20/10/2026) take the one every other Premium Steel sheet
+  // carries, which is one and the same on all of them (so-glass.test.ts).
+  return SHEET_ULTRA_GRAIN[group] ?? (group === "4050/4051/4053/4132" ? Object.values(PREMIUM_ULTRA_GRAIN)[0] ?? null : null);
 }
 
 function tablesFor(group: string, series: WindowSeries) {

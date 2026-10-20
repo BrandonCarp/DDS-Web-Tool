@@ -246,8 +246,10 @@ describe("Modern Steel — Clopay's stacking chart and panel counts (19/10/2026)
       .toBeCloseTo(specialDoorQuote({ ...base, height: "8.3", color: "White" }).quote!.unitPrice + sell(264.61), 2);
     expect(specialDoorQuote({ ...base, width: "16", color: "Ultra-Grain Cypress Walnut Finish" }).quote?.unitPrice)
       .toBeCloseTo(specialDoorQuote({ ...base, width: "16", color: "White" }).quote!.unitPrice + sell(317.53), 2);
-    // The 4308 and 4309 come in the paint colours and Iron Ore; the 9208 and 9209 in the Cypress and Plank finishes too.
+    // The 4309 comes in the paint colours and Iron Ore, the 4308 in the Cypress finishes too (Brandon, 20/10/2026); the Plank finishes are the 9208 and 9209's.
     expect(specialOrderColors("4308")).toContain("Iron Ore");
+    expect(specialOrderColors("4308")).toContain("Ultra-Grain Cypress Slate Finish");
+    expect(specialOrderColors("4309")).not.toContain("Ultra-Grain Cypress Slate Finish");
     expect(specialOrderColors("4308")).not.toContain("Ultra-Grain Plank Kona Finish");
     // The 4138's list is Clopay's order form's (20/10/2026): no Hunter Green, the Cypress finishes and Iron Ore at the adder.
     expect(specialOrderColors("4138")).toEqual([
@@ -257,11 +259,13 @@ describe("Modern Steel — Clopay's stacking chart and panel counts (19/10/2026)
     const b41 = { model: "4138", width: "8", height: "7", style: "solid" as const, track: "r12" as const, spring: "extension" as const, lock: "none" as const };
     expect(specialDoorQuote({ ...b41, color: "Ultra-Grain Cypress Slate Finish" }).quote?.unitPrice)
       .toBeCloseTo(specialDoorQuote({ ...b41, color: "White" }).quote!.unitPrice + sell(158.77), 2);
-    // The 9208's Lustra finishes take the adder as Iron Ore does (20/10/2026); the 9209 has none.
+    // The Lustra finishes take the adder as Iron Ore does, on the 9208 and the 9209 (Brandon, 20/10/2026).
     for (const c of ["Lustra Black", "Lustra Charcoal", "Lustra Silver"]) {
       expect(specialOrderColors("9208")).toContain(c);
-      expect(specialOrderColors("9209")).not.toContain(c);
+      expect(specialOrderColors("9209")).toContain(c);
       expect(specialDoorQuote({ ...base, color: c }).quote?.unitPrice, c).toBeCloseTo(white + sell(158.77), 2);
+      expect(specialDoorQuote({ ...base, variant: "9209", color: c }).quote?.unitPrice, c)
+        .toBeCloseTo(specialDoorQuote({ ...base, variant: "9209", color: "White" }).quote!.unitPrice + sell(158.77), 2);
     }
     expect(specialOrderColors("9208")).toContain("Ultra-Grain Plank Kona Finish");
     expect(specialOrderColors("9209")).toContain("Ultra-Grain Cypress Slate Finish");

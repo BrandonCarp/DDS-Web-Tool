@@ -20,7 +20,7 @@ import {
   minWidthFor, excludedWidthsFor,
   parseModelSelection, modelSelectionValue, windowsOfferedAt,
 } from "@/lib/pricing/data/special-door-pricing";
-import { COLORS, specialOrderColors } from "@/lib/pricing/data/catalog-meta";
+import { COLORS, colorKeyFor, specialOrderColors } from "@/lib/pricing/data/catalog-meta";
 import { designsBuilt, designLabel, designTakesWindows, hasDesigns, secondColorName, secondColors } from "@/lib/pricing/data/door-designs";
 import { isSheetGroup, windowsPricedAt } from "@/lib/pricing/data/so-glass";
 import {
@@ -326,7 +326,6 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   // keyed by catalogue group. Resolve through the first member.
   // A member with no colour list of its own (the 4132, the 9201…) takes its
   // group's first member's, which is the family's.
-  const colorKeyFor = (m: string) => (COLORS[dataKey(m)] ? dataKey(m) : null);
   const gColorKey = colorKeyFor(modelMember || modelGroup.split("/")[0]) ?? colorKeyFor(modelGroup.split("/")[0]) ?? dataKey(modelGroup);
   const gColors = COLORS[gColorKey] ? specialOrderColors(gColorKey) : ["White"];
   // The configurator opens in order: size, then color (and the Coachman's
