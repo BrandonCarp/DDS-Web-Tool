@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { priceResidential, quoteResidential, quoteResidentialSection, resolveSizeCode, tierForHeight, listModels } from "./engine";
+import { priceResidential, quoteResidential, quoteResidentialSection, resolveSizeCode, specialSheetPriceFor, tierForHeight, listModels } from "./engine";
 import { RESIDENTIAL_PRICES } from "./data/residential-prices";
 import { STOCK_PRICES } from "./data/stock-prices";
+import { SPECIAL_DOORS } from "./data/special-doors";
 import type { WindowStyle } from "./types";
 import { windowDesigns } from "./data/inserts";
 
@@ -62,6 +63,9 @@ describe("resolveSizeCode", () => {
   });
 });
 
+// Since 20/10/2026 (Brandon) a door prices at the special order sheet's figure
+// wherever the sheet has one; the stock and standard books price the rest.
+// Stock or standard still says whether the size is stocked.
 describe("priceResidential — stock vs standard (the core rule)", () => {
   const cases: [string, ReturnType<typeof dim>, WindowStyle, number, "stock" | "standard"][] = [
     ["T50S", dim(8, 0, 7, 0), "solid", 566.06, "stock"],
@@ -80,11 +84,11 @@ describe("priceResidential — stock vs standard (the core rule)", () => {
     ["T50S", dim(12, 0, 9, 0), "solid", 1476.22, "stock"], // 9' tall exact width -> 9FT-book stock price
     ["T50S", dim(10, 0, 9, 0), "solid", 1140.14, "stock"],
     ["T50S", dim(12, 2, 9, 0), "solid", 1827.12, "standard"], // odd 9' width stays on the odd band
-    ["T52S", dim(8, 0, 7, 0), "solid", 663.27, "stock"],
-    ["T52S", dim(9, 0, 7, 0), "glass", 837.91, "stock"],
-    ["T52S", dim(9, 4, 7, 0), "glass", 1084.98, "standard"],
-    ["T52S", dim(16, 0, 8, 0), "inserts", 1853.32, "stock"],
-    ["T52S", dim(12, 0, 7, 0), "solid", 1271.55, "standard"],
+    ["T52S", dim(8, 0, 7, 0), "solid", 664.25, "stock"],       // the T52S sheet at 7'0" (20/10/2026)
+    ["T52S", dim(9, 0, 7, 0), "glass", 839.14, "stock"],
+    ["T52S", dim(9, 4, 7, 0), "glass", 1103.21, "standard"],
+    ["T52S", dim(16, 0, 8, 0), "inserts", 1853.32, "stock"],    // no sheet figure over 7'0": the stock book
+    ["T52S", dim(12, 0, 7, 0), "solid", 1084.54, "standard"],   // the sheet, under the standard book's copy-filled 1271.55
     ["T52S", dim(10, 0, 8, 0), "solid", 991.96, "stock"],
   ];
   it.each(cases)("%s %o %s -> $%d (%s)", (model, d, style, expected, source) => {
@@ -102,7 +106,7 @@ describe("data integrity", () => {
         for (const v of [t.solid, t.glass, t.inserts]) expect(v).toBeGreaterThan(0);
   });
 
-  it("the stock override is actually applied for every exact stock size", () => {
+  it("every exact stock size reads as stock, at the special order sheet's figure where it has one, else the stock book's", () => {
     for (const [model, widths] of Object.entries(STOCK_PRICES)) {
       for (const [w, tiers] of Object.entries(widths)) {
         for (const [tier, trip] of Object.entries(tiers)) {
@@ -110,11 +114,32 @@ describe("data integrity", () => {
           const wf = w === "7.6" ? 7 : Number(w);
           const wi = w === "7.6" ? 6 : 0;
           const r = priceResidential(model, dim(wf, wi, hf, 0), "solid");
-          expect(r.source).toBe("stock");
-          expect(r.price).toBeCloseTo(trip.solid, 2);
+          expect(r.source, `${model} ${w}x${tier}`).toBe("stock");
+          expect(r.price, `${model} ${w}x${tier}`).toBeCloseTo(specialSheetPriceFor(model, r.size!)?.solid ?? trip.solid, 2);
         }
       }
     }
+  });
+
+  it("prices every size at the special order sheet's figure where it has one — never under it (Brandon, 20/10/2026)", () => {
+    let checked = 0;
+    for (const [group, tiers] of Object.entries(SPECIAL_DOORS)) {
+      const model = group.split("/")[0];
+      if (!listModels().includes(model)) continue;
+      for (const [tier, widths] of Object.entries(tiers)) {
+        if (!["7", "8", "9"].includes(tier)) continue;
+        for (const [w, cell] of Object.entries(widths)) {
+          if (cell.solid == null) continue;
+          const [wf, wi] = w.split(".").map(Number);
+          for (const style of ["solid", "glass", "inserts"] as const) {
+            const r = priceResidential(model, dim(wf, wi ?? 0, Number(tier), 0), style);
+            expect(r.price, `${model} ${w}x${tier} ${style}`).toBe(cell[style]);
+            checked++;
+          }
+        }
+      }
+    }
+    expect(checked).toBeGreaterThan(2000);
   });
 });
 
@@ -318,30 +343,34 @@ describe("model split (independent selection, shared pricing)", () => {
 
 describe("2026 workbook authority (V2 stock + strict 9FT book)", () => {
   it("grouped models get stock prices at exact stock sizes (V2 book)", () => {
-    expect(priceResidential("4050", dim(8, 0, 7, 0), "solid")).toMatchObject({ price: 723.25, source: "stock" });
-    expect(priceResidential("4051", dim(8, 0, 8, 0), "solid")).toMatchObject({ price: 875.95, source: "stock" });
-    expect(priceResidential("9130", dim(9, 0, 7, 0), "glass")).toMatchObject({ price: 1125.93, source: "stock" });
-    expect(priceResidential("GD1SP", dim(16, 0, 8, 0), "inserts")).toMatchObject({ price: 2505.53, source: "stock" });
-    expect(priceResidential("4300", dim(9, 0, 8, 0), "solid")).toMatchObject({ price: 1065.28, source: "stock" });
+    // Figures the special order sheets' since 20/10/2026 (the V2 book's 723.25, 875.95, 1125.93, 2505.53, 1065.28 ran under them).
+    expect(priceResidential("4050", dim(8, 0, 7, 0), "solid")).toMatchObject({ price: 747.62, source: "stock" });
+    expect(priceResidential("4051", dim(8, 0, 8, 0), "solid")).toMatchObject({ price: 905.45, source: "stock" });
+    expect(priceResidential("9130", dim(9, 0, 7, 0), "glass")).toMatchObject({ price: 1165.01, source: "stock" });
+    expect(priceResidential("GD1SP", dim(16, 0, 8, 0), "inserts")).toMatchObject({ price: 2598.68, source: "stock" });
+    expect(priceResidential("4300", dim(9, 0, 8, 0), "solid")).toMatchObject({ price: 1117.37, source: "stock" });
   });
-  it("odd widths on grouped models stay on the standard band", () => {
-    expect(priceResidential("4050", dim(8, 4, 7, 0), "solid")).toMatchObject({ price: 905.53, source: "standard" });
-    expect(priceResidential("9133", dim(9, 4, 7, 0), "solid").source).toBe("standard");
+  it("odd widths on grouped models stay on the standard band, at the sheet's odd-width figure", () => {
+    expect(priceResidential("4050", dim(8, 4, 7, 0), "solid")).toMatchObject({ price: 936.05, source: "standard" });
+    // A 9130 at 9'4" is its own size on the sheet (the book priced it as 9'0").
+    expect(priceResidential("9133", dim(9, 4, 7, 0), "solid")).toMatchObject({ price: 1247.92, source: "standard" });
+    expect(priceResidential("9133", dim(9, 4, 7, 0), "solid").size?.code).toBe("9.4x7");
   });
-  it("9-ft-high exact sizes use the strict 9FT-book prices", () => {
-    expect(priceResidential("4050", dim(12, 0, 9, 0), "solid")).toMatchObject({ price: 1796.05, source: "stock" });
-    expect(priceResidential("9130", dim(12, 0, 9, 0), "solid")).toMatchObject({ price: 2064.75, source: "stock" });
+  it("9-ft-high exact sizes read as stock, at the sheet's figure", () => {
+    expect(priceResidential("4050", dim(12, 0, 9, 0), "solid")).toMatchObject({ price: 1856.59, source: "stock" });
+    expect(priceResidential("9130", dim(12, 0, 9, 0), "solid")).toMatchObject({ price: 2181.97, source: "stock" });
     // DDS stocks only the 4050 at 18'0" — T50S/T52S 18' price from the standard
-    //  tier and read as special order (Brandon, 08/2026). Price is unchanged.
+    //  tier and read as special order (Brandon, 08/2026). The T52S sheet stops
+    //  at 7'0", so the standard book's figure stands.
     expect(priceResidential("T52S", dim(18, 0, 9, 0), "inserts")).toMatchObject({ price: 2694.66, source: "standard" });
-    expect(priceResidential("4300", dim(8, 0, 9, 0), "solid")).toMatchObject({ price: 1311.74, source: "stock" });
+    expect(priceResidential("4300", dim(8, 0, 9, 0), "solid")).toMatchObject({ price: 1355.16, source: "stock" });
   });
   it("prices the Gallery at 9'0\" tall, added 10/9/2026", () => {
-    // The Gallery had no 9-ft prices until the stock sheet carried them.
+    // The Gallery had no 9-ft prices until the stock sheet carried them; the special order sheet's figure since 20/10/2026.
     for (const m of ["GD1LP", "GD1SP"]) {
       const r = priceResidential(m, dim(8, 0, 9, 0), "solid");
       expect(r.source, m).toBe("stock");
-      expect(r.price, m).toBe(1317.26);
+      expect(r.price, m).toBe(1366.24);
     }
   });
   it("only the 4050 family is stocked at 18' — T50S/T52S are special order", () => {
@@ -403,42 +432,44 @@ describe("4300 family (4301/4310 share 4300 pricing; 7/5/2026 odd-size sheets)",
     expect(q.priced).toBe(false);
     expect(q.unitPrice).toBe(0);
   });
-  it("prices the new 7-ft odd bands (incl. the 15'6/15'8 split)", () => {
-    expect(priceResidential("4300", dim(6, 2, 7, 0), "solid").price).toBeCloseTo(818.96, 2);
-    expect(priceResidential("4300", dim(15, 6, 7, 0), "solid").price).toBeCloseTo(1452.59, 2);
-    expect(priceResidential("4300", dim(15, 4, 7, 0), "solid").price).toBeCloseTo(1676.07, 2);
+  it("prices the 7-ft odd bands at the sheet's figures (the 15'6/15'8 split is the book's; the sheet prices 15'4\" and 15'6\" alike)", () => {
+    expect(priceResidential("4300", dim(6, 2, 7, 0), "solid").price).toBeCloseTo(989.33, 2);
+    expect(priceResidential("4300", dim(15, 6, 7, 0), "solid").price).toBeCloseTo(1786.44, 2);
+    expect(priceResidential("4300", dim(15, 4, 7, 0), "solid").price).toBeCloseTo(1786.44, 2);
+    // 19'10" is not on the sheet: the book's figure stands.
     expect(priceResidential("4300", dim(19, 10, 7, 0), "inserts").price).toBeCloseTo(2803.36, 2);
   });
-  it("prices the new 9-ft odd bands and keeps stock overrides at exact stock sizes", () => {
-    expect(priceResidential("4301", dim(9, 4, 9, 0), "glass").price).toBeCloseTo(1922.13, 2);
-    expect(priceResidential("4300", dim(8, 0, 7, 0), "solid")).toMatchObject({ price: 823.71, source: "stock" });
-    expect(priceResidential("4301", dim(12, 0, 9, 0), "solid")).toMatchObject({ price: 1873.54, source: "stock" });
+  it("prices the 9-ft odd bands at the sheet's figures and keeps stock overrides at exact stock sizes", () => {
+    expect(priceResidential("4301", dim(9, 4, 9, 0), "glass").price).toBeCloseTo(2024.17, 2);
+    expect(priceResidential("4300", dim(8, 0, 7, 0), "solid")).toMatchObject({ price: 855.28, source: "stock" });
+    expect(priceResidential("4301", dim(12, 0, 9, 0), "solid")).toMatchObject({ price: 1935.57, source: "stock" });
   });
-  it("corrects the 12-ft x 9-ft inserts sheet typo (was listed below glass)", () => {
-    expect(priceResidential("4300", dim(12, 4, 9, 0), "inserts").price).toBeCloseTo(2716.7, 2);
+  it("prices 12-ft x 9-ft inserts above the glass (the book's sheet typo is moot: the special order sheet's figure)", () => {
+    expect(priceResidential("4300", dim(12, 4, 9, 0), "inserts").price).toBeCloseTo(2869.35, 2);
+    expect(priceResidential("4300", dim(12, 4, 9, 0), "inserts").price).toBeGreaterThan(priceResidential("4300", dim(12, 4, 9, 0), "glass").price!);
   });
 });
 
-describe("GD1LP/GD1SP odd-size grids (Est 42768/42827/42828, 7/2026)", () => {
+describe("GD1LP/GD1SP odd sizes — the special order sheet's figures since 20/10/2026 (the 7/2026 estimate grid, Est 42768/42827/42828, ran under them)", () => {
   const cases: [ReturnType<typeof dim>, WindowStyle, number][] = [
     // tier 7 (heights 6'0–7'0)
-    [dim(6, 2, 6, 0), "solid", 764.05],
-    [dim(6, 2, 7, 0), "inserts", 1042.35],
-    [dim(6, 6, 6, 3), "glass", 1101.96], // 6'4–6'10 band interior
-    [dim(7, 0, 7, 0), "solid", 883.32], // 7'0 flat shares the 7'0–7'6 band
-    [dim(11, 6, 6, 9), "glass", 1698.32], // the 116'' sheet typo width
-    [dim(15, 4, 7, 0), "solid", 1567.11], // 15' split: 15'2/15'4/15'10...
-    [dim(15, 8, 7, 0), "solid", 1357.74], // ...vs cheaper 15'6/15'8
-    [dim(17, 10, 7, 0), "inserts", 2644.51],
+    [dim(6, 2, 6, 0), "solid", 928.2],         // the sheet prices 6'2" to 7'0" alike (the estimate grid had 6'2" at 764.05)
+    [dim(6, 2, 7, 0), "inserts", 1223.99],
+    [dim(6, 6, 6, 3), "glass", 1160.6], // 6'4–6'10 band interior
+    [dim(7, 0, 7, 0), "solid", 928.2], // 7'0 flat shares the 7'0–7'6 band
+    [dim(11, 6, 6, 9), "glass", 1794.43], // the 116'' sheet typo width
+    [dim(15, 4, 7, 0), "solid", 1654.98], // 15' split: 15'2/15'4/15'10...
+    [dim(15, 8, 7, 0), "solid", 1432.44], // ...vs cheaper 15'6/15'8
+    [dim(17, 10, 7, 0), "inserts", 2800.09],
     // tier 8 (heights 7'6–8'0)
-    [dim(6, 2, 7, 6), "solid", 921.74],
-    [dim(10, 8, 8, 0), "glass", 1991.18],
-    [dim(17, 10, 8, 0), "inserts", 3059.32],
+    [dim(6, 2, 7, 6), "solid", 1121.16],
+    [dim(10, 8, 8, 0), "glass", 1950.77],       // under the estimate grid's 1991.18
+    [dim(17, 10, 8, 0), "inserts", 3240.95],
     // tier 9 (heights 8'3–9'0)
-    [dim(6, 2, 8, 3), "solid", 1295.46],
-    [dim(12, 10, 9, 0), "glass", 2925.46],
-    [dim(15, 6, 9, 0), "inserts", 3138.82],
-    [dim(17, 10, 9, 0), "inserts", 4065.12],
+    [dim(6, 2, 8, 3), "solid", 1571.88],
+    [dim(12, 10, 9, 0), "glass", 3098.7],
+    [dim(15, 6, 9, 0), "inserts", 3325.46],
+    [dim(17, 10, 9, 0), "inserts", 4310],
   ];
   for (const [d, style, want] of cases) {
     it(`prices ${d.widthFt}'${d.widthIn}\" x ${d.heightFt}'${d.heightIn}\" ${style} at ${want} (both models)`, () => {

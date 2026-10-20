@@ -5,6 +5,7 @@
 
 import { RESIDENTIAL_PRICES } from "./data/residential-prices";
 import { STOCK_PRICES } from "./data/stock-prices";
+import { SPECIAL_DOORS } from "./data/special-doors";
 import { highLiftPrice, mountPhrase } from "./data/track-lift";
 import { ADDONS, ULTRAGRAIN, GRADE_RES, COLLECTIONS_RES } from "./data/addons";
 import { dataKey, expandModels } from "./model-groups";
@@ -65,9 +66,13 @@ export function resolveSizeCode(model: string, dim: Dimensions): SizeCode | null
   const tier = tierForHeight(hf * 12 + hi);
   if (tier === null) return null; // taller than the book — Special Order
   const grid = RESIDENTIAL_PRICES[dataKey(model)] ?? {};
-  const widthsForTier = Object.keys(grid)
-    .filter((k) => k.endsWith("x" + tier))
-    .map((k) => k.split("x")[0]);
+  // The widths the tier prices: the residential grid's and the special order
+  // sheet's, so an odd width the sheet prices (a 9130 at 8'2") is its own size.
+  const sheet = specialSheetOf(model)?.[tier] ?? {};
+  const widthsForTier = [...new Set([
+    ...Object.keys(grid).filter((k) => k.endsWith("x" + tier)).map((k) => k.split("x")[0]),
+    ...Object.keys(sheet).filter((w) => sheet[w].solid != null),
+  ])];
 
   const candidates: string[] = [];
   if (wi === 0) candidates.push(String(wf));
@@ -107,7 +112,27 @@ export function stockPriceFor(model: string, size: SizeCode): PriceTriple | null
   return modelStock[widthKey]?.[size.tier] ?? null;
 }
 
-/** Price a residential base door (stock price when the exact size is stock, else standard). */
+/** The special order grid a residential model is on — the 4050's "4050/4051/4053/4132", say. */
+function specialSheetOf(model: string): Record<string, Record<string, Partial<PriceTriple>>> | null {
+  const group = Object.keys(SPECIAL_DOORS).find((g) => g.split("/").includes(model));
+  return group ? SPECIAL_DOORS[group] : null;
+}
+
+/**
+ * The special order sheet's figure for the size, where it has one.
+ *
+ * Brandon, 20/10/2026: the residential tab prices a door at its special order
+ * price — the stock and standard books ran 3-4% under CJ's special order
+ * sheets for the same door — so the sheet's figure comes first, and the books
+ * price only what the sheet does not (the T52S over 7'0" high, a 6'0" 4050).
+ * Whether the size is stocked is still the stock book's say.
+ */
+export function specialSheetPriceFor(model: string, size: SizeCode): PriceTriple | null {
+  const t = specialSheetOf(model)?.[size.tier]?.[size.widthCode];
+  return t && t.solid != null && t.glass != null && t.inserts != null ? { solid: t.solid, glass: t.glass, inserts: t.inserts } : null;
+}
+
+/** Price a residential base door: the special order sheet's figure, else the stock price when the exact size is stock, else standard. */
 export function priceResidential(
   model: string,
   dim: Dimensions,
@@ -119,7 +144,7 @@ export function priceResidential(
   }
   const standard = RESIDENTIAL_PRICES[dataKey(model)]?.[size.code] ?? null;
   const stock = stockPriceFor(model, size);
-  const triple = stock ?? standard;
+  const triple = specialSheetPriceFor(model, size) ?? stock ?? standard;
   if (!triple) {
     return { model, style, size, price: null, priced: false, isStock: false, source: "none", triple: null };
   }
@@ -239,7 +264,8 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
   if (!size) return empty;
   const standard = RESIDENTIAL_PRICES[dataKey(model)]?.[size.code] ?? null;
   const stock = stockPriceFor(model, size);
-  const triple = stock ?? standard;
+  // The special order sheet's figure first (Brandon, 20/10/2026), see priceResidential.
+  const triple = specialSheetPriceFor(model, size) ?? stock ?? standard;
   if (!triple) return { ...empty, size };
 
   const lines = [];

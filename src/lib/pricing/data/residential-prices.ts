@@ -1,4 +1,7 @@
 // AUTO-GENERATED residential price grid. Do not edit by hand.
+// Since 20/10/2026 (Brandon) a door prices at the special order sheet's figure
+// wherever the sheet has one (engine.ts, specialSheetPriceFor); this book prices
+// only what the sheet does not.
 // 18'0" widths for T50S / T52S generated 08/2026 from new_pricing_2026_V2.xlsx (SELL
 // columns). DDS stocks only the 4050 at 18'0", so T50S/T52S 18' live here in the
 // standard tier and read as special order. NOTE: that workbook's T52S 9'0" column is

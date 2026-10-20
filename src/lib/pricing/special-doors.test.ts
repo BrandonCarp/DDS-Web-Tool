@@ -47,12 +47,11 @@ describe("special order door grid", () => {
     expect(specialDoorQuote({ ...base, width: "16", style: "inserts" }).quote?.unitPrice).toBe(sheet(973) + windows(8, 49));
   });
 
-  it("prices off CJ's sheet, which the stock tab's grid does not follow yet", () => {
-    // The stock tab (residential-prices.ts) still carries the older book: a
-    // stocked 8'0" x 7'0" 4050 is $723.25 there and $747.62 here. The two
-    // grids come from different sheets now, deliberately — the special order
-    // follows what Clopay charges today.
-    expect(priceResidential("4050", { widthFt: 8, widthIn: 0, heightFt: 7, heightIn: 0 }, "solid").price).toBe(723.25);
+  it("prices off CJ's sheet, and the stock tab follows it (Brandon, 20/10/2026)", () => {
+    // The stock tab's own book had a stocked 8'0" x 7'0" 4050 at $723.25 against
+    // $747.62 here; the stock tab now prices at the sheet's figure, so the two
+    // tabs agree on every door the sheet prices.
+    expect(priceResidential("4050", { widthFt: 8, widthIn: 0, heightFt: 7, heightIn: 0 }, "solid").price).toBe(747.62);
     expect(specialDoorQuote({ ...base, width: "8", style: "solid" }).quote?.unitPrice).toBe(747.62);
   });
 

@@ -192,16 +192,18 @@ describe("residential colour lists", () => {
 
 describe("9ft tiers added 10/9/2026", () => {
   it("prices the 4050 at 7'0\" and 7'6\" wide, 9'0\" tall", () => {
-    // Those two widths carried no 9-ft tier before the stock sheet.
+    // Those two widths carried no 9-ft tier before the stock sheet; the special
+    // order sheet's figure since 20/10/2026 (1372.35 off the stock book).
     for (const w of [[7, 0], [7, 6]] as const) {
       const r = priceResidential("4050", { widthFt: w[0], widthIn: w[1], heightFt: 9, heightIn: 0 }, "solid");
       expect(r.source, `${w[0]}'${w[1]}"`).toBe("stock");
-      expect(r.price, `${w[0]}'${w[1]}"`).toBe(1372.35);
+      expect(r.price, `${w[0]}'${w[1]}"`).toBe(1418.61);
     }
   });
 
   it("prices the Gallery at every stock width, 9'0\" tall", () => {
-    for (const [w, expected] of [[8, 1317.26], [9, 1420.47]] as const) {
+    // The special order sheet's figures since 20/10/2026 (1317.26 and 1420.47 off the stock book).
+    for (const [w, expected] of [[8, 1366.24], [9, 1473.29]] as const) {
       const r = priceResidential("GD1LP", { widthFt: w, widthIn: 0, heightFt: 9, heightIn: 0 }, "solid");
       expect(r.source, `${w}'`).toBe("stock");
       expect(r.price, `${w}'`).toBe(expected);
