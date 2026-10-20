@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "./Icon";
 import { QtyStepper } from "./QtyStepper";
+import { NoticeModal } from "./NoticeModal";
+import { EMPTY_NOTICE, NOTICE_BODY_MAX, NOTICE_TITLE_MAX, type LoginNotice } from "@/lib/login-notice";
 
 export interface AdminUser {
   id: number;
@@ -247,6 +249,7 @@ export function AdminPanel({
   meId,
   master,
   username,
+  notice = EMPTY_NOTICE,
 }: {
   users: AdminUser[];
   logins?: LoginEvent[];
@@ -256,11 +259,42 @@ export function AdminPanel({
   /** Full admins manage accounts; semi-admins see the dashboard without user controls. */
   master: boolean;
   username: string;
+  /** The sign-in notice as saved (master admin only; Brandon, 20/10/2026). */
+  notice?: LoginNotice;
 }) {
   const router = useRouter();
-  const [view, setView] = useState<"dashboard" | "users">("dashboard");
+  const [view, setView] = useState<"dashboard" | "users" | "notice">("dashboard");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  // The sign-in notice as typed, saved with Save; Preview shows the window as
+  // the sign-in page will.
+  const [nOn, setNOn] = useState(notice.enabled);
+  const [nTitle, setNTitle] = useState(notice.title);
+  const [nBody, setNBody] = useState(notice.body);
+  const [nSaved, setNSaved] = useState<LoginNotice>(notice);
+  const [nPreview, setNPreview] = useState(false);
+  const nDirty = nOn !== nSaved.enabled || nTitle.trim() !== nSaved.title || nBody.trim() !== nSaved.body;
+  async function saveNotice() {
+    setBusy(true);
+    setErr(null);
+    try {
+      const r = await fetch("/api/admin/notice", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: nOn, title: nTitle, body: nBody }),
+      });
+      const d = (await r.json().catch(() => ({}))) as { notice?: LoginNotice; error?: string };
+      if (r.status === 401) { window.location.assign("/login"); return; }
+      if (!r.ok || !d.notice) throw new Error(d.error ?? "Request failed");
+      setNSaved(d.notice);
+      setNOn(d.notice.enabled);
+      setNTitle(d.notice.title);
+      setNBody(d.notice.body);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Request failed");
+    }
+    setBusy(false);
+  }
   const [nu, setNu] = useState("");
   const [np, setNp] = useState("");
   const [nr, setNr] = useState<"admin" | "semiadmin" | "user">("user");
@@ -397,12 +431,23 @@ export function AdminPanel({
               Users
             </button>
           )}
+          {master && (
+            <button
+              type="button"
+              className={view === "notice" ? "active" : ""}
+              onClick={() => setView("notice")}
+              data-testid="adm-nav-notice"
+            >
+              <Icon name="settings" />
+              Sign-in notice
+            </button>
+          )}
         </nav>
       </aside>
 
       <main className="adm-main">
         <div className="adm-top">
-          <h1>{view === "users" ? "Users" : "Admin Dashboard"}</h1>
+          <h1>{view === "users" ? "Users" : view === "notice" ? "Sign-in notice" : "Admin Dashboard"}</h1>
           <span className="who">{username}</span>
           <div className="adm-actions no-print">
             <Link href="/">‹ Back to tool</Link>
@@ -575,6 +620,48 @@ export function AdminPanel({
               )}
             </div>
           </>
+        )}
+
+        {view === "notice" && master && (
+          <div className="chartcard notice-card" data-testid="notice-card">
+            <div className="ggroup">
+              <div className="ghdr">Shown to everyone as they sign in</div>
+              <div className="notice-form">
+                <label className="notice-switch">
+                  <input type="checkbox" checked={nOn} onChange={(e) => setNOn(e.target.checked)} data-testid="notice-on" />
+                  <span>{nOn ? "On" : "Off"}</span>
+                </label>
+                <input
+                  placeholder="Title"
+                  value={nTitle}
+                  maxLength={NOTICE_TITLE_MAX}
+                  onChange={(e) => setNTitle(e.target.value)}
+                  data-testid="notice-title"
+                />
+                <textarea
+                  placeholder="Message"
+                  value={nBody}
+                  maxLength={NOTICE_BODY_MAX}
+                  rows={7}
+                  onChange={(e) => setNBody(e.target.value)}
+                  data-testid="notice-body"
+                />
+                <div className="notice-actions">
+                  <button className="btn primary" disabled={busy || !nDirty} onClick={saveNotice} data-testid="notice-save">
+                    Save
+                  </button>
+                  <button className="chip" disabled={!nBody.trim()} onClick={() => setNPreview(true)} data-testid="notice-preview">
+                    Preview
+                  </button>
+                  <span className="muted-note" data-testid="notice-status">
+                    {nDirty ? "Not saved" : nSaved.enabled && nSaved.body ? "On — shows at every sign-in" : "Off"}
+                    {!nDirty && nSaved.updated_at ? ` · saved ${when(nSaved.updated_at)}${nSaved.updated_by ? ` by ${nSaved.updated_by}` : ""}` : ""}
+                  </span>
+                </div>
+              </div>
+            </div>
+            {nPreview && <NoticeModal title={nTitle.trim()} body={nBody.trim()} onClose={() => setNPreview(false)} testId="notice-preview-modal" />}
+          </div>
         )}
 
         {view === "users" && master && (

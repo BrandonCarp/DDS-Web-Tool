@@ -1,12 +1,16 @@
 "use client";
 
 import { useState, type KeyboardEvent } from "react";
+import { NoticeModal } from "@/components/NoticeModal";
 
 export default function LoginPage() {
   const [u, setU] = useState("");
   const [p, setP] = useState("");
   const [err, setErr] = useState(false);
   const [busy, setBusy] = useState(false);
+  // The sign-in notice the admin panel switched on, shown once the account is
+  // in and before the tool (Brandon, 20/10/2026); OK goes on to the tool.
+  const [notice, setNotice] = useState<{ title: string; body: string } | null>(null);
 
   async function login() {
     setErr(false);
@@ -18,6 +22,8 @@ export default function LoginPage() {
         body: JSON.stringify({ username: u, password: p }),
       });
       if (r.ok) {
+        const d = (await r.json().catch(() => ({}))) as { notice?: { title: string; body: string } | null };
+        if (d.notice && d.notice.body) { setNotice(d.notice); return; }
         window.location.href = "/";
         return;
       }
@@ -61,6 +67,7 @@ export default function LoginPage() {
           <div className="foot">© Doors Direct · 2026</div>
         </div>
       </div>
+      {notice && <NoticeModal title={notice.title} body={notice.body} onClose={() => { window.location.href = "/"; }} />}
     </div>
   );
 }

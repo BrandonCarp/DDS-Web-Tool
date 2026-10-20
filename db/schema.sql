@@ -65,3 +65,13 @@ insert into barcodes (code, item_key, linked_by) values
   ('123456',  'FASTENERS|TRACK NUTS',        'setup'),
   ('1234567', 'FASTENERS|3/8" FLAT WASHERS', 'setup')
 on conflict (code) do nothing;
+
+-- App settings, one row a key (20/10/2026): the sign-in notice the admin panel
+-- writes lives under 'login_notice'. The app makes this table itself on the
+-- first save, so running this is not required for it.
+create table if not exists app_settings (
+  key        text primary key,
+  value      jsonb not null,
+  updated_at timestamptz not null default now(),
+  updated_by text
+);

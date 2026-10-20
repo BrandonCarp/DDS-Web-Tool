@@ -1,6 +1,8 @@
 import { requireAdmin } from "@/lib/auth";
 import { query } from "@/lib/db";
 import { AdminPanel, type AdminUser, type AdminEstimate, type LoginEvent } from "@/components/AdminPanel";
+import { EMPTY_NOTICE } from "@/lib/login-notice";
+import { readLoginNotice } from "@/lib/login-notice-db";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +57,8 @@ export default async function AdminPage() {
       `select ${baseCols} from estimates order by created_at desc limit 100`,
     );
   }
+  // The sign-in notice is the master admin's to set (20/10/2026).
+  const notice = master ? await readLoginNotice() : EMPTY_NOTICE;
   return (
     <div className="tool-shell admin-page">
       <AdminPanel
@@ -65,6 +69,7 @@ export default async function AdminPage() {
         meId={admin.id}
         master={master}
         username={admin.username}
+        notice={notice}
       />
     </div>
   );

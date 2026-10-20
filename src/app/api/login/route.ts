@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { verifyPassword, createSession, SESSION_COOKIE } from "@/lib/auth";
+import { noticeToShow } from "@/lib/login-notice";
+import { readLoginNotice } from "@/lib/login-notice-db";
 
 export async function POST(req: Request) {
   let body: Record<string, unknown> = {};
@@ -42,7 +44,10 @@ export async function POST(req: Request) {
     /* activity logging is best-effort */
   }
 
-  const res = NextResponse.json({ ok: true });
+  // The sign-in notice, when the admin panel has one switched on: the sign-in
+  // page shows it in a window before it goes on to the tool (20/10/2026).
+  const notice = noticeToShow(await readLoginNotice());
+  const res = NextResponse.json({ ok: true, notice });
   res.cookies.set(SESSION_COOKIE, token, {
     httpOnly: true, secure: true, sameSite: "lax", path: "/", expires,
   });
