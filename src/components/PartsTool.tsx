@@ -20,6 +20,7 @@ import { PartsNavigator } from "./PartsNavigator";
 import { cableQuote, CABLE_GAUGES } from "@/lib/pricing/data/cables";
 import { feetLimits, isLockbar, isSolidShaft, measuredToInch, partColors, pieceCounted, priceNoteText, priceNotSet, takesLength } from "@/lib/pricing/data/part-pricing";
 import { QtyStepper } from "./QtyStepper";
+import { PickInput, range } from "./PickInput";
 import { COMMERCIAL_TRACK, COMMERCIAL_TRACK_HEIGHTS, COMMERCIAL_TRACK_SUB, commercialTrackAt } from "@/lib/pricing/data/commercial-track";
 import { RESIDENTIAL_TRACK_SUB, pickResidentialTrack, radiiFor, residentialTrackSets, trackHeightFor } from "@/lib/pricing/data/residential-track";
 
@@ -258,8 +259,8 @@ export function PartsTool({
                   <div className="gbody" data-testid="track-res">
                     <div className="grow"><label>Width</label>
                       <div className="ctl dimrow">
-                        <input data-testid="track-width-ft" type="number" min={0} placeholder="ft" value={trkWFt}
-                          onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setTrkWFt(v); }} />
+                        <PickInput testId="track-width-ft" label="Width feet" min={0} placeholder="ft" value={trkWFt} options={range(6, 24)}
+                          onChange={(v) => { if (v === "" || Number(v) >= 0) setTrkWFt(v); }} />
                         <span className="u">ft</span>
                         <select data-testid="track-width-in" className="insel" aria-label="Width inches" value={trkWIn} onChange={(e) => setTrkWIn(e.target.value)}>
                           {["0", "2", "4", "6", "8", "10"].map((v) => <option key={v} value={v}>{v}</option>)}
@@ -269,8 +270,8 @@ export function PartsTool({
                     </div>
                     <div className="grow"><label>Height</label>
                       <div className="ctl dimrow">
-                        <input data-testid="track-height-ft" type="number" min={0} placeholder="ft" value={trkHFt}
-                          onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setTrkHFt(v); }} />
+                        <PickInput testId="track-height-ft" label="Height feet" min={0} placeholder="ft" value={trkHFt} options={range(6, 16)}
+                          onChange={(v) => { if (v === "" || Number(v) >= 0) setTrkHFt(v); }} />
                         <span className="u">ft</span>
                         <select data-testid="track-height-in" className="insel" aria-label="Height inches" value={trkHIn} onChange={(e) => setTrkHIn(e.target.value)}>
                           {["0", "3", "6", "9"].map((v) => <option key={v} value={v}>{v}</option>)}
@@ -454,24 +455,9 @@ export function PartsTool({
                     <div className="grow">
                       <label>Length</label>
                       <div className="ctl dimrow">
-                        <input
-                          data-testid="cable-ft"
-                          type="number"
-                          min={0}
-                          value={cabFt}
-                          onChange={(e) => setCabFt(e.target.value)}
-                          placeholder="ft"
-                        />
+                        <PickInput testId="cable-ft" label="Length feet" min={0} value={cabFt} options={range(6, 30)} onChange={setCabFt} placeholder="ft" />
                         <span className="u">ft</span>
-                        <input
-                          data-testid="cable-in"
-                          type="number"
-                          min={0}
-                          max={11}
-                          value={cabIn}
-                          onChange={(e) => setCabIn(e.target.value)}
-                          placeholder="in"
-                        />
+                        <PickInput testId="cable-in" label="Length inches" min={0} max={11} value={cabIn} options={range(0, 11)} onChange={setCabIn} placeholder="in" />
                         <span className="u">in</span>
                       </div>
                       <div className="muted-note" style={{ marginTop: 6 }}>
@@ -521,13 +507,14 @@ export function PartsTool({
                     <div className="grow">
                       <label>{toInch ? "How long?" : "How many feet?"}</label>
                       <div className={toInch ? "ctl dimrow" : "ctl"}>
-                        <input
-                          data-testid="parts-feet"
-                          type="number"
+                        <PickInput
+                          testId="parts-feet"
+                          label={toInch ? "Feet" : "How many feet"}
                           min={limits?.min ?? (toInch ? 0 : 1)}
                           max={limits?.max}
                           value={feet}
-                          onChange={(e) => setFeet(e.target.value)}
+                          options={range(limits?.min ?? (toInch ? 6 : 1), limits?.max ?? (toInch ? 24 : 100))}
+                          onChange={setFeet}
                           placeholder={limits ? `${limits.min} to ${limits.max}` : toInch ? "ft" : "e.g. 50"}
                         />
                         {toInch && (

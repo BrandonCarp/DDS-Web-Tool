@@ -14,6 +14,7 @@ import { TORSION, ID_ORDER, torsionPrice, fmtWire, springDescription, inchesText
 import { STOCK_TORSION_SPRINGS } from "@/lib/pricing/data/springs";
 import { partDescription, partPrice, partQuantity } from "@/lib/pricing/data/parts";
 import { QtyStepper } from "./QtyStepper";
+import { PickInput, range } from "./PickInput";
 
 const fmt = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -120,8 +121,8 @@ export function TorsionTool({ openOn }: { openOn?: SearchPick } = {}) {
               </div>
               <div className="field"><label className="lbl">Length (inches) <span className="req">*</span></label>
                 <div className="lenrow">
-                  <input data-testid="tor-length" type="text" inputMode="numeric" value={length} onChange={(e) => setLength(e.target.value)}
-                    placeholder="e.g. 24" aria-label="Whole inches" />
+                  <PickInput testId="tor-length" label="Whole inches" inputMode="numeric" min={0} value={length} options={range(8, 60)}
+                    onChange={setLength} placeholder="e.g. 24" />
                   <select data-testid="tor-length-frac" value={frac} onChange={(e) => setFrac(e.target.value)} aria-label="Fraction of an inch">
                     <option value="0">0</option>
                     <option value="0.25">1/4″</option>

@@ -201,12 +201,24 @@ describe("ribbed steel verbiage", () => {
     expect(sec("2415V", { lock: "none" })).toMatch(/single end stile$/);
     expect(sec("2415V", { secKind: "bt", lock: "slide" })).toMatch(/single end stile$/);
     expect(sec("524", { manFt: 12, manIn: 0, lock: "slide" })).toMatch(/inside slide lock, single end stile, stile locations needed$/);
-    expect(sec("524", { manFt: 14, manIn: 0, lock: "slide", windowPanels: [2, 3] })).toMatch(/windows in center of section, solid-glass-glass-solid, inside slide lock, single end stile, stile locations needed$/);
+    // A section with windows takes no lock (Brandon, 20/10/2026).
+    expect(sec("524", { manFt: 14, manIn: 0, lock: "slide", windowPanels: [2, 3] })).toMatch(/windows in center of section, solid-glass-glass-solid, single end stile, stile locations needed$/);
     expect(section("3200", { manFt: 8, manIn: 2, secHeight: "24", stile: "single", lock: "slide" })).toMatch(/single end stile, inside slide lock$/);
-    expect(section("3720", { manFt: 12, manIn: 0, windows: 1, stile: "single", lock: "slide" })).toMatch(/single end stile, inside slide lock$/);
+    expect(section("3720", { manFt: 12, manIn: 0, windows: 1, stile: "single", lock: "slide" })).toMatch(/single end stile$/);
     // Wording only: the price does not move.
     const price = (o: Record<string, unknown>) => quoteCommercial({ order: "section", mfr: "Clopay", model: "524", manFt: 12, manIn: 0, secKind: "int", secHeight: "24", stile: "single", color: "White", ...o } as never).unitPrice;
     expect(price({ lock: "slide" })).toBe(price({ lock: "none" }));
+  });
+
+  it("puts a lockbar on a windowless intermediate section at the add-on figures, and says so (Brandon, 20/10/2026)", () => {
+    const price = (o: Record<string, unknown>) => quoteCommercial({ order: "section", mfr: "Clopay", model: "524", manFt: 12, manIn: 0, secKind: "int", secHeight: "24", stile: "single", color: "White", ...o } as never).unitPrice;
+    expect(price({ lock: "lockbar" })).toBeCloseTo(price({ lock: "none" }) + 49.95, 2);
+    expect(price({ lock: "lockbar_installed" })).toBeCloseTo(price({ lock: "none" }) + 74.95, 2);
+    expect(price({ lock: "lockbar_installed", windowPanels: [2, 3] })).toBeCloseTo(price({ lock: "none", windowPanels: [2, 3] }), 2);
+    expect(sec("524", { manFt: 12, manIn: 0, lock: "lockbar", stileLocations: ['48"', '96"'] })).toMatch(/solid no windows, lockbar assembly, single end stile, stile locations 48" and 96"$/);
+    expect(sec("2415V", { lock: "lockbar_installed" })).toMatch(/solid no windows, lockbar installed, single end stile$/);
+    expect(sec("2415V", { secKind: "bt", lock: "lockbar" })).toMatch(/single end stile$/);
+    expect(section("3200", { manFt: 8, manIn: 2, secHeight: "24", stile: "single", lock: "lockbar" })).toMatch(/single end stile, lockbar assembly$/);
   });
 
   it("words the 2415 the same way, under its own maker", () => {

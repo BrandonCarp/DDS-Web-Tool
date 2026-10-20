@@ -51,7 +51,7 @@ export async function POST(req: Request) {
       stile: b.stile === "double" ? "double" : "single",
       stileLocations: Array.isArray(b.stileLocations) ? b.stileLocations.slice(0, 10).map((x) => String(x ?? "").slice(0, 40)) : undefined,
       stileLocationsNeeded: b.stileLocationsNeeded === true,
-      lock: b.lock === "slide" ? "slide" : "none",
+      lock: b.lock === "slide" || b.lock === "lockbar" || b.lock === "lockbar_installed" ? b.lock : "none",
       color: b.color === "Brown" ? "Brown" : "White",
     };
   }

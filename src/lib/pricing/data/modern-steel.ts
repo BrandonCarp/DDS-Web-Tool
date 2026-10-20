@@ -183,25 +183,24 @@ function listed(parts: readonly string[]): string {
  * The windows on the line, as DDS's estimates word a Modern Steel door
  * (Brandon, 19/10/2026): where they are — "all sections", "section 1",
  * "sections 1 and 3" — then, where a section is not glazed across, the
- * row as GL and SOL a panel, written LOOKING OUT (the drawing is the door
- * from outside, so its right-hand panel is the left looking out), and the
- * side the glass sits on: "all sections, GL-SOL, left side looking out".
+ * row as GL and SOL a panel, left to right, and the side the glass sits on:
+ * "all sections, GL-SOL, left side looking out". The drawing is the door
+ * from inside looking out (20/10/2026), so the row reads as drawn.
  * Sections glazed differently are each written with their row.
  */
 export function describeModernWindows(places: readonly WindowPlace[], sections: number, across: number): string {
   const has = new Set(places.map(placeKey));
   const glazed = [...new Set(places.map((p) => p.section))].filter((s) => s >= 1 && s <= sections).sort((a, b) => a - b);
   if (!glazed.length) return "no sections";
-  // A section's row looking out: the drawing's last panel first.
-  const row = (s: number) => Array.from({ length: across }, (_, i) => across - i).map((panel) => has.has(placeKey({ section: s, panel })) ? "GL" : "SOL");
+  // A section's row as drawn, left to right.
+  const row = (s: number) => Array.from({ length: across }, (_, i) => i + 1).map((panel) => has.has(placeKey({ section: s, panel })) ? "GL" : "SOL");
   const full = (s: number) => row(s).every((x) => x === "GL");
   const where = glazed.length === sections ? "all sections" : `section${glazed.length > 1 ? "s" : ""} ${listed(glazed.map(String))}`;
   const rows = new Set(glazed.map((s) => row(s).join("-")));
   const partial = glazed.some((s) => !full(s));
-  // Which side the glass is on, looking out: every window in the left half, or every one in the right.
+  // Which side the glass is on: every window in the left half, or every one in the right.
   const half = Math.floor(across / 2);
-  const outIndex = (panel: number) => across + 1 - panel;
-  const seats = places.filter((p) => glazed.includes(p.section)).map((p) => outIndex(p.panel));
+  const seats = places.filter((p) => glazed.includes(p.section)).map((p) => p.panel);
   const side = !partial ? "" : seats.every((j) => j <= half) ? "left side looking out" : seats.every((j) => j > across - half) ? "right side looking out" : "looking out";
   const text = rows.size === 1
     ? `${where}${partial ? `, ${[...rows][0]}` : ""}`

@@ -22,6 +22,8 @@ import { RESIDENTIAL_PHOTOS } from "@/lib/door-photos";
 import { vinylForDoor, vinylForDoorColor } from "@/lib/pricing/data/vinyl";
 import { VinylPrompt, YES_NO } from "./VinylPrompt";
 import { QtyStepper } from "./QtyStepper";
+import { PickInput, range } from "./PickInput";
+import { addonLine, OPERATOR_BRACKETS, operatorBracketPart, strutForWidth, type OperatorBracket } from "@/lib/pricing/data/door-addons";
 
 const GLASS = [
   { value: "solid", label: "Solid (no windows)" },
@@ -144,6 +146,10 @@ export function ResidentialTool({
   // in the quote card after — Brandon, 25/9/2026.
   const [vinylOn, setVinylOn] = useState(false);
   const [askVinyl, setAskVinyl] = useState(false);
+  // The add-ons suggested under the vinyl (Brandon, 20/10/2026): an operator
+  // bracket, ARB or ORB, and struts the door's width — none until chosen.
+  const [opBracket, setOpBracket] = useState<OperatorBracket>("none");
+  const [struts, setStruts] = useState(0);
   const [spring, setSpring] = useState<SpringKey>("extension");
   const [track, setTrack] = useState<TrackKey>("r12");
   const [lock, setLock] = useState<LockKey>("none");
@@ -399,7 +405,7 @@ export function ResidentialTool({
     setHeightFt(""); setHeightIn("0");
     setSecKind("bt"); setSecHeight("18"); setSecWidth(""); setSecGlass("solid"); setSecLock("none");
     setColor("");
-    setGlass("solid"); setFraming("plain"); setWindesign(""); setVinylOn(false);
+    setGlass("solid"); setFraming("plain"); setWindesign(""); setVinylOn(false); setOpBracket("none"); setStruts(0);
     setSpring("extension"); setTrack("r12"); setLock("none");
     setQty(1);
     setResult(null); setError(null); setSaved(false);
@@ -421,12 +427,19 @@ export function ResidentialTool({
   const vinyl = vinylColor && sizeComplete
     ? vinylForDoor(vinylColor, wf + (parseInt(widthIn, 10) || 0) / 12, hf + (parseInt(heightIn, 10) || 0) / 12, Math.max(1, qty))
     : null;
+  // The suggested add-ons as QuickBooks lines, for every door quoted.
+  const bracketPart = sections ? null : operatorBracketPart(opBracket);
+  const strutPart = sections || struts <= 0 ? null : strutForWidth(wf, parseInt(widthIn, 10) || 0);
+  const addonLines = [
+    ...(bracketPart ? [addonLine(bracketPart, Math.max(1, qty))] : []),
+    ...(strutPart ? [addonLine(strutPart, struts * Math.max(1, qty))] : []),
+  ];
 
 
   function clearAll() {
     setWidthFt(""); setWidthIn("0"); setHeightFt(""); setHeightIn("0");
     setSecKind("bt"); setSecHeight("18"); setSecWidth(""); setSecGlass("solid"); setSecLock("none");
-    setGlass("solid"); setFraming("plain"); setWindesign(""); setVinylOn(false);
+    setGlass("solid"); setFraming("plain"); setWindesign(""); setVinylOn(false); setOpBracket("none"); setStruts(0);
     setSpring("extension"); setTrack("r12"); setLock("none"); setQty(1);
   }
 
@@ -567,7 +580,8 @@ export function ResidentialTool({
                         </select>
                       </div>
                     ) : (
-                      <input data-testid="width-ft" type="number" min={0} placeholder="ft" value={widthFt} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setWidthFt(v); }} />
+                      <PickInput testId="width-ft" label="Width feet" min={0} placeholder="ft" value={widthFt} options={range(6, 24)}
+                        onChange={(v) => { if (v === "" || Number(v) >= 0) setWidthFt(v); }} />
                     )}
                     <span className="u">ft</span>
                     {stockSizes ? (
@@ -596,7 +610,8 @@ export function ResidentialTool({
                         </select>
                       </div>
                     ) : (
-                      <input data-testid="height-ft" type="number" min={0} placeholder="ft" value={heightFt} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) setHeightFt(v); }} />
+                      <PickInput testId="height-ft" label="Height feet" min={0} placeholder="ft" value={heightFt} options={range(6, 16)}
+                        onChange={(v) => { if (v === "" || Number(v) >= 0) setHeightFt(v); }} />
                     )}
                     <span className="u">ft</span>
                     {stockSizes ? (
@@ -825,20 +840,33 @@ export function ResidentialTool({
                   )}
                 </div>
               )}
-              {vinylOn && vinyl && (
-                <div className="lines">
-                  <div className="qline">
-                    {/* The pieces, as the Vinyl tab quotes them, not the footage — Brandon, 25/9/2026. */}
-                    <span className="nm" data-testid="vinyl-line">
-                      {vinyl.color} vinyl {vinyl.pieces.map((p) => `(${p.count}) ${p.ft}FT`).join(" & ")}
-                    </span>
+              {/* Under the vinyl, the add-ons a door usually wants (Brandon,
+                  20/10/2026): an operator bracket and struts the door's width,
+                  each a PARTS line on the copy once chosen. */}
+              {!sections && (
+                <div className="addons" data-testid="addons">
+                  <div className="addons-hdr">Suggested addons</div>
+                  <div className="qtyrow">
+                    <label htmlFor="opbracket">Operator bracket</label>
+                    <div className="selectwrap addons-sel">
+                      <select id="opbracket" data-testid="addon-bracket" value={opBracket} onChange={(e) => setOpBracket(e.target.value as OperatorBracket)}>
+                        {OPERATOR_BRACKETS.map((b) => <option key={b.value} value={b.value}>{b.label}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="qtyrow">
+                    <label htmlFor="struts">Strut</label>
+                    <QtyStepper id="struts" testId="addon-struts" min={0} value={struts} label="Struts" onChange={(v) => setStruts(Math.max(0, Math.trunc(Number(v)) || 0))} />
                   </div>
                 </div>
               )}
               <div className="qfoot">
                 <CopyQuickBooks item={QB_STOCK_DOORS} description={description}
                   rate={unit} qty={qty} testId="copy-qb"
-                  extraLines={vinylOn && vinyl ? [{ item: QB_VINYL, description: vinyl.description, qty: vinyl.feet, rate: vinyl.pricePerFt }] : undefined} />
+                  extraLines={[
+                    ...(vinylOn && vinyl ? [{ item: QB_VINYL, description: vinyl.description, qty: vinyl.feet, rate: vinyl.pricePerFt }] : []),
+                    ...addonLines,
+                  ]} />
               </div>
             </>
           ) : (

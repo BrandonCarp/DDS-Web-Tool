@@ -3,6 +3,7 @@
 
 import { collapseUpcharges } from "./types";
 import { COMM_MATRIX, COMM_SECTIONS, COMM_SECTION_STOCK, COMM_SLAB, STOCK_COMM, GRADE_COMM } from "./data/commercial";
+import { ADDONS } from "./data/addons";
 import {
   COMM_COMPLETE, panelCount, panelsPhrase, joinAnd, roundedFeet, slabBilledFeet, SLAB_MIN_FEET, SECTION_MAX_WIDTH_IN, maxWidthLabel, sectionColors,
   sectionWindowSizes, stileLocationCount,
@@ -52,8 +53,13 @@ export interface CommSectionInput {
   stile?: "none" | "single" | "double"; // per-foot only
   /** The stile measurements, left to right, as typed — a 524 or 2415 (stileLocationCount). */
   stileLocations?: string[];
-  /** An inside slide lock on an intermediate section — wording only, as on the complete door (16/10/2026). */
-  lock?: "none" | "slide";
+  /**
+   * A lock on an intermediate section with no windows (Brandon, 20/10/2026):
+   * a lockbar assembly or a lockbar installed, at the add-on figures the
+   * residential doors carry; "slide" is the inside slide lock of the 16th,
+   * wording only. A section with windows takes none.
+   */
+  lock?: "none" | "slide" | "lockbar" | "lockbar_installed";
   /** The locations are still to come: the line ends "stile locations needed". */
   stileLocationsNeeded?: boolean;
   color?: "White" | "Brown";          // DESCRIPTION ONLY — individual sections come in white or brown
@@ -287,6 +293,10 @@ export function quoteCommercial(input: CommInput): CommQuote {
     : [...new Set((input.windowPanels ?? []).map((n) => Math.trunc(n)))].filter((n) => n >= 1 && n <= panels).sort((a, b) => a - b);
   const nWin = input.secKind !== "int" ? 0 : input.windowPanels ? picked.length : Math.min(Math.trunc(Number(input.windows)) || 0, panels);
   if (nWin > 0) lines.push({ name: `Windows ×${nWin}`, value: COMM_SLAB.adders.window * nWin, kind: "add" });
+  // A lockbar on a windowless intermediate section, at the residential add-on figures.
+  const lock = input.secKind === "int" && nWin === 0 ? input.lock ?? "none" : "none";
+  if (lock === "lockbar") lines.push({ name: "Lockbar assembly", value: ADDONS.lockbar_assembly, kind: "add" });
+  if (lock === "lockbar_installed") lines.push({ name: "Lockbar installed", value: ADDONS.lockbar_installed, kind: "add" });
   const unitPrice = lines.reduce((a, l) => a + (l.kind === "minus" ? -l.value : l.value), 0);
 
   // Description for a replacement section. Written in the counter's own order —
@@ -325,9 +335,9 @@ export function quoteCommercial(input: CommInput): CommQuote {
   const stileLocations = stileCount > 0
     ? input.stileLocationsNeeded || !typed.length ? "stile locations needed" : `stile locations ${joinAnd(typed, "  ")}`
     : null;
-  // An inside slide lock goes on an intermediate section only: after the
-  // windows on a 524 or 2415, before the stiles; last on the other models.
-  const lockTxt = input.secKind === "int" && input.lock === "slide" ? "inside slide lock" : null;
+  // A lock goes on an intermediate section only: after the windows on a 524
+  // or 2415, before the stiles; last on the other models.
+  const lockTxt = ({ slide: "inside slide lock", lockbar: "lockbar assembly", lockbar_installed: "lockbar installed" } as Record<string, string>)[lock] ?? null;
   const description = insulation
     // The 524 and 2415 — Brandon's estimate of 16/10/2026: the section, the
     // colour, the insulation, the windows (or SOLID NO WINDOWS) and the

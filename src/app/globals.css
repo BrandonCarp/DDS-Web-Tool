@@ -524,6 +524,18 @@ html, body { margin: 0; padding: 0; }
 .tool-shell .dimrow select.insel { flex: none; width: 60px; padding: 8px 4px; text-align: center; }
 .tool-shell .dimrow .inpick { flex: none; width: 84px; }
 .tool-shell .dimrow .u { flex: none; margin-right: 4px; font-size: 13px; color: var(--muted); white-space: nowrap; }
+/* A box typed in or picked from (PickInput.tsx, 20/10/2026): the chevron at
+   its right is the list, laid over the box's end so a press there opens it. */
+.tool-shell .pickin { position: relative; display: inline-flex; min-width: 0; }
+.tool-shell .pickin > input { width: 100%; padding-right: 26px; }
+.tool-shell .dimrow .pickin { width: 88px; flex: none; }
+.tool-shell .dimrow .pickin > input { width: 88px; }
+.tool-shell .pickin-arrow {
+  position: absolute; top: 50%; right: 11px; width: 7px; height: 7px; pointer-events: none;
+  border-right: 1.75px solid var(--muted); border-bottom: 1.75px solid var(--muted); transform: translateY(-70%) rotate(45deg);
+}
+.tool-shell .pickin-sel { position: absolute; top: 0; right: 0; width: 28px; height: 100%; margin: 0; padding: 0; opacity: 0; cursor: pointer; }
+.tool-shell .lenrow .pickin > input { width: 100%; }
 
 .tool-shell .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .tool-shell .chip {
@@ -893,6 +905,14 @@ html, body { margin: 0; padding: 0; }
 }
 .tool-shell .qtyrow label { font-size: 14px; font-weight: 700; color: var(--ink-2); }
 .tool-shell .qtyrow > input { width: 84px; font-weight: 700; text-align: center; }
+/* The add-ons suggested under a stock door's vinyl (20/10/2026): a small
+   header, then a row each — the operator bracket's list, the struts' count. */
+.tool-shell .addons { border-top: 1px solid var(--line-2); }
+.tool-shell .addons-hdr { padding: 12px 20px 0; font-size: 11.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.tool-shell .addons .qtyrow { border-top: 0; padding-top: 8px; padding-bottom: 8px; }
+.tool-shell .addons .qtyrow:last-child { padding-bottom: 14px; }
+.tool-shell .addons-sel { width: 120px; }
+.tool-shell .addons-sel select { width: 100%; min-height: 36px; padding: 6px 28px 6px 10px; font-weight: 700; }
 
 .tool-shell .total {
   display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px;
@@ -1615,15 +1635,46 @@ html, body { margin: 0; padding: 0; }
   font-size: 15px; font-weight: 700; letter-spacing: .02em;
 }
 .tool-shell .pglass .selectwrap::after { right: 8px; border-color: var(--on-accent); }
-/* The stile boxes sit under each stile: the inches, then the quarter. */
-.tool-shell .pdiag-stiles { position: relative; height: 44px; }
-.tool-shell .pstile { position: absolute; top: 6px; display: flex; gap: 2px; transform: translateX(-50%); }
-.tool-shell .pstile input { width: 50px; min-height: 34px; padding: 4px; text-align: center; font-size: 14px; font-weight: 700; }
-.tool-shell .pstile .selectwrap { width: 56px; }
-.tool-shell .pstile select { width: 100%; min-height: 34px; padding: 4px 18px 4px 6px; font-size: 12.5px; }
+/* Over the drawing: the way it is read (Brandon, 20/10/2026). */
+.tool-shell .plook { margin: 0 0 6px; font-size: 12.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--ink); text-align: center; }
+/* The stile boxes sit under each stile: the inches, then the quarter —
+   bigger and bolder than the other boxes, so they are not missed (20/10/2026);
+   past one a stile (a double end stile, ADD STILE) they run in a row. */
+.tool-shell .pdiag-stiles { position: relative; height: 62px; }
+.tool-shell .pdiag-stiles.row { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: center; gap: 14px 12px; height: auto; min-height: 62px; padding-top: 6px; }
+.tool-shell .pdiag-stiles.row .pickin { width: 70px; }
+.tool-shell .pdiag-stiles.row .pickin > input { width: 70px; }
+.tool-shell .pdiag-stiles.row .selectwrap { width: 58px; }
+.tool-shell .pstile { position: absolute; top: 12px; transform: translateX(-50%); }
+.tool-shell .pdiag-stiles.row .pstile { position: static; transform: none; }
+.tool-shell .pstile-boxes { display: flex; gap: 3px; }
+.tool-shell .pstile .pickin { width: 76px; }
+.tool-shell .pstile .pickin > input { width: 76px; min-height: 42px; padding: 4px 22px 4px 6px; text-align: center; font-size: 17px; font-weight: 800; border: 2px solid var(--ink-2); }
+.tool-shell .pstile .pickin-arrow { right: 8px; }
+.tool-shell .pstile .selectwrap { width: 64px; }
+.tool-shell .pstile select { width: 100%; min-height: 42px; padding: 4px 20px 4px 6px; font-size: 14px; font-weight: 700; border: 2px solid var(--ink-2); }
 .tool-shell .pstile .selectwrap::after { right: 7px; }
+/* The − over a stile added by hand takes it out again. */
+.tool-shell .pstile-remove {
+  position: absolute; top: -13px; left: 50%; transform: translateX(-50%); width: 22px; height: 16px; padding: 0; margin: 0;
+  display: grid; place-items: center; border: 1.5px dashed var(--muted-2); border-radius: 3px; background: var(--surface); color: var(--muted);
+  font-size: 13px; line-height: 1; cursor: pointer;
+}
+.tool-shell .pdiag-stiles.row .pstile { position: relative; padding-top: 14px; }
+.tool-shell .pdiag-stiles.row .pstile-remove { top: -2px; }
+.tool-shell .pstile-remove:hover { color: var(--ink); border-color: var(--ink); }
+/* ADD STILE, at the end of the row: a + in a dotted box, the label under it. */
+.tool-shell .padd-wrap { position: absolute; right: -8px; top: 10px; display: grid; justify-items: center; gap: 2px; transform: translateX(100%); }
+.tool-shell .pdiag-stiles.row .padd-wrap { position: static; transform: none; padding-top: 2px; }
+.tool-shell .padd {
+  width: 42px; height: 42px; padding: 0; margin: 0; display: grid; place-items: center;
+  border: 2px dashed var(--muted-2); border-radius: 4px; background: transparent; color: var(--muted); font-size: 22px; line-height: 1; cursor: pointer;
+}
+.tool-shell .padd:hover { color: var(--ink); border-color: var(--ink); }
+.tool-shell .padd-lbl { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 /* Under the drawing, centred: what to do, then the Add windows button. */
 .tool-shell .pnotes { display: grid; justify-items: center; gap: 2px; padding: 2px 16px 12px; text-align: center; }
+.tool-shell .pnote-stiles { font-size: 14.5px; font-weight: 600; color: var(--ink-2); }
 .tool-shell .pnotes .btn { min-height: 38px; margin-top: 8px; padding: 6px 16px; font-size: 13.5px; }
 .tool-shell .btn.on { color: var(--accent-ink); border-color: var(--accent); background: var(--surface-3); }
 /* A group across both columns of the configuration; a column of groups stacked with no row to line up with. */

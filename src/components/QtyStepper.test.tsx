@@ -96,6 +96,7 @@ describe("every quantity box in the app is a stepper", () => {
     'data-testid={`comm-stile-', // a stile location's inches (15/10/2026)
     'data-testid="track-width-ft"', 'data-testid="track-height-ft"', // the door a residential track set is for
     'step="0.01"', // prices
+    'data-testid={testId}', // PickInput's box: a measurement typed or picked (20/10/2026)
   ];
 
   it("has no plain number box left but measurements and prices", () => {

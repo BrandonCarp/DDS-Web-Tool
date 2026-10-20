@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { cleanup, render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { ResidentialTool } from "./ResidentialTool";
 import { copiedQbLine, copyFrom } from "./test-clipboard";
-import { QB_VINYL } from "@/lib/pricing/data/quickbooks";
+import { QB_PARTS, QB_VINYL } from "@/lib/pricing/data/quickbooks";
 
 /**
  * What these cover, and why.
@@ -437,26 +437,48 @@ describe("residential tool — vinyl molding", () => {
     expect((await copyFrom(screen.getByTestId("copy-qb"))).split("\n")).toHaveLength(1);
   });
 
-  it("Yes puts the door on row 1 and the vinyl on row 3, row 2 left blank", async () => {
+  it("Yes puts the door on row 1 and the vinyl on row 3, row 2 left blank — with no pieces line in the card (20/10/2026)", async () => {
     await priceIt();
     fireEvent.click(screen.getByTestId("vinyl-ask-yes"));
-    await waitFor(() => screen.getByTestId("vinyl-line"));
-    // White 9' x 7': one 9' header and two 7' legs — the pieces, never a price.
-    expect(screen.getByTestId("vinyl-line").textContent?.trim()).toBe("WHITE vinyl (1) 9FT & (2) 7FT");
+    await waitFor(() => expect(screen.getByTestId("vinyl-yes").getAttribute("aria-checked")).toBe("true"));
+    expect(screen.queryByTestId("vinyl-line")).toBeNull();
     expect(screen.queryByTestId("vinyl-price")).toBeNull();
     const rows = (await copyFrom(screen.getByTestId("copy-qb"))).split("\n");
     expect(rows).toHaveLength(3);
     expect(rows[1]).toBe("");
+    // White 9' x 7': one 9' header and two 7' legs — the pieces, never a price.
     expect(rows[2].split("\t")).toEqual([QB_VINYL, "WHITE VINYL STOP MOLDING,  [1] - 9FT AND [2] - 7FT", "23", "0.95"]);
   });
 
   it("can change its mind in the quote card", async () => {
     await priceIt();
     fireEvent.click(screen.getByTestId("vinyl-ask-yes"));
-    await waitFor(() => screen.getByTestId("vinyl-line"));
+    await waitFor(() => expect(screen.getByTestId("vinyl-yes").getAttribute("aria-checked")).toBe("true"));
+    expect((await copyFrom(screen.getByTestId("copy-qb"))).split("\n")).toHaveLength(3);
     fireEvent.click(screen.getByTestId("vinyl-no"));
-    expect(screen.queryByTestId("vinyl-line")).toBeNull();
     expect((await copyFrom(screen.getByTestId("copy-qb"))).split("\n")).toHaveLength(1);
+  });
+
+  it("suggests an operator bracket and struts under the vinyl, each a PARTS line once chosen (Brandon, 20/10/2026)", async () => {
+    await priceIt();
+    fireEvent.click(screen.getByTestId("vinyl-ask-no"));
+    expect(screen.getByTestId("addons").querySelector(".addons-hdr")?.textContent).toBe("Suggested addons");
+    expect([...(screen.getByTestId("addon-bracket") as HTMLSelectElement).options].map((o) => o.textContent)).toEqual(["No", "ARB", "ORB"]);
+    expect((screen.getByTestId("addon-struts") as HTMLInputElement).value).toBe("0");
+    expect((await copyFrom(screen.getByTestId("copy-qb"))).split("\n")).toHaveLength(1);
+    fireEvent.change(screen.getByTestId("addon-bracket"), { target: { value: "ARB" } });
+    fireEvent.click(screen.getByTestId("addon-struts-plus"));
+    fireEvent.click(screen.getByTestId("addon-struts-plus"));
+    const rows = (await copyFrom(screen.getByTestId("copy-qb"))).split("\n");
+    // The bracket, then two struts the door's width — a 9'0" door takes the 9FT strut.
+    expect(rows).toHaveLength(5);
+    expect(rows[2].split("\t")).toEqual([QB_PARTS, "ARB BRACKET", "1", "12.95"]);
+    expect(rows[4].split("\t")).toEqual([QB_PARTS, '2-1/4" GALVANIZED STRUT, [2] - 9FT', "2", "17.95"]);
+    // Two doors: two brackets, four struts.
+    fireEvent.change(document.getElementById("qty")!, { target: { value: "2" } });
+    const twice = (await copyFrom(screen.getByTestId("copy-qb"))).split("\n");
+    expect(twice[2].split("\t")).toEqual([QB_PARTS, "ARB BRACKET", "2", "12.95"]);
+    expect(twice[4].split("\t")).toEqual([QB_PARTS, '2-1/4" GALVANIZED STRUT, [4] - 9FT', "4", "17.95"]);
   });
 
   it("never asks for a replacement section — its opening already has molding", async () => {

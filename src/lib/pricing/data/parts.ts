@@ -5,6 +5,9 @@
 // rate, so the per-foot figure never lands on the QuickBooks line.
 // Vinyl stop molding is deliberately absent: it takes a door size rather
 // than a footage and bills the other way round. See data/vinyl.ts.
+//
+// Hand edits since the sheet: the Felco cable cutter 99.95, not 74.95
+// (Brandon, 20/10/2026).
 
 export interface Part {
   name: string;
@@ -313,7 +316,7 @@ export const PART_CATEGORIES: PartCategory[] = [
   {
     "name": "TOOLS",
     "items": [
-      {"desc": "FELCO CABLE CUTTER", "name": "CABLE CUTTER", "price": 74.95},
+      {"desc": "FELCO CABLE CUTTER", "name": "CABLE CUTTER", "price": 99.95},
       {"desc": "RONAN MULTI CUT", "name": "MULTI CUT", "price": 30.95},
       {"desc": "RONAN MULTI CUT REPLACEMENT BLADES", "name": "MULTI CUT BLADES", "price": 9.95},
       {"desc": "TORSION SPRING POCKET GAUGE", "name": "POCKET GAUGE", "price": 42.95},

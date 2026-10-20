@@ -186,16 +186,29 @@ describe("commercial tab — a section's windows, pressed into the drawing once 
     expect(screen.getByTestId("comm-model-note").textContent).toBe("Wayne Dalton · 2″ non-insulated");
   });
 
-  it("offers an inside slide lock on an intermediate section only", async () => {
+  it("offers a lockbar on an intermediate section without windows only (Brandon, 20/10/2026)", async () => {
     configure("section", "Wayne Dalton", "2415V");
     expect(screen.queryByTestId("comm-sec-lock")).toBeNull();
     change("comm-sec-kind", "int");
-    expect(options("comm-sec-lock")).toEqual(["none", "slide"]);
-    change("comm-sec-lock", "slide");
+    expect(options("comm-sec-lock")).toEqual(["none", "lockbar", "lockbar_installed"]);
+    change("comm-sec-lock", "lockbar_installed");
     width("8", "2");
-    expect(await getPrice()).toMatchObject({ secKind: "int", lock: "slide" });
+    expect(await getPrice()).toMatchObject({ secKind: "int", lock: "lockbar_installed" });
+    // A window in the section takes the lock away.
+    fireEvent.click(screen.getByTestId("comm-add-windows"));
+    fireEvent.click(screen.getByTestId("comm-panel-1-add"));
+    expect(screen.queryByTestId("comm-sec-lock")).toBeNull();
+    expect(await getPrice()).toMatchObject({ secKind: "int", lock: "none" });
+    fireEvent.click(screen.getByTestId("comm-panel-1-remove"));
+    expect(options("comm-sec-lock")).toEqual(["none", "lockbar", "lockbar_installed"]);
     change("comm-sec-kind", "bt");
     expect(await getPrice()).toMatchObject({ secKind: "bt", lock: "none" });
+  });
+
+  it("says inside looking out over the drawing (Brandon, 20/10/2026)", () => {
+    configure("section", "Wayne Dalton", "2415V");
+    width("8", "2");
+    expect(screen.getByTestId("comm-looking-out").textContent).toBe("Inside looking out");
   });
 });
 
@@ -264,6 +277,30 @@ describe("commercial tab — stile locations on a 524 or 2415, under the stiles 
     body = await getPrice();
     expect(body).toMatchObject({ model: "2415V", secKind: "bt", stileLocations: ['39"', '78-1/2"', "", '156-1/4"'] });
     expect(screen.getByText("Enter in stile measurements — measurements are taken left to right.")).toBeTruthy();
+  });
+
+  it("adds a stile box for a double end stile, and ADD STILE adds one that its − takes out again (Brandon, 20/10/2026)", async () => {
+    configure("section", "Wayne Dalton", "2415V");
+    width("12");
+    expect(stileRows()).toBe(2);
+    expect(screen.queryByTestId("comm-stile-1-remove")).toBeNull();
+    change("comm-end-stiles", "double");
+    expect(stileRows()).toBe(3);
+    expect(screen.queryByTestId("comm-stile-3-remove")).toBeNull();   // the double end stile's box is not one to take out
+    fireEvent.click(screen.getByTestId("comm-add-stile"));
+    expect(stileRows()).toBe(4);
+    expect(screen.getByTestId("comm-stile-4-remove")).toBeTruthy();
+    stileInch(1, "39"); stileInch(3, "117"); stileInch(4, "140");
+    expect(await getPrice()).toMatchObject({ stile: "double", stileLocations: ['39"', "", '117"', '140"'] });
+    fireEvent.click(screen.getByTestId("comm-stile-4-remove"));
+    expect(stileRows()).toBe(3);
+    expect(await getPrice()).toMatchObject({ stileLocations: ['39"', "", '117"'] });
+    change("comm-end-stiles", "single");
+    expect(stileRows()).toBe(2);
+    // The inches can be picked as well as typed.
+    change("comm-stile-2-pick", "78");
+    expect((screen.getByTestId("comm-stile-2") as HTMLInputElement).value).toBe("78");
+    expect(await getPrice()).toMatchObject({ stileLocations: ['39"', '78"'] });
   });
 
   it("lays a section out as Brandon drew it (16/10/2026): the section beside colour, end stiles and lock, the drawing across both with its notes and Add windows under it", () => {

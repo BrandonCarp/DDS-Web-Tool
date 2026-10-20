@@ -34,6 +34,10 @@ describe("parts list", () => {
     }
   });
 
+  it("prices the Felco cable cutter at 99.95 (Brandon, 20/10/2026)", () => {
+    expect(find("TOOLS", "CABLE CUTTER").price).toBe(99.95);
+  });
+
   it("writes the footage onto a per-foot description", () => {
     // The sheet leaves a trailing comma for exactly this.
     // Raw track says the footage asked for; the stick is billed (below): 10FT asked, 12FT sold, line says 10FT.

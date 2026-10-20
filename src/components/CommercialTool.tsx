@@ -21,6 +21,7 @@ import {
 import { PanelDiagram, type StileValue } from "./PanelDiagram";
 import { homeownerMarkup } from "@/lib/pricing/engine";
 import { QtyStepper } from "./QtyStepper";
+import { PickInput, range } from "./PickInput";
 
 interface CommQuote {
   priced: boolean; incomplete?: string; warn?: string;
@@ -68,11 +69,14 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   // the inches and the quarter — as many as the sheet asks by width; or
   // "needed" when they are still to be determined (15/10/2026).
   const [stileVals, setStileVals] = useState<StileValue[]>([]);
+  // Stiles added by hand with ADD STILE, past the sheet's count (20/10/2026).
+  const [extraStiles, setExtraStiles] = useState(0);
   // Windows go in only after Add windows is pressed (16/10/2026).
   const [addingWindows, setAddingWindows] = useState(false);
   const [secColor, setSecColor] = useState<"White" | "Brown">("White");
-  // An inside slide lock on an intermediate section (16/10/2026).
-  const [lock, setLock] = useState<"none" | "slide">("none");
+  // A lock on an intermediate section without windows (20/10/2026): no
+  // lock, a lockbar assembly or a lockbar installed, at the add-on figures.
+  const [lock, setLock] = useState<"none" | "lockbar" | "lockbar_installed">("none");
 
   const [qty, setQty] = useState(1);
   const { custName, custPo, custJob } = useCustomerJob();
@@ -104,7 +108,13 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const glassOn = order === "complete" ? glass === "glass" : secKind === "int" && addingWindows;
   const winPanelsUsed = glassOn ? winPanels.filter((n) => n >= 1 && n <= panels) : [];
   const stileCount = order === "section" ? stileLocationCount(model, parseInt(manFt, 10) || 0, parseInt(manIn, 10) || 0) : 0;
-  const stileValsUsed = Array.from({ length: stileCount }, (_, i) => stileVals[i] ?? { inch: "", frac: "0" });
+  // The sheet's count, one more for a double end stile, and any added by hand (Brandon, 20/10/2026).
+  const stileFixed = stileCount > 0 ? stileCount + (stile === "double" ? 1 : 0) : 0;
+  const stileTotal = stileCount > 0 ? stileFixed + extraStiles : 0;
+  const stileValsUsed = Array.from({ length: stileTotal }, (_, i) => stileVals[i] ?? { inch: "", frac: "0" });
+  // A lock goes on an intermediate section with no windows in it.
+  const lockOffered = secKind === "int" && winPanelsUsed.length === 0;
+  const lockUsed = lockOffered ? lock : "none";
   const stileLocationsUsed = stileValsUsed.map((v) => stileLocationText(v.inch, v.frac));
   function togglePanel(p: number) {
     setWinPanels((cur) => (cur.includes(p) ? cur.filter((x) => x !== p) : [...cur, p].sort((a, b) => a - b)));
@@ -112,10 +122,15 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const allPanels = (n: number) => Array.from({ length: n }, (_, i) => i + 1);
   function setStileVal(i: number, patch: Partial<StileValue>) {
     setStileVals((cur) => {
-      const next = Array.from({ length: Math.max(stileCount, i + 1) }, (_, k) => cur[k] ?? { inch: "", frac: "0" });
+      const next = Array.from({ length: Math.max(stileTotal, i + 1) }, (_, k) => cur[k] ?? { inch: "", frac: "0" });
       next[i] = { ...next[i], ...patch };
       return next;
     });
+  }
+  /** Take out a stile added by hand, and what was typed in it. */
+  function removeStile(i: number) {
+    setStileVals((cur) => cur.filter((_, k) => k !== i));
+    setExtraStiles((n) => Math.max(0, n - 1));
   }
 
   // Widest section this model may be ordered in, for the input hint and the
@@ -130,7 +145,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const placements = order === "complete" ? windowPlacements(panels) : [];
   const placement = placementOf(panels, winPanelsUsed);
 
-  const cfgSig = JSON.stringify([mfr, model, order, size, glass, track, mount, cspring, clock, cColor, winSection, manFt, manIn, secKind, secHeight, winPanelsUsed, winSizeUsed, stile, stileLocationsUsed, secColor, lock, homeowner]);
+  const cfgSig = JSON.stringify([mfr, model, order, size, glass, track, mount, cspring, clock, cColor, winSection, manFt, manIn, secKind, secHeight, winPanelsUsed, winSizeUsed, stile, stileLocationsUsed, secColor, lockUsed, homeowner]);
   const result = resultRaw && resultSig === cfgSig ? resultRaw : null;
   const liveError = errorRaw && resultSig === cfgSig ? errorRaw : null;
   const priced = result?.priced ?? false;
@@ -147,7 +162,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   function pickModel(m: string) {
     setModel(m);
     setSize(""); setManFt(""); setManIn("0");
-    setWinPanels([]); setAddingWindows(false); setWindowSize(""); setStile("single"); setSecColor("White"); setStileVals([]); setLock("none");
+    setWinPanels([]); setAddingWindows(false); setWindowSize(""); setStile("single"); setSecColor("White"); setStileVals([]); setExtraStiles(0); setLock("none");
   }
   /** The order type, as the first two buttons ask it: it decides which models are listed. */
   function pickOrder(o: "complete" | "section") {
@@ -170,7 +185,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
     setSize(""); setGlass("solid"); setTrack("15R"); setMount("continuous"); setCspring("torsion"); setClock("none");
     setManFt(""); setManIn("0");
     setSecKind("bt"); setSecHeight("24"); setWinPanels([]); setAddingWindows(false); setWindowSize(""); setStile("single"); setSecColor("White");
-    setStileVals([]); setLock("none");
+    setStileVals([]); setExtraStiles(0); setLock("none");
     setQty(1); setResult(null); setError(null); setSaved(false);
   }
   function onBack() { resetConfig(); setStep(1); }
@@ -182,7 +197,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
         order === "complete"
           ? { order, mfr, model, size, glass, track, mount, cspring, clock, color: cColor, winSection: Number(winSection) || 3, windowPanels: winPanelsUsed, windowSize: winSizeUsed }
           : { order, mfr, model, manFt: Number(manFt), manIn: Number(manIn) || 0, secKind, secHeight, windowPanels: winPanelsUsed, windowSize: winSizeUsed, stile,
-              stileLocations: stileLocationsUsed, color: secColor, lock: secKind === "int" ? lock : "none" };
+              stileLocations: stileLocationsUsed, color: secColor, lock: lockUsed };
       const res = await fetch("/api/price/commercial", {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
       });
@@ -460,7 +475,8 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
                       <label>Door width</label>
                       <div className="ctl dimstack">
                         <div className="dimrow">
-                          <input data-testid="comm-width-ft" type="number" min={0} max={maxFt ?? undefined} placeholder="ft" value={manFt} onChange={(e) => { const v = e.target.value; if (v === "" || Number(v) >= 0) pickWidth(v, manIn); }} />
+                          <PickInput testId="comm-width-ft" label="Door width feet" min={0} max={maxFt ?? undefined} placeholder="ft" value={manFt}
+                            options={range(6, maxFt ?? 24)} onChange={(v) => { if (v === "" || Number(v) >= 0) pickWidth(v, manIn); }} />
                           <span className="u">ft</span>
                           {/* A picker, not a number box: 12 or 20 inches used to price a
                               section that cannot be built. The engine re-checks this
@@ -524,13 +540,14 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
                         </div>
                       </>
                     )}
-                    {secKind === "int" && (
+                    {lockOffered && (
                       <div className="grow">
                         <label>Lock</label>
                         <div className="ctl selectwrap">
-                          <select data-testid="comm-sec-lock" value={lock} onChange={(e) => setLock(e.target.value as "none" | "slide")}>
+                          <select data-testid="comm-sec-lock" value={lock} onChange={(e) => setLock(e.target.value as "none" | "lockbar" | "lockbar_installed")}>
                             <option value="none">No lock</option>
-                            <option value="slide">Inside slide lock</option>
+                            <option value="lockbar">Lockbar assembly</option>
+                            <option value="lockbar_installed">Lockbar installed</option>
                           </select>
                         </div>
                       </div>
@@ -550,11 +567,12 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
                     <div className="ggroup span" data-testid="comm-drawing">
                       <PanelDiagram panels={panels} windows={glassOn ? new Set(winPanelsUsed) : null} onToggle={togglePanel}
                         sizes={winSizes} size={winSizeUsed} onSize={setWindowSize}
-                        stiles={stileCount > 0 ? stileValsUsed : null} onStile={setStileVal}
+                        stiles={stileCount > 0 ? stileValsUsed : null} onStile={setStileVal} fixedStiles={stileFixed}
+                        onAddStile={stileCount > 0 ? () => setExtraStiles((k) => k + 1) : undefined} onRemoveStile={removeStile}
                         widthIn={widthIn} heightIn={Number(secHeight)} />
                       {(secKind === "int" || stileCount > 0) && (
                         <div className="pnotes">
-                          {stileCount > 0 && <div className="muted-note">Enter in stile measurements — measurements are taken left to right.</div>}
+                          {stileCount > 0 && <div className="pnote-stiles">Enter in stile measurements — measurements are taken left to right.</div>}
                           {secKind === "int" && (
                             <button type="button" className={`btn${addingWindows ? " on" : ""}`} data-testid="comm-add-windows" aria-pressed={addingWindows}
                               onClick={() => { setAddingWindows((v) => !v); setWinPanels([]); }}>

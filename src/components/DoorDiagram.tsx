@@ -8,7 +8,8 @@ import { placeKey, type WindowPlace } from "@/lib/pricing/data/modern-steel";
  * count for the size — drawn as a garage door is: raised steel sections with
  * a joint between them, the panels marked by their seams (Brandon,
  * 19/10/2026: the commercial section's picker, for the entire door, looking
- * like a door). A press on a panel puts a window in it, drawn as glass, and
+ * like a door), read from inside looking out, which the label over it says
+ * (20/10/2026). A press on a panel puts a window in it, drawn as glass, and
  * the x at its corner takes it out; ALL beside a section fills the row, or
  * clears it when it is full.
  */
@@ -34,6 +35,7 @@ export function DoorDiagram({
   const across = Array.from({ length: n }, (_, i) => i + 1);
   return (
     <div className={`ddiag${windows ? "" : " static"}`} data-testid={testId}>
+      <div className="plook" data-testid="door-looking-out">Inside looking out</div>
       <div className="ddiag-door" role={windows ? "group" : undefined} aria-label={windows ? "Windows by section and panel" : undefined}
         style={{ aspectRatio: `${ratio} / 1`, maxWidth: `${Math.round(ratio * 360)}px` }}>
         {stack.map((h, si) => {
