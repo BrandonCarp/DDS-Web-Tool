@@ -778,7 +778,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                     </div>
                   )}
                   {gTrackEff === "roof_pitch" && (
-                    <div className="grow"><label>Roof pitch</label>
+                    <div className="grow"><label>Pitch</label>
                       <div className="ctl selectwrap">
                         <select disabled={!gOpen} data-testid="so-roof-pitch" value={gPitchEff}
                           onChange={(e) => { setGPitch(e.target.value); setSaved(false); }}>

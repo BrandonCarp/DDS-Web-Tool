@@ -29,7 +29,7 @@ export function sheetTrackChoices(group: string): { value: SheetTrack; label: st
   if (!t) return [];
   const out: { value: SheetTrack; label: string }[] = [];
   if (t.fullVertical.bracket || t.fullVertical.angle) out.push({ value: "full_vertical", label: "Full vertical lift" });
-  if (t.roofPitch.bracket || t.roofPitch.angle) out.push({ value: "roof_pitch", label: "Roof pitch" });
+  if (t.roofPitch.bracket || t.roofPitch.angle) out.push({ value: "roof_pitch", label: "Follow the roof pitch" });
   return out;
 }
 

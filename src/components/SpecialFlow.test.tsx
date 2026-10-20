@@ -1297,7 +1297,7 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     fireEvent.change(sel("so-spring"), { target: { value: "torsion" } });
     await settle();
     expect(options("so-track").map((o) => o.value)).toEqual(["r10", "r12", "r15", "low_headroom", "r20", "r32", "high_lift", "full_vertical", "roof_pitch"]);
-    expect(options("so-track").slice(-2).map((o) => o.textContent)).toEqual(["Full vertical lift", "Roof pitch"]);
+    expect(options("so-track").slice(-2).map((o) => o.textContent)).toEqual(["Full vertical lift", "Follow the roof pitch"]);
     const solid = (await copiedQbLine(screen.getByTestId("copy-qb"))).rate;
     const sell = (cost: number) => Math.round((cost / 0.55) * 100) / 100;
     // High lift: breakaway or 25 degree, the sheet's inches up to the door's 81".
