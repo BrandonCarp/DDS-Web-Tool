@@ -42,7 +42,7 @@ export interface PriceResult {
   triple: PriceTriple | null; // all three styles for the resolved size
 }
 
-export type TrackKey = "r10" | "r12" | "r15" | "low_headroom" | "reverse_low_headroom" | "r20" | "r32" | "no_tracks" | "high_lift";
+export type TrackKey = "r10" | "r12" | "r15" | "low_headroom" | "reverse_low_headroom" | "r20" | "r32" | "no_tracks" | "high_lift" | "full_vertical" | "roof_pitch";
 /** Galvanized torsion springs are torsion springs too — Brandon, 5/10/2026. */
 export type SpringKey = "extension" | "torsion" | "galvanized";
 export type LockKey = "none" | "slide" | "lockbar" | "lockbar_installed";

@@ -47,7 +47,8 @@ describe("parts list", () => {
     );
     // A U retainer counts its piece, in the shelf's wording (14/10/2026).
     expect(partDescription(shelfPart("RETAINERS", '2" U RETAINER'), 8)).toBe('2" PLASTIC U RETAINER WITH RUBBER, [1] - 8FT');
-    expect(partDescription(shelfPart("RETAINERS", '1-3/8" U RETAINER'), 8.5)).toBe('1-3/8" PLASTIC U RETAINER WITH RUBBER, [1] - 8\'6"');
+    // Under the sticks a retainer bills the next whole foot up (20/10/2026): 8'6" is a 9FT.
+    expect(partDescription(shelfPart("RETAINERS", '1-3/8" U RETAINER'), 8.5)).toBe('1-3/8" PLASTIC U RETAINER WITH RUBBER, [1] - 9FT');
     // The 1-3/8" and 2" L retainers are plastic and count the piece too (16/10/2026); the 1-3/4" counts it under the sheet's words.
     expect(partDescription(shelfPart("RETAINERS", '2" L RETAINER'), 8)).toBe('2" PLASTIC L RETAINER, [1] - 8FT');
     expect(partDescription(shelfPart("RETAINERS", '1-3/8" L RETAINER'), 8)).toBe('1-3/8" PLASTIC L RETAINER, [1] - 8FT');
@@ -64,7 +65,7 @@ describe("parts list", () => {
     const u = partDescription(shelfPart("RETAINERS", '2" U RETAINER'), 12);
     expect(pieceCounted(u)).toBe(true);
     expect(withPieceCount(u, 3)).toBe('2" PLASTIC U RETAINER WITH RUBBER, [3] - 16FT');
-    expect(withPieceCount(partDescription(shelfPart("RETAINERS", '1-3/8" U RETAINER'), 8.5), 2)).toBe('1-3/8" PLASTIC U RETAINER WITH RUBBER, [2] - 8\'6"');
+    expect(withPieceCount(partDescription(shelfPart("RETAINERS", '1-3/8" U RETAINER'), 8.5), 2)).toBe('1-3/8" PLASTIC U RETAINER WITH RUBBER, [2] - 9FT');
     expect(withPieceCount(partDescription(shelfPart("RETAINERS", '2" L RETAINER'), 8), 4)).toBe('2" PLASTIC L RETAINER, [4] - 8FT');
     expect(withPieceCount(partDescription(shelfPart("STRUTS", "12FT STRUT")), 2)).toBe('2-1/4" GALVANIZED STRUT, [2] - 12FT');
     // One at a quantity of one, and a broken quantity counts one.
@@ -192,14 +193,23 @@ describe("raw track sticks (30/9/2026)", () => {
     expect(partDescription(shelfPart("RETAINERS", '2" U RETAINER'), 12)).toBe('2" PLASTIC U RETAINER WITH RUBBER, [1] - 16FT');
     expect(partDescription(shelfPart("RETAINERS", '2" U RETAINER'), 17)).toBe('2" PLASTIC U RETAINER WITH RUBBER, [1] - 18FT');
     // L retainers come as 16FT and 18FT sticks too (16/10/2026): 16'0" is the 16FT, 16'1" the 18FT.
-    for (const nm of ['2" L RETAINER', '1-3/8" L RETAINER', '1-3/4" L RETAINER']) {
-      for (const [asked, billed] of [[8, 8], [10, 10], [10 + 1 / 12, 16], [16, 16], [16 + 1 / 12, 18], [18, 18]]) {
+    // Under the sticks, whole feet rounded up (Brandon, 20/10/2026): 8'0" is 8FT, 8'2" to 9'0" is 9FT, 9'2" to 10'0" is 10FT.
+    for (const nm of ['2" L RETAINER', '1-3/8" L RETAINER', '1-3/4" L RETAINER', '2" U RETAINER', '1-3/8" U RETAINER']) {
+      for (const [asked, billed] of [[7, 7], [7 + 6 / 12, 8], [8, 8], [8 + 2 / 12, 9], [8 + 11 / 12, 9], [9, 9], [9 + 2 / 12, 10], [10, 10], [10 + 1 / 12, 16], [16, 16], [16 + 1 / 12, 18], [18, 18]]) {
         expect(billedFeet(shelfPart("RETAINERS", nm), asked), `${nm} at ${asked}`).toBe(billed);
       }
-      expect(partPrice(shelfPart("RETAINERS", nm), 16)).toBe(2.75 * 16);
+      expect(partPrice(shelfPart("RETAINERS", nm), 8 + 2 / 12)).toBeCloseTo(shelfPart("RETAINERS", nm).price * 9, 2);
+      expect(partDescription(shelfPart("RETAINERS", nm), 8 + 2 / 12)).toContain("[1] - 9FT");
+      expect(partPrice(shelfPart("RETAINERS", nm), 16)).toBeCloseTo(shelfPart("RETAINERS", nm).price * 16, 2);
       expect(partDescription(shelfPart("RETAINERS", nm), 16)).toContain("[1] - 16FT");
       expect(partDescription(shelfPart("RETAINERS", nm), 16.5)).toContain("[1] - 18FT");
     }
+    // The universal bottom retainer too (20/10/2026): to the inch, billed the next whole foot up, no stick.
+    const ub = shelfPart("RETAINERS", "UNIVERSAL BTM");
+    expect(measuredToInch(ub)).toBe(true);
+    for (const [asked, billed] of [[8, 8], [8 + 2 / 12, 9], [9, 9], [10 + 1 / 12, 11], [16 + 1 / 12, 17]]) expect(billedFeet(ub, asked), `universal at ${asked}`).toBe(billed);
+    expect(partPrice(ub, 8 + 2 / 12)).toBeCloseTo(3.5 * 9, 2);
+    expect(partDescription(ub, 8 + 2 / 12)).toBe("UNIVERSAL BOTTOM RETAINER,  9FT");
   });
 
   it("is asked for in feet and inches, and the line says them", () => {

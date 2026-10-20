@@ -28,6 +28,7 @@ import {
 import { sectionCost, windowSectionGroup, windowSectionSell } from "./coachman-windows";
 import { colorKeyFor, colorTakesPremium } from "./catalog-meta";
 import { highLiftPrice, mountPhrase, trackMountFor, type InclineStyle } from "./track-lift";
+import { glassWhere, sheetTrackPrice, sheetTracksFor } from "./sheet-tracks";
 import { ADDONS, GRADE_RES, COLLECTIONS_RES } from "./addons";
 import { dataKey } from "../model-groups";
 import { designName, specialPlainWindowsFor, specialWindowDesigns } from "./inserts";
@@ -64,10 +65,12 @@ export interface SpecialDoorInput {
   design?: string;
   /** The door's second colour — the Coachman's overlay, the Bridgeport Inlay's inlay — named on the line after the door's. */
   overlayColor?: string;
-  /** Track mount, incline and high lift — priced from the track-lift tables. */
+  /** Track mount, incline and high lift — priced from the track-lift tables, or the sheet's own (the 4138's). */
   trackMount?: string;
   incline?: string;
   highLiftInches?: number;
+  /** The pitch, 1/12 to 6/12, for track following the roof (the 4138's sheet). */
+  roofPitch?: string;
   /** A Modern Steel door's windows, where they were pressed in on the drawing: section from the top, panel from the left. */
   windowsAt?: WindowPlace[];
   /** The Modern Steel window's framing — its size, plain or with grilles (modern-steel.ts). */
@@ -87,6 +90,8 @@ export interface SpecialDoorQuote {
 
 const TRACK_TEXT: Record<string, string> = {
   high_lift: 'high lift track',
+  full_vertical: 'full vertical lift track',
+  roof_pitch: 'roof pitch track',
   r10: '10\u2033 radius track',
   r12: '12\u2033 radius track',
   r15: '15\u2033 radius track',
@@ -112,9 +117,9 @@ const TORSION_INCLUDED = new Set(["CD"]);
  */
 const HIGH_LIFT_GROUPS = new Set(["4050/4051/4053/4132"]);
 
-/** True when a group's special order configurator offers high lift track. */
+/** True when a group's special order configurator offers high lift track: the 4050 family off Clopay's book, and any group whose sheet prices it (the 4138, 20/10/2026). */
 export function highLiftOffered(group: string): boolean {
-  return HIGH_LIFT_GROUPS.has(group);
+  return HIGH_LIFT_GROUPS.has(group) || !!sheetTracksFor(group);
 }
 
 /** True when a group's grid prices include torsion at every height. */
@@ -631,18 +636,38 @@ export function specialDoorQuote(
   // extension is not sold, so one asked for is torsion.
   const spring: SpringKey = galvanizedPriced(input.model) && input.spring === "extension" ? "torsion" : input.spring;
   const springPriced = galvanizedPriced(input.model) && spring === "torsion" ? "galvanized" : spring;
-  // High lift is the 4050 family's; on any other door it is 12" radius track.
-  const track: TrackKey = input.track === "high_lift" && !highLiftOffered(input.model) ? "r12" : input.track;
+  // High lift is the 4050 family's and the sheet-tracked doors'; full
+  // vertical lift and roof pitch the sheet-tracked doors' alone (the 4138,
+  // 20/10/2026). On any other door each is 12" radius track.
+  const sheetTracks = sheetTracksFor(input.model);
+  const track: TrackKey =
+    (input.track === "high_lift" && !highLiftOffered(input.model))
+    || ((input.track === "full_vertical" || input.track === "roof_pitch") && !sheetTracks)
+      ? "r12" : input.track;
   const liftInches = track === "high_lift" ? input.highLiftInches ?? 0 : 0;
-  // A mount the model is not sold with (an angle mount on the 4138) is bracket.
+  // A mount the model is not sold with is bracket.
   const mount = trackMountFor(member, input.trackMount);
+  const [hf, hi] = [Number(input.height.split(".")[0]), Number(input.height.split(".")[1] ?? 0)];
 
   // High lift is priced from the Clopay track tables, then divided by the
   // group's margin — the grid holds SELL figures, so an adder has to be lifted
-  // into the same space before it can be added.
+  // into the same space before it can be added. A sheet-tracked door's high
+  // lift, full vertical lift and roof pitch come off its own sheet the same
+  // way, and the sheet says what each is built with: a track the door is not
+  // built with that way is not priced.
   const lift = (() => {
+    if (sheetTracks && (track === "high_lift" || track === "full_vertical" || track === "roof_pitch")) {
+      if (track === "high_lift" && liftInches <= 0) return { value: 0, label: "" };
+      const r = sheetTrackPrice({
+        group: input.model, track, mount, incline: input.incline, inches: liftInches, heightFt: hf, heightIn: hi,
+        pitch: input.roofPitch, glass: glassWhere(input.windowsAt, style !== "solid"),
+      });
+      if ("reason" in r) return { value: 0, label: "", reason: r.reason };
+      const margin = doorMargin(input.model);
+      const value = margin == null ? r.cost : Math.round((r.cost / (1 - margin / 100)) * 100) / 100;
+      return { value, label: r.label };
+    }
     if (liftInches <= 0) return { value: 0, label: "" };
-    const [hf, hi] = [Number(input.height.split(".")[0]), Number(input.height.split(".")[1] ?? 0)];
     const r = highLiftPrice({
       mount,
       incline: (input.incline ?? "straight_incline") as InclineStyle,
@@ -653,6 +678,7 @@ export function specialDoorQuote(
     const value = margin == null ? r.price : Math.round((r.price / (1 - margin / 100)) * 100) / 100;
     return { value, label: r.label };
   })();
+  if ("reason" in lift && lift.reason) return { reason: lift.reason };
 
   // Ultra-Grain and the other premium finishes on a sheet-priced door: a flat
   // adder, single or double (10'2" and up), in two height bands — up to 8'0",
@@ -681,7 +707,7 @@ export function specialDoorQuote(
 
   const adders =
     premium +
-    (track === "high_lift" ? 0 : ADDONS.track[track as keyof typeof ADDONS.track] ?? 0) +
+    (track === "high_lift" || track === "full_vertical" || track === "roof_pitch" ? 0 : ADDONS.track[track as keyof typeof ADDONS.track] ?? 0) +
     springAdder(springPriced, torsionOnly, parseInt(input.width, 10) >= 12, springRatesFor(member)) +
     (LOCK[input.lock] ?? 0) +
     lift.value +
@@ -759,6 +785,7 @@ export function specialDoorQuote(
     (mountPhrase(mount) ? `${mountPhrase(mount)}, ` : "") +
     `${track === "high_lift" && liftInches
         ? `${liftInches}\u2033 high lift track`
+        : track === "roof_pitch" && lift.label ? lift.label
         : TRACK_TEXT[track] ?? TRACK_TEXT.r12}, ` +
     `${spring === "galvanized" ? "galvanized torsion" : torsionOnly || spring === "torsion" ? "torsion" : "extension"} springs, ` +
     `${LOCK_TEXT[input.lock] ?? "no lock"}`;

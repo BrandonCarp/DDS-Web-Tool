@@ -1285,20 +1285,72 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     expect(line.description).toMatch(/CLOPAY MODERN COLLECTION, MODEL 4138, 7'6" X 8'0", IN THE COLOR WHITE, 1\/8" TEMPERED FROSTED SHORT 19 1\/2X16 WINDOWS IN SECTION 2, SOL-GL-SOL, LOOKING OUT, REC12 INSERTS/i);
   });
 
-  it("offers the 4138 bracket mount only, and the other Modern Steel doors every mount (Brandon, 20/10/2026)", async () => {
+  it("offers the 4138 every mount, and CJ's track options off its sheet: high lift breakaway or 25 degree, full vertical lift, roof pitch — torsion only (20/10/2026)", async () => {
     await pickModern("4138");
     setWidth("8");
     setHeight("7");
     fireEvent.change(sel("so-color"), { target: { value: "White" } });
     await settle();
-    expect(options("so-track-mount").map((o) => o.value)).toEqual(["bracket"]);
-    expect(sel("so-track-mount").value).toBe("bracket");
-    cleanup();
-    await pickModern("4308");
-    setWidth("8");
-    setHeight("7");
-    fireEvent.change(sel("so-color"), { target: { value: "White" } });
-    await settle();
     expect(options("so-track-mount").map((o) => o.value)).toEqual(["bracket", "continuous_angle", "reverse_angle"]);
+    // On extension springs none of the sheet's tracks are offered.
+    expect(options("so-track").map((o) => o.value)).toEqual(["r10", "r12", "r15", "low_headroom", "r20", "r32"]);
+    fireEvent.change(sel("so-spring"), { target: { value: "torsion" } });
+    await settle();
+    expect(options("so-track").map((o) => o.value)).toEqual(["r10", "r12", "r15", "low_headroom", "r20", "r32", "high_lift", "full_vertical", "roof_pitch"]);
+    expect(options("so-track").slice(-2).map((o) => o.textContent)).toEqual(["Full vertical lift", "Roof pitch"]);
+    const solid = (await copiedQbLine(screen.getByTestId("copy-qb"))).rate;
+    const sell = (cost: number) => Math.round((cost / 0.55) * 100) / 100;
+    // High lift: breakaway or 25 degree, the sheet's inches up to the door's 81".
+    fireEvent.change(sel("so-track"), { target: { value: "high_lift" } });
+    await settle();
+    expect(options("so-incline").map((o) => o.value)).toEqual(["breakaway", "deg25"]);
+    expect(sel("so-incline").value).toBe("breakaway");
+    expect(options("so-high-lift").map((o) => o.value).slice(1)).toEqual(["36", "39", "42", "45", "48", "51", "54", "57", "60", "63", "66", "69", "72", "75", "78", "81"]);
+    fireEvent.change(sel("so-high-lift"), { target: { value: "60" } });
+    await settle();
+    let line = await copiedQbLine(screen.getByTestId("copy-qb"));
+    expect(line.rate).toBeCloseTo(solid + sell(161.20), 2);
+    expect(line.description).toMatch(/60″ HIGH LIFT TRACK, TORSION SPRINGS/i);
+    fireEvent.change(sel("so-incline"), { target: { value: "deg25" } });
+    await settle();
+    expect(options("so-high-lift").map((o) => o.value).slice(-1)).toEqual(["72"]);
+    line = await copiedQbLine(screen.getByTestId("copy-qb"));
+    expect(line.rate).toBeCloseTo(solid + sell(188.91), 2);
+    // Angle mount off the angle column.
+    fireEvent.change(sel("so-track-mount"), { target: { value: "reverse_angle" } });
+    await settle();
+    line = await copiedQbLine(screen.getByTestId("copy-qb"));
+    expect(line.rate).toBeCloseTo(solid + sell(273.92), 2);
+    expect(line.description).toMatch(/2" REVERSE ANGLE MOUNT TRACK TO STEEL, 60″ HIGH LIFT TRACK/i);
+    // Full vertical lift, by the door's height; the pitch box only on roof pitch.
+    fireEvent.change(sel("so-track"), { target: { value: "full_vertical" } });
+    await settle();
+    expect(maybe("so-high-lift")).toBeNull();
+    expect(maybe("so-roof-pitch")).toBeNull();
+    line = await copiedQbLine(screen.getByTestId("copy-qb"));
+    expect(line.rate).toBeCloseTo(solid + sell(158.21), 2);
+    expect(line.description).toMatch(/2" REVERSE ANGLE MOUNT TRACK TO STEEL, FULL VERTICAL LIFT TRACK, TORSION SPRINGS/i);
+    fireEvent.change(sel("so-track"), { target: { value: "roof_pitch" } });
+    await settle();
+    expect(options("so-roof-pitch").map((o) => o.value)).toEqual(["1/12", "2/12", "3/12", "4/12", "5/12", "6/12"]);
+    fireEvent.change(sel("so-roof-pitch"), { target: { value: "5/12" } });
+    fireEvent.change(sel("so-track-mount"), { target: { value: "bracket" } });
+    await settle();
+    line = await copiedQbLine(screen.getByTestId("copy-qb"));
+    expect(line.rate).toBeCloseTo(solid + sell(137.27), 2);
+    expect(line.description).toMatch(/, 5\/12 ROOF PITCH TRACK, TORSION SPRINGS/i);
+    // Glass on full vertical lift is not built: the reason shows and nothing prices.
+    fireEvent.change(sel("so-track"), { target: { value: "full_vertical" } });
+    fireEvent.change(sel("so-framing"), { target: { value: "short" } });
+    await settle();
+    fireEvent.click(screen.getByTestId("door-panel-1-1-add"));
+    await settle();
+    expect(maybe("copy-qb")).toBeNull();
+    expect(document.body.textContent).toMatch(/Full vertical lift is built solid only/);
+    // Back to extension springs: the sheet's tracks fall back to 12" radius.
+    fireEvent.change(sel("so-spring"), { target: { value: "extension" } });
+    await settle();
+    expect(sel("so-track").value).toBe("r12");
+    expect(maybe("copy-qb")).toBeTruthy();
   });
 });

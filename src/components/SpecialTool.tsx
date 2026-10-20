@@ -35,6 +35,7 @@ import { homeownerMarkupForBand } from "@/lib/pricing/engine";
 import { OptionButtons, type ButtonOption } from "./OptionButtons";
 import { DoorDiagram } from "./DoorDiagram";
 import { modernFramingChoices, modernGlassForFraming, modernPanelsWide, modernPickerModel, modernStack, placeKey, type WindowPlace } from "@/lib/pricing/data/modern-steel";
+import { roofPitches, sheetInclines, sheetLiftChoices, sheetTrackChoices, sheetTracksFor } from "@/lib/pricing/data/sheet-tracks";
 import { QtyStepper } from "./QtyStepper";
 
 const fmt = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -161,6 +162,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const [gMount, setGMount] = useState<TrackMount>("bracket");
   const [gIncline, setGIncline] = useState<InclineStyle>("straight_incline");
   const [gLift, setGLift] = useState(0);
+  const [gPitch, setGPitch] = useState("1/12");
   const [homeowner, setHomeowner] = useState<"no" | "single" | "double">("no");
   const [price, setPrice] = useState("");
   const [qty, setQty] = useState(1);
@@ -193,7 +195,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const resetGrid = () => {
     setGWidthFt(""); setGWidthIn("0"); setGHeightFt(""); setGHeightIn("0"); setGColor(""); setGCdDesign(""); setGOverlay("");
     setGGlass("solid"); setGFraming(""); setGVariant(""); setGWinPlaces(new Set()); setGModernFraming("");
-    setGSpring("extension"); setGTrack("r12"); setGMount("bracket"); setGIncline("straight_incline"); setGLift(0); setGLock("none"); setHomeowner("no");
+    setGSpring("extension"); setGTrack("r12"); setGMount("bracket"); setGIncline("straight_incline"); setGLift(0); setGPitch("1/12"); setGLock("none"); setHomeowner("no");
     setVinylOn(false); setOpBracket("none"); setStruts(0);
   };
   const pickCommSeries = (v: string) => {
@@ -293,19 +295,27 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const gSpringUsed = gTorsionOnly && gSpring === "extension" ? "torsion" : gSpring;
   const gLiftOffered = gridded && highLiftOffered(modelGroup);
   const gLiftAllowed = gLiftOffered && canTakeHighLift(gSpringUsed);
+  // A sheet-tracked door (the 4138, CJ's TRACKS block of 20/10/2026) offers
+  // full vertical lift and roof pitch too, torsion like high lift, its high
+  // lift breakaway or 25 degree at the sheet's inches.
+  const gSheetTracks = gridded ? sheetTrackChoices(modelGroup) : [];
+  const gSheetTrack = gSheetTracks.some((t) => t.value === gTrack);
   // A high lift chosen on a door that then stops offering it is 12" radius.
-  const gTrackEff = gTrack === "high_lift" && !gLiftAllowed ? "r12" : gTrack;
+  const gTrackEff = (gTrack === "high_lift" && !gLiftAllowed) || ((gTrack === "full_vertical" || gTrack === "roof_pitch") && !(gSheetTrack && gLiftAllowed)) ? "r12" : gTrack;
   const gIsLift = gTrackEff === "high_lift";
   const gHeightFtN = Number(gHeightFt || "0");
   const gHeightInN = Number(gHeightIn || "0");
-  const gLiftSteps = highLiftChoices(gHeightFtN, gHeightInN);
-  const gEffLift = gLiftSteps.length && gLift > gLiftSteps[gLiftSteps.length - 1] ? 0 : gLift;
-  // The 4138 is bracket mount only (Brandon, 20/10/2026); an angle mount
-  // carried over from another model is bracket on it.
+  const gInclines = sheetInclines(modelGroup) ?? INCLINE_STYLES.map((i) => i.value);
+  const gInclineEff: InclineStyle = gInclines.includes(gIncline) ? gIncline : gInclines[0];
+  const gLiftSteps = sheetLiftChoices(modelGroup, gInclineEff, gHeightFtN, gHeightInN) ?? highLiftChoices(gHeightFtN, gHeightInN);
+  const gEffLift = gLiftSteps.includes(gLift) ? gLift : 0;
+  const gPitches = roofPitches(modelGroup);
+  const gPitchEff = gPitches.includes(gPitch) ? gPitch : gPitches[0] ?? "";
+  // A mount the model is not sold with is bracket on it.
   const gMounts = trackMountsFor(member);
   const gMountEff = trackMountFor(member, gMount);
-  const gLiftNote = gIsLift && gEffLift
-    ? highLiftPrice({ mount: gMountEff, incline: gIncline, heightFt: gHeightFtN, heightIn: gHeightInN, inches: gEffLift }).reason ?? ""
+  const gLiftNote = gIsLift && gEffLift && !sheetTracksFor(modelGroup)
+    ? highLiftPrice({ mount: gMountEff, incline: gInclineEff, heightFt: gHeightFtN, heightIn: gHeightInN, inches: gEffLift }).reason ?? ""
     : "";
 
   // Track depends on the door size — high lift caps at the height, and the
@@ -345,7 +355,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
         windowsAt: gModern ? gPlaces : undefined, modernFraming: gModern ? gModernFramingEff?.value : undefined,
         variant: (modelMember || gVariant) || undefined,
         track: gTrackEff as never, spring: gSpringUsed as never, lock: gLock as never,
-        trackMount: gMountEff, incline: gIncline, highLiftInches: gIsLift ? gEffLift : 0 })
+        trackMount: gMountEff, incline: gInclineEff, highLiftInches: gIsLift ? gEffLift : 0, roofPitch: gPitchEff })
     : null;
 
   // The door's vinyl stop molding, in the vinyl that matches its colour and cut
@@ -734,6 +744,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                         <option value="r20">20&quot; radius</option>
                         <option value="r32">32&quot; radius</option>
                         {gLiftAllowed && <option value="high_lift">High lift</option>}
+                        {gLiftAllowed && gSheetTracks.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                       </select>
                     </div>
                   </div>
@@ -759,9 +770,19 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                   {gIsLift && (
                     <div className="grow"><label>Incline style</label>
                       <div className="ctl selectwrap">
-                        <select disabled={!gOpen} data-testid="so-incline" value={gIncline}
+                        <select disabled={!gOpen} data-testid="so-incline" value={gInclineEff}
                           onChange={(e) => { setGIncline(e.target.value as InclineStyle); setSaved(false); }}>
-                          {INCLINE_STYLES.map((i) => <option key={i.value} value={i.value}>{i.label}</option>)}
+                          {INCLINE_STYLES.filter((i) => gInclines.includes(i.value)).map((i) => <option key={i.value} value={i.value}>{i.label}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                  {gTrackEff === "roof_pitch" && (
+                    <div className="grow"><label>Roof pitch</label>
+                      <div className="ctl selectwrap">
+                        <select disabled={!gOpen} data-testid="so-roof-pitch" value={gPitchEff}
+                          onChange={(e) => { setGPitch(e.target.value); setSaved(false); }}>
+                          {gPitches.map((p) => <option key={p} value={p}>{p}</option>)}
                         </select>
                       </div>
                     </div>

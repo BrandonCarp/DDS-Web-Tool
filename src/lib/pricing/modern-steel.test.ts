@@ -221,15 +221,13 @@ describe("Modern Steel — Clopay's stacking chart and panel counts (19/10/2026)
     expect(modernGlassForFraming("9138", modernFramingChoices("9138", "9138")[0])).toEqual(modernGlassOptions("9138"));
   });
 
-  it("sells the 4138 bracket mount only — no continuous or reverse angle (Brandon, 20/10/2026)", () => {
-    expect(trackMountsFor("4138").map((m) => m.value)).toEqual(["bracket"]);
-    expect(trackMountsFor("4308").map((m) => m.value)).toEqual(["bracket", "continuous_angle", "reverse_angle"]);
-    expect(trackMountFor("4138", "reverse_angle")).toBe("bracket");
-    expect(trackMountFor("4308", "reverse_angle")).toBe("reverse_angle");
+  it("sells every Modern Steel door with every mount — the 4138 too, since its sheet prices angle mount tracks (20/10/2026, afternoon)", () => {
+    for (const m of ["4138", "4308", "9208"]) expect(trackMountsFor(m).map((x) => x.value), m).toEqual(["bracket", "continuous_angle", "reverse_angle"]);
+    expect(trackMountFor("4138", "reverse_angle")).toBe("reverse_angle");
+    expect(trackMountFor("4308", "nonsense")).toBe("bracket");
     const line = (model: string, variant: string | undefined, trackMount: string) =>
       specialDoorQuote({ model, variant, width: "8", height: "7", style: "solid", color: "White", track: "r12", spring: "extension", lock: "none", trackMount }).quote!.description;
-    // Asked for on the 4138, an angle mount is bracket: nothing on the line.
-    expect(line("4138", undefined, "continuous_angle")).not.toMatch(/angle mount/i);
+    expect(line("4138", undefined, "continuous_angle")).toMatch(/2" continuous angle mount track to wood/);
     expect(line("4308/4309", "4308", "continuous_angle")).toMatch(/2" continuous angle mount track to wood/);
   });
 

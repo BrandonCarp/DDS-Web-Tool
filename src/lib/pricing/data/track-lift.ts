@@ -29,8 +29,12 @@ export const TRACK_MOUNTS: { value: TrackMount; label: string }[] = [
   { value: "reverse_angle", label: "Reverse angle mount to steel" },
 ];
 
-/** Models sold bracket mount only — the 4138 (Brandon, 20/10/2026): no continuous or reverse angle. */
-const BRACKET_ONLY = new Set(["4138"]);
+/**
+ * Models sold bracket mount only. The 4138 was (Brandon, 20/10/2026, morning)
+ * until CJ's sheet priced its angle mount tracks that afternoon — none now,
+ * the mechanism kept for the next one.
+ */
+const BRACKET_ONLY = new Set<string>([]);
 
 /** The mounts a model is sold with. */
 export function trackMountsFor(member: string): { value: TrackMount; label: string }[] {

@@ -1344,6 +1344,102 @@ def panels_wide(w, size):
     return None if w < 92 else 2 if w <= 140 else 3 if w <= 178 else 4 if w <= 228 else 5 if w <= 240 else None
 
 
+# The 4138 sheet's TRACKS block (CJ, 20/10/2026), under the grid: the track
+# options Clopay prices on it, list | cost at the TRACK multiplier (.774 on
+# the 4138, not the door's .776), bracket mount in A-C and angle mount in E-F:
+#
+#   BRACKET MOUNT, HIGH LIFT, BREAKAWAY …  | ANGLE MOUNT, HIGH LIFT, BREAKAWAY …
+#     36" … 117", a row a 3" of lift
+#   BRACKET MOUNT, HIGH LIFT, 25 DEGREE …  | ANGLE MOUNT, HIGH LIFT, 25 DEGREE …
+#     36" … 72", then STOPS AT 72"
+#   BRACKET MOUNT, FULL VERTICAL TRACKS …    7FT HIGH … 10FT HIGH, by door height
+#   ANGLE MOUNT, FULL VERTICAL TRACKS …
+#   BRACKET MOUNT FOLLOW THE ROOF PITCH      1/12 … 6/12 in B, list | cost in C-D
+#   ANGLE MOUNT FOLLOW THE ROOF PITCH          (the height labels down A are not read)
+#
+# The headings' build rules (solid only, top section glass, reverse angle) are
+# the app's own (sheet-tracks.ts); what lands here is the cost.
+TRACK_INCLINES = {"BREAKAWAY": "breakaway", "25 DEGREE": "deg25"}
+
+
+def read_tracks_block(ws, wsf, problems):
+    """The TRACKS block as {highLift: {incline: {bracket: {in: cost}, angle: {...}}}, fullVertical: {...}, roofPitch: {...}}, or None where the sheet has none."""
+    top = next((r for r in range(1, ws.max_row + 1) if str(ws.cell(r, 1).value or "").strip().upper() == "TRACKS"), None)
+    if top is None:
+        return None
+    tracks = {"highLift": {}, "fullVertical": {}, "roofPitch": {}, "mult": None}
+    mults = set()
+
+    def cost_at(r, lc, cc, where):
+        lst, cost = ws.cell(r, lc).value, ws.cell(r, cc).value
+        if not isinstance(lst, (int, float)) or not isinstance(cost, (int, float)):
+            problems.add(f"{ws.title} tracks {where} (row {r}): list {lst!r} / cost {cost!r} are not numbers")
+            return None
+        fm = mult_from_formula(wsf.cell(r, cc).value)
+        if fm is None or abs(lst * fm * K - cost) > 0.06:
+            problems.add(f"{ws.title} tracks {where} (row {r}): cost {cost!r} is not list {lst} at the formula's multiplier ({wsf.cell(r, cc).value!r})")
+            return None
+        mults.add(fm)
+        return money(cost)
+
+    r = top + 1
+    while r <= ws.max_row:
+        head = str(ws.cell(r, 1).value or "").strip().upper()
+        if "HIGH LIFT" in head:
+            incline = next((v for k, v in TRACK_INCLINES.items() if k in head), None)
+            angle_head = "ANGLE MOUNT" in str(ws.cell(r, 5).value or "").upper()
+            if incline is None:
+                problems.add(f"{ws.title} tracks row {r}: high lift heading {head!r} names no incline the app knows")
+            table = {"bracket": {}, "angle": {}}
+            r += 1
+            while re.match(r'^\d+"$', str(ws.cell(r, 1).value or "").strip()):
+                inch = int(str(ws.cell(r, 1).value).strip().rstrip('"'))
+                c = cost_at(r, 2, 3, f"{incline} bracket {inch}\"")
+                if c is not None:
+                    table["bracket"][inch] = c
+                if angle_head:
+                    c = cost_at(r, 5, 6, f"{incline} angle {inch}\"")
+                    if c is not None:
+                        table["angle"][inch] = c
+                r += 1
+            if incline:
+                tracks["highLift"][incline] = table
+            continue
+        if "FULL VERTICAL" in head or "ROOF PITCH" in head:
+            which = "fullVertical" if "FULL VERTICAL" in head else "roofPitch"
+            mount = "angle" if head.startswith("ANGLE") else "bracket"
+            table = {}
+            r += 1
+            while True:
+                a, b = ws.cell(r, 1).value, ws.cell(r, 2).value
+                if which == "fullVertical":
+                    m = re.match(r"^(\d+)FT HIGH$", str(a or "").strip().upper())
+                    if not m:
+                        break
+                    c = cost_at(r, 2, 3, f"full vertical {mount} {m.group(1)}FT")
+                    if c is not None:
+                        table[m.group(1)] = c
+                else:
+                    m = re.match(r"^(\d+)/12$", str(b or "").strip())
+                    if not m:
+                        break
+                    c = cost_at(r, 3, 4, f"roof pitch {mount} {b}")
+                    if c is not None:
+                        table[str(b).strip()] = c
+                r += 1
+            tracks[which][mount] = table
+            continue
+        r += 1
+    if not tracks["highLift"]:
+        problems.add(f"{ws.title}: a TRACKS block with no high lift table")
+    tracks["mult"] = sorted(mults)
+    said = ", ".join(f"{inc} {'/'.join(f'{m} {min(t)}-{max(t)}\"' for m, t in tb.items() if t)}" for inc, tb in tracks["highLift"].items())
+    print(f"  note: {ws.title}: tracks at x{'/'.join(f'{m:g}' for m in sorted(mults))}: high lift {said}; "
+          f"full vertical {'/'.join(tracks['fullVertical'])} by height {'/'.join(next(iter(tracks['fullVertical'].values()), {}))}FT; "
+          f"roof pitch {'/'.join(tracks['roofPitch'])} at {'/'.join(next(iter(tracks['roofPitch'].values()), {}))}")
+    return tracks
+
+
 def read_modern_sheet(ws, wsf, margins):
     """
     CJ's Modern Steel sheets on the Premium Steel workbook (19/10/2026): one a
@@ -1558,12 +1654,14 @@ def read_modern_sheet(ws, wsf, margins):
         print(f"  note: {ws.title}: rows {leftover - 1} on carry glass blocks down column A (the 9200 sheet's architectural series) — not read on this layout")
 
     ug = ultra_color_block(ws, wsf, problems)
+    tracks = read_tracks_block(ws, wsf, problems)
     print(f"  note: {ws.title}: windows {', '.join(f'{labels[g]} ({'/'.join(windows[g])})' for g in windows)}")
     return {
         "sheet": ws.title, "group": group, "members": members, "mult": mult, "glass_mult": mult, "flat": DOOR_FLAT,
         "min_width": {}, "ug": ug, "only_to_8": False, "unavailable": [],
         "tiers": list(tiers), "bands": bands, "gaps": gaps, "no_windows": {}, "glass": {},
         "solid_grid_only": True, "windows": windows, "window_labels": labels, "slim_glass": [g for g, _ in slim_glass], "counts": counts,
+        "tracks": tracks,
         "problems": problems,
     }
 
@@ -1836,6 +1934,40 @@ def write_modern_windows(fam, infos, workbook_name):
             continue
         out.append(f'  "{info["group"]}": {{ upTo8ft: {{ single: {ug["low"]["single"]:.2f}, double: {ug["low"]["double"]:.2f} }}, '
                    f'over8ft: {{ single: {ug["high"]["single"]:.2f}, double: {ug["high"]["double"]:.2f} }} }},')
+    out += ["};", "",
+            "/** A sheet's track options, cost before margin: high lift by incline, mount and inches of lift; full vertical lift by door height; track following the roof pitch by pitch. */",
+            "export interface SheetTracks {",
+            "  highLift: Record<string, { bracket: Record<number, number>; angle: Record<number, number> }>;",
+            "  fullVertical: { bracket?: Record<string, number>; angle?: Record<string, number> };",
+            "  roofPitch: { bracket?: Record<string, number>; angle?: Record<string, number> };",
+            "}",
+            "",
+            "/**",
+            " * The TRACKS block (CJ, 20/10/2026), where a sheet has one — the 4138's:",
+            " * breakaway high lift 36\" to 117\" and 25 degree 36\" to 72\", full vertical",
+            " * lift by door height, and track following the roof pitch, each bracket or",
+            " * angle mount, at the track multiplier. Cost, before margin.",
+            " */",
+            f"export const {const}_TRACKS: Record<string, SheetTracks> = {{"]
+    for info in infos:
+        tr = info.get("tracks")
+        if not tr:
+            out.append(f'  // "{info["group"]}": the sheet prices no tracks of its own.')
+            continue
+        out.append(f'  "{info["group"]}": {{')
+        out.append("    highLift: {")
+        for incline, table in tr["highLift"].items():
+            out.append(f"      {incline}: {{")
+            for mount in ("bracket", "angle"):
+                out.append(f"        {mount}: {{ " + ", ".join(f"{i}: {c:.2f}" for i, c in sorted(table[mount].items())) + " },")
+            out.append("      },")
+        out.append("    },")
+        for which in ("fullVertical", "roofPitch"):
+            out.append(f"    {which}: {{")
+            for mount, table in tr[which].items():
+                out.append(f"      {mount}: {{ " + ", ".join(f'"{k}": {c:.2f}' for k, c in table.items()) + " },")
+            out.append("    },")
+        out.append("  },")
     out += ["};", ""]
     fam["out"].write_text("\n".join(out))
 

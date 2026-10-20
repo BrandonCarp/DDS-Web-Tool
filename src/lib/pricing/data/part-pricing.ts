@@ -103,8 +103,9 @@ export function partQuantity(part: Part, right?: number, left?: number): number 
  * so a 16'0" is a 16FT stick). The offcut is not sellable, so the customer
  * pays for the whole stick.
  *
- * Under the threshold it still bills by the foot. Brandon: nobody asks for less
- * than 7 or 8 feet in practice, so there is no minimum charge to worry about.
+ * Under the threshold it bills whole feet, rounded up (Brandon, 20/10/2026):
+ * 8'0" is 8FT, 8'2" to 9'0" is 9FT, 9'2" to 10'0" is 10FT. Nobody asks for
+ * less than 7 or 8 feet in practice, so there is no minimum charge to worry about.
  *
  * Matches on " U RETAINER" / " L RETAINER" as the retainer TYPE. "UNIVERSAL
  * BOTTOM RETAINER" is not a U retainer and is deliberately not caught, nor are
@@ -160,9 +161,15 @@ export function takesLength(part: Part): boolean {
   return !!part.perFoot || isLockbar(part);
 }
 
+/** The universal bottom retainer: sold by the foot, measured to the inch and billed the next whole foot up (Brandon, 20/10/2026). */
+const UNIVERSAL_BOTTOM = /\bUNIVERSAL BOTTOM RETAINER\b/i;
+export function isUniversalBottom(part: Part): boolean {
+  return !!part.perFoot && (UNIVERSAL_BOTTOM.test(part.desc) || UNIVERSAL_BOTTOM.test(part.name));
+}
+
 /** Parts measured in feet and inches rather than whole feet. */
 export function measuredToInch(part: Part): boolean {
-  return isRetainer(part) || isLockbar(part) || isRawTrack(part) || isSolidShaft(part);
+  return isRetainer(part) || isUniversalBottom(part) || isLockbar(part) || isRawTrack(part) || isSolidShaft(part);
 }
 
 /** Feet actually billed for a part, which is not always the feet asked for. */
@@ -178,6 +185,8 @@ export function billedFeet(part: Part, feet?: number): number {
   for (const stick of RETAINER_STICKS) {
     if (stick.type.test(part.desc) && ft > stick.overFeet) return stick.billFeet;
   }
+  // A U or L retainer under its sticks, and the universal bottom retainer: the next whole foot up.
+  if (isRetainer(part) || isUniversalBottom(part)) return Math.ceil(ft - 1e-9);
   return ft;
 }
 

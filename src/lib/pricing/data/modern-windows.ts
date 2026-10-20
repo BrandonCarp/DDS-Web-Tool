@@ -85,3 +85,41 @@ export const MODERN_ULTRA_GRAIN: Record<string, { upTo8ft: { single: number; dou
   "4138": { upTo8ft: { single: 158.77, double: 317.53 }, over8ft: { single: 264.61, double: 529.22 } },
   "4308/4309": { upTo8ft: { single: 158.77, double: 317.53 }, over8ft: { single: 264.61, double: 529.22 } },
 };
+
+/** A sheet's track options, cost before margin: high lift by incline, mount and inches of lift; full vertical lift by door height; track following the roof pitch by pitch. */
+export interface SheetTracks {
+  highLift: Record<string, { bracket: Record<number, number>; angle: Record<number, number> }>;
+  fullVertical: { bracket?: Record<string, number>; angle?: Record<string, number> };
+  roofPitch: { bracket?: Record<string, number>; angle?: Record<string, number> };
+}
+
+/**
+ * The TRACKS block (CJ, 20/10/2026), where a sheet has one — the 4138's:
+ * breakaway high lift 36" to 117" and 25 degree 36" to 72", full vertical
+ * lift by door height, and track following the roof pitch, each bracket or
+ * angle mount, at the track multiplier. Cost, before margin.
+ */
+export const MODERN_TRACKS: Record<string, SheetTracks> = {
+  // "9208/9209": the sheet prices no tracks of its own.
+  "4138": {
+    highLift: {
+      breakaway: {
+        bracket: { 36: 136.17, 39: 136.17, 42: 136.17, 45: 136.17, 48: 136.17, 51: 136.17, 54: 136.17, 57: 148.69, 60: 161.20, 63: 173.72, 66: 186.23, 69: 198.75, 72: 211.26, 75: 223.78, 78: 236.29, 81: 248.81, 84: 261.32, 87: 273.84, 90: 286.35, 93: 298.87, 96: 311.38, 99: 323.90, 102: 336.41, 105: 348.93, 108: 361.44, 111: 373.96, 114: 386.48, 117: 398.99 },
+        angle: { 36: 221.18, 39: 221.18, 42: 221.18, 45: 221.18, 48: 221.18, 51: 221.18, 54: 221.18, 57: 233.70, 60: 246.21, 63: 258.73, 66: 271.24, 69: 283.76, 72: 296.27, 75: 308.79, 78: 321.30, 81: 333.82, 84: 346.33, 87: 358.85, 90: 371.36, 93: 383.88, 96: 396.39, 99: 408.91, 102: 421.42, 105: 433.94, 108: 446.45, 111: 458.97, 114: 471.48, 117: 484.00 },
+      },
+      deg25: {
+        bracket: { 36: 160.57, 39: 160.57, 42: 160.57, 45: 160.57, 48: 160.57, 51: 160.57, 54: 160.57, 57: 174.74, 60: 188.91, 63: 203.08, 66: 217.24, 69: 231.41, 72: 245.58 },
+        angle: { 36: 245.58, 39: 245.58, 42: 245.58, 45: 245.58, 48: 245.58, 51: 245.58, 54: 245.58, 57: 259.75, 60: 273.92, 63: 288.09, 66: 302.25, 69: 316.42, 72: 330.59 },
+      },
+    },
+    fullVertical: {
+      bracket: { "7": 104.69, "8": 119.64, "9": 134.60, "10": 149.55 },
+      angle: { "7": 158.21, "8": 173.17, "9": 188.12, "10": 203.08 },
+    },
+    roofPitch: {
+      bracket: { "1/12": 78.24, "2/12": 78.24, "3/12": 106.65, "4/12": 106.65, "5/12": 137.27, "6/12": 137.27 },
+      angle: { "1/12": 158.53, "2/12": 158.53, "3/12": 186.94, "4/12": 186.94, "5/12": 217.56, "6/12": 217.56 },
+    },
+  },
+  // "4308/4309": the sheet prices no tracks of its own.
+};

@@ -412,13 +412,16 @@ describe("retainers measured in feet and inches (9/10/2026)", () => {
     expect([...inches.options].map((o) => o.value)).toEqual(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"]);
   });
 
-  it("bills 8'6\" by the foot, to the inch, and names the length on the line", async () => {
+  it("bills 8'6\" as the next whole foot, 9FT, and names that on the line (Brandon, 20/10/2026)", async () => {
     uRetainer();
     fireEvent.change(screen.getByTestId("parts-feet"), { target: { value: "8" } });
     fireEvent.change(screen.getByTestId("parts-inches"), { target: { value: "6" } });
     const line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
-    expect(line.description).toContain("8'6\"");
-    expect(line.rate).toBeCloseTo(3.75 * 8.5, 2);
+    expect(line.description).toContain("[1] - 9FT");
+    expect(line.rate).toBeCloseTo(3.75 * 9, 2);
+    // 8'0" is 8FT as before.
+    fireEvent.change(screen.getByTestId("parts-inches"), { target: { value: "0" } });
+    expect((await copiedQbLine(screen.getByTestId("parts-copy-qb"))).rate).toBeCloseTo(3.75 * 8, 2);
   });
 
   it("bills 10'1\" as the 16FT stick, since it is over 10 feet, with no note saying so", async () => {
