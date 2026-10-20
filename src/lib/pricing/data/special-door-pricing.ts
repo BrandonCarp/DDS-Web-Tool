@@ -221,10 +221,11 @@ export function galvanizedPriced(group: string): boolean {
 /** The grades as the stock tab words them; every other glass goes by its label. */
 const GRADE_WORDS: Record<string, string> = { ssb: "Single strength b grade", dsb: "Double strength b grade" };
 
+// Worded as the residential line words them (Brandon, 20/10/2026: "lockbar assembly", not "lockbar").
 const LOCK_TEXT: Record<string, string> = {
   none: "no lock",
   slide: "inside slide lock",
-  lockbar: "lockbar",
+  lockbar: "lockbar assembly",
   lockbar_installed: "lockbar installed",
 };
 

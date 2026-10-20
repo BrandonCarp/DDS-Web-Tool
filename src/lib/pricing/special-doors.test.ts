@@ -161,6 +161,9 @@ describe("gridded door verbiage", () => {
   it("carries colour, options and the insert design through", () => {
     expect(d({ color: "Black", track: "low_headroom", spring: "torsion", lock: "lockbar_installed" }))
       .toContain("in the color Black, solid no windows, low headroom track, torsion springs, lockbar installed");
+    // A lockbar assembly says so, as the stock tab's line does (Brandon, 20/10/2026: it said "lockbar").
+    expect(d({ lock: "lockbar" })).toMatch(/, extension springs, lockbar assembly$/);
+    expect(d({ lock: "slide" })).toMatch(/, inside slide lock$/);
     expect(d({ width: "9", style: "inserts", windesign: "509" }))
       .toContain("windows in the top section, Colonial 509 inserts");
   });
