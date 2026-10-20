@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { describeModernWindows, describeWindowPlaces, modernFramings, modernGlassOptions, modernPanelsWide, modernPickerModel, modernStack, modernWindowCost } from "./data/modern-steel";
+import { describeModernWindows, describeWindowPlaces, modernFramingChoices, modernFramings, modernGlassForFraming, modernGlassOptions, modernPanelsWide, modernPickerModel, modernStack, modernWindowCost } from "./data/modern-steel";
 import { MODERN_GLASS_TYPES, MODERN_ULTRA_GRAIN, MODERN_WINDOW_COST } from "./data/modern-windows";
 import { specialDoorQuote } from "./data/special-door-pricing";
 import { specialOrderColors } from "./data/catalog-meta";
+import { trackMountsFor, trackMountFor } from "./data/track-lift";
 
 const K = 0.99 / (1 - 0.0265);
 const cost = (list: number, mult: number) => Math.round(list * mult * K * 100) / 100;
@@ -194,6 +195,42 @@ describe("Modern Steel — Clopay's stacking chart and panel counts (19/10/2026)
     // The other Modern Steel doors keep the stock adders.
     expect(q("8", "torsion", "9208/9209", "9208")).toBeCloseTo(q("8", "extension", "9208/9209", "9208") + 35, 2);
     expect(q("16", "galvanized", "4308/4309", "4308")).toBeCloseTo(q("16", "extension", "4308/4309", "4308") + 45, 2);
+  });
+
+  it("lists the framing first and the glass a window comes in after it (Brandon, 20/10/2026)", () => {
+    const v = (xs: { value: string }[]) => xs.map((x) => x.value);
+    const ids = (xs: { id: string }[]) => xs.map((x) => x.id);
+    // Every window the sheet prices in some glass: the 9208 and 4308 the slim window too, the 4138 not.
+    expect(v(modernFramingChoices("9208/9209", "9208"))).toEqual(["short", "long", "short_grilles:REC12", "long_grilles:REC14", "short_grilles:SQ22", "long_grilles:SQ24", "slim:black", "slim:silver"]);
+    expect(v(modernFramingChoices("4138", "4138"))).toEqual(["short", "long", "short_grilles:REC12", "long_grilles:REC14", "short_grilles:SQ22", "long_grilles:SQ24"]);
+    // The short window in every glass but the slim window's own 9/16"; the slim window in the three insulated glasses alone.
+    const short = modernFramingChoices("4308/4309", "4308").find((f) => f.value === "short")!;
+    const slim = modernFramingChoices("4308/4309", "4308").find((f) => f.value === "slim:black")!;
+    expect(ids(modernGlassForFraming("4308/4309", short))).toEqual(ids(modernGlassOptions("4308/4309")).filter((g) => g !== "insulated_tempered_midnight_gray_916"));
+    expect(ids(modernGlassForFraming("4308/4309", slim))).toEqual(["insulated_tempered", "insulated_tempered_frosted", "insulated_tempered_midnight_gray_916"]);
+    // Each pairing offered is one the sheet prices, and no window is offered without a glass.
+    for (const g of ["9208/9209", "4308/4309", "4138"]) {
+      for (const f of modernFramingChoices(g, g.split("/")[0])) {
+        const glass = modernGlassForFraming(g, f);
+        expect(glass.length, `${g} ${f.value}`).toBeGreaterThan(0);
+        for (const x of glass) expect(modernWindowCost(g, x.id, f.price), `${g} ${f.value} in ${x.id}`).not.toBeNull();
+      }
+    }
+    // No sheet (the 9138): every window the model takes, in every glass.
+    expect(v(modernFramingChoices("9138", "9138"))).toEqual(["short", "long", "short_grilles:REC12", "long_grilles:REC14", "short_grilles:SQ22", "long_grilles:SQ24"]);
+    expect(modernGlassForFraming("9138", modernFramingChoices("9138", "9138")[0])).toEqual(modernGlassOptions("9138"));
+  });
+
+  it("sells the 4138 bracket mount only — no continuous or reverse angle (Brandon, 20/10/2026)", () => {
+    expect(trackMountsFor("4138").map((m) => m.value)).toEqual(["bracket"]);
+    expect(trackMountsFor("4308").map((m) => m.value)).toEqual(["bracket", "continuous_angle", "reverse_angle"]);
+    expect(trackMountFor("4138", "reverse_angle")).toBe("bracket");
+    expect(trackMountFor("4308", "reverse_angle")).toBe("reverse_angle");
+    const line = (model: string, variant: string | undefined, trackMount: string) =>
+      specialDoorQuote({ model, variant, width: "8", height: "7", style: "solid", color: "White", track: "r12", spring: "extension", lock: "none", trackMount }).quote!.description;
+    // Asked for on the 4138, an angle mount is bracket: nothing on the line.
+    expect(line("4138", undefined, "continuous_angle")).not.toMatch(/angle mount/i);
+    expect(line("4308/4309", "4308", "continuous_angle")).toMatch(/2" continuous angle mount track to wood/);
   });
 
   it("carries the sheet's ULTRA COLOR block: Iron Ore and the Ultra-Grain finishes a flat adder, lifted by the 45%", () => {

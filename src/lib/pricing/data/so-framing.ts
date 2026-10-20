@@ -185,6 +185,28 @@ function seriesFraming(group: string, member: string, width: string, glass: stri
   return out;
 }
 
+/**
+ * The Framing list first (Brandon, 20/10/2026): every window the door takes
+ * at the width in any of its glass — the plain windows, then the inserts, as
+ * the list in a glass orders them — and the glass follows from the window.
+ * Nothing where the width is not built with windows.
+ */
+export function framingChoices(group: string, member: string, width: string, windowsOk: boolean): FramingOption[] {
+  if (!width || !windowsOk) return [];
+  const out: FramingOption[] = [];
+  for (const g of glassTypeOptions(group, width, true)) {
+    if (g.id === SOLID.id) continue;
+    for (const f of framingOptions(group, member, width, g.id)) if (!out.some((o) => o.value === f.value)) out.push(f);
+  }
+  return [...out.filter((o) => o.kind === "plain"), ...out.filter((o) => o.kind !== "plain")];
+}
+
+/** The glass a window comes in at the width, in the glass list's order; Solid alone where no window is chosen. */
+export function glassForFraming(group: string, member: string, width: string, framing: FramingOption | undefined): GlassOption[] {
+  if (!framing || !width) return [SOLID];
+  return glassTypeOptions(group, width, true).filter((g) => g.id !== SOLID.id && framingOptions(group, member, width, g.id).some((f) => f.value === framing.value));
+}
+
 /** "PLAIN ARCH 1" and "Arch 1 Plain" are the same window. */
 function sameWindow(orderName: string, designName: string): boolean {
   const words = (s: string) => s.toUpperCase().replace(/[^A-Z0-9 ]/g, "").split(/\s+/).filter(Boolean).sort().join(" ");

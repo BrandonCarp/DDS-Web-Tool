@@ -7,14 +7,15 @@ import { priceText } from "@/components/CopyButton";
 import { CopyQuickBooks } from "./CopyQuickBooks";
 import { QB_SPECIAL_ORDERS, QB_VINYL } from "@/lib/pricing/data/quickbooks";
 import { vinylForDoor, vinylForDoorColor } from "@/lib/pricing/data/vinyl";
-import { VinylPrompt, YES_NO } from "./VinylPrompt";
+import { YES_NO } from "./VinylPrompt";
+import { addonLine, OPERATOR_BRACKETS, operatorBracketPart, strutForWidth, type OperatorBracket } from "@/lib/pricing/data/door-addons";
 import {
   SPECIAL, SPECIAL_COMMERCIAL, SPECIAL_COMMERCIAL_PINNED, SPECIAL_COMMERCIAL_SERIES,
   commercialSeriesOf, SO_MANUFACTURERS, seriesFor, hasSingleSeries, modelGroupsOf,
 } from "@/lib/pricing/data/special-orders";
 import {
   specialDoorQuote, hasGrid, griddedWidths, griddedHeights,
-  offeredHeights, tierForOfferedHeight, heightLabel,
+  offeredHeights, tierForOfferedHeight,
   groupMembers, groupHasWidthLimits, heightForcesTorsion, torsionIncluded, highLiftOffered, shouldSplitGroup,
   minWidthFor, excludedWidthsFor,
   parseModelSelection, modelSelectionValue, windowsOfferedAt,
@@ -23,17 +24,17 @@ import { COLORS, specialOrderColors } from "@/lib/pricing/data/catalog-meta";
 import { designsBuilt, designLabel, designTakesWindows, hasDesigns, secondColorName, secondColors } from "@/lib/pricing/data/door-designs";
 import { isSheetGroup, windowsPricedAt } from "@/lib/pricing/data/so-glass";
 import {
-  splitSize, sizeKey, feetOptions, inchOptions, glassTypeOptions, framingOptions, windowChoice, GLAZED_SECTIONS,
+  splitSize, sizeKey, feetOptions, inchOptions, framingChoices, glassForFraming, windowChoice, GLAZED_SECTIONS, SOLID,
 } from "@/lib/pricing/data/so-framing";
 import {
-  TRACK_MOUNTS, INCLINE_STYLES, highLiftChoices, highLiftPrice, canTakeHighLift,
+  trackMountsFor, trackMountFor, INCLINE_STYLES, highLiftChoices, highLiftPrice, canTakeHighLift,
   type TrackMount, type InclineStyle,
 } from "@/lib/pricing/data/track-lift";
 import { dataKey } from "@/lib/pricing/model-groups";
 import { homeownerMarkupForBand } from "@/lib/pricing/engine";
 import { OptionButtons, type ButtonOption } from "./OptionButtons";
 import { DoorDiagram } from "./DoorDiagram";
-import { modernFramings, modernGlassOptions, modernPanelsWide, modernPickerModel, modernStack, placeKey, type WindowPlace } from "@/lib/pricing/data/modern-steel";
+import { modernFramingChoices, modernGlassForFraming, modernPanelsWide, modernPickerModel, modernStack, placeKey, type WindowPlace } from "@/lib/pricing/data/modern-steel";
 import { QtyStepper } from "./QtyStepper";
 
 const fmt = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -182,15 +183,18 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const isPinnedModel = (v: string) => SPECIAL_COMMERCIAL_PINNED.includes(v);
   const commSeriesName = isPinnedModel(cSeries) ? (commercialSeriesOf(cSeries) ?? "") : cSeries;
   const commModels = SPECIAL_COMMERCIAL_SERIES.find((g) => g.name === commSeriesName)?.models ?? [];
-  // Vinyl molding for a configured door, asked once the door prices and
-  // changeable after, as the stock tab does it (Brandon, 14/10/2026).
+  // Vinyl molding for a configured door: No until the Yes on the quote card
+  // (Brandon, 20/10/2026 — no question asked), and the add-ons suggested
+  // under it, an operator bracket and struts the door's width, as the stock
+  // tab has them.
   const [vinylOn, setVinylOn] = useState(false);
-  const [vinylAsked, setVinylAsked] = useState(false);
+  const [opBracket, setOpBracket] = useState<OperatorBracket>("none");
+  const [struts, setStruts] = useState(0);
   const resetGrid = () => {
     setGWidthFt(""); setGWidthIn("0"); setGHeightFt(""); setGHeightIn("0"); setGColor(""); setGCdDesign(""); setGOverlay("");
     setGGlass("solid"); setGFraming(""); setGVariant(""); setGWinPlaces(new Set()); setGModernFraming("");
     setGSpring("extension"); setGTrack("r12"); setGMount("bracket"); setGIncline("straight_incline"); setGLift(0); setGLock("none"); setHomeowner("no");
-    setVinylOn(false); setVinylAsked(false);
+    setVinylOn(false); setOpBracket("none"); setStruts(0);
   };
   const pickCommSeries = (v: string) => {
     setCSeries(v);
@@ -255,21 +259,23 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   // where they are pressed in on the door drawing below (Brandon,
   // 19/10/2026) — each as CJ's sheet prices the pair, a window at a time.
   const gModern = gridded && modernPickerModel(member);
-  const gGlassOptions = gridded && gWidth
-    ? gModern ? [{ id: "solid", label: "Solid — no windows" }, ...(gWindowsOk ? modernGlassOptions(modelGroup) : [])] : glassTypeOptions(modelGroup, gWidth, gWindowsOk)
-    : [];
-  const gGlassEff = gGlassOptions.some((g) => g.id === gGlass) ? gGlass : "solid";
-  const gGlazed = gGlassEff !== "solid";
-  const gFramings = gridded && gWidth && gGlazed && !gModern ? framingOptions(modelGroup, member, gWidth, gGlassEff) : [];
-  // The framing picked stays through a glass change where the new glass
-  // offers it (a Coachman design, say); where it does not, the first is used.
-  const gFramingEff = gFramings.find((f) => f.value === gFraming) ?? gFramings[0];
+  // The framing comes first (Brandon, 20/10/2026): Solid, then every window
+  // the door takes at the width; the glass list is what that window comes
+  // in, the first of them until another is picked. No framing is a solid door.
+  const gFramings = gridded && gWidth && !gModern ? framingChoices(modelGroup, member, gWidth, gWindowsOk) : [];
+  const gFramingEff = gFramings.find((f) => f.value === gFraming);
   const [vwf0, vwi0] = gWidth.split(".").map(Number); const [vhf0, vhi0] = gHeight.split(".").map(Number);
   // The drawing for the size: Clopay's section stack and panel count, by the window's size.
-  const gModernFramings = gModern && gWidth && gGlazed
-    ? modernFramings(modelGroup, member, gGlassEff).filter((f) => modernPanelsWide(vwf0, vwi0 ?? 0, f.size) != null) : [];
-  // The first window the glass comes in unless another is picked.
-  const gModernFramingEff = gModernFramings.find((f) => f.value === gModernFraming) ?? gModernFramings[0] ?? null;
+  const gModernFramings = gModern && gWidth && gWindowsOk
+    ? modernFramingChoices(modelGroup, member).filter((f) => modernPanelsWide(vwf0, vwi0 ?? 0, f.size) != null) : [];
+  const gModernFramingEff = gModernFramings.find((f) => f.value === gModernFraming) ?? null;
+  const gGlazed = gModern ? !!gModernFramingEff : !!gFramingEff;
+  // The glass list is empty until a window is chosen — Solid is the framing's.
+  const gGlassOptions = !gridded || !gWidth || !gGlazed ? []
+    : gModern ? modernGlassForFraming(modelGroup, gModernFramingEff) : glassForFraming(modelGroup, member, gWidth, gFramingEff);
+  // The glass picked stays through a framing change where the new window
+  // comes in it; where it does not, the first it comes in is used.
+  const gGlassEff = !gGlazed ? "solid" : gGlassOptions.some((g) => g.id === gGlass) ? gGlass : gGlassOptions[0]?.id ?? "solid";
   const gStack = gModern && gHeight ? modernStack(vhf0, vhi0 ?? 0) : null;
   const gPanelsWide = gModern && gWidth && gModernFramingEff ? modernPanelsWide(vwf0, vwi0 ?? 0, gModernFramingEff.size) : null;
   // Windows pressed in that still fit the drawing — a size or framing change can shrink it.
@@ -294,8 +300,12 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const gHeightInN = Number(gHeightIn || "0");
   const gLiftSteps = highLiftChoices(gHeightFtN, gHeightInN);
   const gEffLift = gLiftSteps.length && gLift > gLiftSteps[gLiftSteps.length - 1] ? 0 : gLift;
+  // The 4138 is bracket mount only (Brandon, 20/10/2026); an angle mount
+  // carried over from another model is bracket on it.
+  const gMounts = trackMountsFor(member);
+  const gMountEff = trackMountFor(member, gMount);
   const gLiftNote = gIsLift && gEffLift
-    ? highLiftPrice({ mount: gMount, incline: gIncline, heightFt: gHeightFtN, heightIn: gHeightInN, inches: gEffLift }).reason ?? ""
+    ? highLiftPrice({ mount: gMountEff, incline: gIncline, heightFt: gHeightFtN, heightIn: gHeightInN, inches: gEffLift }).reason ?? ""
     : "";
 
   // Track depends on the door size — high lift caps at the height, and the
@@ -336,7 +346,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
         windowsAt: gModern ? gPlaces : undefined, modernFraming: gModern ? gModernFramingEff?.value : undefined,
         variant: (modelMember || gVariant) || undefined,
         track: gTrackEff as never, spring: gSpringUsed as never, lock: gLock as never,
-        trackMount: gMount, incline: gIncline, highLiftInches: gIsLift ? gEffLift : 0 })
+        trackMount: gMountEff, incline: gIncline, highLiftInches: gIsLift ? gEffLift : 0 })
     : null;
 
   // The door's vinyl stop molding, in the vinyl that matches its colour and cut
@@ -346,8 +356,13 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const vinyl = vinylColor
     ? vinylForDoor(vinylColor, Number(vwf) + (Number(vwi ?? 0)) / 12, Number(vhf) + (Number(vhi ?? 0)) / 12, Math.max(1, qty))
     : null;
-  // Asked once, when the door first prices; Yes or No stays in the quote card.
-  const askVinyl = !!vinyl && !vinylAsked;
+  // The suggested add-ons as QuickBooks lines, for every door quoted.
+  const bracketPart = gridded && kind === "door" ? operatorBracketPart(opBracket) : null;
+  const strutPart = gridded && kind === "door" && struts > 0 ? strutForWidth(Number(vwf) || 0, Number(vwi ?? 0)) : null;
+  const addonLines = [
+    ...(bracketPart ? [addonLine(bracketPart, Math.max(1, qty))] : []),
+    ...(strutPart ? [addonLine(strutPart, struts * Math.max(1, qty))] : []),
+  ];
 
   // Grid first when it produced a price and the counter has not typed a total.
   // A typed total always wins: it is what someone reaches for precisely when
@@ -648,12 +663,21 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                   </div>
                   <div className="ggroup">
                   <div className="ghdr">Window options</div>
-                  <div className="grow"><label>Glass type</label>
+                  <div className="grow"><label>Framing</label>
                     <div className="ctl selectwrap">
-                      <select disabled={!gOpen} data-testid="so-glass" value={gGlassEff}
-                        onChange={(e) => { setGGlass(e.target.value); setSaved(false); }}>
-                        {(gGlassOptions.length ? gGlassOptions : [{ id: "solid", label: "Solid — no windows" }]).map((g) => <option key={g.id} value={g.id}>{g.label}</option>)}
-                      </select>
+                      {gModern ? (
+                        <select disabled={!gOpen} data-testid="so-framing" value={gModernFramingEff?.value ?? ""}
+                          onChange={(e) => { setGModernFraming(e.target.value); setGWinPlaces(new Set()); setSaved(false); }}>
+                          <option value="">{SOLID.label}</option>
+                          {gModernFramings.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
+                        </select>
+                      ) : (
+                        <select disabled={!gOpen} data-testid="so-framing" value={gFramingEff?.value ?? ""}
+                          onChange={(e) => { setGFraming(e.target.value); setSaved(false); }}>
+                          <option value="">{SOLID.label}</option>
+                          {gFramings.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
+                        </select>
+                      )}
                     </div>
                     {gWidth && !gWindowsOk && (!gDesigned || designTakesWindows(modelGroup, gDesignEff)) && (
                       <div className="muted-note" style={{ marginTop: 6 }} data-testid="so-no-windows">
@@ -669,20 +693,13 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                       </select>
                     </div>
                   </div>}
-                  <div className="grow"><label>Framing</label>
+                  <div className="grow"><label>Glass type</label>
                     <div className="ctl selectwrap">
-                      {gModern ? (
-                        <select disabled={!gOpen || !gGlazed} data-testid="so-framing" value={gModernFramingEff?.value ?? ""}
-                          onChange={(e) => { setGModernFraming(e.target.value); setGWinPlaces(new Set()); setSaved(false); }}>
-                          {gModernFramings.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
-                        </select>
-                      ) : (
-                        <select disabled={!gOpen || !gGlazed} data-testid="so-framing" value={gFramingEff?.value ?? ""}
-                          onChange={(e) => { setGFraming(e.target.value); setSaved(false); }}>
-                          {gFramings.length === 0 && <option value="">Plain (no insert)</option>}
-                          {gFramings.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
-                        </select>
-                      )}
+                      <select disabled={!gOpen || !gGlazed} data-testid="so-glass" value={gGlazed ? gGlassEff : ""}
+                        onChange={(e) => { setGGlass(e.target.value); setSaved(false); }}>
+                        {!gGlazed && <option value=""></option>}
+                        {gGlassOptions.map((g) => <option key={g.id} value={g.id}>{g.label}</option>)}
+                      </select>
                     </div>
                   </div>
                   </div>
@@ -723,9 +740,9 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                   </div>
                   <div className="grow"><label>Track mount</label>
                     <div className="ctl selectwrap">
-                      <select disabled={!gOpen} data-testid="so-track-mount" value={gMount}
+                      <select disabled={!gOpen} data-testid="so-track-mount" value={gMountEff}
                         onChange={(e) => { setGMount(e.target.value as TrackMount); setSaved(false); }}>
-                        {TRACK_MOUNTS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+                        {gMounts.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
                       </select>
                     </div>
                   </div>
@@ -915,26 +932,32 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                   )}
                 </div>
               )}
-              {vinylOn && vinyl && (
-                <div className="lines">
-                  <div className="qline">
-                    <span className="nm" data-testid="so-vinyl-line">
-                      {vinyl.color} vinyl {vinyl.pieces.map((p) => `(${p.count}) ${p.ft}FT`).join(" & ")}
-                    </span>
+              {gridded && kind === "door" && !manual && (
+                <div className="addons" data-testid="so-addons">
+                  <div className="addons-hdr">Suggested addons</div>
+                  <div className="qtyrow">
+                    <label htmlFor="so-opbracket">Operator bracket</label>
+                    <div className="selectwrap addons-sel">
+                      <select id="so-opbracket" data-testid="so-addon-bracket" value={opBracket} onChange={(e) => { setOpBracket(e.target.value as OperatorBracket); setSaved(false); }}>
+                        {OPERATOR_BRACKETS.map((b) => <option key={b.value} value={b.value}>{b.label}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="qtyrow">
+                    <label htmlFor="so-struts">Strut</label>
+                    <QtyStepper id="so-struts" testId="so-addon-struts" min={0} value={struts} label="Struts"
+                      onChange={(v) => { setStruts(Math.max(0, Math.trunc(Number(v)) || 0)); setSaved(false); }} />
                   </div>
                 </div>
               )}
               <div className="qfoot">
                 <CopyQuickBooks item={QB_SPECIAL_ORDERS} description={copyText ?? label}
                   rate={(n?.sell ?? 0) + hoMarkup} qty={qty} onCopy={saveQuote} testId="copy-qb"
-                  extraLines={vinylOn && vinyl ? [{ item: QB_VINYL, description: vinyl.description, qty: vinyl.feet, rate: vinyl.pricePerFt }] : undefined} />
+                  extraLines={!manual ? [
+                    ...(vinylOn && vinyl ? [{ item: QB_VINYL, description: vinyl.description, qty: vinyl.feet, rate: vinyl.pricePerFt }] : []),
+                    ...addonLines,
+                  ] : undefined} />
               </div>
-              {askVinyl && vinyl && (
-                <VinylPrompt
-                  detail={`${vinyl.color} vinyl stop molding for this ${heightLabel(gWidth)} x ${heightLabel(gHeight)} door.`}
-                  onAnswer={(yes) => { setVinylOn(yes); setVinylAsked(true); setSaved(false); }}
-                />
-              )}
             </>
           )}
         </div>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  splitSize, sizeKey, feetOptions, inchOptions, glassTypeOptions, framingOptions, designPanel, windowChoice, GLAZED_SECTIONS,
+  splitSize, sizeKey, feetOptions, inchOptions, glassTypeOptions, framingOptions, framingChoices, glassForFraming, designPanel, windowChoice, GLAZED_SECTIONS, SOLID,
 } from "./data/so-framing";
 import { ARCHITECTURAL, DECORATIVE, plainWindowsFor, specialPlainWindowsFor, specialWindowDesigns, windowDesigns } from "./data/inserts";
 import { specialDoorQuote } from "./data/special-door-pricing";
@@ -206,6 +206,53 @@ describe("framing", () => {
     // 12'0" to 13'8": the REC and SQ designs and the arched sections; 14'0": solid only.
     expect(framingOptions("CD", "CD", "12", "dsb").map((o) => o.design)).toEqual(["REC11", "REC13", "REC14", "SQ23", "SQ24", "ARC13A", "ARC14A", "ARC1A", "ARC3A", "ARC4A"]);
     expect(framingOptions("CD", "CD", "14", "dsb")).toEqual([]);
+  });
+});
+
+describe("framing first, the glass from the window (Brandon, 20/10/2026)", () => {
+  const G = "4050/4051/4053/4132";
+  const ids = (xs: { id: string }[]) => xs.map((x) => x.id);
+
+  it("lists every window the door takes at the width over all its glass, the plain windows first", () => {
+    const f = framingChoices(G, "4050", "8", true);
+    const plain = f.filter((o) => o.kind === "plain");
+    expect(plain.map((o) => o.label)).toEqual(['PLAIN SHORT 19-1/2" X 12"', 'PLAIN LONG 40-1/2" X 12"', 'PLAIN SHORT 19-1/2" X 16"', 'PLAIN LONG 42" X 16"', "PLAIN ARCH 1", "Arch 2 Plain"]);
+    expect(f.findIndex((o) => o.kind !== "plain")).toBe(plain.length);
+    expect(f.map((o) => o.label)).toContain("Colonial 509 inserts");
+    expect(f.map((o) => o.label)).toContain("SQ24 inserts");
+    expect(new Set(f.map((o) => o.value)).size).toBe(f.length);
+    // Under 8'0" the short windows alone; nothing where the width is not built with windows.
+    expect(framingChoices(G, "4050", "7", true).every((o) => o.panel === "short")).toBe(true);
+    expect(framingChoices(G, "4050", "8", false)).toEqual([]);
+    expect(framingChoices(G, "4050", "", true)).toEqual([]);
+    // The Coachman: its window designs and arched sections at the width; none at 14'0".
+    expect(framingChoices("CD", "CD", "12", true).map((o) => o.design)).toEqual(["REC11", "REC13", "REC14", "SQ23", "SQ24", "ARC13A", "ARC14A", "ARC1A", "ARC3A", "ARC4A"]);
+    expect(framingChoices("CD", "CD", "14", true)).toEqual([]);
+  });
+
+  it("gives a window the glass it comes in — the standard glass behind a standard window, single strength first; the architectural behind an architectural one; any of the Coachman's behind a design", () => {
+    const f = framingChoices(G, "4050", "9", true);
+    const by = (label: string) => f.find((o) => o.label === label);
+    expect(ids(glassForFraming(G, "4050", "9", by('PLAIN SHORT 19-1/2" X 12"')))).toEqual([
+      "ssb", "dsb", "acrylic", "obscure", "insulated", "insulated_obscure", "frosted", "insulated_frosted", "rain", "insulated_rain",
+    ]);
+    expect(ids(glassForFraming(G, "4050", "9", by('PLAIN SHORT 19-1/2" X 16"')))).toEqual([
+      "dsb", "obscure", "insulated", "insulated_obscure", "frosted", "insulated_frosted", "rain", "insulated_rain",
+      "seeded", "insulated_seeded", "midnight_gray", "insulated_midnight_gray", "tempered_midnight_gray", "insulated_tempered_midnight_gray",
+    ]);
+    // An insert comes in the glass its window takes inserts in.
+    const seeded = ids(glassForFraming(G, "4050", "9", by("SQ24 inserts")));
+    expect(seeded).toContain("seeded");
+    expect(seeded).not.toContain("acrylic");
+    expect(ids(glassForFraming("CD", "CD", "16", framingChoices("CD", "CD", "16", true)[0]))).toEqual(["dsb", "obscure", "frosted", "rain", "seeded"]);
+    // No window: Solid alone.
+    expect(glassForFraming(G, "4050", "9", undefined)).toEqual([SOLID]);
+    // Every window comes in at least one glass, and every glass offered frames the window.
+    for (const o of f) {
+      const g = glassForFraming(G, "4050", "9", o);
+      expect(g.length, o.label).toBeGreaterThan(0);
+      for (const x of g) expect(framingOptions(G, "4050", "9", x.id).map((y) => y.value), `${o.label} in ${x.id}`).toContain(o.value);
+    }
   });
 });
 

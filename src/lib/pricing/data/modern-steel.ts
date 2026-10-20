@@ -156,6 +156,26 @@ export function modernFramings(group: string, model: string, glass?: string): Mo
   return all.filter((f) => priced[f.price] != null);
 }
 
+/**
+ * The framing list first (Brandon, 20/10/2026): every window the model takes
+ * that the group's sheet prices in some glass — all of them where no sheet
+ * prices the group yet.
+ */
+export function modernFramingChoices(group: string, model: string): ModernFraming[] {
+  const all = CLOPAY_FRAMINGS.filter((f) => f.size !== "slim" || SLIM_MODELS.has(model));
+  const sheet = MODERN_WINDOW_COST[group];
+  if (!sheet) return all;
+  return all.filter((f) => Object.values(sheet).some((priced) => priced[f.price] != null));
+}
+
+/** The glass a window comes in, in Clopay's order: what the sheet prices it in — every glass where no sheet prices the group. */
+export function modernGlassForFraming(group: string, framing: ModernFraming | null): GlassOption[] {
+  const sheet = MODERN_WINDOW_COST[group];
+  const glass = modernGlassOptions(group);
+  if (!sheet || !framing) return glass;
+  return glass.filter((g) => sheet[g.id]?.[framing.price] != null);
+}
+
 export function modernFraming(group: string, model: string, glass: string | undefined, value: string | undefined): ModernFraming | null {
   return modernFramings(group, model, glass).find((f) => f.value === value) ?? null;
 }

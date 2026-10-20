@@ -29,6 +29,19 @@ export const TRACK_MOUNTS: { value: TrackMount; label: string }[] = [
   { value: "reverse_angle", label: "Reverse angle mount to steel" },
 ];
 
+/** Models sold bracket mount only — the 4138 (Brandon, 20/10/2026): no continuous or reverse angle. */
+const BRACKET_ONLY = new Set(["4138"]);
+
+/** The mounts a model is sold with. */
+export function trackMountsFor(member: string): { value: TrackMount; label: string }[] {
+  return BRACKET_ONLY.has(member) ? TRACK_MOUNTS.filter((m) => m.value === "bracket") : TRACK_MOUNTS;
+}
+
+/** The mount a model takes: the one asked for when it is sold with it, else bracket. */
+export function trackMountFor(member: string, mount: string | undefined): TrackMount {
+  return trackMountsFor(member).some((m) => m.value === mount) ? (mount as TrackMount) : "bracket";
+}
+
 /**
  * How a mount reads on a quote.
  *

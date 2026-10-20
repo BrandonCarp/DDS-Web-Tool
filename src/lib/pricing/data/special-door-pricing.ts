@@ -27,7 +27,7 @@ import {
 } from "./so-glass";
 import { sectionCost, windowSectionGroup, windowSectionSell } from "./coachman-windows";
 import { colorTakesPremium } from "./catalog-meta";
-import { highLiftPrice, mountPhrase, type TrackMount, type InclineStyle } from "./track-lift";
+import { highLiftPrice, mountPhrase, trackMountFor, type InclineStyle } from "./track-lift";
 import { ADDONS, GRADE_RES, COLLECTIONS_RES } from "./addons";
 import { dataKey } from "../model-groups";
 import { designName, specialPlainWindowsFor, specialWindowDesigns } from "./inserts";
@@ -634,6 +634,8 @@ export function specialDoorQuote(
   // High lift is the 4050 family's; on any other door it is 12" radius track.
   const track: TrackKey = input.track === "high_lift" && !highLiftOffered(input.model) ? "r12" : input.track;
   const liftInches = track === "high_lift" ? input.highLiftInches ?? 0 : 0;
+  // A mount the model is not sold with (an angle mount on the 4138) is bracket.
+  const mount = trackMountFor(member, input.trackMount);
 
   // High lift is priced from the Clopay track tables, then divided by the
   // group's margin — the grid holds SELL figures, so an adder has to be lifted
@@ -642,7 +644,7 @@ export function specialDoorQuote(
     if (liftInches <= 0) return { value: 0, label: "" };
     const [hf, hi] = [Number(input.height.split(".")[0]), Number(input.height.split(".")[1] ?? 0)];
     const r = highLiftPrice({
-      mount: (input.trackMount ?? "bracket") as TrackMount,
+      mount,
       incline: (input.incline ?? "straight_incline") as InclineStyle,
       heightFt: hf, heightIn: hi, inches: liftInches,
     });
@@ -750,8 +752,7 @@ export function specialDoorQuote(
     `in the color ${input.color}${overlay}, ${winText}, ` +
     // An angle mount names what it fastens to, exactly as the commercial tool
     // phrases it, so the two read alike on a quote.
-    (mountPhrase((input.trackMount ?? "bracket") as TrackMount)
-      ? `${mountPhrase((input.trackMount ?? "bracket") as TrackMount)}, ` : "") +
+    (mountPhrase(mount) ? `${mountPhrase(mount)}, ` : "") +
     `${track === "high_lift" && liftInches
         ? `${liftInches}\u2033 high lift track`
         : TRACK_TEXT[track] ?? TRACK_TEXT.r12}, ` +

@@ -541,7 +541,13 @@ html, body { margin: 0; padding: 0; }
   position: absolute; top: 50%; right: 11px; width: 7px; height: 7px; pointer-events: none;
   border-right: 1.75px solid var(--muted); border-bottom: 1.75px solid var(--muted); transform: translateY(-70%) rotate(45deg);
 }
-.tool-shell .pickin-sel { position: absolute; top: 0; right: 0; width: 28px; height: 100%; margin: 0; padding: 0; opacity: 0; cursor: pointer; }
+/* The list is as wide as the box, so what drops down is too (Brandon,
+   20/10/2026: a list the width of the chevron was too narrow to read);
+   the clip keeps the press that opens it to the chevron's end of the box. */
+.tool-shell .pickin-sel {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%; margin: 0; padding: 0; opacity: 0; cursor: pointer;
+  font-size: 16px; clip-path: inset(0 0 0 calc(100% - 28px));
+}
 .tool-shell .lenrow .pickin > input { width: 100%; }
 
 .tool-shell .chips { display: flex; flex-wrap: wrap; gap: 8px; }
