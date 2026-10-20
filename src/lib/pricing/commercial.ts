@@ -51,10 +51,8 @@ export interface CommSectionInput {
   windowSize?: string;
   retainer?: boolean;                 // DEPRECATED — ignored; retainer is always included on bottom sections
   stile?: "none" | "single" | "double"; // per-foot only
-  /** The stile measurements, left to right, as typed — a 524 or 2415 (stileLocationCount). */
+  /** The stile measurements, left to right, as typed — a 524 or 2415 (stileLocationCount), any added by hand among them. */
   stileLocations?: string[];
-  /** Stiles added by hand past the sheet's count (20/10/2026): each is one more panel. */
-  extraStiles?: number;
   /**
    * A lock on an intermediate section with no windows (Brandon, 20/10/2026):
    * a lockbar assembly or a lockbar installed, at the add-on figures the
@@ -290,7 +288,7 @@ export function quoteCommercial(input: CommInput): CommQuote {
   }
   // Windows on an intermediate section: one a panel, the panels chosen from
   // the left (15/10/2026), or a plain count where none are named.
-  const panels = panelCount(ft, inch) + Math.max(0, Math.min(10, Math.trunc(Number(input.extraStiles)) || 0));
+  const panels = panelCount(ft, inch);
   const picked = input.secKind !== "int" ? []
     : [...new Set((input.windowPanels ?? []).map((n) => Math.trunc(n)))].filter((n) => n >= 1 && n <= panels).sort((a, b) => a - b);
   const nWin = input.secKind !== "int" ? 0 : input.windowPanels ? picked.length : Math.min(Math.trunc(Number(input.windows)) || 0, panels);
