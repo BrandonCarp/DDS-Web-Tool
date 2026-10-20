@@ -210,6 +210,12 @@ describe("ribbed steel verbiage", () => {
     expect(price({ lock: "slide" })).toBe(price({ lock: "none" }));
   });
 
+  it("draws a stile added by hand as one more panel (Brandon, 20/10/2026)", () => {
+    // A 14'0" 524 is four panels; one stile more makes five, so the same three windows sit left of centre.
+    expect(sec("524", { manFt: 14, manIn: 0, windowPanels: [2, 3] })).toMatch(/windows in center of section, solid-glass-glass-solid, /);
+    expect(sec("524", { manFt: 14, manIn: 0, windowPanels: [2, 3], extraStiles: 1 })).toMatch(/windows in the second and third panels from the left, solid-glass-glass-solid-solid, /);
+  });
+
   it("puts a lockbar on a windowless intermediate section at the add-on figures, and says so (Brandon, 20/10/2026)", () => {
     const price = (o: Record<string, unknown>) => quoteCommercial({ order: "section", mfr: "Clopay", model: "524", manFt: 12, manIn: 0, secKind: "int", secHeight: "24", stile: "single", color: "White", ...o } as never).unitPrice;
     expect(price({ lock: "lockbar" })).toBeCloseTo(price({ lock: "none" }) + 49.95, 2);

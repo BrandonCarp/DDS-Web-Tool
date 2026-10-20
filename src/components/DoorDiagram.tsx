@@ -37,7 +37,7 @@ export function DoorDiagram({
     <div className={`ddiag${windows ? "" : " static"}`} data-testid={testId}>
       <div className="plook" data-testid="door-looking-out">Inside looking out</div>
       <div className="ddiag-door" role={windows ? "group" : undefined} aria-label={windows ? "Windows by section and panel" : undefined}
-        style={{ aspectRatio: `${ratio} / 1`, maxWidth: `${Math.round(ratio * 360)}px` }}>
+        style={{ aspectRatio: `${ratio} / 1`, maxWidth: `${Math.round(ratio * 480)}px` }}>
         {stack.map((h, si) => {
           const section = si + 1;
           const full = !!windows && across.every((panel) => windows.has(placeKey({ section, panel })));

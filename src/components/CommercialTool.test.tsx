@@ -279,22 +279,25 @@ describe("commercial tab — stile locations on a 524 or 2415, under the stiles 
     expect(screen.getByText("Enter in stile measurements — measurements are taken left to right.")).toBeTruthy();
   });
 
-  it("adds a stile box for a double end stile, and ADD STILE adds one that its − takes out again (Brandon, 20/10/2026)", async () => {
+  it("adds a stile box for a double end stile, and ADD STILE's + adds a stile — a line more in the section — that its − takes out again (Brandon, 20/10/2026)", async () => {
     configure("section", "Wayne Dalton", "2415V");
     width("12");
     expect(stileRows()).toBe(2);
-    expect(screen.queryByTestId("comm-stile-1-remove")).toBeNull();
+    expect(panelsDrawn()).toBe(3);
+    expect((screen.getByTestId("comm-remove-stile") as HTMLButtonElement).disabled).toBe(true);
     change("comm-end-stiles", "double");
     expect(stileRows()).toBe(3);
-    expect(screen.queryByTestId("comm-stile-3-remove")).toBeNull();   // the double end stile's box is not one to take out
+    expect(panelsDrawn()).toBe(3);   // the double end stile is no line in the section
     fireEvent.click(screen.getByTestId("comm-add-stile"));
     expect(stileRows()).toBe(4);
-    expect(screen.getByTestId("comm-stile-4-remove")).toBeTruthy();
+    expect(panelsDrawn()).toBe(4);
+    expect((screen.getByTestId("comm-remove-stile") as HTMLButtonElement).disabled).toBe(false);
     stileInch(1, "39"); stileInch(3, "117"); stileInch(4, "140");
-    expect(await getPrice()).toMatchObject({ stile: "double", stileLocations: ['39"', "", '117"', '140"'] });
-    fireEvent.click(screen.getByTestId("comm-stile-4-remove"));
+    expect(await getPrice()).toMatchObject({ stile: "double", extraStiles: 1, stileLocations: ['39"', "", '117"', '140"'] });
+    fireEvent.click(screen.getByTestId("comm-remove-stile"));
     expect(stileRows()).toBe(3);
-    expect(await getPrice()).toMatchObject({ stileLocations: ['39"', "", '117"'] });
+    expect(panelsDrawn()).toBe(3);
+    expect(await getPrice()).toMatchObject({ extraStiles: 0, stileLocations: ['39"', "", '117"'] });
     change("comm-end-stiles", "single");
     expect(stileRows()).toBe(2);
     // The inches can be picked as well as typed.

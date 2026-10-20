@@ -104,13 +104,16 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const widthIn = order === "complete"
     ? (sizeDims ? Number(sizeDims[1]) * 12 + Number(sizeDims[2]) : 0)
     : (parseInt(manFt, 10) || 0) * 12 + (parseInt(manIn, 10) || 0);
-  const panels = widthIn > 0 ? panelCount(0, widthIn) : 0;
+  const stileCount = order === "section" ? stileLocationCount(model, parseInt(manFt, 10) || 0, parseInt(manIn, 10) || 0) : 0;
+  // A stile added by hand (ADD STILE, 20/10/2026) is another line in the
+  // section — one more panel — on the drawing and in the quote.
+  const extras = stileCount > 0 ? extraStiles : 0;
+  const panels = widthIn > 0 ? panelCount(0, widthIn) + extras : 0;
   const glassOn = order === "complete" ? glass === "glass" : secKind === "int" && addingWindows;
   const winPanelsUsed = glassOn ? winPanels.filter((n) => n >= 1 && n <= panels) : [];
-  const stileCount = order === "section" ? stileLocationCount(model, parseInt(manFt, 10) || 0, parseInt(manIn, 10) || 0) : 0;
   // The sheet's count, one more for a double end stile, and any added by hand (Brandon, 20/10/2026).
   const stileFixed = stileCount > 0 ? stileCount + (stile === "double" ? 1 : 0) : 0;
-  const stileTotal = stileCount > 0 ? stileFixed + extraStiles : 0;
+  const stileTotal = stileCount > 0 ? stileFixed + extras : 0;
   const stileValsUsed = Array.from({ length: stileTotal }, (_, i) => stileVals[i] ?? { inch: "", frac: "0" });
   // A lock goes on an intermediate section with no windows in it.
   const lockOffered = secKind === "int" && winPanelsUsed.length === 0;
@@ -127,9 +130,10 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
       return next;
     });
   }
-  /** Take out a stile added by hand, and what was typed in it. */
-  function removeStile(i: number) {
-    setStileVals((cur) => cur.filter((_, k) => k !== i));
+  /** Take out the last stile added by hand, and what was typed in it. */
+  function removeStile() {
+    if (extras <= 0) return;
+    setStileVals((cur) => cur.slice(0, stileTotal - 1));
     setExtraStiles((n) => Math.max(0, n - 1));
   }
 
@@ -145,7 +149,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const placements = order === "complete" ? windowPlacements(panels) : [];
   const placement = placementOf(panels, winPanelsUsed);
 
-  const cfgSig = JSON.stringify([mfr, model, order, size, glass, track, mount, cspring, clock, cColor, winSection, manFt, manIn, secKind, secHeight, winPanelsUsed, winSizeUsed, stile, stileLocationsUsed, secColor, lockUsed, homeowner]);
+  const cfgSig = JSON.stringify([mfr, model, order, size, glass, track, mount, cspring, clock, cColor, winSection, manFt, manIn, secKind, secHeight, winPanelsUsed, winSizeUsed, stile, stileLocationsUsed, extras, secColor, lockUsed, homeowner]);
   const result = resultRaw && resultSig === cfgSig ? resultRaw : null;
   const liveError = errorRaw && resultSig === cfgSig ? errorRaw : null;
   const priced = result?.priced ?? false;
@@ -197,7 +201,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
         order === "complete"
           ? { order, mfr, model, size, glass, track, mount, cspring, clock, color: cColor, winSection: Number(winSection) || 3, windowPanels: winPanelsUsed, windowSize: winSizeUsed }
           : { order, mfr, model, manFt: Number(manFt), manIn: Number(manIn) || 0, secKind, secHeight, windowPanels: winPanelsUsed, windowSize: winSizeUsed, stile,
-              stileLocations: stileLocationsUsed, color: secColor, lock: lockUsed };
+              stileLocations: stileLocationsUsed, extraStiles: extras, color: secColor, lock: lockUsed };
       const res = await fetch("/api/price/commercial", {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
       });
@@ -567,8 +571,8 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
                     <div className="ggroup span" data-testid="comm-drawing">
                       <PanelDiagram panels={panels} windows={glassOn ? new Set(winPanelsUsed) : null} onToggle={togglePanel}
                         sizes={winSizes} size={winSizeUsed} onSize={setWindowSize}
-                        stiles={stileCount > 0 ? stileValsUsed : null} onStile={setStileVal} fixedStiles={stileFixed}
-                        onAddStile={stileCount > 0 ? () => setExtraStiles((k) => k + 1) : undefined} onRemoveStile={removeStile}
+                        stiles={stileCount > 0 ? stileValsUsed : null} onStile={setStileVal}
+                        onAddStile={stileCount > 0 ? () => setExtraStiles((k) => k + 1) : undefined} onRemoveStile={removeStile} canRemoveStile={extras > 0}
                         widthIn={widthIn} heightIn={Number(secHeight)} />
                       {(secKind === "int" || stileCount > 0) && (
                         <div className="pnotes">
