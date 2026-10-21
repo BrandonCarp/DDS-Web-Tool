@@ -14,11 +14,12 @@ import {
   PARTS_TAB_CATEGORIES,
   TRACK_CATEGORIES,
   CABLE_CATEGORIES,
-  STOCK_TORSION_SPRINGS,
+  STOCK_TORSION_SPRINGS, stockSpringAsCut,
   TORSION_CATEGORY,
   springFieldSpacing,
   springGroups,
 } from "./data/springs";
+import { torsionPrice } from "./data/torsion";
 
 describe("springs split out of the parts shelf", () => {
   it("finds both spring categories in the generated data", () => {
@@ -93,6 +94,23 @@ describe("shapes the spring tabs assume", () => {
     const row = STOCK_TORSION_SPRINGS.items.find((p) => p.name === '160LBS,  2 X 262 X 35-1/4"');
     expect(row?.desc).toBe('TORSION SPRINGS,  2" ID,  262 WIRE,  35-1/4" LONG');
     expect(springFieldSpacing('TORSION SPRINGS,  2" ID, 262 WIRE,35" LONG')).toBe('TORSION SPRINGS,  2" ID,  262 WIRE,  35" LONG');
+  });
+
+  it("prices every stock torsion spring as the cut-to-size configurator would price the same spring (Brandon, 21/10/2026)", () => {
+    const len = (t: string) => { const m = /^(\d+)(?:-(\d)\/(\d))?$/.exec(t)!; return Number(m[1]) + (m[2] ? Number(m[2]) / Number(m[3]) : 0); };
+    for (const p of STOCK_TORSION_SPRINGS.items) {
+      const m = /^TORSION SPRINGS,\s*2" ID,\s*(\d+) WIRE,\s*([\d\-/]+)" LONG$/.exec(p.desc);
+      expect(m, p.name).toBeTruthy();
+      expect(p.price, p.name).toBe(torsionPrice(`0.${m![1]}`, "2", len(m![2])));
+    }
+    // The sheet had the 7FT 80LBS at 42.95; a 22-1/4" spring cuts as 23" and comes to 43.95. A whole-inch spring keeps its figure.
+    const at = (name: string) => STOCK_TORSION_SPRINGS.items.find((p) => p.name === name)!.price;
+    expect(at('80LBS,  2 X 207 X 22-1/4"')).toBe(43.95);
+    expect(at('90LBS,  2 X 207 X 20"')).toBe(39.95);
+    expect(at('140LBS,  2 X 243 X 28-1/4"')).toBe(61.95);
+    expect(at('160LBS,  2 X 262 X 42-3/4"')).toBe(92.95);
+    // A line the rule cannot read keeps the sheet's price.
+    expect(stockSpringAsCut({ name: "x", desc: "SOMETHING ELSE", price: 12.5 } as never).price).toBe(12.5);
   });
 
   it("has no per-foot stock torsion spring", () => {

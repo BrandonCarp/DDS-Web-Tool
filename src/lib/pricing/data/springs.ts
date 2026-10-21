@@ -12,6 +12,7 @@
 
 import { PART_CATEGORIES, type Part, type PartCategory } from "./parts";
 import { COMMERCIAL_TRACK_PARTS, COMMERCIAL_TRACK_SUB } from "./commercial-track";
+import { torsionPrice } from "./torsion";
 
 export const EXTENSION_CATEGORY = "EXTENSION SPRINGS";
 export const TORSION_CATEGORY = "TORSION SPRINGS";
@@ -59,9 +60,26 @@ export const EXTENSION_SPRINGS: PartCategory = {
 export function springFieldSpacing(desc: string): string {
   return desc.replace(/,\s*/g, ",  ");
 }
+/**
+ * A stock torsion spring sells at what the cut-to-size configurator charges
+ * for the same spring (Brandon, 21/10/2026): its inside diameter, wire and
+ * length read off its own line — "TORSION SPRINGS,  2" ID,  218 WIRE,
+ * 23-1/4" LONG" — and priced as torsionPrice prices a cut one, a fraction of
+ * an inch as the next whole inch, up to .95. A line the rule cannot read, or
+ * a spring the cut-to-size table does not price, keeps the sheet's price.
+ */
+export function stockSpringAsCut(p: Part): Part {
+  const m = /^TORSION SPRINGS,\s*([\d\-/]+)" ID,\s*(\d+) WIRE,\s*(\d+)(?:-(\d)\/(\d))?" LONG/i.exec(p.desc);
+  if (!m) return p;
+  const id = { "2": "2", "2-5/8": "2.625", "3-3/4": "3.75", "6": "6" }[m[1]];
+  const length = Number(m[3]) + (m[4] ? Number(m[4]) / Number(m[5]) : 0);
+  const price = id ? torsionPrice(`0.${m[2]}`, id, length) : null;
+  return price == null ? p : { ...p, price };
+}
+
 export const STOCK_TORSION_SPRINGS: PartCategory = {
   name: TORSION_CATEGORY,
-  items: inSpringOrder(TORSION_ALL.items.filter((p) => !isKit(p))).map((p) => ({ ...p, desc: springFieldSpacing(p.desc) })),
+  items: inSpringOrder(TORSION_ALL.items.filter((p) => !isKit(p))).map((p) => stockSpringAsCut({ ...p, desc: springFieldSpacing(p.desc) })),
 };
 export const EXTENSION_KITS_CATEGORY = "EXTENSION KITS";
 export const TORSION_KITS_CATEGORY = "TORSION KITS";
