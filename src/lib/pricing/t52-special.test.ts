@@ -4,6 +4,7 @@ import {
 } from "./data/special-door-pricing";
 import { windowDesigns } from "./data/inserts";
 import { SPECIAL } from "./data/special-orders";
+import { STOCK_PRICES } from "./data/stock-prices";
 import { glassOptionsFor } from "./data/so-glass";
 
 const G = "T52S/T52L";
@@ -34,16 +35,23 @@ describe("T52S / T52L — special order", () => {
     expect(w[w.length - 1]).toBe("18");
   });
 
-  it("prices all three styles", () => {
-    expect(sell("9", "solid")).toBeCloseTo(702.46, 2);
-    expect(sell("9", "glass")).toBeCloseTo(839.14, 2);
-    expect(sell("16", "inserts")).toBeCloseTo(1607.71, 2);
+  it("prices all three styles — the stocked T52S at the stock book's figures (21/10/2026), the T52L off the sheet", () => {
+    // DDS stocks the T52S at 9'0" x 7'0": 701.43 solid, the stock book's, a
+    // dollar under the sheet; the T52L, not stocked, is the sheet's 702.46.
+    expect(sell("9", "solid")).toBeCloseTo(701.43, 2);
+    expect(sell("9", "glass")).toBeCloseTo(837.91, 2);
+    expect(specialDoorQuote({ ...base, width: "9", style: "solid", variant: "T52L" }).quote?.unitPrice).toBeCloseTo(702.46, 2);
+    expect(specialDoorQuote({ ...base, width: "9", style: "glass", variant: "T52L" }).quote?.unitPrice).toBeCloseTo(839.14, 2);
+    expect(sell("16", "inserts")).toBeCloseTo(STOCK_PRICES["T52S"]["16"]["7"].inserts, 2);
+    expect(specialDoorQuote({ ...base, width: "16", style: "inserts", variant: "T52L" }).quote?.unitPrice).toBeCloseTo(1607.71, 2);
+    // An odd width is the sheet's on either.
+    expect(sell("9.2", "solid")).toBeCloseTo(specialDoorQuote({ ...base, width: "9.2", style: "solid", variant: "T52L" }).quote!.unitPrice, 2);
   });
 
-  it("prices every member off the one grid", () => {
+  it("prices every member off the one grid where DDS does not stock the door", () => {
     for (const v of ["T52S", "T52L"]) {
-      expect(specialDoorQuote({ ...base, width: "9", style: "solid", variant: v }).quote?.unitPrice, v)
-        .toBeCloseTo(702.46, 2);
+      expect(specialDoorQuote({ ...base, width: "9.2", style: "solid", variant: v }).quote?.unitPrice, v)
+        .toBeCloseTo(specialDoorQuote({ ...base, width: "9.2", style: "solid", variant: "T52L" }).quote!.unitPrice, 2);
     }
   });
 

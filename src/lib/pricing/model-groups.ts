@@ -40,6 +40,13 @@ export function expandModels(keys: string[]): string[] {
   return keys.flatMap((k) => MODEL_SPLIT[k] ?? [k]);
 }
 
+/**
+ * Models the residential tab does not offer: the 4300 family is special
+ * order only for now (Brandon, 10/9/2026). It keeps its price grid, so a
+ * quote for one still prices correctly if reached another way.
+ */
+export const RESIDENTIAL_HIDDEN: ReadonlySet<string> = new Set(["4300", "4301", "4302", "4305", "4310"]);
+
 /** Display order for the model selector within each collection. */
 export const MODEL_ORDER = ["T50S", "T52S", "4050", "4051", "4053", "4300", "4301", "4310", "9130", "9133", "GD1LP", "GD1SP"];
 

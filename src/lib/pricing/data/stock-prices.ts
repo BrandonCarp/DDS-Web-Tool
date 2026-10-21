@@ -1,7 +1,4 @@
 // AUTO-GENERATED from the 2026 stock price workbooks. Do not edit by hand.
-// Since 20/10/2026 (Brandon) a door prices at the special order sheet's figure
-// wherever the sheet has one (engine.ts, specialSheetPriceFor); this book prices
-// only what the sheet does not.
 //   Tiers 7/8: new_pricing_2026_V2.xlsx (authoritative stock-item book)
 //   Tier 9:    9FT_Pricing.xlsx (strict 9-ft-high prices for the sizes listed there)
 //   4050-4051-4053 tier 7: 4050-7FT.xlsx (STOCK tab, 43M)

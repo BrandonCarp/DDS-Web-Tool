@@ -9,9 +9,17 @@ import {
 import { SPECIAL_DOORS } from "./data/special-doors";
 import { ADDONS } from "./data/addons";
 import { priceResidential, quoteResidential } from "./engine";
+import { STOCK_PRICES } from "./data/stock-prices";
+import { glassAdderSell } from "./data/so-glass";
 
 const M = "4050/4051/4053/4132";
 const base = { model: M, height: "7", color: "White", track: "r12" as const, spring: "extension" as const, lock: "none" as const };
+// A stocked size is the stock book's price on this tab too (Brandon,
+// 21/10/2026) — the 4050, 4051 and 4053 at the whole feet, 7', 8' and 9'
+// high — so the sheet's own figures are read off the 4132, which DDS does
+// not stock, or at an odd width.
+const SHEET = { ...base, variant: "4132" };
+const STOCK = STOCK_PRICES["4050-4051-4053"];
 
 /**
  * CJ's Premium Steel workbook of 16/10/2026 prices the 4050 family at list x
@@ -37,28 +45,53 @@ describe("special order door grid", () => {
   it("quotes the SELL column straight, with no further margin", () => {
     // The grid is already at 43M. Applying the margin again here would be the
     // single most expensive mistake available in this file.
-    expect(specialDoorQuote({ ...base, width: "8", style: "solid" }).quote?.unitPrice).toBe(sheet(540));
-    expect(specialDoorQuote({ ...base, width: "8", style: "solid" }).quote?.unitPrice).toBe(747.62);
-    expect(specialDoorQuote({ ...base, width: "18", style: "solid" }).quote?.unitPrice).toBe(sheet(1176));
+    expect(specialDoorQuote({ ...SHEET, width: "8", style: "solid" }).quote?.unitPrice).toBe(sheet(540));
+    expect(specialDoorQuote({ ...SHEET, width: "8", style: "solid" }).quote?.unitPrice).toBe(747.62);
+    expect(specialDoorQuote({ ...SHEET, width: "18", style: "solid" }).quote?.unitPrice).toBe(sheet(1176));
     // Windows are the sheet's price a window times the windows the width
     // carries, over the solid door: 16'0" takes eight short single strength
     // windows with inserts at 49 list each (single strength is the glass
     // unless another is picked — the grade the grid's own column carries).
-    expect(specialDoorQuote({ ...base, width: "16", style: "inserts" }).quote?.unitPrice).toBe(sheet(973) + windows(8, 49));
+    expect(specialDoorQuote({ ...SHEET, width: "16", style: "inserts" }).quote?.unitPrice).toBe(sheet(973) + windows(8, 49));
   });
 
-  it("prices off CJ's sheet, and the stock tab follows it (Brandon, 20/10/2026)", () => {
-    // The stock tab's own book had a stocked 8'0" x 7'0" 4050 at $723.25 against
-    // $747.62 here; the stock tab now prices at the sheet's figure, so the two
-    // tabs agree on every door the sheet prices.
-    expect(priceResidential("4050", { widthFt: 8, widthIn: 0, heightFt: 7, heightIn: 0 }, "solid").price).toBe(747.62);
-    expect(specialDoorQuote({ ...base, width: "8", style: "solid" }).quote?.unitPrice).toBe(747.62);
+  it("prices a stocked door at the stock book's figure, in every style, as the residential tab does (Brandon, 21/10/2026)", () => {
+    // The 4050 at 8'0" x 7'0" is stocked: 723.25 solid, and its GLASS and
+    // INSERTS columns with single strength short windows; any other glass is
+    // the sheet's adder over the stocked solid door.
+    expect(specialDoorQuote({ ...base, width: "8", style: "solid" }).quote?.unitPrice).toBe(STOCK["8"]["7"].solid);
+    expect(specialDoorQuote({ ...base, width: "8", style: "glass" }).quote?.unitPrice).toBe(STOCK["8"]["7"].glass);
+    expect(specialDoorQuote({ ...base, width: "8", style: "inserts", windesign: "509" }).quote?.unitPrice).toBe(STOCK["8"]["7"].inserts);
+    expect(specialDoorQuote({ ...base, width: "8", style: "glass", glassType: "dsb" }).quote?.unitPrice).toBeCloseTo(STOCK["8"]["7"].solid + windows(4, 35), 2);
+    expect(specialDoorQuote({ ...base, width: "8", style: "glass", panelStyle: "long" }).quote?.unitPrice).toBeCloseTo(STOCK["8"]["7"].solid + glassAdderSell(M, "long", "8", "ssb")!, 2);
+    for (const [w, h] of [["8", "7"], ["16", "8"], ["12", "9"], ["7.6", "8"]]) {
+      for (const style of ["solid", "glass", "inserts"] as const) {
+        const r = quoteResidential("4050", { widthFt: Number(w.split(".")[0]), widthIn: Number(w.split(".")[1] ?? 0), heightFt: Number(h), heightIn: 0 }, { style, color: "White", track: "r12", spring: "extension", lock: "none", windesign: style === "inserts" ? "509" : undefined });
+        expect(specialDoorQuote({ ...base, width: w, height: h, style, windesign: style === "inserts" ? "509" : undefined }).quote?.unitPrice, `${w}x${h} ${style}`).toBe(r.unitPrice);
+      }
+    }
+    // The 4051 and 4053 are the same stocked door; the 4132 is not stocked.
+    expect(specialDoorQuote({ ...base, variant: "4053", width: "8", style: "solid" }).quote?.unitPrice).toBe(STOCK["8"]["7"].solid);
+    expect(specialDoorQuote({ ...base, variant: "4132", width: "8", style: "solid" }).quote?.unitPrice).toBe(747.62);
+    // Nothing is stocked at 10' high, or at an odd width.
+    expect(STOCK["8"]["10"]).toBeUndefined();
+    expect(specialDoorQuote({ ...base, width: "8", height: "10", style: "solid" }).quote?.unitPrice).toBe(SPECIAL_DOORS[M]["10"]["8"].solid);
+    expect(specialDoorQuote({ ...base, width: "8.2", style: "solid" }).quote?.unitPrice).toBeCloseTo(747.62 + 200, 2);
+  });
+
+  it("prices off CJ's sheet where DDS does not stock the door, and the stock tab keeps its own book", () => {
+    // The stock tab (residential-prices.ts) carries the stock book: a stocked
+    // 8'0" x 7'0" 4050 is $723.25 there, and on this tab too since 21/10/2026;
+    // the sheet's $747.62 is what the 4132 — never stocked — prices at.
+    expect(priceResidential("4050", { widthFt: 8, widthIn: 0, heightFt: 7, heightIn: 0 }, "solid").price).toBe(723.25);
+    expect(specialDoorQuote({ ...base, width: "8", style: "solid" }).quote?.unitPrice).toBe(723.25);
+    expect(specialDoorQuote({ ...SHEET, width: "8", style: "solid" }).quote?.unitPrice).toBe(747.62);
   });
 
   it("adds the same option money a stock door pays", () => {
-    const plain = specialDoorQuote({ ...base, width: "8", style: "solid" }).quote!;
+    const plain = specialDoorQuote({ ...SHEET, width: "8", style: "solid" }).quote!;
     const loaded = specialDoorQuote({
-      ...base, width: "8", style: "solid",
+      ...SHEET, width: "8", style: "solid",
       spring: "torsion", track: "low_headroom", lock: "lockbar_installed",
     }).quote!;
     expect(loaded.base).toBe(plain.base);
@@ -66,6 +99,9 @@ describe("special order door grid", () => {
       ADDONS.track.low_headroom + ADDONS.torsion + ADDONS.lockbar_installed, 2,
     );
     expect(loaded.unitPrice).toBeCloseTo(747.62 + ADDONS.track.low_headroom + ADDONS.torsion + ADDONS.lockbar_installed, 2);
+    // On the stocked 4050 the same money over the stock book's door.
+    expect(specialDoorQuote({ ...base, width: "8", style: "solid", spring: "torsion", track: "low_headroom", lock: "lockbar_installed" }).quote?.unitPrice)
+      .toBeCloseTo(723.25 + ADDONS.track.low_headroom + ADDONS.torsion + ADDONS.lockbar_installed, 2);
   });
 
   it("refuses anything off the grid, and says to use the manual total", () => {
@@ -103,12 +139,15 @@ describe("special order door grid", () => {
     // …which is how CJ's sheet lists them, and not how they are sold: an odd
     // width is the whole-foot door below it plus a flat $200 on the sell
     // price (Brandon, 19/10/2026), so the sheet's odd rows are never read.
+    // Read off the 4132 (not stocked): on the stocked 4050 the whole feet are
+    // the stock book's, and an odd width is still the sheet's whole-foot door and 200.
     const solid = (w: string) =>
-      specialDoorQuote({ ...base, width: w, style: "solid" }).quote!.unitPrice;
+      specialDoorQuote({ ...SHEET, width: w, style: "solid" }).quote!.unitPrice;
     for (const [std, odd] of [["8", "8.2"], ["8", "8.10"], ["9", "9.2"], ["9", "9.6"], ["10", "10.2"], ["10", "11"], ["10", "11.10"], ["12", "12.2"], ["12", "13"], ["14", "14.10"], ["15", "15.6"], ["16", "16.6"], ["17", "17.2"]]) {
       expect(solid(odd), `${odd} is the ${std} and 200`).toBeCloseTo(solid(std) + 200, 2);
     }
     expect(solid("8.2")).toBe(747.62 + 200);
+    expect(specialDoorQuote({ ...base, width: "8.2", style: "solid" }).quote?.unitPrice).toBe(747.62 + 200);
     expect(solid("8.2")).not.toBe(sheet(676.1));
     // Whole feet with a row of their own are their own price; under 8'0" the
     // sheet's one band stands, there being no whole foot below it.
@@ -186,13 +225,18 @@ describe("the 6'2\"-7'10\" band", () => {
   const BAND = { solid: sheet(625.5), glass: sheet(625.5) + windows(3, 33), inserts: sheet(625.5) + windows(3, 49) };
   const WIDTHS = ["6.2", "6.4", "6.6", "6.8", "6.10", "7", "7.2", "7.4", "7.6", "7.8", "7.10"];
 
-  it("prices every width in the band identically, in all three styles", () => {
+  it("prices every width in the band identically, in all three styles — the stocked 7'0\" and 7'6\" aside, the stock book's", () => {
     for (const width of WIDTHS) {
       for (const [style, expected] of Object.entries(BAND)) {
         expect(
-          specialDoorQuote({ ...base, width, style: style as "solid" }).quote?.unitPrice,
+          specialDoorQuote({ ...SHEET, width, style: style as "solid" }).quote?.unitPrice,
           `${width} ${style}`,
         ).toBe(expected);
+        const stocked = STOCK[width]?.["7"];
+        expect(
+          specialDoorQuote({ ...base, width, style: style as "solid" }).quote?.unitPrice,
+          `4050 ${width} ${style}`,
+        ).toBe(stocked ? stocked[style as "solid"] : expected);
       }
     }
   });
@@ -203,7 +247,8 @@ describe("the 6'2\"-7'10\" band", () => {
   });
 
   it("drops back down at 8'0\", where the stocked size takes over", () => {
-    expect(specialDoorQuote({ ...base, width: "8", style: "solid" }).quote?.unitPrice).toBe(747.62);
+    expect(specialDoorQuote({ ...SHEET, width: "8", style: "solid" }).quote?.unitPrice).toBe(747.62);
+    expect(specialDoorQuote({ ...base, width: "8", style: "solid" }).quote?.unitPrice).toBe(723.25);
     expect(BAND.solid).toBeGreaterThan(747.62);
   });
 });
@@ -219,8 +264,8 @@ describe("offered heights", () => {
   it("bands an in-between height to its tier, like residential", () => {
     // Clopay grids 7'0" and 8'0"; everything between prices off the nearer one
     // at or above it. 6'6" is a 7' door as far as the book is concerned.
-    const at = (h: string) =>
-      specialDoorQuote({ model: M, width: "9", height: h, color: "White", style: "solid",
+    const at = (h: string, variant = "4132") =>
+      specialDoorQuote({ model: M, variant, width: "9", height: h, color: "White", style: "solid",
         track: "r12", spring: "extension", lock: "none" }).quote!.unitPrice;
     for (const h of ["6", "6.3", "6.6", "6.9", "7"]) expect(at(h), h).toBe(sheet(584));
     for (const h of ["7.6", "7.9", "8"]) expect(at(h), h).toBe(sheet(713));
@@ -229,6 +274,11 @@ describe("offered heights", () => {
     expect(at("9")).toBe(sheet(965));
     expect(at("9.6")).toBe(at("10"));
     expect(at("10")).toBe(sheet(1028));
+    // The stocked 4050 bands the same way, to the stock book's tiers.
+    for (const h of ["6", "6.6", "7"]) expect(at(h, "4050"), h).toBe(STOCK["9"]["7"].solid);
+    for (const h of ["7.6", "8"]) expect(at(h, "4050"), h).toBe(STOCK["9"]["8"].solid);
+    for (const h of ["8.3", "9"]) expect(at(h, "4050"), h).toBe(STOCK["9"]["9"].solid);
+    expect(at("10", "4050")).toBe(sheet(1028));
   });
 
   it("writes the height ordered, not the tier it priced from", () => {
@@ -254,7 +304,7 @@ describe("offered heights", () => {
 
   it("prices 8'0\" above 7'0\" on the same width", () => {
     const at = (height: string) =>
-      specialDoorQuote({ model: M, width: "9", height, color: "White", style: "solid",
+      specialDoorQuote({ model: M, variant: "4132", width: "9", height, color: "White", style: "solid",
         track: "r12", spring: "extension", lock: "none" }).quote!.unitPrice;
     expect(at("8")).toBeGreaterThan(at("7"));
     expect(at("7")).toBe(808.54);
@@ -290,7 +340,8 @@ describe("per-model width limits", () => {
     expect(griddedWidths(M, "7", "4053")).toHaveLength(55); // 72 less 11 narrow, less the 15' band
     expect(q("6.2", "4053").quote).toBeUndefined();
     expect(q("7.6", "4053").quote).toBeUndefined();
-    expect(q("8", "4053").quote?.unitPrice).toBe(747.62);
+    expect(q("8", "4053").quote?.unitPrice).toBe(723.25);   // stocked: the stock book's (21/10/2026)
+    expect(q("8", "4132").quote?.unitPrice).toBe(747.62);   // the sheet's
   });
 
   it("leaves the 4050, 4051 and 4132 on the full range", () => {
@@ -563,13 +614,16 @@ describe("9ft and 10ft on CJ's sheet (16/10/2026)", () => {
   it("prices the torsion heights off the TORSION columns, glass over the solid door", () => {
     // 15'0" x 9'0": 1577 list; seven short single strength windows at 33 —
     // and 15'6" is that door and $200 (19/10/2026).
-    const r = specialDoorQuote({ model: M, width: "15", height: "9", color: "White",
+    // Off the 4132: the 4050 is stocked at 15'0" x 9'0" (the stock book's there).
+    const r = specialDoorQuote({ model: M, variant: "4132", width: "15", height: "9", color: "White",
       style: "glass", track: "r12", spring: "torsion", lock: "none" });
     expect(r.quote?.base).toBeCloseTo(sheet(1577) + windows(7, 33), 2);
     expect(r.quote?.torsionIncluded).toBe(true);
     const odd = specialDoorQuote({ model: M, width: "15.6", height: "9", color: "White",
       style: "glass", track: "r12", spring: "torsion", lock: "none" });
     expect(odd.quote?.unitPrice).toBeCloseTo(r.quote!.unitPrice + 200, 2);
+    expect(specialDoorQuote({ model: M, width: "15", height: "9", color: "White",
+      style: "glass", track: "r12", spring: "torsion", lock: "none" }).quote?.unitPrice).toBe(STOCK["15"]["9"].glass);
     const ten = specialDoorQuote({ model: M, width: "10", height: "10", color: "White",
       style: "glass", track: "r12", spring: "torsion", lock: "none" });
     expect(ten.quote?.base).toBeCloseTo(sheet(1187) + windows(5, 33), 2);

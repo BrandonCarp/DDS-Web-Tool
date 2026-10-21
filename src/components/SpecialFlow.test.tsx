@@ -193,12 +193,12 @@ describe("special order — glass types reach the price", () => {
     fireEvent.change(sel("so-glass"), { target: { value: "dsb" } });
     await settle();
     await fillOptions();
-    // CJ's sheet (16/10/2026): the 8'0" x 7'0" door 747.62, four short double strength windows at 35 list.
-    expect(await total()).toBeCloseTo(747.62 + Math.round(4 * 35 * 0.776 * (0.99 / (1 - 0.0265)) * 100) / 100 / 0.57, 1);
+    // The stocked 8'0" x 7'0" 4050 is the stock book's 723.25 (Brandon, 21/10/2026); CJ's sheet prices the windows over it: four short double strength at 35 list.
+    expect(await total()).toBeCloseTo(723.25 + Math.round(4 * 35 * 0.776 * (0.99 / (1 - 0.0265)) * 100) / 100 / 0.57, 1);
     fireEvent.change(sel("so-glass"), { target: { value: "insulated_rain" } });
     await settle();
     // Four insulated rain windows at 130 list, at .776 and 43.
-    expect(await total()).toBeCloseTo(747.62 + Math.round(4 * 130 * 0.776 * (0.99 / (1 - 0.0265)) * 100) / 100 / 0.57, 0);
+    expect(await total()).toBeCloseTo(723.25 + Math.round(4 * 130 * 0.776 * (0.99 / (1 - 0.0265)) * 100) / 100 / 0.57, 0);
   });
 
   it("offers the architectural windows on a Premium Steel door in the one framing list, with their glass in the one glass list (19/10/2026)", async () => {
@@ -234,7 +234,7 @@ describe("special order — glass types reach the price", () => {
     await settle();
     await fillOptions();
     // Four short seeded windows at 130 list over the solid door.
-    expect(await total()).toBeCloseTo(747.62 + Math.round(4 * 130 * 0.776 * (0.99 / (1 - 0.0265)) * 100) / 100 / 0.57, 0);
+    expect(await total()).toBeCloseTo(723.25 + Math.round(4 * 130 * 0.776 * (0.99 / (1 - 0.0265)) * 100) / 100 / 0.57, 0);
     // The glass stays through a framing change to a window that comes in it.
     fireEvent.change(sel("so-framing"), { target: { value: "arch:insert:long:SQ24" } });
     await settle();

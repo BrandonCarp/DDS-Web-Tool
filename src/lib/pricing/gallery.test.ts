@@ -4,6 +4,11 @@ import { SPECIAL_DOORS } from "./data/special-doors";
 import { glassOptionsFor, glassTakesInserts, panelStylesFor, GALLERY_GROUP } from "./data/so-glass";
 import { GALLERY_GLASS, GALLERY_GLASS_TYPES, GALLERY_GROUPS, GALLERY_ULTRA_GRAIN } from "./data/gallery-glass";
 import { SPECIAL } from "./data/special-orders";
+import { STOCK_PRICES } from "./data/stock-prices";
+
+// A stocked size is the stock book's price on this tab too (Brandon,
+// 21/10/2026): the GD1LP/GD1SP at the whole feet, 7', 8' and 9' high.
+const stock = STOCK_PRICES["GD1LP-GD1SP"];
 
 // Figures off CJ's GALLERY 3 LAYER workbook (12/10/2026), loaded as he has
 // it: DDS cost is Clopay list x .786 x 0.99 / (1 - 0.0265) on the door and
@@ -29,13 +34,15 @@ const price = (o: Record<string, unknown>) => {
 };
 
 describe("Gallery GD1SP/GD1LP special order grid (8/10/2026)", () => {
-  it("prices the solid door off the width band, by height tier", () => {
-    expect(price({})).toBe(sell(door(569)));                       // 8'0" x 7'
-    expect(price({ width: "8.2" })).toBeCloseTo(sell(door(569)) + 200, 2);   // an odd width: the 8'0" door and 200 (19/10/2026), not the 8'2" to 8'10" row
-    expect(price({ width: "16", height: "8" })).toBe(sell(door(1285)));
-    expect(price({ width: "15.6", height: "8" })).toBeCloseTo(price({ width: "15", height: "8" }) + 200, 2);
-    expect(price({ width: "9", height: "9" })).toBe(sell(door(1046)));
-    expect(price({ width: "9", height: "10" })).toBe(sell(door(1046))); // 9 and 10 ft share a column
+  it("prices the solid door off the width band, by height tier — the stock book's at a stocked size", () => {
+    expect(price({})).toBe(stock["8"]["7"].solid);                 // 8'0" x 7', stocked: 772.72
+    expect(SPECIAL_DOORS[GALLERY_GROUP]["7"]["8"].solid).toBe(sell(door(569)));   // the sheet's 8'0", under the odd widths
+    expect(price({ width: "8.2" })).toBeCloseTo(sell(door(569)) + 200, 2);   // an odd width: the sheet's 8'0" door and 200 (19/10/2026), not the 8'2" to 8'10" row
+    expect(price({ width: "16", height: "8" })).toBe(stock["16"]["8"].solid);
+    expect(SPECIAL_DOORS[GALLERY_GROUP]["8"]["16"].solid).toBe(sell(door(1285)));
+    expect(price({ width: "15.6", height: "8" })).toBeCloseTo(sell(door(1236)) + 200, 2);   // 15'0" is stocked; the odd width is the sheet's 15'0" and 200
+    expect(price({ width: "9", height: "9" })).toBe(stock["9"]["9"].solid);
+    expect(price({ width: "9", height: "10" })).toBe(sell(door(1046))); // 9 and 10 ft share a column; nothing is stocked at 10'
   });
 
   it("grids 7, 8, 9 and 10 ft, and offers heights to 10'0\"", () => {
@@ -47,9 +54,11 @@ describe("Gallery GD1SP/GD1LP special order grid (8/10/2026)", () => {
   it("includes torsion at 9 ft and up, with nothing added for picking it", () => {
     const r = q({ width: "9", height: "9", spring: "torsion" });
     expect(r.quote?.torsionIncluded).toBe(true);
-    expect(r.quote?.unitPrice).toBe(sell(door(1046)));
-    expect(q({ width: "9", height: "9", spring: "galvanized" }).quote?.unitPrice).toBe(sell(door(1046)));   // galvanized is the same price
-    expect(q({ width: "9", height: "8", spring: "torsion" }).quote?.unitPrice).toBe(sell(door(750)) + 55);
+    expect(r.quote?.unitPrice).toBe(stock["9"]["9"].solid);
+    expect(q({ width: "9", height: "9", spring: "galvanized" }).quote?.unitPrice).toBe(stock["9"]["9"].solid);   // galvanized is the same price
+    expect(q({ width: "9", height: "10", spring: "torsion" }).quote?.unitPrice).toBe(sell(door(1046)));
+    expect(q({ width: "9", height: "8", spring: "torsion" }).quote?.unitPrice).toBe(stock["9"]["8"].solid + 55);
+    expect(q({ width: "9.2", height: "8", spring: "torsion" }).quote?.unitPrice).toBeCloseTo(sell(door(750)) + 200 + 55, 2);
   });
 
   it("adds torsion at 55 on a single door and 75 on a double, galvanized the same (Brandon, 12/10/2026)", () => {
@@ -76,8 +85,11 @@ describe("Gallery glass", () => {
     // Ultra-Grain single, up to 8ft, 158.76 — each lifted by the margin. The
     // door and its glass are lifted together, the finish on its own, so the
     // cents can differ from one lift of the whole by a couple of pennies.
+    // The 8'0" x 7'0" is stocked, so the door itself is the stock book's 772.72 (21/10/2026).
     const got = price({ style: "inserts", glassType: "insulated", color: "Ultra-Grain Oak Medium Finish" });
-    expect(got).toBeCloseTo(sell(door(569)) + sell(265.37) + sell(158.76), 0);
+    expect(got).toBeCloseTo(stock["8"]["7"].solid + sell(265.37) + sell(158.76), 0);
+    expect(price({ width: "8.2", style: "inserts", glassType: "insulated", color: "Ultra-Grain Oak Medium Finish" }))
+      .toBeCloseTo(sell(door(569)) + 200 + sell(265.37) + sell(158.76), 0);
   });
 
   it("words the line as the stock tab does: the grade, then the design or NO INSERTS", () => {
@@ -87,12 +99,18 @@ describe("Gallery glass", () => {
     expect(q({ style: "inserts" }).quote?.description).toContain("double strength b grade windows in the top section, no inserts");
   });
 
-  it("prices double strength as the base glass, with inserts on top", () => {
+  it("prices double strength as the base glass, with inserts on top — the stock book's glass and inserts at a stocked size", () => {
     // The door and its glass are lifted separately, each rounded to cents, so
-    // the sum can sit a penny off one lift of the whole.
-    expect(price({ style: "glass" })).toBeCloseTo(sell(door(569) + 175.85), 1);
-    expect(price({ style: "inserts" })).toBeCloseTo(sell(door(569) + 223.81), 1);
+    // the sum can sit a penny off one lift of the whole. At 8'2" (the sheet's
+    // 8'0" and 200); at the stocked 8'0" the stock book's GLASS and INSERTS
+    // columns, as the residential tab has them (21/10/2026).
+    expect(price({ width: "8.2", style: "glass" })).toBeCloseTo(sell(door(569) + 175.85) + 200, 1);
+    expect(price({ width: "8.2", style: "inserts" })).toBeCloseTo(sell(door(569) + 223.81) + 200, 1);
+    expect(price({ style: "glass" })).toBe(stock["8"]["7"].glass);
+    expect(price({ style: "inserts" })).toBe(stock["8"]["7"].inserts);
     expect(price({ style: "glass", glassType: "dsb" })).toBe(price({ style: "glass" }));
+    // Any other glass, or the long windows, is the sheet's adder over the stocked solid door.
+    expect(price({ style: "glass", glassType: "insulated" })).toBeCloseTo(stock["8"]["7"].solid + sell(163.06 * 4 / 3), 0);
   });
 
   it("prices long panel glass at the GD1LP figure and short at the GD1SP's, whichever model is picked", () => {
@@ -131,7 +149,7 @@ describe("Gallery glass", () => {
     expect(glassTakesInserts(GALLERY_GROUP, "short", "8", "acrylic")).toBe(false);
     expect(glassTakesInserts(GALLERY_GROUP, "long", "8", "seeded")).toBe(true);
     expect(q({ style: "inserts", glassType: "acrylic" }).reason).toMatch(/not offered/);
-    expect(price({ style: "glass", glassType: "acrylic" })).toBeCloseTo(sell(door(569) + 450.82), 1); // 4 x 141 x .786 x k; a half-cent at 43.25%
+    expect(price({ style: "glass", glassType: "acrylic" })).toBeCloseTo(stock["8"]["7"].solid + sell(450.82), 1); // 4 x 141 x .786 x k over the stocked solid door; a half-cent at 43.25%
   });
 
   it("matches the sheet on every band: glass is the per-window figure times the count, inserts +11.99 a short window on the GD1 pair", () => {

@@ -30,7 +30,8 @@ import { colorKeyFor, colorTakesPremium } from "./catalog-meta";
 import { highLiftPrice, mountPhrase, trackMountFor, type InclineStyle } from "./track-lift";
 import { glassWhere, sheetTrackPrice, sheetTracksFor } from "./sheet-tracks";
 import { ADDONS, GRADE_RES, COLLECTIONS_RES } from "./addons";
-import { dataKey } from "../model-groups";
+import { dataKey, RESIDENTIAL_HIDDEN } from "../model-groups";
+import { STOCK_PRICES } from "./stock-prices";
 import { designName, specialPlainWindowsFor, specialWindowDesigns } from "./inserts";
 import { describeModernWindows, modernFraming, modernGlassLabel, modernPanelsWide, modernPickerModel, modernStack, modernWindowCost, type WindowPlace } from "./modern-steel";
 import { designBuilt, designTakesWindows, hasDesigns, modelWithDesign, secondColorName, secondColorPricedAs } from "./door-designs";
@@ -143,6 +144,21 @@ const STOCK_SPRING_RATES: SpringRates = {
   torsion: { single: ADDONS.torsion, double: ADDONS.torsion },
   galvanized: { single: ADDONS.galvanized.single, double: ADDONS.galvanized.double },
 };
+/**
+ * A stocked door is a stocked door whichever tab quotes it (Brandon,
+ * 21/10/2026): at a size DDS stocks a residential model in — the stock
+ * book's whole-foot widths and 7'6", 7', 8' and 9' high — the special order
+ * quote takes the stock book's figures for the door itself, solid, glass and
+ * inserts, so the two tabs agree on it; the sheet still prices what goes on
+ * it (its windows, colours and track). An odd size, a 10' door, a model the
+ * residential tab does not offer (the 4300 family) or one with no stock
+ * book (the 4132, the 9131, the Modern Steel doors) is the sheet's.
+ */
+function stockedTriple(member: string, width: string, tierKey: string | null): PriceTriple | null {
+  if (!tierKey || RESIDENTIAL_HIDDEN.has(member)) return null;
+  return STOCK_PRICES[dataKey(member)]?.[width]?.[tierKey] ?? null;
+}
+
 /**
  * Spring rates a model carries on its own, ahead of its collection's: the
  * 4138 (Brandon, 20/10/2026) — torsion 45 on a single door and 55 on a
@@ -497,7 +513,10 @@ export function specialDoorQuote(
   const asEight = nineFootGlass(input.model, input.width, style);
   const oddBase = sectioned ? null : oddWidthBase(tier, input.width);
   const priceWidth = asEight ? NINE_FOOT_GLASS.pricedAs : oddBase ?? input.width;
-  const triple = tier[priceWidth];
+  const member = input.variant || input.model.split("/")[0];
+  // A stocked door is a stocked door whichever tab quotes it (Brandon, 21/10/2026).
+  const stocked = stockedTriple(member, input.width, tierKey);
+  const triple = stocked ?? tier[priceWidth];
   if (!triple) return { reason: "That width is not on the grid — enter the Clopay total below." };
 
   // The door's design, where it has one: built at this size, and on the
@@ -528,7 +547,6 @@ export function specialDoorQuote(
     return { reason: `Clopay prices no windows on the ${name} at ${heightLabel(input.width)} — solid only at this width.` };
   }
 
-  const member = input.variant || input.model.split("/")[0];
   // A Modern Steel door's windows are where they were pressed in on the
   // drawing (Brandon, 19/10/2026), a window at a time over the solid door, at
   // what CJ's sheet prices the glass and framing a window — and until a
@@ -595,16 +613,24 @@ export function specialDoorQuote(
     glassName = input.glassType && input.glassType !== "dsb" ? glassLabel(input.glassType) : null;
   } else if (sheet && style !== "solid" && typeof triple.solid === "number") {
     const glassId = input.glassType || baseGlassFor(input.model, series);
-    // The windows of the door priced — the whole-foot door's on an odd width —
-    // and the asked width's own where that door has none of this series.
-    const glassWidth = glassAdderSell(input.model, sheetPanel, priceWidth, glassId, false, series) == null ? input.width : priceWidth;
-    const add = glassAdderSell(input.model, sheetPanel, glassWidth, glassId, style === "inserts", series);
-    if (add == null) {
-      return { reason: glassAdderSell(input.model, sheetPanel, glassWidth, glassId, false, series) == null
-        ? `That glass is not priced on the ${sheetPanel} ${series} windows at this width — pick another glass.`
-        : "Inserts are not offered on that glass — pick another glass, or plain glass." };
+    const stockGlass = stocked && series === "standard" && sheetPanel === "short" && glassId === baseGlassFor(input.model, series) && typeof stocked[style] === "number";
+    if (stockGlass) {
+      // The stocked door with the stock book's own windows — the grade its
+      // GLASS and INSERTS columns were built from, short, in the top section —
+      // is the stock book's figure, as the residential tab prices it.
+      base = stocked[style] as number;
+    } else {
+      // The windows of the door priced — the whole-foot door's on an odd width —
+      // and the asked width's own where that door has none of this series.
+      const glassWidth = glassAdderSell(input.model, sheetPanel, priceWidth, glassId, false, series) == null ? input.width : priceWidth;
+      const add = glassAdderSell(input.model, sheetPanel, glassWidth, glassId, style === "inserts", series);
+      if (add == null) {
+        return { reason: glassAdderSell(input.model, sheetPanel, glassWidth, glassId, false, series) == null
+          ? `That glass is not priced on the ${sheetPanel} ${series} windows at this width — pick another glass.`
+          : "Inserts are not offered on that glass — pick another glass, or plain glass." };
+      }
+      base = triple.solid + add;
     }
-    base = triple.solid + add;
     // The glass is named as the stock tab names a grade — "single strength b
     // grade", "double strength b grade" — and a special glass by its name.
     glassName = GRADE_WORDS[glassId] ?? glassLabel(glassId);

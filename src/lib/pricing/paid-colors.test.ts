@@ -88,7 +88,9 @@ describe("the paid colours by model (Brandon, 20/10/2026)", () => {
     expect(blocks.map(([g]) => g)).toEqual(PREMIUM_GROUPS.filter((g) => g !== "4050/4051/4053/4132"));   // CJ's 4050 sheet has none
     for (const [g, b] of blocks) expect(b, g).toEqual(first);
     expect(sheetUltraGrain("4050/4051/4053/4132")).toEqual(first);
-    expect(quote("4050/4051/4053/4132", "4050", "White")).toBe(747.62);
+    // The 4132 is not stocked: the sheet's 747.62 (the stocked 4050 is the stock book's 723.25 at this size, 21/10/2026).
+    expect(quote("4050/4051/4053/4132", "4132", "White")).toBe(747.62);
+    expect(quote("4050/4051/4053/4132", "4050", "White")).toBe(723.25);
     expect(quote("4050/4051/4053/4132", "4132", CYPRESS[0])).toBeCloseTo(747.62 + Math.round((first.upTo8ft.single / 0.57) * 100) / 100, 2);
   });
 });

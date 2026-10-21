@@ -106,8 +106,13 @@ describe("panel style", () => {
   });
 
   it("prices a long-panel door off its own band", () => {
-    expect(sell("12", "ssb", "long")).not.toBe(sell("12", "ssb", "short"));
-    expect(sell("12", "ssb", "long") - sell("12", "ssb", "short")).toBeCloseTo(
+    // On the 4132: the 4050 at 12'0" x 7'0" is stocked, its short single
+    // strength door the stock book's (21/10/2026), so the two bands cannot be
+    // told apart there.
+    const sell4132 = (panel: "short" | "long") =>
+      specialDoorQuote({ ...base, variant: "4132", width: "12", style: "glass", glassType: "ssb", panelStyle: panel }).quote?.unitPrice ?? 0;
+    expect(sell4132("long")).not.toBe(sell4132("short"));
+    expect(sell4132("long") - sell4132("short")).toBeCloseTo(
       glassAdderSell(G, "long", "12", "ssb")! - glassAdderSell(G, "short", "12", "ssb")!, 2,
     );
   });
