@@ -424,22 +424,18 @@ describe("residential tool — vinyl molding", () => {
     await waitFor(() => expect(bodies.length).toBeGreaterThan(0));
   }
 
-  it("asks about vinyl when Get price is pressed", async () => {
+  it("asks nothing on Get price: the card's Yes/No is No until pressed (Brandon, 21/10/2026), and No copies the door line alone", async () => {
     await priceIt();
-    expect(screen.getByTestId("vinyl-prompt").textContent).toContain("WHITE vinyl");
-  });
-
-  it("No copies the door line alone", async () => {
-    await priceIt();
-    fireEvent.click(screen.getByTestId("vinyl-ask-no"));
     expect(screen.queryByTestId("vinyl-prompt")).toBeNull();
+    expect(document.querySelector(".modal-scrim")).toBeNull();
     await waitFor(() => screen.getByTestId("copy-qb"));
+    expect(screen.getByTestId("vinyl-no").getAttribute("aria-checked")).toBe("true");
     expect((await copyFrom(screen.getByTestId("copy-qb"))).split("\n")).toHaveLength(1);
   });
 
   it("Yes puts the door on row 1 and the vinyl on row 3, row 2 left blank — with no pieces line in the card (20/10/2026)", async () => {
     await priceIt();
-    fireEvent.click(screen.getByTestId("vinyl-ask-yes"));
+    fireEvent.click(screen.getByTestId("vinyl-yes"));
     await waitFor(() => expect(screen.getByTestId("vinyl-yes").getAttribute("aria-checked")).toBe("true"));
     expect(screen.queryByTestId("vinyl-line")).toBeNull();
     expect(screen.queryByTestId("vinyl-price")).toBeNull();
@@ -452,7 +448,7 @@ describe("residential tool — vinyl molding", () => {
 
   it("can change its mind in the quote card", async () => {
     await priceIt();
-    fireEvent.click(screen.getByTestId("vinyl-ask-yes"));
+    fireEvent.click(screen.getByTestId("vinyl-yes"));
     await waitFor(() => expect(screen.getByTestId("vinyl-yes").getAttribute("aria-checked")).toBe("true"));
     expect((await copyFrom(screen.getByTestId("copy-qb"))).split("\n")).toHaveLength(3);
     fireEvent.click(screen.getByTestId("vinyl-no"));
@@ -461,7 +457,6 @@ describe("residential tool — vinyl molding", () => {
 
   it("suggests an operator bracket and struts under the vinyl, each a PARTS line once chosen (Brandon, 20/10/2026)", async () => {
     await priceIt();
-    fireEvent.click(screen.getByTestId("vinyl-ask-no"));
     expect(screen.getByTestId("addons").querySelector(".addons-hdr")?.textContent).toBe("Suggested addons");
     expect([...(screen.getByTestId("addon-bracket") as HTMLSelectElement).options].map((o) => o.textContent)).toEqual(["No", "ARB", "ORB"]);
     expect((screen.getByTestId("addon-struts") as HTMLInputElement).value).toBe("0");
@@ -473,12 +468,12 @@ describe("residential tool — vinyl molding", () => {
     // The bracket, then two struts the door's width — a 9'0" door takes the 9FT strut.
     expect(rows).toHaveLength(5);
     expect(rows[2].split("\t")).toEqual([QB_PARTS, "ARB BRACKET", "1", "12.95"]);
-    expect(rows[4].split("\t")).toEqual([QB_PARTS, '2-1/4" GALVANIZED STRUT, [2] - 9FT', "2", "17.95"]);
+    expect(rows[4].split("\t")).toEqual([QB_PARTS, '2-1/4" GALVANIZED STRUT,  [2] - 9FT', "2", "17.95"]);
     // Two doors: two brackets, four struts.
     fireEvent.change(document.getElementById("qty")!, { target: { value: "2" } });
     const twice = (await copyFrom(screen.getByTestId("copy-qb"))).split("\n");
     expect(twice[2].split("\t")).toEqual([QB_PARTS, "ARB BRACKET", "2", "12.95"]);
-    expect(twice[4].split("\t")).toEqual([QB_PARTS, '2-1/4" GALVANIZED STRUT, [4] - 9FT', "4", "17.95"]);
+    expect(twice[4].split("\t")).toEqual([QB_PARTS, '2-1/4" GALVANIZED STRUT,  [4] - 9FT', "4", "17.95"]);
   });
 
   it("never asks for a replacement section — its opening already has molding", async () => {
@@ -496,7 +491,6 @@ describe("residential tool — the door price is for one door", () => {
     fireEvent.change(screen.getByTestId("color"), { target: { value: "White" } });
     fireEvent.click(screen.getByTestId("get-price"));
     await waitFor(() => expect(screen.getByTestId("source-badge")).toBeTruthy());
-    fireEvent.click(screen.getByTestId("vinyl-ask-no"));
     const card = document.querySelector("aside.quote") as HTMLElement;
     const price = () => within(card).getByTestId("total").textContent;
     expect(price()).toBe("$100.00");

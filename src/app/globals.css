@@ -606,8 +606,8 @@ html, body { margin: 0; padding: 0; }
 .tool-shell :is(input, textarea)[data-set]:not(:focus):not(:placeholder-shown) { border-color: var(--good); }
 
 
-/* The vinyl question: a small modal over the whole window, and its row in the
-   quote card. */
+/* A small modal over the whole window (the cart's question, the disposals,
+   the door preview), and the vinyl row in the quote card. */
 .tool-shell .modal-scrim {
   position: fixed; inset: 0; z-index: 60;
   display: grid; place-items: center; padding: 20px;

@@ -15,12 +15,11 @@ import { dataKey, modelSort } from "@/lib/pricing/model-groups";
 import { windowDesigns, designWidthCode, plainWindowsFor, takesInserts, stockLongAllowed } from "@/lib/pricing/data/inserts";
 import { RES_SECTION_WIDTHS, sectionWidthLabel, SECTION_ONLY_MODELS, NO_GLASS_AT_18 } from "@/lib/pricing/data/res-section-meta";
 import { stockedWidths, stockedHeights, sizeParts, sizeCode, stockedColors, solidOnlyHeight, torsionOnlyHeight, SECTION_STOCK_COLORS } from "@/lib/pricing/data/stock-colors";
-import { OptionButtons, type ButtonOption } from "./OptionButtons";
+import { OptionButtons, YES_NO, type ButtonOption } from "./OptionButtons";
 import type { SearchPick } from "@/lib/search";
 import { DoorSlideshow } from "./DoorSlideshow";
 import { RESIDENTIAL_PHOTOS } from "@/lib/door-photos";
 import { vinylForDoor, vinylForDoorColor } from "@/lib/pricing/data/vinyl";
-import { VinylPrompt, YES_NO } from "./VinylPrompt";
 import { QtyStepper } from "./QtyStepper";
 import { PickInput, range } from "./PickInput";
 import { addonLine, OPERATOR_BRACKETS, operatorBracketPart, strutForWidth, type OperatorBracket } from "@/lib/pricing/data/door-addons";
@@ -142,10 +141,10 @@ export function ResidentialTool({
   const [glass, setGlass] = useState("solid");
   const [framing, setFraming] = useState("plain");
   const [windesign, setWindesign] = useState("");
-  // Vinyl molding for this door: asked when Get price is pressed, changeable
-  // in the quote card after — Brandon, 25/9/2026.
+  // Vinyl molding for this door: a Yes/No in the quote card, No until
+  // pressed — nothing asked (Brandon, 21/10/2026; it was a question on Get
+  // price from 25/9/2026).
   const [vinylOn, setVinylOn] = useState(false);
-  const [askVinyl, setAskVinyl] = useState(false);
   // The add-ons suggested under the vinyl (Brandon, 20/10/2026): an operator
   // bracket, ARB or ORB, and struts the door's width — none until chosen.
   const [opBracket, setOpBracket] = useState<OperatorBracket>("none");
@@ -790,15 +789,9 @@ export function ResidentialTool({
               </div>
             </div>
 
-            <button data-testid="get-price" className="btn primary configbtn" type="button" disabled={!optionsOpen || priced} onClick={() => { void getPrice(); if (vinyl) setAskVinyl(true); }}>
+            <button data-testid="get-price" className="btn primary configbtn" type="button" disabled={!optionsOpen || priced} onClick={() => { void getPrice(); }}>
               Get price
             </button>
-            {askVinyl && vinyl && (
-              <VinylPrompt
-                detail={`${vinyl.color} vinyl stop molding for this ${widthFt}'${widthIn || 0}" x ${heightFt}'${heightIn || 0}" door.`}
-                onAnswer={(yes) => { setVinylOn(yes); setAskVinyl(false); }}
-              />
-            )}
             {liveError && <div className="alert warn" data-testid="error">{liveError}</div>}
           </div>
         </div>

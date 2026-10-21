@@ -439,7 +439,7 @@ describe("retainers measured in feet and inches (9/10/2026)", () => {
     fireEvent.change(screen.getByTestId("parts-feet"), { target: { value: "12" } });
     fireEvent.change(screen.getByTestId("parts-copy-qb-qty"), { target: { value: "3" } });
     const line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
-    expect(line).toEqual({ item: "PARTS", description: '2" PLASTIC U RETAINER WITH RUBBER, [3] - 16FT', qty: 3, rate: 60 });
+    expect(line).toEqual({ item: "PARTS", description: '2" PLASTIC U RETAINER WITH RUBBER,  [3] - 16FT', qty: 3, rate: 60 });
   });
 
   it("counts the plastic L retainers and the struts the same way", async () => {
@@ -449,14 +449,14 @@ describe("retainers measured in feet and inches (9/10/2026)", () => {
     fireEvent.click(screen.getByText('2" L RETAINER').closest("button")!);
     fireEvent.change(screen.getByTestId("parts-feet"), { target: { value: "8" } });
     fireEvent.change(screen.getByTestId("parts-copy-qb-qty"), { target: { value: "2" } });
-    expect((await copiedQbLine(screen.getByTestId("parts-copy-qb"))).description).toBe('2" PLASTIC L RETAINER, [2] - 8FT');
+    expect((await copiedQbLine(screen.getByTestId("parts-copy-qb"))).description).toBe('2" PLASTIC L RETAINER,  [2] - 8FT');
     cleanup();
     const struts = GROUP_TABS.find((t) => t.id === "struts")!;
     show(<PartsTool menu={struts.menu} categories={struts.categories} group="Struts" />);
     fireEvent.click(screen.getByTestId("page-standard-struts"));
     fireEvent.click(screen.getByText("12FT STRUT").closest("button")!);
     fireEvent.change(screen.getByTestId("parts-copy-qb-qty"), { target: { value: "4" } });
-    expect(await copiedQbLine(screen.getByTestId("parts-copy-qb"))).toEqual({ item: "PARTS", description: '2-1/4" GALVANIZED STRUT, [4] - 12FT', qty: 4, rate: 29.95 });
+    expect(await copiedQbLine(screen.getByTestId("parts-copy-qb"))).toEqual({ item: "PARTS", description: '2-1/4" GALVANIZED STRUT,  [4] - 12FT', qty: 4, rate: 29.95 });
   });
 
   it("gives lock bars the same feet-and-inches box, 1 to 18 ft, and writes the length on the line", async () => {

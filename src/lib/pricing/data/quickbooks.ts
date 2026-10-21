@@ -49,7 +49,9 @@ export function quickBooksRow(
   qty: number,
   rate: number,
 ): string {
-  const clean = description.replace(/[\t\r\n]+/g, " ").trim();
+  // Two spaces after every comma (Brandon, 21/10/2026), as the spring lines
+  // have always been typed — the whole description, whichever tool wrote it.
+  const clean = description.replace(/[\t\r\n]+/g, " ").replace(/,\s*/g, ",  ").trim();
   // Math.max(1, NaN) is NaN, so guard the value itself rather than the floor —
   // a blank or broken quantity field would otherwise put "NaN" in the column.
   const n = Number.isFinite(qty) ? Math.max(1, Math.floor(qty)) : 1;

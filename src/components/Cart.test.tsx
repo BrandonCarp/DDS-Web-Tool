@@ -60,7 +60,7 @@ describe("the cart", () => {
     );
     // Two on the button, then three in the cart; the same retainer again adds to it.
     fireEvent.change(screen.getByTestId("ret-qty"), { target: { value: "2" } });
-    expect(await copyFrom(screen.getByTestId("ret"))).toBe('PARTS\t2" PLASTIC U RETAINER WITH RUBBER, [2] - 16FT\t2\t60.00');
+    expect(await copyFrom(screen.getByTestId("ret"))).toBe('PARTS\t2" PLASTIC U RETAINER WITH RUBBER,  [2] - 16FT\t2\t60.00');
     fireEvent.click(screen.getByTestId("ret-cart"));
     expect(lines()[0].textContent).toContain("[2] - 16FT");
     fireEvent.change(screen.getAllByTestId("cartline-qty")[0], { target: { value: "3" } });
@@ -68,7 +68,7 @@ describe("the cart", () => {
     fireEvent.click(screen.getByTestId("ret-cart"));
     expect(lines()).toHaveLength(1);
     expect(qtys()).toEqual(["5"]);
-    expect(await copyFrom(screen.getByTestId("cart-qb"))).toBe('PARTS\t2" PLASTIC U RETAINER WITH RUBBER, [5] - 16FT\t5\t60.00');
+    expect(await copyFrom(screen.getByTestId("cart-qb"))).toBe('PARTS\t2" PLASTIC U RETAINER WITH RUBBER,  [5] - 16FT\t5\t60.00');
   });
 
   it("asks whether to clear the cart once it is copied to QuickBooks (12/10/2026)", async () => {

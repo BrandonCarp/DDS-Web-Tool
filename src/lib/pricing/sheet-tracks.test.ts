@@ -124,6 +124,12 @@ describe("the 4138's track tables", () => {
     expect(glassWhere([{ section: 1 }, { section: 1 }], true)).toBe("top");
     expect(glassWhere([{ section: 1 }, { section: 3 }], true)).toBe("other");
     expect(glassWhere([{ section: 1 }], false)).toBe("none");
+    // A door whose windows are not placed on a drawing has them in the top section: the 4050 with windows takes no breakaway either (Brandon, 21/10/2026).
+    expect(glassWhere(undefined, true)).toBe("top");
+    expect(glassWhere([], true)).toBe("none");
+    const g4050 = (incline: string) => specialDoorQuote({ model: "4050/4051/4053/4132", variant: "4050", width: "9", height: "7", color: "White", style: "glass", spring: "torsion", lock: "none", track: "high_lift", incline, highLiftInches: 36 } as never);
+    expect(g4050("breakaway").reason).toMatch(/Breakaway high lift is built solid only/);
+    expect(g4050("deg25").quote).toBeTruthy();
   });
 
   it("prices full vertical lift by the door's height, solid only, and the line says so", () => {

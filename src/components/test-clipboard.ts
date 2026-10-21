@@ -23,7 +23,7 @@ export async function copyFrom(button: HTMLElement): Promise<string> {
   return copied;
 }
 
-/** The four fields Copy for QuickBooks pastes: item, description, quantity, rate. */
+/** The four fields Copy for QuickBooks pastes: item, description, quantity, rate — the description as pasted, two spaces after every comma (21/10/2026). */
 export async function copiedQbLine(button: HTMLElement) {
   const [item, description, qty, rate] = (await copyFrom(button)).split("\t");
   return { item, description, qty: Number(qty), rate: Number(rate) };

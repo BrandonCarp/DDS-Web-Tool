@@ -7,7 +7,6 @@ import { priceText } from "@/components/CopyButton";
 import { CopyQuickBooks } from "./CopyQuickBooks";
 import { QB_SPECIAL_ORDERS, QB_VINYL } from "@/lib/pricing/data/quickbooks";
 import { vinylForDoor, vinylForDoorColor } from "@/lib/pricing/data/vinyl";
-import { YES_NO } from "./VinylPrompt";
 import { addonLine, OPERATOR_BRACKETS, operatorBracketPart, strutForWidth, type OperatorBracket } from "@/lib/pricing/data/door-addons";
 import {
   SPECIAL, SPECIAL_COMMERCIAL, SPECIAL_COMMERCIAL_PINNED, SPECIAL_COMMERCIAL_SERIES,
@@ -32,7 +31,7 @@ import {
 } from "@/lib/pricing/data/track-lift";
 import { dataKey } from "@/lib/pricing/model-groups";
 import { homeownerMarkupForBand } from "@/lib/pricing/engine";
-import { OptionButtons, type ButtonOption } from "./OptionButtons";
+import { OptionButtons, YES_NO, type ButtonOption } from "./OptionButtons";
 import { DoorDiagram } from "./DoorDiagram";
 import { modernFramingChoices, modernGlassForFraming, modernPanelsWide, modernPickerModel, modernStack, placeKey, type WindowPlace } from "@/lib/pricing/data/modern-steel";
 import { roofPitches, sheetInclines, sheetLiftChoices, sheetRearTorsion, sheetTrackChoices } from "@/lib/pricing/data/sheet-tracks";
@@ -309,8 +308,13 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const gIsLift = gTrackEff === "high_lift";
   const gHeightFtN = Number(gHeightFt || "0");
   const gHeightInN = Number(gHeightIn || "0");
-  const gInclines = sheetInclines(modelGroup) ?? INCLINE_STYLES.map((i) => i.value);
-  const gInclineEff: InclineStyle = gInclines.includes(gIncline) ? gIncline : gInclines[0];
+  // Breakaway high lift is built solid only (CJ's sheet; Brandon, 21/10/2026:
+  // a door with windows cannot pick it), so a door with windows — pressed into
+  // the drawing on a Modern Steel door, in the top section on any other — is
+  // offered the other inclines alone.
+  const gHasWindows = gStyleEff !== "solid" && (!gModern || gPlaces.length > 0);
+  const gInclines = (sheetInclines(modelGroup) ?? INCLINE_STYLES.map((i) => i.value)).filter((i) => !(gHasWindows && i === "breakaway"));
+  const gInclineEff: InclineStyle = gInclines.includes(gIncline) ? gIncline : gInclines[0] ?? "deg25";
   const gLiftSteps = sheetLiftChoices(modelGroup, gInclineEff, gHeightFtN, gHeightInN) ?? highLiftChoices(gHeightFtN, gHeightInN);
   const gEffLift = gLiftSteps.includes(gLift) ? gLift : 0;
   const gPitches = roofPitches(modelGroup);

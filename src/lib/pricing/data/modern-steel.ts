@@ -218,10 +218,12 @@ export function describeModernWindows(places: readonly WindowPlace[], sections: 
   const where = glazed.length === sections ? "all sections" : `section${glazed.length > 1 ? "s" : ""} ${listed(glazed.map(String))}`;
   const rows = new Set(glazed.map((s) => row(s).join("-")));
   const partial = glazed.some((s) => !full(s));
-  // Which side the glass is on: every window in the left half, or every one in the right.
+  // Which side the glass is on, from inside looking out (Brandon,
+  // 21/10/2026): every window in the left half, or every one in the right —
+  // nothing said where there is glass on both sides.
   const half = Math.floor(across / 2);
   const seats = places.filter((p) => glazed.includes(p.section)).map((p) => p.panel);
-  const side = !partial ? "" : seats.every((j) => j <= half) ? "left side looking out" : seats.every((j) => j > across - half) ? "right side looking out" : "looking out";
+  const side = !partial ? "" : seats.every((j) => j <= half) ? "left side inside looking out" : seats.every((j) => j > across - half) ? "right side inside looking out" : "";
   const text = rows.size === 1
     ? `${where}${partial ? `, ${[...rows][0]}` : ""}`
     : listed(glazed.map((s) => `section ${s} ${row(s).join("-")}`));

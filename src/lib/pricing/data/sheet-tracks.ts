@@ -157,9 +157,14 @@ export function sheetTrackPrice(input: SheetTrackInput): { cost: number; label: 
   return { reason: "Not a sheet track." };
 }
 
-/** Where a Modern Steel door's windows are: none, the top section alone, or elsewhere too. */
+/**
+ * Where a door's windows are: none, the top section alone, or elsewhere too.
+ * A Modern Steel door's are where they were pressed into the drawing; any
+ * other door's windows are in its top section.
+ */
 export function glassWhere(places: readonly { section: number }[] | undefined, glazed: boolean): GlassWhere {
   if (!glazed) return "none";
-  if (!places || places.length === 0) return "none";
+  if (!places) return "top";
+  if (places.length === 0) return "none";
   return places.every((p) => p.section === 1) ? "top" : "other";
 }

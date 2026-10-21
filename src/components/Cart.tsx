@@ -7,8 +7,7 @@ import { Icon } from "./Icon";
 import { quickBooksRow } from "@/lib/pricing/data/quickbooks";
 import { withPieceCount } from "@/lib/pricing/data/part-pricing";
 import { QtyStepper } from "./QtyStepper";
-import { OptionButtons } from "./OptionButtons";
-import { YES_NO } from "./VinylPrompt";
+import { OptionButtons, YES_NO } from "./OptionButtons";
 
 /**
  * One QuickBooks invoice line in the cart. The rate is the price of ONE. A

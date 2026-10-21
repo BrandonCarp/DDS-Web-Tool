@@ -4,6 +4,12 @@ import { Icon, type IconName } from "./Icon";
 
 export type ButtonOption<T extends string> = { value: T; label: string; icon?: IconName };
 
+/** A yes or no: the vinyl question on the quote cards, the cart's. */
+export const YES_NO: ButtonOption<"yes" | "no">[] = [
+  { value: "yes", label: "Yes" },
+  { value: "no", label: "No" },
+];
+
 /**
  * Two or three either/or choices shown as buttons instead of a dropdown — the
  * assembly type, for one. All the options stay on screen, so the choice made

@@ -11,6 +11,16 @@ describe("QuickBooks row", () => {
     expect(row.split("\t")).toEqual(["STOCK DOOR", "CLOPAY 4050", "1", "784.89"]);
   });
 
+  it("puts two spaces after every comma in the description, whatever the tool wrote (Brandon, 21/10/2026)", () => {
+    const desc = (d: string) => quickBooksRow(QB_STOCK_DOORS, d, 1, 1).split("\t")[1];
+    expect(desc('Clopay Model 4050, 9\'0" x 7\'0", in the color White, solid no windows, 12″ radius track, front torsion springs, no lock'))
+      .toBe('CLOPAY MODEL 4050,  9\'0" X 7\'0",  IN THE COLOR WHITE,  SOLID NO WINDOWS,  12″ RADIUS TRACK,  FRONT TORSION SPRINGS,  NO LOCK');
+    // One already spaced the spring lines' way stays as it is; one with no space, or several, is made the same.
+    expect(desc('TORSION SPRINGS,  2" ID,  218 WIRE')).toBe('TORSION SPRINGS,  2" ID,  218 WIRE');
+    expect(desc("a,b,   c")).toBe("A,  B,  C");
+    expect(desc("no comma here")).toBe("NO COMMA HERE");
+  });
+
   it("sends the rate bare, with no currency symbol", () => {
     // QuickBooks wants a number in Rate — a leading "$" had to be deleted by
     // hand on every paste before this existed.
