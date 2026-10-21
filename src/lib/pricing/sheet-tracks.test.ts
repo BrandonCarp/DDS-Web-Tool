@@ -110,8 +110,10 @@ describe("the 4138's track tables", () => {
     // No amount chosen yet: the door prices without the lift, as the 4050 does.
     expect(q({ incline: "breakaway", highLiftInches: 0 }).quote?.unitPrice).toBe(solid);
     const line = q({ incline: "breakaway", highLiftInches: 36, trackMount: "reverse_angle" }).quote!.description;
-    expect(line).toMatch(/2" REVERSE ANGLE MOUNT TRACK TO STEEL, 36″ HIGH LIFT BREAKAWAY TRACK, FRONT TORSION SPRINGS/i);
-    expect(q({ incline: "deg25", highLiftInches: 69 }).quote!.description).toMatch(/, 69″ HIGH LIFT 25 DEGREE TRACK, FRONT TORSION SPRINGS/i);
+    expect(line).toMatch(/SOLID NO WINDOWS, 2" REVERSE ANGLE MOUNT TRACK TO STEEL WITH 36″ HIGH LIFT BREAKAWAY, FRONT TORSION SPRINGS/i);
+    expect(q({ incline: "deg25", highLiftInches: 69 }).quote!.description).toMatch(/SOLID NO WINDOWS, 2" BRACKET MOUNT TRACK WITH 69″ HIGH LIFT 25 DEGREE BREAKAWAY, FRONT TORSION SPRINGS/i);
+    // Without the lift amount the mount is not named on a bracket mount, as on any other track.
+    expect(q({ incline: "breakaway", highLiftInches: 0 }).quote!.description).toMatch(/SOLID NO WINDOWS, HIGH LIFT TRACK, FRONT TORSION SPRINGS/i);
   });
 
   it("builds breakaway high lift solid only, on either mount (CJ, 21/10/2026 — the top section glass build of the day before is off the sheet)", () => {

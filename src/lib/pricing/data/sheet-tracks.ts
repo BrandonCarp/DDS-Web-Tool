@@ -136,8 +136,10 @@ export function sheetTrackPrice(input: SheetTrackInput): { cost: number; label: 
     // SOLID ONLY on both mounts (CJ, 21/10/2026 — the top-section-glass
     // reverse angle build of the day before is gone from the sheet).
     if (incline === "breakaway" && input.glass !== "none") return { reason: "Breakaway high lift is built solid only." };
-    // The line names the incline (Brandon, 21/10/2026): 72″ high lift breakaway track, 69″ high lift 25 degree track.
-    return { cost, label: `${inches}″ high lift ${incline === "deg25" ? "25 degree" : "breakaway"} track` };
+    // The line names the incline (Brandon, 21/10/2026, afternoon): "2" bracket
+    // mount track with 72″ high lift breakaway", "… with 72″ high lift 25
+    // degree breakaway" — the mount is the quote's to say.
+    return { cost, label: `${inches}″ high lift ${incline === "deg25" ? "25 degree breakaway" : "breakaway"}` };
   }
   if (input.track === "full_vertical") {
     const table = t.fullVertical[mount];

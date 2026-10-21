@@ -1059,7 +1059,7 @@ describe("special order — high lift is the sheet-tracked doors' (the 4050 fami
     await settle();
     line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(sheetSolid + sell(136.52), 2);
-    expect(line.description).toMatch(/36″ HIGH LIFT BREAKAWAY TRACK,  FRONT TORSION SPRINGS/i);
+    expect(line.description).toMatch(/SOLID NO WINDOWS,  2" BRACKET MOUNT TRACK WITH 36″ HIGH LIFT BREAKAWAY,  FRONT TORSION SPRINGS/i);
     fireEvent.change(sel("so-track"), { target: { value: "full_vertical" } });
     await settle();
     expect((await copiedQbLine(screen.getByTestId("copy-qb"))).rate).toBeCloseTo(sheetSolid + sell(104.96), 2);
@@ -1086,7 +1086,7 @@ describe("special order — high lift is the sheet-tracked doors' (the 4050 fami
     expect(sel("so-incline").value).toBe("deg25");
     fireEvent.change(sel("so-high-lift"), { target: { value: "36" } });
     await settle();
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS IN THE TOP SECTION.*36″ HIGH LIFT 25 DEGREE TRACK/i);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS IN THE TOP SECTION.*2" BRACKET MOUNT TRACK WITH 36″ HIGH LIFT 25 DEGREE BREAKAWAY,  FRONT TORSION SPRINGS/i);
     fireEvent.change(sel("so-framing"), { target: { value: "" } });
     await settle();
     expect(options("so-incline").map((o) => o.value)).toEqual(["breakaway", "deg25"]);
@@ -1445,7 +1445,7 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     await settle();
     let line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(solid + sell(161.62), 2);
-    expect(line.description).toMatch(/60″ HIGH LIFT BREAKAWAY TRACK,  FRONT TORSION SPRINGS/i);
+    expect(line.description).toMatch(/SOLID NO WINDOWS,  2" BRACKET MOUNT TRACK WITH 60″ HIGH LIFT BREAKAWAY,  FRONT TORSION SPRINGS/i);
     fireEvent.change(sel("so-incline"), { target: { value: "deg25" } });
     await settle();
     expect(options("so-high-lift").map((o) => o.value).slice(-1)).toEqual(["72"]);
@@ -1456,7 +1456,7 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     await settle();
     line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(solid + sell(274.63), 2);
-    expect(line.description).toMatch(/2" REVERSE ANGLE MOUNT TRACK TO STEEL,  60″ HIGH LIFT 25 DEGREE TRACK/i);
+    expect(line.description).toMatch(/SOLID NO WINDOWS,  2" REVERSE ANGLE MOUNT TRACK TO STEEL WITH 60″ HIGH LIFT 25 DEGREE BREAKAWAY,  FRONT TORSION SPRINGS/i);
     // Full vertical lift, by the door's height; the pitch box only on roof pitch.
     fireEvent.change(sel("so-track"), { target: { value: "full_vertical" } });
     await settle();

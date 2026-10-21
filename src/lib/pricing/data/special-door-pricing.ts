@@ -821,15 +821,17 @@ export function specialDoorQuote(
   const secondName = secondColorName(input.model);
   const overlay = secondName && input.overlayColor ? `, ${secondName === "overlay" ? "overlays" : "inlay"} in the color ${input.overlayColor}` : "";
   const torsionTxt = track === "reverse_low_headroom" ? "rear torsion springs" : "front torsion springs";
+  const trackLine = track === "high_lift" && liftInches && lift.label
+    ? `${mountPhrase(mount) || '2" bracket mount track'} with ${lift.label}`
+    : `${mountPhrase(mount) ? `${mountPhrase(mount)}, ` : ""}${track === "roof_pitch" ? lift.label || TRACK_TEXT[track] : TRACK_TEXT[track] ?? TRACK_TEXT.r12}`;
   const description =
     `Clopay ${collection}Model ${modelText}, ${feetInches(input.width)} x ${heightLabel(input.height)}, ` +
     `in the color ${input.color}${overlay}, ${winText}, ` +
     // An angle mount names what it fastens to, exactly as the commercial tool
-    // phrases it, so the two read alike on a quote.
-    (mountPhrase(mount) ? `${mountPhrase(mount)}, ` : "") +
-    `${(track === "high_lift" && liftInches) || track === "roof_pitch"
-        ? lift.label || TRACK_TEXT[track]
-        : TRACK_TEXT[track] ?? TRACK_TEXT.r12}, ` +
+    // phrases it, so the two read alike on a quote. High lift rides on the
+    // mount (Brandon, 21/10/2026): "2" bracket mount track with 72″ high lift
+    // breakaway".
+    `${trackLine}, ` +
     // Torsion springs say where they sit (Brandon, 21/10/2026): front, or
     // rear on a low headroom rear torsion track, as the residential line does.
     `${spring === "galvanized" ? `galvanized ${torsionTxt}` : torsionOnly || spring === "torsion" ? torsionTxt : "extension springs"}, ` +
