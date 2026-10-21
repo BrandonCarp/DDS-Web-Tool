@@ -3,6 +3,7 @@ import {
   hasGrid, griddedHeights, griddedWidths, groupMembers, shouldSplitGroup, specialDoorQuote,
 } from "./data/special-door-pricing";
 import { SPECIAL } from "./data/special-orders";
+import { SPECIAL_DOORS } from "./data/special-doors";
 import { glassOptionsFor } from "./data/so-glass";
 import { specialOrderColors } from "./data/catalog-meta";
 
@@ -119,10 +120,11 @@ describe("9200 family — special order", () => {
     expect(at("9", "Iron Ore", "9") - at("9", "White", "9")).toBeCloseTo(lift(264.61), 2);
     expect(at("16", "Iron Ore", "10") - at("16", "White", "10")).toBeCloseTo(lift(529.22), 2);
     for (const c of ["Charcoal", "Mocha Brown", "Hunter Green", "Black"]) expect(at("9", c), c).toBe(at("9", "White"));
-    // The 9130 the same; the 4300 at its own 44; the 4050's sheet has no block and its colours take none.
-    const q = (model: string, color: string) =>
-      specialDoorQuote({ ...base, model, width: "9", height: "7", color, style: "solid" }).quote!.unitPrice;
-    expect(q("9130/9131/9132/9133", "Iron Ore") - q("9130/9131/9132/9133", "White")).toBeCloseTo(lift(158.77), 2);
+    // The 9130 the same (at 10' wide — its 9' x 7' in White is on the floor, the stock book's door, so the Iron Ore door is compared with the sheet's); the 4300 at its own 44; the 4050's sheet has no block and its colours take none.
+    const q = (model: string, color: string, width = "9") =>
+      specialDoorQuote({ ...base, model, width, height: "7", color, style: "solid" }).quote!.unitPrice;
+    expect(q("9130/9131/9132/9133", "Iron Ore", "10") - q("9130/9131/9132/9133", "White", "10")).toBeCloseTo(lift(158.77), 2);
+    expect(q("9130/9131/9132/9133", "Iron Ore") - SPECIAL_DOORS["9130/9131/9132/9133"]["7"]["9"].solid!).toBeCloseTo(lift(158.77), 2);
     expect(q("4300/4301/4302/4305/4310", "Iron Ore") - q("4300/4301/4302/4305/4310", "White")).toBeCloseTo(lift(158.77, 0.56), 2);
     expect(q("4300/4301/4302/4305/4310", "Charcoal")).toBe(q("4300/4301/4302/4305/4310", "White"));
     expect(q("4050/4051/4053/4132", "Black")).toBe(q("4050/4051/4053/4132", "White"));

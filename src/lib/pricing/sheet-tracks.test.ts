@@ -5,6 +5,8 @@ import { trackMountsFor } from "./data/track-lift";
 import { MODERN_SPRING_RATES, MODERN_TRACKS } from "./data/modern-windows";
 import { PREMIUM_SPRING_RATES, PREMIUM_TRACKS } from "./data/premium-glass";
 import { ADDONS } from "./data/addons";
+import { STOCK_PRICES } from "./data/stock-prices";
+import { SPECIAL_DOORS } from "./data/special-doors";
 
 /**
  * The 4138's own track options, off CJ's TRACKS block (20/10/2026): high
@@ -167,14 +169,15 @@ describe("the 4138's track tables", () => {
     expect(sheetTrackAdder("GD1LP/GD1SP", "low_headroom", "bracket")).toBeNull();
   });
 
-  it("keeps the stock book's option money on a stocked model, and takes the sheet's on one DDS does not stock (Brandon, 21/10/2026)", () => {
+  it("keeps the stock book's option money on a floored door, and takes the sheet's on one DDS does not have on the floor (Brandon, 21/10/2026)", () => {
     const g4050 = "4050/4051/4053/4132";
     const door = (variant: string, extra: Record<string, unknown>) =>
       specialDoorQuote({ model: g4050, variant, width: "9", height: "7", color: "White", style: "solid", spring: "torsion", lock: "none", track: "r12", ...extra } as never);
     const sell43 = (cost: number) => Math.round((cost / 0.57) * 100) / 100;
-    // The 4050 is stocked: low headroom 45, rear torsion 60, an angle mount free, torsion 35 — at a size the stock book has and at one it does not.
+    // The 4050 in White is floored at 9' and 10' wide: low headroom 45, rear torsion 60, an angle mount free, torsion 35.
     for (const width of ["9", "10"]) {
       const plain = door("4050", { width }).quote!.unitPrice;
+      expect(plain, width).toBe(STOCK_PRICES["4050-4051-4053"][width]["7"].solid + ADDONS.torsion);
       expect(door("4050", { width, track: "low_headroom" }).quote!.unitPrice - plain, width).toBeCloseTo(ADDONS.track.low_headroom, 2);
       expect(door("4050", { width, track: "reverse_low_headroom" }).quote!.unitPrice - plain, width).toBeCloseTo(ADDONS.track.reverse_low_headroom, 2);
       expect(door("4050", { width, track: "r12", trackMount: "continuous_angle" }).quote!.unitPrice, width).toBe(plain);
@@ -182,14 +185,23 @@ describe("the 4138's track tables", () => {
       expect(door("4050", { width, track: "r12" }).quote!.unitPrice - door("4050", { width, spring: "extension" }).quote!.unitPrice, width).toBeCloseTo(ADDONS.torsion, 2);
       expect(door("4050", { width, spring: "galvanized" }).quote!.unitPrice - door("4050", { width, spring: "extension" }).quote!.unitPrice, width).toBeCloseTo(ADDONS.galvanized.single, 2);
     }
-    // …and the sheet for what the stock tab does not sell: high lift, full vertical lift, roof pitch — at the 4050's 43%.
-    const plain9 = door("4050", {}).quote!.unitPrice;
-    expect(door("4050", { track: "high_lift", incline: "breakaway", highLiftInches: 36 }).quote!.unitPrice).toBeCloseTo(plain9 + sell43(136.52), 2);
-    expect(door("4050", { track: "high_lift", incline: "deg25", highLiftInches: 72, trackMount: "continuous_angle" }).quote!.unitPrice).toBeCloseTo(plain9 + sell43(331.44), 2);
+    // A track the stock tab does not sell — high lift, full vertical lift, roof pitch — makes it a special order: the sheet's door (and its 45 torsion) under the sheet's track, at the 4050's 43%.
+    const sheet9 = SPECIAL_DOORS[g4050]["7"]["9"].solid! + 45;
+    expect(sheet9).not.toBe(door("4050", {}).quote!.unitPrice);
+    expect(door("4050", { track: "high_lift", incline: "breakaway", highLiftInches: 36 }).quote!.unitPrice).toBeCloseTo(sheet9 + sell43(136.52), 2);
+    expect(door("4050", { track: "high_lift", incline: "deg25", highLiftInches: 72, trackMount: "continuous_angle" }).quote!.unitPrice).toBeCloseTo(sheet9 + sell43(331.44), 2);
     expect(door("4050", { track: "high_lift", incline: "straight_incline", highLiftInches: 36 }).reason).toMatch(/breakaway or 25 degree/);
-    expect(door("4050", { track: "full_vertical" }).quote!.unitPrice).toBeCloseTo(plain9 + sell43(104.96), 2);
-    expect(door("4050", { track: "roof_pitch", roofPitch: "3/12" }).quote!.unitPrice).toBeCloseTo(plain9 + sell43(106.93), 2);
+    expect(door("4050", { track: "full_vertical" }).quote!.unitPrice).toBeCloseTo(sheet9 + sell43(104.96), 2);
+    expect(door("4050", { track: "roof_pitch", roofPitch: "3/12" }).quote!.unitPrice).toBeCloseTo(sheet9 + sell43(106.93), 2);
     expect(door("4050", { track: "roof_pitch", roofPitch: "3/12" }).quote!.description).toMatch(/3\/12 ROOF PITCH TRACK/i);
+    // Off the floor the 4050 is a special order through and through: a 10' x 8' in Black (floored at 8, 9 and 16), the sheet's door, springs and adders.
+    const black = (extra: Record<string, unknown>) => door("4050", { width: "10", height: "8", color: "Black", ...extra }).quote!.unitPrice;
+    expect(black({})).toBe(SPECIAL_DOORS[g4050]["8"]["10"].solid! + 45);
+    expect(black({ track: "low_headroom" }) - black({})).toBeCloseTo(sell43(39.06), 2);
+    expect(black({ track: "r12", trackMount: "continuous_angle" }) - black({})).toBeCloseTo(sell43(58.40), 2);
+    expect(black({ spring: "galvanized" }) - black({ spring: "extension" })).toBeCloseTo(50, 2);
+    expect(door("4053", { width: "10", height: "8", color: "Black" }).quote!.unitPrice).toBe(black({}));
+    expect(door("4053", { width: "9", height: "8", color: "Black" }).quote!.unitPrice).toBe(STOCK_PRICES["4050-4051-4053"]["9"]["8"].solid + ADDONS.torsion);
     // The 4132 has no stock book: the sheet's adders and springs, every one.
     const plain4132 = door("4132", {}).quote!.unitPrice;
     expect(door("4132", { track: "low_headroom" }).quote!.unitPrice - plain4132).toBeCloseTo(sell43(39.06), 2);

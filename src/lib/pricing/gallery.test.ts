@@ -55,19 +55,24 @@ describe("Gallery GD1SP/GD1LP special order grid (8/10/2026)", () => {
     const r = q({ width: "9", height: "9", spring: "torsion" });
     expect(r.quote?.torsionIncluded).toBe(true);
     expect(r.quote?.unitPrice).toBe(stock["9"]["9"].solid);
-    expect(q({ width: "9", height: "9", spring: "galvanized" }).quote?.unitPrice).toBe(stock["9"]["9"].solid);   // galvanized is the same price
+    // A floored door takes the stock tab's springs (21/10/2026): galvanized over included torsion is the stock 40 less 35.
+    expect(q({ width: "9", height: "9", spring: "galvanized" }).quote?.unitPrice).toBe(stock["9"]["9"].solid + 5);
     expect(q({ width: "9", height: "10", spring: "torsion" }).quote?.unitPrice).toBe(sell(door(1046)));
-    expect(q({ width: "9", height: "8", spring: "torsion" }).quote?.unitPrice).toBe(stock["9"]["8"].solid + 55);
+    expect(q({ width: "9", height: "8", spring: "torsion" }).quote?.unitPrice).toBe(stock["9"]["8"].solid + 35);
     expect(q({ width: "9.2", height: "8", spring: "torsion" }).quote?.unitPrice).toBeCloseTo(sell(door(750)) + 200 + 55, 2);
   });
 
-  it("adds torsion at 55 on a single door and 75 on a double, galvanized the same (Brandon, 12/10/2026)", () => {
+  it("adds torsion at 55 on a single door and 75 on a double, galvanized the same (Brandon, 12/10/2026) — off the floor; a floored door takes the stock tab's 35 and 40/45 (21/10/2026)", () => {
     const unit = (o: Record<string, unknown>) => q(o).quote!.unitPrice;
-    expect(unit({ spring: "torsion" })).toBe(unit({ spring: "extension" }) + 55);
-    expect(unit({ spring: "galvanized" })).toBe(unit({ spring: "extension" }) + 55);
-    expect(unit({ spring: "torsion", width: "16" })).toBe(unit({ spring: "extension", width: "16" }) + 75);
-    expect(unit({ spring: "galvanized", width: "16" })).toBe(unit({ spring: "extension", width: "16" }) + 75);
+    // 10' and 12' are not floored on the GD1: the Gallery's rates.
+    expect(unit({ spring: "torsion", width: "10" })).toBe(unit({ spring: "extension", width: "10" }) + 55);
+    expect(unit({ spring: "galvanized", width: "10" })).toBe(unit({ spring: "extension", width: "10" }) + 55);
     expect(unit({ spring: "torsion", width: "12" })).toBe(unit({ spring: "extension", width: "12" }) + 75);   // 12' is a double door
+    // 8' and 16' in White are on the floor: the stock tab's.
+    expect(unit({ spring: "torsion" })).toBe(unit({ spring: "extension" }) + 35);
+    expect(unit({ spring: "galvanized" })).toBe(unit({ spring: "extension" }) + 40);
+    expect(unit({ spring: "torsion", width: "16" })).toBe(unit({ spring: "extension", width: "16" }) + 35);
+    expect(unit({ spring: "galvanized", width: "16" })).toBe(unit({ spring: "extension", width: "16" }) + 45);
     expect(q({ spring: "galvanized" }).quote?.description).toContain(", galvanized front torsion springs");
     expect(q({ spring: "torsion" }).quote?.description).toContain(", front torsion springs");
   });
@@ -85,9 +90,10 @@ describe("Gallery glass", () => {
     // Ultra-Grain single, up to 8ft, 158.76 — each lifted by the margin. The
     // door and its glass are lifted together, the finish on its own, so the
     // cents can differ from one lift of the whole by a couple of pennies.
-    // The 8'0" x 7'0" is stocked, so the door itself is the stock book's 772.72 (21/10/2026).
+    // Insulated glass and an Ultra-Grain finish are not what is on the floor,
+    // so the door is the sheet's 801.43, not the stock book's 772.72 (21/10/2026).
     const got = price({ style: "inserts", glassType: "insulated", color: "Ultra-Grain Oak Medium Finish" });
-    expect(got).toBeCloseTo(stock["8"]["7"].solid + sell(265.37) + sell(158.76), 0);
+    expect(got).toBeCloseTo(sell(door(569)) + sell(265.37) + sell(158.76), 0);
     expect(price({ width: "8.2", style: "inserts", glassType: "insulated", color: "Ultra-Grain Oak Medium Finish" }))
       .toBeCloseTo(sell(door(569)) + 200 + sell(265.37) + sell(158.76), 0);
   });
@@ -109,8 +115,8 @@ describe("Gallery glass", () => {
     expect(price({ style: "glass" })).toBe(stock["8"]["7"].glass);
     expect(price({ style: "inserts" })).toBe(stock["8"]["7"].inserts);
     expect(price({ style: "glass", glassType: "dsb" })).toBe(price({ style: "glass" }));
-    // Any other glass, or the long windows, is the sheet's adder over the stocked solid door.
-    expect(price({ style: "glass", glassType: "insulated" })).toBeCloseTo(stock["8"]["7"].solid + sell(163.06 * 4 / 3), 0);
+    // Any other glass, or the long windows, is not a stocked door: the sheet's door and the sheet's windows.
+    expect(price({ style: "glass", glassType: "insulated" })).toBeCloseTo(sell(door(569)) + sell(163.06 * 4 / 3), 0);
   });
 
   it("prices long panel glass at the GD1LP figure and short at the GD1SP's, whichever model is picked", () => {
@@ -149,7 +155,7 @@ describe("Gallery glass", () => {
     expect(glassTakesInserts(GALLERY_GROUP, "short", "8", "acrylic")).toBe(false);
     expect(glassTakesInserts(GALLERY_GROUP, "long", "8", "seeded")).toBe(true);
     expect(q({ style: "inserts", glassType: "acrylic" }).reason).toMatch(/not offered/);
-    expect(price({ style: "glass", glassType: "acrylic" })).toBeCloseTo(stock["8"]["7"].solid + sell(450.82), 1); // 4 x 141 x .786 x k over the stocked solid door; a half-cent at 43.25%
+    expect(price({ style: "glass", glassType: "acrylic" })).toBeCloseTo(sell(door(569)) + sell(450.82), 1); // 4 x 141 x .786 x k over the sheet's solid door; a half-cent at 43.25%
   });
 
   it("matches the sheet on every band: glass is the per-window figure times the count, inserts +11.99 a short window on the GD1 pair", () => {
@@ -183,18 +189,22 @@ describe("the Gallery grid and its margin agree", () => {
 describe("Gallery Ultra-Grain", () => {
   it("is single to 10'0\", double from 10'2\"; the low band to 8'0\", the high from 8'2\"", () => {
     for (const g of GALLERY_GROUPS) expect(GALLERY_ULTRA_GRAIN[g], g).toEqual({ upTo8ft: { single: 158.76, double: 317.53 }, over8ft: { single: 264.61, double: 529.22 } });
-    const ug = (w: string, h: string) => price({ width: w, height: h, color: "Ultra-Grain Oak Dark Finish" }) - price({ width: w, height: h });
-    expect(ug("10", "8")).toBeCloseTo(sell(158.76), 2);
-    expect(ug("10.2", "8")).toBeCloseTo(sell(317.53), 2);
-    expect(ug("8", "8.3")).toBeCloseTo(sell(264.61), 2);
-    expect(ug("16", "9")).toBeCloseTo(sell(529.22), 2);
+    // Over the sheet's solid door: an Ultra-Grain GD1 is never the floored (White) one.
+    const ug = (w: string, h: string, tier: string) => price({ width: w, height: h, color: "Ultra-Grain Oak Dark Finish" }) - SPECIAL_DOORS[GALLERY_GROUP][tier][w].solid!;
+    expect(ug("10", "8", "8")).toBeCloseTo(sell(158.76), 2);
+    expect(price({ width: "10.2", height: "8", color: "Ultra-Grain Oak Dark Finish" }) - price({ width: "10.2", height: "8" })).toBeCloseTo(sell(317.53), 2);   // an odd width is never floored: both the sheet's
+    expect(ug("8", "8.3", "9")).toBeCloseTo(sell(264.61), 2);
+    expect(ug("16", "9", "9")).toBeCloseTo(sell(529.22), 2);
   });
 
   it("charges nothing for a standard colour, and only on the Gallery", () => {
-    expect(price({ color: "Almond" })).toBe(price({}));
+    // Almond is a standard colour, so no adder — and not a floored GD1 (White is), so the sheet's door, not the stock book's.
+    expect(price({ color: "Almond" })).toBe(SPECIAL_DOORS[GALLERY_GROUP]["7"]["8"].solid);
+    expect(price({ color: "Almond", width: "10" })).toBe(price({ width: "10" }));
     const r4050 = (c: string) => specialDoorQuote({ model: "4050/4051/4053/4132", variant: "4050", width: "8", height: "7", color: c,
       style: "solid", track: "r12", spring: "extension", lock: "none" } as never).quote!.unitPrice;
-    expect(r4050("Ultra-Grain Oak Medium Finish")).toBe(r4050("White")); // the 4050's own premium colours are not gridded this way
+    expect(r4050("Ultra-Grain Oak Medium Finish")).toBe(747.62); // the 4050's own premium colours are not gridded this way: the sheet's door, nothing added
+    expect(r4050("White")).toBe(723.25);                        // floored: the stock book's
   });
 });
 

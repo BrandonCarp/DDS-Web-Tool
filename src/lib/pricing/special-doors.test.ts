@@ -56,23 +56,41 @@ describe("special order door grid", () => {
   });
 
   it("prices a stocked door at the stock book's figure, in every style, as the residential tab does (Brandon, 21/10/2026)", () => {
-    // The 4050 at 8'0" x 7'0" is stocked: 723.25 solid, and its GLASS and
-    // INSERTS columns with single strength short windows; any other glass is
-    // the sheet's adder over the stocked solid door.
+    // The 4050 at 8'0" x 7'0" in White is floored: 723.25 solid, and its GLASS
+    // and INSERTS columns with single strength short windows. Any other glass
+    // is not a door DDS stocks: the sheet's door (747.62) and the sheet's
+    // windows (Brandon, 21/10/2026, afternoon: strictly what is on the floor).
     expect(specialDoorQuote({ ...base, width: "8", style: "solid" }).quote?.unitPrice).toBe(STOCK["8"]["7"].solid);
     expect(specialDoorQuote({ ...base, width: "8", style: "glass" }).quote?.unitPrice).toBe(STOCK["8"]["7"].glass);
     expect(specialDoorQuote({ ...base, width: "8", style: "inserts", windesign: "509" }).quote?.unitPrice).toBe(STOCK["8"]["7"].inserts);
-    expect(specialDoorQuote({ ...base, width: "8", style: "glass", glassType: "dsb" }).quote?.unitPrice).toBeCloseTo(STOCK["8"]["7"].solid + windows(4, 35), 2);
-    expect(specialDoorQuote({ ...base, width: "8", style: "glass", panelStyle: "long" }).quote?.unitPrice).toBeCloseTo(STOCK["8"]["7"].solid + glassAdderSell(M, "long", "8", "ssb")!, 2);
+    expect(specialDoorQuote({ ...base, width: "8", style: "glass", glassType: "dsb" }).quote?.unitPrice).toBeCloseTo(747.62 + windows(4, 35), 2);
+    expect(specialDoorQuote({ ...base, width: "8", style: "glass", panelStyle: "long" }).quote?.unitPrice).toBeCloseTo(747.62 + glassAdderSell(M, "long", "8", "ssb")!, 2);
     for (const [w, h] of [["8", "7"], ["16", "8"], ["12", "9"], ["7.6", "8"]]) {
       for (const style of ["solid", "glass", "inserts"] as const) {
         const r = quoteResidential("4050", { widthFt: Number(w.split(".")[0]), widthIn: Number(w.split(".")[1] ?? 0), heightFt: Number(h), heightIn: 0 }, { style, color: "White", track: "r12", spring: "extension", lock: "none", windesign: style === "inserts" ? "509" : undefined });
         expect(specialDoorQuote({ ...base, width: w, height: h, style, windesign: style === "inserts" ? "509" : undefined }).quote?.unitPrice, `${w}x${h} ${style}`).toBe(r.unitPrice);
       }
     }
-    // The 4051 and 4053 are the same stocked door; the 4132 is not stocked.
+    // The 4053 is floored at 8, 9 and 16 in White or Black; the 4132 is not stocked.
     expect(specialDoorQuote({ ...base, variant: "4053", width: "8", style: "solid" }).quote?.unitPrice).toBe(STOCK["8"]["7"].solid);
+    expect(specialDoorQuote({ ...base, variant: "4053", width: "8", color: "Black", style: "solid" }).quote?.unitPrice).toBe(STOCK["8"]["7"].solid);
     expect(specialDoorQuote({ ...base, variant: "4132", width: "8", style: "solid" }).quote?.unitPrice).toBe(747.62);
+    // Strictly the floor (Brandon, 21/10/2026): a 4053 10' x 8' in Black and a
+    // 4050 10' x 8' in Black are the sheet's — Black is floored at 8, 9 and 16
+    // — where the 4050 10' x 8' in White is on the floor; Sandtone stops at 8'
+    // high; Bronze is not floored at all.
+    const sheet10x8 = SPECIAL_DOORS[M]["8"]["10"].solid;
+    expect(sheet10x8).not.toBe(STOCK["10"]["8"].solid);
+    expect(specialDoorQuote({ ...base, variant: "4053", width: "10", height: "8", color: "Black", style: "solid" }).quote?.unitPrice).toBe(sheet10x8);
+    expect(specialDoorQuote({ ...base, variant: "4050", width: "10", height: "8", color: "Black", style: "solid" }).quote?.unitPrice).toBe(sheet10x8);
+    expect(specialDoorQuote({ ...base, variant: "4050", width: "10", height: "8", color: "White", style: "solid" }).quote?.unitPrice).toBe(STOCK["10"]["8"].solid);
+    expect(specialDoorQuote({ ...base, variant: "4050", width: "9", height: "8", color: "Sandtone", style: "solid" }).quote?.unitPrice).toBe(STOCK["9"]["8"].solid);
+    expect(specialDoorQuote({ ...base, variant: "4050", width: "9", height: "8.3", color: "Sandtone", style: "solid" }).quote?.unitPrice).toBe(SPECIAL_DOORS[M]["9"]["9"].solid);
+    expect(specialDoorQuote({ ...base, variant: "4050", width: "9", height: "8.3", color: "White", style: "solid" }).quote?.unitPrice).toBe(STOCK["9"]["9"].solid);
+    expect(specialDoorQuote({ ...base, variant: "4050", width: "9", color: "Bronze", style: "solid" }).quote?.unitPrice).toBe(SPECIAL_DOORS[M]["7"]["9"].solid);
+    // A track the stock tab does not sell makes it a special order too: the sheet's door under the sheet's high lift.
+    expect(specialDoorQuote({ ...base, width: "8", style: "solid", spring: "torsion", track: "high_lift", incline: "breakaway", highLiftInches: 36 } as never).quote?.unitPrice)
+      .toBeCloseTo(747.62 + 45 + Math.round((136.52 / 0.57) * 100) / 100, 2);
     // Nothing is stocked at 10' high, or at an odd width.
     expect(STOCK["8"]["10"]).toBeUndefined();
     expect(specialDoorQuote({ ...base, width: "8", height: "10", style: "solid" }).quote?.unitPrice).toBe(SPECIAL_DOORS[M]["10"]["8"].solid);

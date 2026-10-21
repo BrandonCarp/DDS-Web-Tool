@@ -33,6 +33,7 @@ import type { SpringRates } from "./sheet-band";
 import { ADDONS, GRADE_RES, COLLECTIONS_RES } from "./addons";
 import { dataKey, RESIDENTIAL_HIDDEN } from "../model-groups";
 import { STOCK_PRICES } from "./stock-prices";
+import { colorInStock } from "./stock-colors";
 import { designName, specialPlainWindowsFor, specialWindowDesigns } from "./inserts";
 import { describeModernWindows, modernFraming, modernGlassLabel, modernPanelsWide, modernPickerModel, modernStack, modernWindowCost, type WindowPlace } from "./modern-steel";
 import { designBuilt, designTakesWindows, hasDesigns, modelWithDesign, secondColorName, secondColorPricedAs } from "./door-designs";
@@ -144,46 +145,45 @@ const STOCK_SPRING_RATES: SpringRates = {
   galvanized: { single: ADDONS.galvanized.single, double: ADDONS.galvanized.double },
 };
 /**
- * A stocked door is a stocked door whichever tab quotes it (Brandon,
- * 21/10/2026): at a size DDS stocks a residential model in — the stock
- * book's whole-foot widths and 7'6", 7', 8' and 9' high — the special order
- * quote takes the stock book's figures for the door itself, solid, glass and
- * inserts, so the two tabs agree on it; the sheet still prices what goes on
- * it (its windows, colours and track). An odd size, a 10' door, a model the
- * residential tab does not offer (the 4300 family) or one with no stock
- * book (the 4132, the 9131, the Modern Steel doors) is the sheet's.
+ * A stocked door is a stocked door whichever tab quotes it, and strictly
+ * what DDS has on the floor (Brandon, 21/10/2026): the model, the colour,
+ * the exact width and the exact height together on the stock list
+ * (stock-colors.ts — what the residential tab's IN STOCK badge goes by: the
+ * 4050 in White 7' to 18' wide and to 9' high, in Black at 8, 9 and 16 wide
+ * to 8' high; the 4053 at 8, 9 and 16 in White or Black; and so on), with
+ * the windows the stock book carries (none, or the standard short windows in
+ * the book's own grade, plain or with inserts) and a track the stock tab
+ * sells. That door takes the stock book's figures — the door itself, its
+ * windows, its springs and its track adders — so the two tabs agree on it.
+ *
+ * Anything else is a special order through and through, the sheet's: a 4053
+ * 10' x 8' in Black (floored at 8, 9 and 16 only), a 4050 9' x 7' in
+ * Sandtone at 9' high (Sandtone stops at 8'), an odd width, a glass the
+ * stock book has no column for, high lift on a floored door, a model with no
+ * stock book (the 4132, the 9131, the 4300 family, the Modern Steel doors).
  */
-function stockedTriple(member: string, width: string, tierKey: string | null): PriceTriple | null {
+function stockedDoor(input: SpecialDoorInput, member: string, style: WindowStyle, track: TrackKey, tierKey: string | null): PriceTriple | null {
   if (!tierKey || RESIDENTIAL_HIDDEN.has(member)) return null;
-  return STOCK_PRICES[dataKey(member)]?.[width]?.[tierKey] ?? null;
+  if (track === "high_lift" || track === "full_vertical" || track === "roof_pitch") return null;
+  const stockWindows = style === "solid"
+    || ((input.windowSeries ?? "standard") === "standard" && (input.panelStyle ?? "short") === "short"
+      && (!input.glassType || input.glassType === baseGlassFor(input.model, "standard")));
+  if (!stockWindows) return null;
+  if (!colorInStock(member, input.color, input.width, input.height, style)) return null;
+  return STOCK_PRICES[dataKey(member)]?.[input.width]?.[tierKey] ?? null;
 }
 
 /**
- * A model DDS stocks — one with a stock book the residential tab offers:
- * the T50S and T52S, the 4050 family, the 9130 and 9133, the GD1. Every
- * option the stock tab sells on it keeps the stock price on a special order
- * too, whatever the size (Brandon, 21/10/2026): the springs, low headroom
- * and low headroom rear torsion track, the 20" and 32" radius, an angle
- * mount. The sheet prices only what the stock tab does not offer — high
- * lift, full vertical lift, track following the roof pitch. A model with no
- * stock book (the 4132, the 9131, the 9200s, the Modern Steel doors, the
- * 4300 family the tab hides) takes the sheet's figures for all of it.
+ * The spring rates a door carries: the stock adders on a stocked door
+ * (stockedDoor); else its collection's where Brandon set them (the Gallery,
+ * the Bridgeport); else its sheet's TORSION SPRINGS where the sheet has the
+ * table (CJ, 21/10/2026 — torsion 45 on a single door and 55 on a double,
+ * galvanized 50 and 70, on every Premium and Modern Steel sheet); the stock
+ * adders otherwise.
  */
-export function stockedModel(member: string): boolean {
-  return !RESIDENTIAL_HIDDEN.has(member) && !!STOCK_PRICES[dataKey(member)];
-}
-
-/**
- * The spring rates a member carries: its collection's where Brandon set
- * them (the Gallery, the Bridgeport); the stock adders on a stocked model;
- * its sheet's TORSION SPRINGS where the sheet has the table (CJ,
- * 21/10/2026 — torsion 45 on a single door and 55 on a double, galvanized
- * 50 and 70, on every Premium and Modern Steel sheet); the stock adders
- * otherwise.
- */
-export function springRatesFor(group: string, member: string): SpringRates {
-  return SPRING_RATES[COLLECTIONS_RES[dataKey(member)] ?? ""]
-    ?? (stockedModel(member) ? STOCK_SPRING_RATES : null)
+export function springRatesFor(group: string, member: string, stocked: boolean): SpringRates {
+  return (stocked ? STOCK_SPRING_RATES : null)
+    ?? SPRING_RATES[COLLECTIONS_RES[dataKey(member)] ?? ""]
     ?? sheetSpringRates(group)
     ?? STOCK_SPRING_RATES;
 }
@@ -529,8 +529,15 @@ export function specialDoorQuote(
   const oddBase = sectioned ? null : oddWidthBase(tier, input.width);
   const priceWidth = asEight ? NINE_FOOT_GLASS.pricedAs : oddBase ?? input.width;
   const member = input.variant || input.model.split("/")[0];
+  // High lift, full vertical lift and roof pitch are the sheet-tracked
+  // doors' (the 4138 on 20/10/2026, every Premium and Modern Steel door on
+  // 21/10/2026). On any other door each is 12" radius track.
+  const sheetTracks = sheetTracksFor(input.model);
+  const track: TrackKey =
+    (input.track === "high_lift" || input.track === "full_vertical" || input.track === "roof_pitch") && !sheetTracks
+      ? "r12" : input.track;
   // A stocked door is a stocked door whichever tab quotes it (Brandon, 21/10/2026).
-  const stocked = stockedTriple(member, input.width, tierKey);
+  const stocked = stockedDoor(input, member, style, track, tierKey);
   const triple = stocked ?? tier[priceWidth];
   if (!triple) return { reason: "That width is not on the grid — enter the Clopay total below." };
 
@@ -628,8 +635,7 @@ export function specialDoorQuote(
     glassName = input.glassType && input.glassType !== "dsb" ? glassLabel(input.glassType) : null;
   } else if (sheet && style !== "solid" && typeof triple.solid === "number") {
     const glassId = input.glassType || baseGlassFor(input.model, series);
-    const stockGlass = stocked && series === "standard" && sheetPanel === "short" && glassId === baseGlassFor(input.model, series) && typeof stocked[style] === "number";
-    if (stockGlass) {
+    if (stocked && typeof stocked[style] === "number") {
       // The stocked door with the stock book's own windows — the grade its
       // GLASS and INSERTS columns were built from, short, in the top section —
       // is the stock book's figure, as the residential tab prices it.
@@ -678,13 +684,6 @@ export function specialDoorQuote(
   // extension is not sold, so one asked for is torsion.
   const spring: SpringKey = galvanizedPriced(input.model) && input.spring === "extension" ? "torsion" : input.spring;
   const springPriced = galvanizedPriced(input.model) && spring === "torsion" ? "galvanized" : spring;
-  // High lift, full vertical lift and roof pitch are the sheet-tracked
-  // doors' (the 4138 on 20/10/2026, every Premium and Modern Steel door on
-  // 21/10/2026). On any other door each is 12" radius track.
-  const sheetTracks = sheetTracksFor(input.model);
-  const track: TrackKey =
-    (input.track === "high_lift" || input.track === "full_vertical" || input.track === "roof_pitch") && !sheetTracks
-      ? "r12" : input.track;
   const liftInches = track === "high_lift" ? input.highLiftInches ?? 0 : 0;
   // A mount the model is not sold with is bracket.
   const mount = trackMountFor(member, input.trackMount);
@@ -708,13 +707,13 @@ export function specialDoorQuote(
     return { value, label: r.label };
   })();
   if ("reason" in lift && lift.reason) return { reason: lift.reason };
-  // A radius or low headroom track: the stock book's adder on a stocked model
-  // (stockedModel); on any other sheet-tracked door the sheet's own where it
+  // A radius or low headroom track: the stock book's adder on a stocked door
+  // (stockedDoor); on any other sheet-tracked door the sheet's own where it
   // has one (low headroom, low headroom rear torsion, an angle mount on 12"
   // or 15" radius), the stock book's otherwise.
   const trackAdder = ((): { value: number; reason?: string } => {
     if (track === "high_lift" || track === "full_vertical" || track === "roof_pitch") return { value: 0 };
-    const own = sheetTracks && !stockedModel(member) ? sheetTrackAdder(input.model, track, mount) : null;
+    const own = sheetTracks && !stocked ? sheetTrackAdder(input.model, track, mount) : null;
     if (own && "reason" in own) return { value: 0, reason: own.reason };
     if (own) {
       const margin = doorMargin(input.model);
@@ -752,7 +751,7 @@ export function specialDoorQuote(
   const adders =
     premium +
     trackAdder.value +
-    springAdder(springPriced, torsionOnly, parseInt(input.width, 10) >= 12, springRatesFor(input.model, member)) +
+    springAdder(springPriced, torsionOnly, parseInt(input.width, 10) >= 12, springRatesFor(input.model, member, !!stocked)) +
     (LOCK[input.lock] ?? 0) +
     lift.value +
     (asEight ? NINE_FOOT_GLASS.flat : 0) +

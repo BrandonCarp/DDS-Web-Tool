@@ -193,12 +193,12 @@ describe("special order — glass types reach the price", () => {
     fireEvent.change(sel("so-glass"), { target: { value: "dsb" } });
     await settle();
     await fillOptions();
-    // The stocked 8'0" x 7'0" 4050 is the stock book's 723.25 (Brandon, 21/10/2026); CJ's sheet prices the windows over it: four short double strength at 35 list.
-    expect(await total()).toBeCloseTo(723.25 + Math.round(4 * 35 * 0.776 * (0.99 / (1 - 0.0265)) * 100) / 100 / 0.57, 1);
+    // Double strength is not the stock book's glass, so this is not the floored 4050 (723.25) but the sheet's 747.62 (Brandon, 21/10/2026), with CJ's windows over it: four short double strength at 35 list.
+    expect(await total()).toBeCloseTo(747.62 + Math.round(4 * 35 * 0.776 * (0.99 / (1 - 0.0265)) * 100) / 100 / 0.57, 1);
     fireEvent.change(sel("so-glass"), { target: { value: "insulated_rain" } });
     await settle();
     // Four insulated rain windows at 130 list, at .776 and 43.
-    expect(await total()).toBeCloseTo(723.25 + Math.round(4 * 130 * 0.776 * (0.99 / (1 - 0.0265)) * 100) / 100 / 0.57, 0);
+    expect(await total()).toBeCloseTo(747.62 + Math.round(4 * 130 * 0.776 * (0.99 / (1 - 0.0265)) * 100) / 100 / 0.57, 0);
   });
 
   it("offers the architectural windows on a Premium Steel door in the one framing list, with their glass in the one glass list (19/10/2026)", async () => {
@@ -234,7 +234,7 @@ describe("special order — glass types reach the price", () => {
     await settle();
     await fillOptions();
     // Four short seeded windows at 130 list over the solid door.
-    expect(await total()).toBeCloseTo(723.25 + Math.round(4 * 130 * 0.776 * (0.99 / (1 - 0.0265)) * 100) / 100 / 0.57, 0);
+    expect(await total()).toBeCloseTo(747.62 + Math.round(4 * 130 * 0.776 * (0.99 / (1 - 0.0265)) * 100) / 100 / 0.57, 0);   // the sheet's door under the architectural windows (21/10/2026)
     // The glass stays through a framing change to a window that comes in it.
     fireEvent.change(sel("so-framing"), { target: { value: "arch:insert:long:SQ24" } });
     await settle();
@@ -1048,7 +1048,9 @@ describe("special order — high lift is the sheet-tracked doors' (the 4050 fami
     expect(line.rate).toBeCloseTo(solid + 200, 2);
     expect(line.description).toMatch(/2" CONTINUOUS ANGLE MOUNT TRACK TO WOOD, 20″ RADIUS TRACK/i);
     fireEvent.change(sel("so-track-mount"), { target: { value: "bracket" } });
-    // High lift off the 4050's sheet (.776, the 4138's figures) at the 43%: breakaway or 25 degree, the sheet's inches.
+    // High lift is not a stock track, so the door is no longer the floored one (782.19 in the stock book): the sheet's 9' x 7' (808.54) with the sheet's torsion (45), under high lift off the 4050's sheet (.776, the 4138's figures) at the 43%: breakaway or 25 degree, the sheet's inches.
+    const sheetSolid = 808.54 + 45;
+    expect(sheetSolid).not.toBe(solid);
     fireEvent.change(sel("so-track"), { target: { value: "high_lift" } });
     await settle();
     expect(options("so-incline").map((o) => o.value)).toEqual(["breakaway", "deg25"]);
@@ -1056,18 +1058,22 @@ describe("special order — high lift is the sheet-tracked doors' (the 4050 fami
     fireEvent.change(sel("so-high-lift"), { target: { value: "36" } });
     await settle();
     line = await copiedQbLine(screen.getByTestId("copy-qb"));
-    expect(line.rate).toBeCloseTo(solid + sell(136.52), 2);
+    expect(line.rate).toBeCloseTo(sheetSolid + sell(136.52), 2);
     expect(line.description).toMatch(/36″ HIGH LIFT TRACK, FRONT TORSION SPRINGS/i);
     fireEvent.change(sel("so-track"), { target: { value: "full_vertical" } });
     await settle();
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).rate).toBeCloseTo(solid + sell(104.96), 2);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).rate).toBeCloseTo(sheetSolid + sell(104.96), 2);
     fireEvent.change(sel("so-track"), { target: { value: "roof_pitch" } });
     await settle();
     fireEvent.change(sel("so-roof-pitch"), { target: { value: "6/12" } });
     await settle();
     line = await copiedQbLine(screen.getByTestId("copy-qb"));
-    expect(line.rate).toBeCloseTo(solid + sell(137.63), 2);
+    expect(line.rate).toBeCloseTo(sheetSolid + sell(137.63), 2);
     expect(line.description).toMatch(/, 6\/12 ROOF PITCH TRACK, FRONT TORSION SPRINGS/i);
+    // Back on a stock track it is the floored door again.
+    fireEvent.change(sel("so-track"), { target: { value: "r12" } });
+    await settle();
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).rate).toBe(solid);
   });
 });
 
