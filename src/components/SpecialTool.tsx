@@ -27,7 +27,7 @@ import {
   splitSize, sizeKey, feetOptions, inchOptions, framingChoices, glassForFraming, windowChoice, GLAZED_SECTIONS, SOLID,
 } from "@/lib/pricing/data/so-framing";
 import {
-  trackMountsFor, trackMountFor, INCLINE_STYLES, highLiftChoices, highLiftPrice, canTakeHighLift,
+  trackMountsFor, trackMountFor, INCLINE_STYLES, highLiftChoices, canTakeHighLift,
   type TrackMount, type InclineStyle,
 } from "@/lib/pricing/data/track-lift";
 import { dataKey } from "@/lib/pricing/model-groups";
@@ -35,7 +35,7 @@ import { homeownerMarkupForBand } from "@/lib/pricing/engine";
 import { OptionButtons, type ButtonOption } from "./OptionButtons";
 import { DoorDiagram } from "./DoorDiagram";
 import { modernFramingChoices, modernGlassForFraming, modernPanelsWide, modernPickerModel, modernStack, placeKey, type WindowPlace } from "@/lib/pricing/data/modern-steel";
-import { roofPitches, sheetInclines, sheetLiftChoices, sheetRearTorsion, sheetTrackChoices, sheetTracksFor } from "@/lib/pricing/data/sheet-tracks";
+import { roofPitches, sheetInclines, sheetLiftChoices, sheetRearTorsion, sheetTrackChoices } from "@/lib/pricing/data/sheet-tracks";
 import { QtyStepper } from "./QtyStepper";
 
 const fmt = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -287,17 +287,18 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const choice = windowChoice(gGlassEff, gFramingEff);
   const gStyleEff = choice.style;
 
-  // High lift is the 4050 family's (Brandon, 13/10/2026), torsion only, and
-  // caps at the door height less 3 inches — above that the door is full
-  // vertical lift, a different track entirely. A tall door locks out extension
+  // High lift is the sheet-tracked doors' (the 4138 on 20/10/2026, every
+  // Premium and Modern Steel door on 21/10/2026), torsion only, and caps at
+  // the door height less 3 inches — above that the door is full vertical
+  // lift, a different track entirely. A tall door locks out extension
   // springs; standard or galvanized torsion stay open (on the Coachman at one
   // price, 13/10/2026).
   const gSpringUsed = gTorsionOnly && gSpring === "extension" ? "torsion" : gSpring;
   const gLiftOffered = gridded && highLiftOffered(modelGroup);
   const gLiftAllowed = gLiftOffered && canTakeHighLift(gSpringUsed);
-  // A sheet-tracked door (the 4138, CJ's TRACKS block of 20/10/2026) offers
-  // full vertical lift and roof pitch too, torsion like high lift, its high
-  // lift breakaway or 25 degree at the sheet's inches.
+  // A sheet-tracked door offers full vertical lift and roof pitch too,
+  // torsion like high lift, its high lift breakaway or 25 degree at the
+  // sheet's inches.
   const gSheetTracks = gridded ? sheetTrackChoices(modelGroup) : [];
   const gSheetTrack = gSheetTracks.some((t) => t.value === gTrack);
   // Low headroom rear torsion is the sheet-tracked doors' too (21/10/2026), torsion like the rest.
@@ -317,9 +318,6 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   // A mount the model is not sold with is bracket on it.
   const gMounts = trackMountsFor(member);
   const gMountEff = trackMountFor(member, gMount);
-  const gLiftNote = gIsLift && gEffLift && !sheetTracksFor(modelGroup)
-    ? highLiftPrice({ mount: gMountEff, incline: gInclineEff, heightFt: gHeightFtN, heightIn: gHeightInN, inches: gEffLift }).reason ?? ""
-    : "";
 
   // Track depends on the door size — high lift caps at the height, and the
   // spring choice is height-driven — so the whole group waits for a size.
@@ -791,7 +789,6 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                       </div>
                     </div>
                   )}
-                  {gLiftNote && <div className="hl-note" data-testid="so-high-lift-note">{gLiftNote}</div>}
                   </>}
                   </div>
                   <div className="ggroup">

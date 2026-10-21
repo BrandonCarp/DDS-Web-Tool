@@ -995,7 +995,9 @@ def read_premium_sheet(ws, wsf, margins):
     columns the solid door plus the short single strength window, which is
     what the 4050 grid always carried), and both series' glass as COST in
     premium-glass.ts — the standard series as the sheet-priced groups' tables
-    are shaped, the architectural series beside them.
+    are shaped, the architectural series beside them; and, since the workbook
+    of 21/10/2026, the TRACKS block (read_tracks_block) and the TORSION
+    SPRINGS table (read_springs_block) each sheet carries beside the grid.
     """
     problems = Problems()
     members = [str(ws.cell(1, c).value).strip() for c in range(1, 12) if ws.cell(1, c).value not in (None, "")]
@@ -1233,11 +1235,14 @@ def read_premium_sheet(ws, wsf, margins):
     print(f"  note: {ws.title}: standard windows {[(lab, n) for _, _, lab, n in std_counts]}")
     print(f"  note: {ws.title}: architectural windows {[(lab, n) for _, _, lab, n in arch_counts]}")
     ug = ultra_color_block(ws, wsf, problems)
+    tracks = read_tracks_block(ws, wsf, problems)
+    springs = read_springs_block(ws, problems)
     return {
         "sheet": ws.title, "group": group, "members": members, "mult": mult, "glass_mult": mult, "flat": DOOR_FLAT,
         "min_width": {}, "ug": ug, "only_to_8": False, "unavailable": [],
         "tiers": list(tiers), "bands": bands, "gaps": gaps, "no_windows": {}, "glass": glass, "arch_glass": arch_glass,
         "grid_glass": "ssb",
+        "tracks": tracks, "springs": springs,
         "problems": problems,
     }
 
@@ -1344,30 +1349,45 @@ def panels_wide(w, size):
     return None if w < 92 else 2 if w <= 140 else 3 if w <= 178 else 4 if w <= 228 else 5 if w <= 240 else None
 
 
-# The 4138 sheet's TRACKS block (CJ, 20/10/2026), under the grid: the track
-# options Clopay prices on it, list | cost at the TRACK multiplier (.774 on
-# the 4138, not the door's .776), bracket mount in A-C and angle mount in E-F:
+# The TRACKS block (CJ, 20/10/2026 on the 4138; every sheet of the workbook
+# of 21/10/2026): the track options Clopay prices on the door, list | cost at
+# the sheet's TRACK multiplier, laid out from the TRACKS cell — in column A
+# under the grid, or beside it from column G:
 #
 #   BRACKET MOUNT, HIGH LIFT, BREAKAWAY …  | ANGLE MOUNT, HIGH LIFT, BREAKAWAY …
-#     36" … 117", a row a 3" of lift
+#     36" … 117", a row a 3" of lift        (the angle list sits under its heading)
 #   BRACKET MOUNT, HIGH LIFT, 25 DEGREE …  | ANGLE MOUNT, HIGH LIFT, 25 DEGREE …
 #     36" … 72", then STOPS AT 72"
 #   BRACKET MOUNT, FULL VERTICAL TRACKS …    7FT HIGH … 10FT HIGH, by door height
 #   ANGLE MOUNT, FULL VERTICAL TRACKS …
-#   BRACKET MOUNT FOLLOW THE ROOF PITCH      1/12 … 6/12 in B, list | cost in C-D
-#   ANGLE MOUNT FOLLOW THE ROOF PITCH          (the height labels down A are not read)
+#   BRACKET MOUNT FOLLOW THE ROOF PITCH      1/12 … 6/12 a column over, list | cost
+#   ANGLE MOUNT FOLLOW THE ROOF PITCH          (the height labels down the first
+#                                               column are not read)
+#   and, beside the breakaway rows: LOW HEADROOM TRACKS, LOW HEADROOM REAR
+#   TORSION, ANGLE MOUNT TRACK, 12R, 15R — a label, list | cost on the row under
 #
-# The headings' build rules (solid only, top section glass, reverse angle) are
-# the app's own (sheet-tracks.ts); what lands here is the cost.
+# The headings' build rules (solid only, solid and glass) are the app's own
+# (sheet-tracks.ts); what lands here is the cost.
 TRACK_INCLINES = {"BREAKAWAY": "breakaway", "25 DEGREE": "deg25"}
 TRACK_ADDERS = {"LOW HEADROOM TRACKS": "lowHeadroom", "LOW HEADROOM REAR TORSION": "lowHeadroomRearTorsion", "ANGLE MOUNT TRACK, 12R, 15R": "angleMount12r15r"}
 
 
+def find_cell(ws, text):
+    """The first cell reading `text` (trimmed, any case), as (row, col); None where the sheet has none."""
+    want = text.upper()
+    for row in ws.iter_rows():
+        for cell in row:
+            if isinstance(cell.value, str) and cell.value.strip().upper() == want:
+                return cell.row, cell.column
+    return None
+
+
 def read_tracks_block(ws, wsf, problems):
-    """The TRACKS block as {highLift: {incline: {bracket: {in: cost}, angle: {...}}}, fullVertical: {...}, roofPitch: {...}}, or None where the sheet has none."""
-    top = next((r for r in range(1, ws.max_row + 1) if str(ws.cell(r, 1).value or "").strip().upper() == "TRACKS"), None)
-    if top is None:
+    """The TRACKS block as {highLift: {incline: {bracket: {in: cost}, angle: {...}}}, fullVertical: {...}, roofPitch: {...}, adders: {...}}, or None where the sheet has none."""
+    at = find_cell(ws, "TRACKS")
+    if at is None:
         return None
+    top, c0 = at
     tracks = {"highLift": {}, "fullVertical": {}, "roofPitch": {}, "mult": None}
     mults = set()
 
@@ -1383,23 +1403,29 @@ def read_tracks_block(ws, wsf, problems):
         mults.add(fm)
         return money(cost)
 
+    def text(r, c):
+        return str(ws.cell(r, c).value or "").strip().upper()
+
     r = top + 1
     while r <= ws.max_row:
-        head = str(ws.cell(r, 1).value or "").strip().upper()
+        head = text(r, c0)
         if "HIGH LIFT" in head:
             incline = next((v for k, v in TRACK_INCLINES.items() if k in head), None)
-            angle_head = "ANGLE MOUNT" in str(ws.cell(r, 5).value or "").upper()
+            # The angle mount's heading sits over its own list column — the
+            # fourth column over on most sheets, the fifth on the 4308's 25
+            # degree table — so the column is the heading's, not a fixed one.
+            angle_col = next((c for c in range(c0 + 1, c0 + 9) if "ANGLE MOUNT" in text(r, c)), None)
             if incline is None:
                 problems.add(f"{ws.title} tracks row {r}: high lift heading {head!r} names no incline the app knows")
             table = {"bracket": {}, "angle": {}}
             r += 1
-            while re.match(r'^\d+"$', str(ws.cell(r, 1).value or "").strip()):
-                inch = int(str(ws.cell(r, 1).value).strip().rstrip('"'))
-                c = cost_at(r, 2, 3, f"{incline} bracket {inch}\"")
+            while re.match(r'^\d+"$', text(r, c0)):
+                inch = int(text(r, c0).rstrip('"'))
+                c = cost_at(r, c0 + 1, c0 + 2, f"{incline} bracket {inch}\"")
                 if c is not None:
                     table["bracket"][inch] = c
-                if angle_head:
-                    c = cost_at(r, 5, 6, f"{incline} angle {inch}\"")
+                if angle_col:
+                    c = cost_at(r, angle_col, angle_col + 1, f"{incline} angle {inch}\"")
                     if c is not None:
                         table["angle"][inch] = c
                 r += 1
@@ -1412,21 +1438,20 @@ def read_tracks_block(ws, wsf, problems):
             table = {}
             r += 1
             while True:
-                a, b = ws.cell(r, 1).value, ws.cell(r, 2).value
                 if which == "fullVertical":
-                    m = re.match(r"^(\d+)FT HIGH$", str(a or "").strip().upper())
+                    m = re.match(r"^(\d+)FT HIGH$", text(r, c0))
                     if not m:
                         break
-                    c = cost_at(r, 2, 3, f"full vertical {mount} {m.group(1)}FT")
+                    c = cost_at(r, c0 + 1, c0 + 2, f"full vertical {mount} {m.group(1)}FT")
                     if c is not None:
                         table[m.group(1)] = c
                 else:
-                    m = re.match(r"^(\d+)/12$", str(b or "").strip())
-                    if not m:
+                    pitch = str(ws.cell(r, c0 + 1).value or "").strip()
+                    if not re.match(r"^\d+/12$", pitch):
                         break
-                    c = cost_at(r, 3, 4, f"roof pitch {mount} {b}")
+                    c = cost_at(r, c0 + 2, c0 + 3, f"roof pitch {mount} {pitch}")
                     if c is not None:
-                        table[str(b).strip()] = c
+                        table[pitch] = c
                 r += 1
             tracks[which][mount] = table
             continue
@@ -1436,12 +1461,11 @@ def read_tracks_block(ws, wsf, problems):
     # TORSION, ANGLE MOUNT TRACK, 12R, 15R.
     adders = {}
     for r in range(top, min(top + 40, ws.max_row) + 1):
-        for c in range(7, min(ws.max_column, 12) + 1):
-            label = str(ws.cell(r, c).value or "").strip().upper()
-            key = TRACK_ADDERS.get(label)
+        for c in range(c0 + 1, min(ws.max_column, c0 + 12) + 1):
+            key = TRACK_ADDERS.get(text(r, c))
             if key is None:
                 continue
-            cost = cost_at(r + 1, c, c + 1, label.lower())
+            cost = cost_at(r + 1, c, c + 1, text(r, c).lower())
             if cost is not None:
                 adders[key] = cost
     if adders:
@@ -1455,6 +1479,43 @@ def read_tracks_block(ws, wsf, problems):
           f"roof pitch {'/'.join(tracks['roofPitch'])} at {'/'.join(next(iter(tracks['roofPitch'].values()), {}))}"
           + (f"; adders {', '.join(f'{k} {v}' for k, v in adders.items())}" if adders else ""))
     return tracks
+
+
+# TORSION SPRINGS (CJ, 21/10/2026, every sheet): the flat adders for torsion
+# springs, GALV and REG (plain) a column each, SINGLE DOOR (UP TO 12FT) and
+# DOUBLE DOOR (12FT AND UP) a row each. Sell figures, added as they stand.
+SPRING_ROWS = {"SINGLE": "single", "DOUB": "double"}
+SPRING_COLS = {"GALV": "galvanized", "REG": "torsion"}
+
+
+def read_springs_block(ws, problems):
+    """The TORSION SPRINGS table as {torsion: {single, double}, galvanized: {single, double}}, or None where the sheet has none."""
+    at = find_cell(ws, "TORSION SPRINGS")
+    if at is None:
+        return None
+    top, c0 = at
+    cols = {}
+    for c in range(c0 + 1, min(ws.max_column, c0 + 6) + 1):
+        key = SPRING_COLS.get(str(ws.cell(top, c).value or "").strip().upper())
+        if key:
+            cols[key] = c
+    rates = {"torsion": {}, "galvanized": {}}
+    for r in range(top + 1, top + 4):
+        label = str(ws.cell(r, c0).value or "").strip().upper()
+        which = next((v for k, v in SPRING_ROWS.items() if label.startswith(k)), None)
+        if which is None:
+            continue
+        for key, c in cols.items():
+            v = ws.cell(r, c).value
+            if isinstance(v, (int, float)):
+                rates[key][which] = money(v)
+            else:
+                problems.add(f"{ws.title} springs {key} {which} (row {r}): {v!r} is not a number")
+    if any(set(t) != {"single", "double"} for t in rates.values()):
+        problems.add(f"{ws.title}: TORSION SPRINGS wants GALV and REG, single and double; read {rates}")
+        return None
+    print(f"  note: {ws.title}: torsion springs {rates['torsion']['single']:g}/{rates['torsion']['double']:g}, galvanized {rates['galvanized']['single']:g}/{rates['galvanized']['double']:g}")
+    return rates
 
 
 def read_modern_sheet(ws, wsf, margins):
@@ -1485,7 +1546,8 @@ def read_modern_sheet(ws, wsf, margins):
     SELL in special-doors.ts, solid alone — a window on these doors is pressed
     into the door drawing, not a column of the grid — and the per-window
     costs and the colour adder in modern-windows.ts, lifted by the margin at
-    quote time.
+    quote time, with the TRACKS block (read_tracks_block) and the TORSION
+    SPRINGS table (read_springs_block) each sheet carries since 21/10/2026.
     """
     problems = Problems()
     members = [str(ws.cell(1, c).value).strip() for c in range(1, 12) if ws.cell(1, c).value not in (None, "")]
@@ -1672,13 +1734,14 @@ def read_modern_sheet(ws, wsf, margins):
 
     ug = ultra_color_block(ws, wsf, problems)
     tracks = read_tracks_block(ws, wsf, problems)
+    springs = read_springs_block(ws, problems)
     print(f"  note: {ws.title}: windows {', '.join(f'{labels[g]} ({'/'.join(windows[g])})' for g in windows)}")
     return {
         "sheet": ws.title, "group": group, "members": members, "mult": mult, "glass_mult": mult, "flat": DOOR_FLAT,
         "min_width": {}, "ug": ug, "only_to_8": False, "unavailable": [],
         "tiers": list(tiers), "bands": bands, "gaps": gaps, "no_windows": {}, "glass": {},
         "solid_grid_only": True, "windows": windows, "window_labels": labels, "slim_glass": [g for g, _ in slim_glass], "counts": counts,
-        "tracks": tracks,
+        "tracks": tracks, "springs": springs,
         "problems": problems,
     }
 
@@ -1861,7 +1924,7 @@ def write_premium_glass(fam, infos, workbook_name):
            "// type here, the grid's own glass. A width in no band takes no window of",
            "// that series.",
            "",
-           'import type { GlassOption, SheetBand } from "./sheet-band";',
+           'import type { GlassOption, SheetBand, SheetTracks, SpringRates } from "./sheet-band";',
            "",
            "/** The groups this workbook prices. */",
            f"export const {const}_GROUPS = [" + ", ".join(f'"{i["group"]}"' for i in infos) + "] as const;",
@@ -1886,6 +1949,7 @@ def write_premium_glass(fam, infos, workbook_name):
         out.append(f'  "{info["group"]}": {{ upTo8ft: {{ single: {ug["low"]["single"]:.2f}, double: {ug["low"]["double"]:.2f} }}, '
                    f'over8ft: {{ single: {ug["high"]["single"]:.2f}, double: {ug["high"]["double"]:.2f} }} }},')
     out += ["};", ""]
+    out += tracks_and_springs(const, infos)
     fam["out"].write_text("\n".join(out))
 
 
@@ -1916,7 +1980,7 @@ def write_modern_windows(fam, infos, workbook_name):
            "// pressed into the door drawing (modern-steel.ts). A glass with no figure",
            "// for a framing is not built that way.",
            "",
-           'import type { GlassOption } from "./sheet-band";',
+           'import type { GlassOption, SheetTracks, SpringRates } from "./sheet-band";',
            "",
            "/** The groups these sheets price. */",
            f"export const {const}_GROUPS = [" + ", ".join(f'"{i["group"]}"' for i in infos) + "] as const;",
@@ -1951,23 +2015,22 @@ def write_modern_windows(fam, infos, workbook_name):
             continue
         out.append(f'  "{info["group"]}": {{ upTo8ft: {{ single: {ug["low"]["single"]:.2f}, double: {ug["low"]["double"]:.2f} }}, '
                    f'over8ft: {{ single: {ug["high"]["single"]:.2f}, double: {ug["high"]["double"]:.2f} }} }},')
-    out += ["};", "",
-            "/** A sheet's track options, cost before margin: high lift by incline, mount and inches of lift; full vertical lift by door height; track following the roof pitch by pitch. */",
-            "export interface SheetTracks {",
-            "  highLift: Record<string, { bracket: Record<number, number>; angle: Record<number, number> }>;",
-            "  fullVertical: { bracket?: Record<string, number>; angle?: Record<string, number> };",
-            "  roofPitch: { bracket?: Record<string, number>; angle?: Record<string, number> };",
-            "  /** The sheet's own figures for low headroom track, low headroom rear torsion, and an angle mount on 12\" or 15\" radius track (CJ, 21/10/2026). */",
-            "  adders?: { lowHeadroom?: number; lowHeadroomRearTorsion?: number; angleMount12r15r?: number };",
-            "}",
-            "",
-            "/**",
-            " * The TRACKS block (CJ, 20/10/2026), where a sheet has one — the 4138's:",
-            " * breakaway high lift 36\" to 117\" and 25 degree 36\" to 72\", full vertical",
-            " * lift by door height, and track following the roof pitch, each bracket or",
-            " * angle mount, at the track multiplier. Cost, before margin.",
-            " */",
-            f"export const {const}_TRACKS: Record<string, SheetTracks> = {{"]
+    out += ["};", ""]
+    out += tracks_and_springs(const, infos)
+    fam["out"].write_text("\n".join(out))
+
+
+def tracks_and_springs(const, infos):
+    """The TRACKS and TORSION SPRINGS tables of a workbook's sheets, for the family's data file."""
+    out = ["/**",
+           " * The TRACKS block (CJ, 20/10/2026 on the 4138, 21/10/2026 on every sheet),",
+           " * where a sheet has one: breakaway high lift 36\" to 117\" and 25 degree 36\"",
+           " * to 72\", full vertical lift by door height, and track following the roof",
+           " * pitch, each bracket or angle mount, at the sheet's track multiplier; and",
+           " * the sheet's own figures for low headroom track, low headroom rear torsion",
+           " * and an angle mount on 12\" or 15\" radius track. Cost, before margin.",
+           " */",
+           f"export const {const}_TRACKS: Record<string, SheetTracks> = {{"]
     for info in infos:
         tr = info.get("tracks")
         if not tr:
@@ -1989,8 +2052,23 @@ def write_modern_windows(fam, infos, workbook_name):
         if tr.get("adders"):
             out.append("    adders: { " + ", ".join(f"{k}: {c:.2f}" for k, c in tr["adders"].items()) + " },")
         out.append("  },")
+    out += ["};", "",
+            "/**",
+            " * The TORSION SPRINGS table (CJ, 21/10/2026), where a sheet has one: what",
+            " * torsion springs add, plain (REG) or galvanized (GALV), on a single door",
+            " * and on a double (12' and up). Flat figures, added as they stand — springs",
+            " * are the one adder the margin does not lift (Brandon, 21/10/2026).",
+            " */",
+            f"export const {const}_SPRING_RATES: Record<string, SpringRates> = {{"]
+    for info in infos:
+        sp = info.get("springs")
+        if not sp:
+            out.append(f'  // "{info["group"]}": the sheet prices no springs of its own.')
+            continue
+        out.append(f'  "{info["group"]}": {{ torsion: {{ single: {sp["torsion"]["single"]:g}, double: {sp["torsion"]["double"]:g} }}, '
+                   f'galvanized: {{ single: {sp["galvanized"]["single"]:g}, double: {sp["galvanized"]["double"]:g} }} }},')
     out += ["};", ""]
-    fam["out"].write_text("\n".join(out))
+    return out
 
 
 def main():

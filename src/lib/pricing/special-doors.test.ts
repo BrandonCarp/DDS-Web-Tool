@@ -88,20 +88,23 @@ describe("special order door grid", () => {
     expect(specialDoorQuote({ ...SHEET, width: "8", style: "solid" }).quote?.unitPrice).toBe(747.62);
   });
 
-  it("adds the same option money a stock door pays", () => {
-    const plain = specialDoorQuote({ ...SHEET, width: "8", style: "solid" }).quote!;
+  it("adds the same option money a stock door pays on a stocked model, and the sheet's on the 4132 (Brandon, 21/10/2026)", () => {
+    // The stocked 4050: the stock book's door and the stock book's options.
+    const plain = specialDoorQuote({ ...base, width: "8", style: "solid" }).quote!;
     const loaded = specialDoorQuote({
-      ...SHEET, width: "8", style: "solid",
+      ...base, width: "8", style: "solid",
       spring: "torsion", track: "low_headroom", lock: "lockbar_installed",
     }).quote!;
     expect(loaded.base).toBe(plain.base);
     expect(loaded.unitPrice - plain.unitPrice).toBeCloseTo(
       ADDONS.track.low_headroom + ADDONS.torsion + ADDONS.lockbar_installed, 2,
     );
-    expect(loaded.unitPrice).toBeCloseTo(747.62 + ADDONS.track.low_headroom + ADDONS.torsion + ADDONS.lockbar_installed, 2);
-    // On the stocked 4050 the same money over the stock book's door.
-    expect(specialDoorQuote({ ...base, width: "8", style: "solid", spring: "torsion", track: "low_headroom", lock: "lockbar_installed" }).quote?.unitPrice)
-      .toBeCloseTo(723.25 + ADDONS.track.low_headroom + ADDONS.torsion + ADDONS.lockbar_installed, 2);
+    expect(loaded.unitPrice).toBeCloseTo(723.25 + ADDONS.track.low_headroom + ADDONS.torsion + ADDONS.lockbar_installed, 2);
+    // The 4132, never stocked: the sheet's low headroom (39.06 cost at the 43%) and torsion (45), the lock the same.
+    const sheetPlain = specialDoorQuote({ ...SHEET, width: "8", style: "solid" }).quote!;
+    const sheetLoaded = specialDoorQuote({ ...SHEET, width: "8", style: "solid", spring: "torsion", track: "low_headroom", lock: "lockbar_installed" }).quote!;
+    expect(sheetLoaded.base).toBe(sheetPlain.base);
+    expect(sheetLoaded.unitPrice).toBeCloseTo(747.62 + Math.round((39.06 / 0.57) * 100) / 100 + 45 + ADDONS.lockbar_installed, 2);
   });
 
   it("refuses anything off the grid, and says to use the manual total", () => {

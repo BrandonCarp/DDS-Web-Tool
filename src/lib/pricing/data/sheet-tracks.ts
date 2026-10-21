@@ -1,30 +1,42 @@
-import { MODERN_TRACKS, type SheetTracks } from "./modern-windows";
+import { MODERN_SPRING_RATES, MODERN_TRACKS } from "./modern-windows";
+import { PREMIUM_SPRING_RATES, PREMIUM_TRACKS } from "./premium-glass";
+import type { SheetTracks, SpringRates } from "./sheet-band";
 import { isAngleMount, maxHighLift, type InclineStyle, type TrackMount } from "./track-lift";
 
 /**
- * The track options a sheet prices on its own (CJ's TRACKS block of
- * 20/10/2026, the 4138's): high lift, breakaway or 25 degree, by inches of
- * lift; full vertical lift by door height; track following the roof pitch —
- * each bracket or angle mount, cost before margin (modern-windows.ts). The
- * headings' build rules are here: what each is built with.
+ * The track options a sheet prices on its own (CJ's TRACKS block — the
+ * 4138's of 20/10/2026, every Premium and Modern Steel sheet's of
+ * 21/10/2026): high lift, breakaway or 25 degree, by inches of lift; full
+ * vertical lift by door height; track following the roof pitch — each
+ * bracket or angle mount, cost before margin (premium-glass.ts and
+ * modern-windows.ts). The headings' build rules are here: what each is
+ * built with.
  *
- *   breakaway high lift   bracket mount: solid only; angle mount: solid, or
- *                         glass in the top section only, on a reverse angle
+ *   breakaway high lift   solid only, bracket or angle mount
  *   25 degree high lift   solid or glass, lift to 72"
  *   full vertical lift    solid only
  *   roof pitch            solid or glass
  *
- * And the sheet's own adders (CJ, 21/10/2026), in place of the stock book's:
- * low headroom track, low headroom rear torsion, and an angle mount on 12"
- * or 15" radius track — the radii the sheet prices it on.
+ * And the sheet's own adders (CJ, 21/10/2026), in place of the stock book's
+ * on a door DDS does not stock: low headroom track, low headroom rear
+ * torsion, and an angle mount on 12" or 15" radius track — the radii the
+ * sheet prices it on.
  */
 export type SheetTrack = "high_lift" | "full_vertical" | "roof_pitch";
 
 /** Which sections of a door carry glass: none, the top section alone, or more. */
 export type GlassWhere = "none" | "top" | "other";
 
+const SHEET_TRACKS: Record<string, SheetTracks> = { ...PREMIUM_TRACKS, ...MODERN_TRACKS };
+const SHEET_SPRINGS: Record<string, SpringRates> = { ...PREMIUM_SPRING_RATES, ...MODERN_SPRING_RATES };
+
 export function sheetTracksFor(group: string): SheetTracks | null {
-  return MODERN_TRACKS[group] ?? null;
+  return SHEET_TRACKS[group] ?? null;
+}
+
+/** The spring rates a sheet prices for a group (its TORSION SPRINGS table), null where it has none. */
+export function sheetSpringRates(group: string): SpringRates | null {
+  return SHEET_SPRINGS[group] ?? null;
 }
 
 /** The track options a sheet adds to the list, beyond high lift. */
@@ -121,11 +133,9 @@ export function sheetTrackPrice(input: SheetTrackInput): { cost: number; label: 
       const max = Math.max(...Object.keys(table[mount]).map(Number));
       return { reason: `${incline === "deg25" ? "25 degree" : "Breakaway"} high lift is priced to ${max}" on this door.` };
     }
-    if (incline === "breakaway" && input.glass !== "none") {
-      if (!angle) return { reason: "Breakaway high lift on a bracket mount is built solid only." };
-      if (input.glass !== "top") return { reason: "Breakaway high lift takes glass in the top section only." };
-      if (input.mount !== "reverse_angle") return { reason: "Breakaway high lift with glass in the top section is built on a reverse angle mount only." };
-    }
+    // SOLID ONLY on both mounts (CJ, 21/10/2026 — the top-section-glass
+    // reverse angle build of the day before is gone from the sheet).
+    if (incline === "breakaway" && input.glass !== "none") return { reason: "Breakaway high lift is built solid only." };
     return { cost, label: `${inches}″ high lift track` };
   }
   if (input.track === "full_vertical") {

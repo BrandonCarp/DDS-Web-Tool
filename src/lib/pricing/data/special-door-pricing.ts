@@ -27,8 +27,9 @@ import {
 } from "./so-glass";
 import { sectionCost, windowSectionGroup, windowSectionSell } from "./coachman-windows";
 import { colorKeyFor, colorTakesPremium } from "./catalog-meta";
-import { highLiftPrice, mountPhrase, trackMountFor, type InclineStyle } from "./track-lift";
-import { glassWhere, sheetTrackAdder, sheetTrackPrice, sheetTracksFor } from "./sheet-tracks";
+import { mountPhrase, trackMountFor } from "./track-lift";
+import { glassWhere, sheetSpringRates, sheetTrackAdder, sheetTrackPrice, sheetTracksFor } from "./sheet-tracks";
+import type { SpringRates } from "./sheet-band";
 import { ADDONS, GRADE_RES, COLLECTIONS_RES } from "./addons";
 import { dataKey, RESIDENTIAL_HIDDEN } from "../model-groups";
 import { STOCK_PRICES } from "./stock-prices";
@@ -112,15 +113,15 @@ const NAMED_COLLECTIONS = new Set(["Gallery Collection", "Bridgeport Collection"
 const TORSION_INCLUDED = new Set(["CD"]);
 
 /**
- * Groups offered high lift track on the special order tab — the 4050 family
- * only (Brandon, 13/10/2026). Every other door takes the radius and low
- * headroom tracks alone, and a high lift asked for on one is 12" radius.
+ * True when a group's special order configurator offers high lift track:
+ * the groups whose sheet prices it (the 4138 on 20/10/2026; every Premium
+ * and Modern Steel sheet on 21/10/2026 — the 4050 family's book figures of
+ * 13/10/2026 are superseded by its sheet). Every other door takes the radius
+ * and low headroom tracks alone, and a high lift asked for on one is 12"
+ * radius.
  */
-const HIGH_LIFT_GROUPS = new Set(["4050/4051/4053/4132"]);
-
-/** True when a group's special order configurator offers high lift track: the 4050 family off Clopay's book, and any group whose sheet prices it (the 4138, 20/10/2026). */
 export function highLiftOffered(group: string): boolean {
-  return HIGH_LIFT_GROUPS.has(group) || !!sheetTracksFor(group);
+  return !!sheetTracksFor(group);
 }
 
 /** True when a group's grid prices include torsion at every height. */
@@ -131,11 +132,9 @@ export function torsionIncluded(group: string): boolean {
 /**
  * Spring rates by collection — Brandon, 12/10/2026: on a Gallery or Bridgeport
  * door torsion is $55 on a single door and $75 on a double, and galvanized
- * torsion is the same price. Every other door keeps the stock adders (torsion
- * 35; galvanized 40 single, 45 double). Where the sheet already includes
- * torsion the torsion rate is in the price, and galvanized adds its difference.
+ * torsion is the same price. Where the sheet already includes torsion the
+ * torsion rate is in the price, and galvanized adds its difference.
  */
-type SpringRates = { torsion: { single: number; double: number }; galvanized: { single: number; double: number } };
 const SPRING_RATES: Record<string, SpringRates> = {
   "Gallery Collection": { torsion: { single: 55, double: 75 }, galvanized: { single: 55, double: 75 } },
   "Bridgeport Collection": { torsion: { single: 55, double: 75 }, galvanized: { single: 55, double: 75 } },
@@ -160,17 +159,33 @@ function stockedTriple(member: string, width: string, tierKey: string | null): P
 }
 
 /**
- * Spring rates a model carries on its own, ahead of its collection's: the
- * 4138 (Brandon, 20/10/2026) — torsion 45 on a single door and 55 on a
- * double, galvanized torsion 50 and 70.
+ * A model DDS stocks — one with a stock book the residential tab offers:
+ * the T50S and T52S, the 4050 family, the 9130 and 9133, the GD1. Every
+ * option the stock tab sells on it keeps the stock price on a special order
+ * too, whatever the size (Brandon, 21/10/2026): the springs, low headroom
+ * and low headroom rear torsion track, the 20" and 32" radius, an angle
+ * mount. The sheet prices only what the stock tab does not offer — high
+ * lift, full vertical lift, track following the roof pitch. A model with no
+ * stock book (the 4132, the 9131, the 9200s, the Modern Steel doors, the
+ * 4300 family the tab hides) takes the sheet's figures for all of it.
  */
-const MODEL_SPRING_RATES: Record<string, SpringRates> = {
-  "4138": { torsion: { single: 45, double: 55 }, galvanized: { single: 50, double: 70 } },
-};
+export function stockedModel(member: string): boolean {
+  return !RESIDENTIAL_HIDDEN.has(member) && !!STOCK_PRICES[dataKey(member)];
+}
 
-/** The spring rates a member carries: its own, else its collection's, else the stock adders. */
-export function springRatesFor(member: string): SpringRates {
-  return MODEL_SPRING_RATES[member] ?? SPRING_RATES[COLLECTIONS_RES[dataKey(member)] ?? ""] ?? STOCK_SPRING_RATES;
+/**
+ * The spring rates a member carries: its collection's where Brandon set
+ * them (the Gallery, the Bridgeport); the stock adders on a stocked model;
+ * its sheet's TORSION SPRINGS where the sheet has the table (CJ,
+ * 21/10/2026 — torsion 45 on a single door and 55 on a double, galvanized
+ * 50 and 70, on every Premium and Modern Steel sheet); the stock adders
+ * otherwise.
+ */
+export function springRatesFor(group: string, member: string): SpringRates {
+  return SPRING_RATES[COLLECTIONS_RES[dataKey(member)] ?? ""]
+    ?? (stockedModel(member) ? STOCK_SPRING_RATES : null)
+    ?? sheetSpringRates(group)
+    ?? STOCK_SPRING_RATES;
 }
 
 /**
@@ -663,55 +678,43 @@ export function specialDoorQuote(
   // extension is not sold, so one asked for is torsion.
   const spring: SpringKey = galvanizedPriced(input.model) && input.spring === "extension" ? "torsion" : input.spring;
   const springPriced = galvanizedPriced(input.model) && spring === "torsion" ? "galvanized" : spring;
-  // High lift is the 4050 family's and the sheet-tracked doors'; full
-  // vertical lift and roof pitch the sheet-tracked doors' alone (the 4138,
-  // 20/10/2026). On any other door each is 12" radius track.
+  // High lift, full vertical lift and roof pitch are the sheet-tracked
+  // doors' (the 4138 on 20/10/2026, every Premium and Modern Steel door on
+  // 21/10/2026). On any other door each is 12" radius track.
   const sheetTracks = sheetTracksFor(input.model);
   const track: TrackKey =
-    (input.track === "high_lift" && !highLiftOffered(input.model))
-    || ((input.track === "full_vertical" || input.track === "roof_pitch") && !sheetTracks)
+    (input.track === "high_lift" || input.track === "full_vertical" || input.track === "roof_pitch") && !sheetTracks
       ? "r12" : input.track;
   const liftInches = track === "high_lift" ? input.highLiftInches ?? 0 : 0;
   // A mount the model is not sold with is bracket.
   const mount = trackMountFor(member, input.trackMount);
   const [hf, hi] = [Number(input.height.split(".")[0]), Number(input.height.split(".")[1] ?? 0)];
 
-  // High lift is priced from the Clopay track tables, then divided by the
-  // group's margin — the grid holds SELL figures, so an adder has to be lifted
-  // into the same space before it can be added. A sheet-tracked door's high
-  // lift, full vertical lift and roof pitch come off its own sheet the same
-  // way, and the sheet says what each is built with: a track the door is not
-  // built with that way is not priced.
+  // High lift, full vertical lift and roof pitch come off the door's sheet
+  // (cost), then divided by the group's margin — the grid holds SELL figures,
+  // so an adder has to be lifted into the same space before it can be added.
+  // The sheet says what each is built with: a track the door is not built
+  // with that way is not priced.
   const lift = (() => {
-    if (sheetTracks && (track === "high_lift" || track === "full_vertical" || track === "roof_pitch")) {
-      if (track === "high_lift" && liftInches <= 0) return { value: 0, label: "" };
-      const r = sheetTrackPrice({
-        group: input.model, track, mount, incline: input.incline, inches: liftInches, heightFt: hf, heightIn: hi,
-        pitch: input.roofPitch, glass: glassWhere(input.windowsAt, style !== "solid"),
-      });
-      if ("reason" in r) return { value: 0, label: "", reason: r.reason };
-      const margin = doorMargin(input.model);
-      const value = margin == null ? r.cost : Math.round((r.cost / (1 - margin / 100)) * 100) / 100;
-      return { value, label: r.label };
-    }
-    if (liftInches <= 0) return { value: 0, label: "" };
-    const r = highLiftPrice({
-      mount,
-      incline: (input.incline ?? "straight_incline") as InclineStyle,
-      heightFt: hf, heightIn: hi, inches: liftInches,
+    if (!sheetTracks || !(track === "high_lift" || track === "full_vertical" || track === "roof_pitch")) return { value: 0, label: "" };
+    if (track === "high_lift" && liftInches <= 0) return { value: 0, label: "" };
+    const r = sheetTrackPrice({
+      group: input.model, track, mount, incline: input.incline, inches: liftInches, heightFt: hf, heightIn: hi,
+      pitch: input.roofPitch, glass: glassWhere(input.windowsAt, style !== "solid"),
     });
-    if (r.price <= 0) return { value: 0, label: "" };
+    if ("reason" in r) return { value: 0, label: "", reason: r.reason };
     const margin = doorMargin(input.model);
-    const value = margin == null ? r.price : Math.round((r.price / (1 - margin / 100)) * 100) / 100;
+    const value = margin == null ? r.cost : Math.round((r.cost / (1 - margin / 100)) * 100) / 100;
     return { value, label: r.label };
   })();
   if ("reason" in lift && lift.reason) return { reason: lift.reason };
-  // A radius or low headroom track on a sheet-tracked door: the sheet's own
-  // adder where it has one (low headroom, low headroom rear torsion, an angle
-  // mount on 12" or 15" radius), the stock book's otherwise.
+  // A radius or low headroom track: the stock book's adder on a stocked model
+  // (stockedModel); on any other sheet-tracked door the sheet's own where it
+  // has one (low headroom, low headroom rear torsion, an angle mount on 12"
+  // or 15" radius), the stock book's otherwise.
   const trackAdder = ((): { value: number; reason?: string } => {
     if (track === "high_lift" || track === "full_vertical" || track === "roof_pitch") return { value: 0 };
-    const own = sheetTracks ? sheetTrackAdder(input.model, track, mount) : null;
+    const own = sheetTracks && !stockedModel(member) ? sheetTrackAdder(input.model, track, mount) : null;
     if (own && "reason" in own) return { value: 0, reason: own.reason };
     if (own) {
       const margin = doorMargin(input.model);
@@ -749,7 +752,7 @@ export function specialDoorQuote(
   const adders =
     premium +
     trackAdder.value +
-    springAdder(springPriced, torsionOnly, parseInt(input.width, 10) >= 12, springRatesFor(member)) +
+    springAdder(springPriced, torsionOnly, parseInt(input.width, 10) >= 12, springRatesFor(input.model, member)) +
     (LOCK[input.lock] ?? 0) +
     lift.value +
     (asEight ? NINE_FOOT_GLASS.flat : 0) +

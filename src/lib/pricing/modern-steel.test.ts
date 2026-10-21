@@ -186,16 +186,17 @@ describe("Modern Steel — Clopay's stacking chart and panel counts (19/10/2026)
     expect(modernPickerModel("9138")).toBe(true);
   });
 
-  it("springs the 4138 at its own rates: torsion 45 single and 55 double, galvanized 50 and 70 (Brandon, 20/10/2026)", () => {
+  it("springs the Modern Steel doors at the sheet's rates: torsion 45 single and 55 double, galvanized 50 and 70 (the 4138 on 20/10/2026, every sheet on 21/10/2026)", () => {
     const q = (width: string, spring: "extension" | "torsion" | "galvanized", model = "4138", variant?: string) =>
       specialDoorQuote({ model, variant, width, height: "7", style: "solid", color: "White", track: "r12", spring, lock: "none" }).quote!.unitPrice;
     expect(q("8", "torsion")).toBeCloseTo(q("8", "extension") + 45, 2);
     expect(q("8", "galvanized")).toBeCloseTo(q("8", "extension") + 50, 2);
     expect(q("16", "torsion")).toBeCloseTo(q("16", "extension") + 55, 2);
     expect(q("16", "galvanized")).toBeCloseTo(q("16", "extension") + 70, 2);
-    // The other Modern Steel doors keep the stock adders.
-    expect(q("8", "torsion", "9208/9209", "9208")).toBeCloseTo(q("8", "extension", "9208/9209", "9208") + 35, 2);
-    expect(q("16", "galvanized", "4308/4309", "4308")).toBeCloseTo(q("16", "extension", "4308/4309", "4308") + 45, 2);
+    // The other Modern Steel doors the same: none of them is stocked.
+    expect(q("8", "torsion", "9208/9209", "9208")).toBeCloseTo(q("8", "extension", "9208/9209", "9208") + 45, 2);
+    expect(q("16", "galvanized", "4308/4309", "4308")).toBeCloseTo(q("16", "extension", "4308/4309", "4308") + 70, 2);
+    expect(q("16", "torsion", "4308/4309", "4309")).toBeCloseTo(q("16", "extension", "4308/4309", "4309") + 55, 2);
   });
 
   it("lists the framing first and the glass a window comes in after it (Brandon, 20/10/2026)", () => {

@@ -985,7 +985,7 @@ describe("special order — the Coachman from CJ's sheet (12/10/2026)", () => {
   });
 });
 
-describe("special order — high lift is the 4050 family's (Brandon, 13/10/2026)", () => {
+describe("special order — high lift is the sheet-tracked doors' (the 4050 family's since 13/10/2026, off its sheet since 21/10/2026)", () => {
   async function pickGallery(member: string) {
     render(<SpecialTool />);
     fireEvent.change(sel("so-scope"), { target: { value: "residential" } });
@@ -1023,6 +1023,51 @@ describe("special order — high lift is the 4050 family's (Brandon, 13/10/2026)
     fireEvent.click(maybe("so-configure")!);
     await settle();
     expect(document.body.textContent).toMatch(/high lift and spring depend on the door size/i);
+  });
+
+  it("keeps the stock book's option money on the stocked 4050 and prices what stock does not sell off CJ's sheet (Brandon, 21/10/2026)", async () => {
+    await configured("9", "7");
+    await fillOptions({ spring: "torsion" });
+    // Torsion opens every track on the sheet: rear torsion after low headroom, high lift, full vertical, roof pitch.
+    expect(options("so-track").map((o) => o.value)).toEqual(["r10", "r12", "r15", "low_headroom", "reverse_low_headroom", "r20", "r32", "high_lift", "full_vertical", "roof_pitch"]);
+    const solid = (await copiedQbLine(screen.getByTestId("copy-qb"))).rate;
+    const sell = (cost: number) => Math.round((cost / 0.57) * 100) / 100;
+    // Stock options at the stock price: low headroom 45, rear torsion 60, an angle mount free.
+    fireEvent.change(sel("so-track"), { target: { value: "low_headroom" } });
+    await settle();
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).rate).toBeCloseTo(solid + 45, 2);
+    fireEvent.change(sel("so-track"), { target: { value: "reverse_low_headroom" } });
+    await settle();
+    let line = await copiedQbLine(screen.getByTestId("copy-qb"));
+    expect(line.rate).toBeCloseTo(solid + 60, 2);
+    expect(line.description).toMatch(/, LOW HEADROOM REAR TORSION TRACK, TORSION SPRINGS/i);
+    fireEvent.change(sel("so-track"), { target: { value: "r20" } });
+    fireEvent.change(sel("so-track-mount"), { target: { value: "continuous_angle" } });
+    await settle();
+    line = await copiedQbLine(screen.getByTestId("copy-qb"));
+    expect(line.rate).toBeCloseTo(solid + 200, 2);
+    expect(line.description).toMatch(/2" CONTINUOUS ANGLE MOUNT TRACK TO WOOD, 20″ RADIUS TRACK/i);
+    fireEvent.change(sel("so-track-mount"), { target: { value: "bracket" } });
+    // High lift off the 4050's sheet (.776, the 4138's figures) at the 43%: breakaway or 25 degree, the sheet's inches.
+    fireEvent.change(sel("so-track"), { target: { value: "high_lift" } });
+    await settle();
+    expect(options("so-incline").map((o) => o.value)).toEqual(["breakaway", "deg25"]);
+    expect(options("so-high-lift").map((o) => o.value).slice(1, 3)).toEqual(["36", "39"]);
+    fireEvent.change(sel("so-high-lift"), { target: { value: "36" } });
+    await settle();
+    line = await copiedQbLine(screen.getByTestId("copy-qb"));
+    expect(line.rate).toBeCloseTo(solid + sell(136.52), 2);
+    expect(line.description).toMatch(/36″ HIGH LIFT TRACK, TORSION SPRINGS/i);
+    fireEvent.change(sel("so-track"), { target: { value: "full_vertical" } });
+    await settle();
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).rate).toBeCloseTo(solid + sell(104.96), 2);
+    fireEvent.change(sel("so-track"), { target: { value: "roof_pitch" } });
+    await settle();
+    fireEvent.change(sel("so-roof-pitch"), { target: { value: "6/12" } });
+    await settle();
+    line = await copiedQbLine(screen.getByTestId("copy-qb"));
+    expect(line.rate).toBeCloseTo(solid + sell(137.63), 2);
+    expect(line.description).toMatch(/, 6\/12 ROOF PITCH TRACK, TORSION SPRINGS/i);
   });
 });
 
