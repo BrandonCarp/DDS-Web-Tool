@@ -718,13 +718,14 @@ describe("the Modern Steel doors: the 9208/9209 and 4308/4309 pairs and the 4138
     expect(q("4308/4309", "8", "7", "glass").reason).toMatch(/none are placed yet/);
   });
 
-  it("grids the 4138 6'2\" to 18'0\" at 7FT and 8FT, the whole feet from 8'0\" at 9FT and 10FT, at its own .776", () => {
-    for (const h of ["7", "8"]) {
+  it("grids the 4138 6'2\" to 18'0\" at every height, at its own .776 — the 9FT and 10FT bands under 8'0\" priced since CJ's sheet of 21/10/2026", () => {
+    for (const h of ["7", "8", "9", "10"]) {
       const widths = griddedWidths("4138", h);
       expect([widths.length, widths[0], widths.slice(-1)[0]], `4138 ${h}ft`).toEqual([72, "6.2", "18"]);
     }
-    for (const h of ["9", "10"]) expect(griddedWidths("4138", h)).toEqual(["8", "9", "10", "12", "14", "15", "16", "17", "18"]);
     expect(q("4138", "6.2", "7", "solid").quote?.unitPrice).toBe(sheet(659, 0.776, 45));
+    expect(q("4138", "7.6", "9", "solid").quote?.unitPrice).toBe(sheet(1116, 0.776, 45));   // 6'2" to 7'10" at 9FT and 10FT: one band
+    expect(q("4138", "6.2", "10", "solid").quote?.unitPrice).toBe(sheet(1116, 0.776, 45));
     expect(q("4138", "18", "10", "solid").quote?.unitPrice).toBe(sheet(2174, 0.776, 45));
     expect(q("4138", "8", "7", "glass").reason).toMatch(/none are placed yet/);
   });

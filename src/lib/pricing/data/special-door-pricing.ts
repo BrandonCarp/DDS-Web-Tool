@@ -28,7 +28,7 @@ import {
 import { sectionCost, windowSectionGroup, windowSectionSell } from "./coachman-windows";
 import { colorKeyFor, colorTakesPremium } from "./catalog-meta";
 import { highLiftPrice, mountPhrase, trackMountFor, type InclineStyle } from "./track-lift";
-import { glassWhere, sheetTrackPrice, sheetTracksFor } from "./sheet-tracks";
+import { glassWhere, sheetTrackAdder, sheetTrackPrice, sheetTracksFor } from "./sheet-tracks";
 import { ADDONS, GRADE_RES, COLLECTIONS_RES } from "./addons";
 import { dataKey, RESIDENTIAL_HIDDEN } from "../model-groups";
 import { STOCK_PRICES } from "./stock-prices";
@@ -97,7 +97,7 @@ const TRACK_TEXT: Record<string, string> = {
   r12: '12\u2033 radius track',
   r15: '15\u2033 radius track',
   low_headroom: "low headroom track",
-  reverse_low_headroom: "reverse low headroom track",
+  reverse_low_headroom: "low headroom rear torsion track",
   r20: '20\u2033 radius track',
   r32: '32\u2033 radius track',
 };
@@ -706,6 +706,20 @@ export function specialDoorQuote(
     return { value, label: r.label };
   })();
   if ("reason" in lift && lift.reason) return { reason: lift.reason };
+  // A radius or low headroom track on a sheet-tracked door: the sheet's own
+  // adder where it has one (low headroom, low headroom rear torsion, an angle
+  // mount on 12" or 15" radius), the stock book's otherwise.
+  const trackAdder = ((): { value: number; reason?: string } => {
+    if (track === "high_lift" || track === "full_vertical" || track === "roof_pitch") return { value: 0 };
+    const own = sheetTracks ? sheetTrackAdder(input.model, track, mount) : null;
+    if (own && "reason" in own) return { value: 0, reason: own.reason };
+    if (own) {
+      const margin = doorMargin(input.model);
+      return { value: margin == null ? own.cost : Math.round((own.cost / (1 - margin / 100)) * 100) / 100 };
+    }
+    return { value: ADDONS.track[track as keyof typeof ADDONS.track] ?? 0 };
+  })();
+  if (trackAdder.reason) return { reason: trackAdder.reason };
 
   // Ultra-Grain and the other premium finishes on a sheet-priced door: a flat
   // adder, single or double (10'2" and up), in two height bands — up to 8'0",
@@ -734,7 +748,7 @@ export function specialDoorQuote(
 
   const adders =
     premium +
-    (track === "high_lift" || track === "full_vertical" || track === "roof_pitch" ? 0 : ADDONS.track[track as keyof typeof ADDONS.track] ?? 0) +
+    trackAdder.value +
     springAdder(springPriced, torsionOnly, parseInt(input.width, 10) >= 12, springRatesFor(member)) +
     (LOCK[input.lock] ?? 0) +
     lift.value +

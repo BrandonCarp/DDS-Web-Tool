@@ -35,7 +35,7 @@ import { homeownerMarkupForBand } from "@/lib/pricing/engine";
 import { OptionButtons, type ButtonOption } from "./OptionButtons";
 import { DoorDiagram } from "./DoorDiagram";
 import { modernFramingChoices, modernGlassForFraming, modernPanelsWide, modernPickerModel, modernStack, placeKey, type WindowPlace } from "@/lib/pricing/data/modern-steel";
-import { roofPitches, sheetInclines, sheetLiftChoices, sheetTrackChoices, sheetTracksFor } from "@/lib/pricing/data/sheet-tracks";
+import { roofPitches, sheetInclines, sheetLiftChoices, sheetRearTorsion, sheetTrackChoices, sheetTracksFor } from "@/lib/pricing/data/sheet-tracks";
 import { QtyStepper } from "./QtyStepper";
 
 const fmt = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -300,8 +300,11 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   // lift breakaway or 25 degree at the sheet's inches.
   const gSheetTracks = gridded ? sheetTrackChoices(modelGroup) : [];
   const gSheetTrack = gSheetTracks.some((t) => t.value === gTrack);
+  // Low headroom rear torsion is the sheet-tracked doors' too (21/10/2026), torsion like the rest.
+  const gRearTorsion = gridded && sheetRearTorsion(modelGroup) && canTakeHighLift(gSpringUsed);
   // A high lift chosen on a door that then stops offering it is 12" radius.
-  const gTrackEff = (gTrack === "high_lift" && !gLiftAllowed) || ((gTrack === "full_vertical" || gTrack === "roof_pitch") && !(gSheetTrack && gLiftAllowed)) ? "r12" : gTrack;
+  const gTrackEff = (gTrack === "high_lift" && !gLiftAllowed) || ((gTrack === "full_vertical" || gTrack === "roof_pitch") && !(gSheetTrack && gLiftAllowed))
+    || (gTrack === "reverse_low_headroom" && !gRearTorsion) ? "r12" : gTrack;
   const gIsLift = gTrackEff === "high_lift";
   const gHeightFtN = Number(gHeightFt || "0");
   const gHeightInN = Number(gHeightIn || "0");
@@ -741,6 +744,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                         <option value="r12">12&quot; radius</option>
                         <option value="r15">15&quot; radius</option>
                         <option value="low_headroom">Low headroom</option>
+                        {gRearTorsion && <option value="reverse_low_headroom">Low headroom rear torsion</option>}
                         <option value="r20">20&quot; radius</option>
                         <option value="r32">32&quot; radius</option>
                         {gLiftAllowed && <option value="high_lift">High lift</option>}

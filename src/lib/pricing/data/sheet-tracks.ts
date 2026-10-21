@@ -13,6 +13,10 @@ import { isAngleMount, maxHighLift, type InclineStyle, type TrackMount } from ".
  *   25 degree high lift   solid or glass, lift to 72"
  *   full vertical lift    solid only
  *   roof pitch            solid or glass
+ *
+ * And the sheet's own adders (CJ, 21/10/2026), in place of the stock book's:
+ * low headroom track, low headroom rear torsion, and an angle mount on 12"
+ * or 15" radius track — the radii the sheet prices it on.
  */
 export type SheetTrack = "high_lift" | "full_vertical" | "roof_pitch";
 
@@ -31,6 +35,37 @@ export function sheetTrackChoices(group: string): { value: SheetTrack; label: st
   if (t.fullVertical.bracket || t.fullVertical.angle) out.push({ value: "full_vertical", label: "Full vertical lift" });
   if (t.roofPitch.bracket || t.roofPitch.angle) out.push({ value: "roof_pitch", label: "Follow the roof pitch" });
   return out;
+}
+
+/** True where the sheet prices low headroom rear torsion, offered after Low headroom in the list. */
+export function sheetRearTorsion(group: string): boolean {
+  return sheetTracksFor(group)?.adders?.lowHeadroomRearTorsion != null;
+}
+
+/** The radius tracks the sheet prices an angle mount on. */
+const ANGLE_MOUNT_RADII = new Set(["r12", "r15"]);
+
+/**
+ * The sheet's adder for a radius or low headroom track, cost before margin:
+ * low headroom and low headroom rear torsion at the sheet's figures, an angle
+ * mount on 12" or 15" radius track at its, nothing on a bracket mount; null
+ * where the sheet has no figure of its own and the stock book's stands, and
+ * a reason where the sheet does not price the combination at all.
+ */
+export function sheetTrackAdder(group: string, track: string, mount: TrackMount): { cost: number } | { reason: string } | null {
+  const a = sheetTracksFor(group)?.adders;
+  if (!a) return null;
+  // An angle mount is priced on 12" and 15" radius track alone — not on any
+  // other radius, nor on low headroom.
+  if (isAngleMount(mount) && a.angleMount12r15r != null) {
+    if (ANGLE_MOUNT_RADII.has(track)) return { cost: a.angleMount12r15r };
+    if (track === "low_headroom" || track === "reverse_low_headroom" || /^r\d+$/.test(track)) {
+      return { reason: 'An angle mount is priced on 12" and 15" radius track on this door.' };
+    }
+  }
+  if (track === "low_headroom" && a.lowHeadroom != null) return { cost: a.lowHeadroom };
+  if (track === "reverse_low_headroom" && a.lowHeadroomRearTorsion != null) return { cost: a.lowHeadroomRearTorsion };
+  return null;
 }
 
 /** The inclines a sheet prices high lift in, in the sheet's order; null where the book's three apply. */

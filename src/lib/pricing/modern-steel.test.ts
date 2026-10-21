@@ -166,7 +166,7 @@ describe("Modern Steel — Clopay's stacking chart and panel counts (19/10/2026)
     expect(specialDoorQuote({ ...b4, width: "8.6", style: "solid" }).quote?.description).toContain("Model 4309, 8'6\" x 7'0\"");
   });
 
-  it("prices the 4138 off its own sheet: 569 list the 8'0\" 7FT door at .776, windows a window, whole feet alone at 9FT and 10FT", () => {
+  it("prices the 4138 off its own sheet: 569 list the 8'0\" 7FT door at .776, windows a window, odd widths the whole foot and 200 at 9FT and 10FT", () => {
     const base = { model: "4138", width: "8", height: "7", color: "White", track: "r12" as const, spring: "extension" as const, lock: "none" as const };
     expect(specialDoorQuote({ ...base, style: "solid" }).quote?.unitPrice).toBe(grid(569, 0.776));
     const r = specialDoorQuote({ ...base, style: "glass", glassType: "tempered", modernFraming: "short_grilles:SQ22", windowsAt: [{ section: 1, panel: 1 }, { section: 2, panel: 4 }] });
@@ -177,8 +177,9 @@ describe("Modern Steel — Clopay's stacking chart and panel counts (19/10/2026)
     expect(specialDoorQuote({ ...base, width: "8.6", height: "9", style: "solid" }).quote?.unitPrice).toBeCloseTo(grid(970, 0.776) + 200, 2);
     expect(specialDoorQuote({ ...base, width: "11", height: "10", style: "solid" }).quote?.unitPrice).toBeCloseTo(grid(1210, 0.776) + 200, 2);
     expect(specialDoorQuote({ ...base, width: "11", height: "8", style: "solid" }).quote?.unitPrice).toBeCloseTo(grid(863, 0.776) + 200, 2);
-    // Under 8'0" the sheet prices no 9FT or 10FT door, and nothing over 18'0".
-    expect(specialDoorQuote({ ...base, width: "7.6", height: "9", style: "solid" }).reason).toMatch(/not on the grid/);
+    // Under 8'0" the 9FT and 10FT doors are one band, 1116 list (CJ's sheet of 21/10/2026); nothing over 18'0".
+    expect(specialDoorQuote({ ...base, width: "7.6", height: "9", style: "solid" }).quote?.unitPrice).toBe(grid(1116, 0.776));
+    expect(specialDoorQuote({ ...base, width: "6.2", height: "10", style: "solid" }).quote?.unitPrice).toBe(grid(1116, 0.776));
     expect(specialDoorQuote({ ...base, width: "7.6", height: "8", style: "solid" }).quote?.unitPrice).toBe(grid(796, 0.776));
     expect(specialDoorQuote({ ...base, width: "19", height: "7", style: "solid" }).reason).toMatch(/not on the grid/);
     // A model with no sheet draws its windows and asks for the Clopay total.

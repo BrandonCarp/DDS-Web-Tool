@@ -1360,6 +1360,7 @@ def panels_wide(w, size):
 # The headings' build rules (solid only, top section glass, reverse angle) are
 # the app's own (sheet-tracks.ts); what lands here is the cost.
 TRACK_INCLINES = {"BREAKAWAY": "breakaway", "25 DEGREE": "deg25"}
+TRACK_ADDERS = {"LOW HEADROOM TRACKS": "lowHeadroom", "LOW HEADROOM REAR TORSION": "lowHeadroomRearTorsion", "ANGLE MOUNT TRACK, 12R, 15R": "angleMount12r15r"}
 
 
 def read_tracks_block(ws, wsf, problems):
@@ -1430,13 +1431,29 @@ def read_tracks_block(ws, wsf, problems):
             tracks[which][mount] = table
             continue
         r += 1
+    # The small table beside the high lift rows (CJ, 21/10/2026): a label, then
+    # list | cost on the row under it — LOW HEADROOM TRACKS, LOW HEADROOM REAR
+    # TORSION, ANGLE MOUNT TRACK, 12R, 15R.
+    adders = {}
+    for r in range(top, min(top + 40, ws.max_row) + 1):
+        for c in range(7, min(ws.max_column, 12) + 1):
+            label = str(ws.cell(r, c).value or "").strip().upper()
+            key = TRACK_ADDERS.get(label)
+            if key is None:
+                continue
+            cost = cost_at(r + 1, c, c + 1, label.lower())
+            if cost is not None:
+                adders[key] = cost
+    if adders:
+        tracks["adders"] = adders
     if not tracks["highLift"]:
         problems.add(f"{ws.title}: a TRACKS block with no high lift table")
     tracks["mult"] = sorted(mults)
     said = ", ".join(f"{inc} {'/'.join(f'{m} {min(t)}-{max(t)}\"' for m, t in tb.items() if t)}" for inc, tb in tracks["highLift"].items())
     print(f"  note: {ws.title}: tracks at x{'/'.join(f'{m:g}' for m in sorted(mults))}: high lift {said}; "
           f"full vertical {'/'.join(tracks['fullVertical'])} by height {'/'.join(next(iter(tracks['fullVertical'].values()), {}))}FT; "
-          f"roof pitch {'/'.join(tracks['roofPitch'])} at {'/'.join(next(iter(tracks['roofPitch'].values()), {}))}")
+          f"roof pitch {'/'.join(tracks['roofPitch'])} at {'/'.join(next(iter(tracks['roofPitch'].values()), {}))}"
+          + (f"; adders {', '.join(f'{k} {v}' for k, v in adders.items())}" if adders else ""))
     return tracks
 
 
@@ -1940,6 +1957,8 @@ def write_modern_windows(fam, infos, workbook_name):
             "  highLift: Record<string, { bracket: Record<number, number>; angle: Record<number, number> }>;",
             "  fullVertical: { bracket?: Record<string, number>; angle?: Record<string, number> };",
             "  roofPitch: { bracket?: Record<string, number>; angle?: Record<string, number> };",
+            "  /** The sheet's own figures for low headroom track, low headroom rear torsion, and an angle mount on 12\" or 15\" radius track (CJ, 21/10/2026). */",
+            "  adders?: { lowHeadroom?: number; lowHeadroomRearTorsion?: number; angleMount12r15r?: number };",
             "}",
             "",
             "/**",
@@ -1967,6 +1986,8 @@ def write_modern_windows(fam, infos, workbook_name):
             for mount, table in tr[which].items():
                 out.append(f"      {mount}: {{ " + ", ".join(f'"{k}": {c:.2f}' for k, c in table.items()) + " },")
             out.append("    },")
+        if tr.get("adders"):
+            out.append("    adders: { " + ", ".join(f"{k}: {c:.2f}" for k, c in tr["adders"].items()) + " },")
         out.append("  },")
     out += ["};", ""]
     fam["out"].write_text("\n".join(out))
