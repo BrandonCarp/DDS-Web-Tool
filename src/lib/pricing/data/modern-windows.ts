@@ -37,19 +37,17 @@ export const MODERN_GLASS_TYPES: GlassOption[] = [
 
 /** A window's cost: group -> glass id -> framing (short, short_grilles, long, long_grilles, slim). */
 export const MODERN_WINDOW_COST: Record<string, Record<string, Record<string, number>>> = {
-  // slim: the 9208-9209 sheet's 180 list at this sheet's multiplier.
   "9138/9139": {
     "tempered": { short: 60.28, short_grilles: 74.20, long: 120.57, long_grilles: 148.39 },
-    "insulated_tempered": { short: 98.31, short_grilles: 112.22, long: 196.62, long_grilles: 224.44, slim: 166.94 },
+    "insulated_tempered": { short: 98.31, short_grilles: 112.22, long: 196.62, long_grilles: 224.44 },
     "tempered_frosted": { short: 75.12, short_grilles: 89.04, long: 150.25, long_grilles: 178.07 },
-    "insulated_tempered_frosted": { short: 112.22, short_grilles: 126.13, long: 224.44, long_grilles: 252.27, slim: 166.94 },
+    "insulated_tempered_frosted": { short: 112.22, short_grilles: 126.13, long: 224.44, long_grilles: 252.27 },
     "insulated_tempered_obscure": { short: 111.29, short_grilles: 125.21, long: 222.59, long_grilles: 250.41 },
     "tempered_narrow_reed": { short: 88.11, short_grilles: 102.02, long: 176.22, long_grilles: 204.04 },
     "tempered_obscure": { short: 69.56, short_grilles: 83.47, long: 139.12, long_grilles: 166.94 },
     "insulated_tempered_narrow_reed": { short: 129.84, short_grilles: 143.76, long: 259.69, long_grilles: 287.51 },
     "tempered_midnight_gray": { short: 75.12, short_grilles: 89.04, long: 150.25, long_grilles: 178.07 },
     "insulated_tempered_midnight_gray": { short: 112.22, short_grilles: 126.13, long: 224.44, long_grilles: 252.27 },
-    "insulated_tempered_midnight_gray_916": { slim: 166.94 },
   },
   "9208/9209": {
     "tempered": { short: 57.18, short_grilles: 70.37, long: 114.36, long_grilles: 140.75 },

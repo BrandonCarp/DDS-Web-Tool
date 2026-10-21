@@ -48,18 +48,19 @@ describe("Modern Steel — Clopay's stacking chart and panel counts (19/10/2026)
     expect(modernPanelsWide(20, 0, "long")).toBe(5);
   });
 
-  it("is the seven contemporary models, slim windows on every one (Clopay's window configurations page; Brandon, 21/10/2026)", () => {
+  it("is the seven contemporary models, slim windows on five of them (Brandon, 21/10/2026: not the 9138 and 9139)", () => {
     for (const m of ["9208", "9138", "9209", "9139", "4308", "4138", "4309"]) expect(modernPickerModel(m), m).toBe(true);
     for (const m of ["9202", "4301", "4050", "9130"]) expect(modernPickerModel(m), m).toBe(false);
     // Clopay's framing list (19/10/2026): plain short and long, the four grille designs, the slim window in black or silver.
     const PLAIN_AND_GRILLES = ["short", "long", "short_grilles:REC12", "long_grilles:REC14", "short_grilles:SQ22", "long_grilles:SQ24"];
-    // The 4138's and the 9138/9139's sheets have no SLIM WINDOWS block: the slim window is lent from the 9208-9209 sheet, 180 list at their own multiplier (Brandon, 21/10/2026), in its three insulated glasses; a model with no sheet takes every window it is built with, the Clopay total typed.
+    // The 4138's sheet has no SLIM WINDOWS block: the slim window is lent from the 9208-9209 sheet, 180 list at its own multiplier (Brandon, 21/10/2026), in its three insulated glasses. The 9138 and 9139 take no slim window (Brandon, the same afternoon). A model with no sheet takes every window it is built with, the Clopay total typed.
     expect(modernFramings("4138", "4138", "tempered").map((f) => f.value)).toEqual(PLAIN_AND_GRILLES);
     expect(modernFramings("4138", "4138", "insulated_tempered").map((f) => f.value)).toEqual([...PLAIN_AND_GRILLES, "slim:black", "slim:silver"]);
-    expect(modernFramings("9138/9139", "9138", "insulated_tempered").map((f) => f.value)).toEqual([...PLAIN_AND_GRILLES, "slim:black", "slim:silver"]);
+    expect(modernFramings("9138/9139", "9138", "insulated_tempered").map((f) => f.value)).toEqual(PLAIN_AND_GRILLES);
     expect(modernFramings("9138/9139", "9139", "tempered").map((f) => f.value)).toEqual(PLAIN_AND_GRILLES);
-    expect(modernFramings("9138/9139", "9139", "insulated_tempered_midnight_gray_916").map((f) => f.value)).toEqual(["slim:black", "slim:silver"]);
-    expect(modernFramings("no-sheet", "9138", "insulated_tempered").map((f) => f.value)).toEqual([...PLAIN_AND_GRILLES, "slim:black", "slim:silver"]);
+    expect(modernFramings("9138/9139", "9139", "insulated_tempered_midnight_gray_916")).toEqual([]);
+    expect(modernFramings("no-sheet", "9138", "insulated_tempered").map((f) => f.value)).toEqual(PLAIN_AND_GRILLES);
+    expect(modernFramings("no-sheet", "4138", "insulated_tempered").map((f) => f.value)).toEqual([...PLAIN_AND_GRILLES, "slim:black", "slim:silver"]);
     // The sheet-priced pairs: the windows the sheet prices in the glass — the slim window in the three insulated glasses Clopay builds it in.
     expect(modernFramings("4308/4309", "4308", "tempered").map((f) => f.value)).toEqual(PLAIN_AND_GRILLES);
     expect(modernFramings("4308/4309", "4308", "insulated_tempered").map((f) => f.value)).toEqual([...PLAIN_AND_GRILLES, "slim:black", "slim:silver"]);
@@ -114,10 +115,10 @@ describe("Modern Steel — Clopay's stacking chart and panel counts (19/10/2026)
       '1/8" tempered narrow reed', '1/8" tempered obscure', "Insulated tempered narrow reed", '1/8" tempered midnight gray',
       '3/4" insulated tempered midnight gray', '9/16" insulated tempered midnight gray',
     ]);
-    // The 4138's and the 9138/9139's sheets have no SLIM WINDOWS block; the slim window is lent from the 9208-9209 sheet at their own multiplier (Brandon, 21/10/2026), so the 9/16" glass is theirs too.
+    // The 4138's sheet has no SLIM WINDOWS block; the slim window is lent from the 9208-9209 sheet at its own multiplier (Brandon, 21/10/2026), so the 9/16" glass is its too — not the 9138/9139's, which take no slim window.
     expect(modernGlassOptions("4138").map((g) => g.id)).toContain("insulated_tempered_midnight_gray_916");
     expect(modernGlassOptions("9208/9209")).toEqual(MODERN_GLASS_TYPES);
-    expect(modernGlassOptions("9138/9139").map((g) => g.id)).toContain("insulated_tempered_midnight_gray_916");
+    expect(modernGlassOptions("9138/9139").map((g) => g.id)).not.toContain("insulated_tempered_midnight_gray_916");
     expect(modernGlassOptions("no-sheet")).toEqual(MODERN_GLASS_TYPES);
     // A window's cost is the sheet's list at the group's multiplier: 65 list a short tempered window.
     expect(modernWindowCost("9208/9209", "tempered", "short")).toBe(cost(65, 0.865));
@@ -132,8 +133,8 @@ describe("Modern Steel — Clopay's stacking chart and panel counts (19/10/2026)
     // The 9138/9139 (CJ, 21/10/2026) at .912: 65 list a short tempered window, 242 a long insulated with grilles.
     expect(modernWindowCost("9138/9139", "tempered", "short")).toBe(cost(65, 0.912));
     expect(modernWindowCost("9138/9139", "insulated_tempered", "long_grilles")).toBe(cost(242, 0.912));
-    expect(modernWindowCost("9138/9139", "insulated_tempered", "slim")).toBe(cost(180, 0.912));
-    expect(modernWindowCost("9138/9139", "insulated_tempered_midnight_gray_916", "slim")).toBe(cost(180, 0.912));
+    expect(modernWindowCost("9138/9139", "insulated_tempered", "slim")).toBeNull();
+    expect(modernWindowCost("9138/9139", "insulated_tempered_midnight_gray_916", "slim")).toBeNull();
     expect(modernWindowCost("4138", "insulated_tempered_frosted", "slim")).toBe(cost(180, 0.776));
     expect(modernWindowCost("4138", "tempered", "slim")).toBeNull();
     expect(modernWindowCost("no-sheet", "tempered", "short")).toBeNull();
@@ -238,9 +239,9 @@ describe("Modern Steel — Clopay's stacking chart and panel counts (19/10/2026)
         for (const x of glass) expect(modernWindowCost(g, x.id, f.price), `${g} ${f.value} in ${x.id}`).not.toBeNull();
       }
     }
-    // The 9138/9139: the sheet's windows and the lent slim window (21/10/2026). No sheet: every window the model takes, in every glass.
-    expect(v(modernFramingChoices("9138/9139", "9138"))).toEqual(["short", "long", "short_grilles:REC12", "long_grilles:REC14", "short_grilles:SQ22", "long_grilles:SQ24", "slim:black", "slim:silver"]);
-    expect(v(modernFramingChoices("no-sheet", "9138"))).toEqual(["short", "long", "short_grilles:REC12", "long_grilles:REC14", "short_grilles:SQ22", "long_grilles:SQ24", "slim:black", "slim:silver"]);
+    // The 9138/9139: the sheet's windows, no slim window (Brandon, 21/10/2026). No sheet: every window the model takes, in every glass.
+    expect(v(modernFramingChoices("9138/9139", "9138"))).toEqual(["short", "long", "short_grilles:REC12", "long_grilles:REC14", "short_grilles:SQ22", "long_grilles:SQ24"]);
+    expect(v(modernFramingChoices("no-sheet", "9138"))).toEqual(["short", "long", "short_grilles:REC12", "long_grilles:REC14", "short_grilles:SQ22", "long_grilles:SQ24"]);
     expect(modernGlassForFraming("no-sheet", modernFramingChoices("no-sheet", "9138")[0])).toEqual(modernGlassOptions("no-sheet"));
   });
 

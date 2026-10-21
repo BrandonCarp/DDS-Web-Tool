@@ -1749,6 +1749,10 @@ def read_modern_sheet(ws, wsf, margins):
     }
 
 
+# Groups the slim window is not offered on, whatever the lender has (Brandon, 21/10/2026): the 9138 and 9139.
+NO_SLIM_WINDOW = {"9138/9139"}
+
+
 def lend_slim_window(infos):
     """
     Every Modern Steel door takes the slim window (Clopay's window
@@ -1756,13 +1760,17 @@ def lend_slim_window(infos):
     but only the 9208-9209 and 4308-4309 sheets carry a SLIM WINDOWS block —
     the same 180 list, in the same three glasses. A sheet without one takes
     that list at its own multiplier (Brandon, 21/10/2026: "the pricing from
-    the 4309 or wherever we have it").
+    the 4309 or wherever we have it") — the 4138's; not the 9138/9139's
+    (Brandon, the same afternoon: no slim window on those two).
     """
     lender = next((i for i in infos if i.get("slim")), None)
     if not lender:
         return
     for info in infos:
         if info.get("slim") or "windows" not in info:
+            continue
+        if info["group"] in NO_SLIM_WINDOW:
+            print(f"  note: {info['sheet']}: no slim window (Brandon, 21/10/2026)")
             continue
         lst = lender["slim"]["list"]
         cost = money(lst * info["mult"] * K)

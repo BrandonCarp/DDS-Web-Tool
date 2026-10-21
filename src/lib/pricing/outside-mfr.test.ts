@@ -66,6 +66,9 @@ describe("Haas reads like Clopay", () => {
     for (const s of OUTSIDE_SERIES) expect(clopay, s).not.toContain(s);
     expect(SPECIAL["Haas"]).toBeUndefined();
     expect(Object.values(SO_OUTSIDE_SERIES).flat().sort()).toEqual([...OUTSIDE_SERIES].sort());
+    // The counter's order (Brandon, 21/10/2026): Value Steel, Premium Steel, Modern, Gallery, Bridgeport, then the rest as listed.
+    expect(clopay.slice(0, 5)).toEqual(["Value Steel Collection", "Premium Steel Collection", "Modern Collection", "Gallery Collection", "Bridgeport Collection"]);
+    expect(clopay.slice(5)).toEqual(["Grand Harbor Collection", "Coachman Collection", "Canyon Ridge Collection", "Avante Collection"]);
   });
 });
 

@@ -1227,13 +1227,13 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     expect(maybe("so-brochure")).toBeNull();
   });
 
-  it("prices the 9138 and 9139 off their sheet (CJ, 21/10/2026): 569 list the 8'0\" x 7'0\" door at .912 and 45, the windows a window, the slim window lent from the 9208's sheet", async () => {
+  it("prices the 9138 and 9139 off their sheet (CJ, 21/10/2026): 569 list the 8'0\" x 7'0\" door at .912 and 45, the windows a window, no slim window (Brandon, 21/10/2026)", async () => {
     await pickModern("9139");
     setWidth("8");
     setHeight("7");
     fireEvent.change(sel("so-color"), { target: { value: "White" } });
     await settle();
-    expect(options("so-framing").map((o) => o.value)).toEqual(["", "short", "long", "short_grilles:REC12", "long_grilles:REC14", "short_grilles:SQ22", "long_grilles:SQ24", "slim:black", "slim:silver"]);
+    expect(options("so-framing").map((o) => o.value)).toEqual(["", "short", "long", "short_grilles:REC12", "long_grilles:REC14", "short_grilles:SQ22", "long_grilles:SQ24"]);
     await fillOptions();
     const k = 0.99 / (1 - 0.0265);
     const grid = (list: number) => Math.round((list * 0.912 * k / 0.55) * 100) / 100;

@@ -374,10 +374,18 @@ export const SO_OUTSIDE_SERIES: Record<string, string[]> = {
 export const SO_MANUFACTURERS = ["Clopay", ...SO_OUTSIDE_MFRS] as const;
 
 /** Series selectable under a manufacturer. */
+/**
+ * Clopay's residential collections in the order the counter reaches for them
+ * (Brandon, 21/10/2026): Value Steel, Premium Steel, Modern, Gallery,
+ * Bridgeport, then the rest as the catalogue lists them.
+ */
+const CLOPAY_SERIES_FIRST = ["Value Steel Collection", "Premium Steel Collection", "Modern Collection", "Gallery Collection", "Bridgeport Collection"];
+
 export function seriesFor(mfr: string): string[] {
   if (mfr === "Clopay") {
     const outside = new Set(Object.values(SO_OUTSIDE_SERIES).flat());
-    return Object.keys(SPECIAL).filter((s) => !outside.has(s));
+    const all = Object.keys(SPECIAL).filter((s) => !outside.has(s));
+    return [...CLOPAY_SERIES_FIRST.filter((s) => all.includes(s)), ...all.filter((s) => !CLOPAY_SERIES_FIRST.includes(s))];
   }
   return SO_OUTSIDE_SERIES[mfr] ?? [];
 }

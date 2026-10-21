@@ -122,12 +122,12 @@ export interface ModernFraming {
 }
 
 /**
- * Every Modern Steel door takes the slim window (Clopay's window
- * configurations page, which names all seven; Brandon, 21/10/2026 — the
- * stacking chart's footnote named four). The sheet says which glass, and a
- * group with no slim figure offers none.
+ * The slim window is the 9208, 9209, 4308, 4309 and 4138's (Clopay's window
+ * configurations page names all seven; Brandon, 21/10/2026: not on the 9138
+ * and 9139). The sheet says which glass, and a group with no slim figure
+ * offers none.
  */
-const SLIM_MODELS: ReadonlySet<string> = MODERN_PICKER_MODELS;
+const SLIM_MODELS: ReadonlySet<string> = new Set(["9208", "9209", "4308", "4309", "4138"]);
 
 /**
  * The contemporary windows as Clopay's order list names them (Brandon,
