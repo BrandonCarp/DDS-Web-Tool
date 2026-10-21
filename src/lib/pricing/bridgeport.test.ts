@@ -297,8 +297,8 @@ describe("Bridgeport Inlay designs and inlay colour (Brandon, 12/10/2026)", () =
       expect(at("galvanized"), g).toBe(at("extension") + 55);
       expect(at("torsion", { width: "16" }), g).toBe(at("extension", { width: "16" }) + 75);
       expect(at("galvanized", { width: "16" }), g).toBe(at("extension", { width: "16" }) + 75);
-      expect(q({ model: g, variant: v, spring: "torsion" }).quote?.description, g).toContain(", torsion springs");
-      expect(q({ model: g, variant: v, spring: "galvanized" }).quote?.description, g).toContain(", galvanized torsion springs");
+      expect(q({ model: g, variant: v, spring: "torsion" }).quote?.description, g).toContain(", front torsion springs");
+      expect(q({ model: g, variant: v, spring: "galvanized" }).quote?.description, g).toContain(", galvanized front torsion springs");
     }
   });
 

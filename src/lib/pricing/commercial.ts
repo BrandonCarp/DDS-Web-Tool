@@ -190,7 +190,8 @@ export function quoteCommercial(input: CommInput): CommQuote {
     // has always said "Full vertical" and the parts catalogue says "FULL
     // VERTICAL LIFT", so the description was the only place it was wrong.
     const radiusTxt = { "15R": '15" radius track', FV: "full vertical lift track", LHR: "low headroom track" }[input.track];
-    const cspringTxt = input.cspring === "extension" ? "extension springs" : "torsion springs";
+    // Torsion springs are front torsion springs on every door quote (Brandon, 21/10/2026); no rear torsion track here.
+    const cspringTxt = input.cspring === "extension" ? "extension springs" : "front torsion springs";
     const clockTxt = input.clock === "slide" ? "inside slide lock" : "no lock";
     return {
       priced: true,

@@ -251,7 +251,7 @@ describe("complete-door description format", () => {
   it("reads the way the counter writes it", () => {
     expect(door().description).toBe(
       'Clopay Model 3200, 12\'2" x 10\'0", in the color white, insulated 24x12 windows in the third section, ' +
-      '2" angle mount track to wood, 15" radius track, torsion springs, inside slide lock',
+      '2" angle mount track to wood, 15" radius track, front torsion springs, inside slide lock',
     );
   });
 

@@ -106,7 +106,7 @@ describe("the 4138's track tables", () => {
     // No amount chosen yet: the door prices without the lift, as the 4050 does.
     expect(q({ incline: "breakaway", highLiftInches: 0 }).quote?.unitPrice).toBe(solid);
     const line = q({ incline: "breakaway", highLiftInches: 36, trackMount: "reverse_angle" }).quote!.description;
-    expect(line).toMatch(/2" REVERSE ANGLE MOUNT TRACK TO STEEL, 36″ HIGH LIFT TRACK, TORSION SPRINGS/i);
+    expect(line).toMatch(/2" REVERSE ANGLE MOUNT TRACK TO STEEL, 36″ HIGH LIFT TRACK, FRONT TORSION SPRINGS/i);
   });
 
   it("builds breakaway high lift solid only, on either mount (CJ, 21/10/2026 — the top section glass build of the day before is off the sheet)", () => {
@@ -128,7 +128,7 @@ describe("the 4138's track tables", () => {
     const fv = (extra: Record<string, unknown>) => specialDoorQuote({ ...base, style: "solid", track: "full_vertical", ...extra } as never);
     expect(fv({}).quote?.unitPrice).toBeCloseTo(solid + sell(104.96), 2);
     expect(fv({ trackMount: "continuous_angle" }).quote?.unitPrice).toBeCloseTo(solid + sell(158.62), 2);
-    expect(fv({}).quote?.description).toMatch(/, FULL VERTICAL LIFT TRACK, TORSION SPRINGS/i);
+    expect(fv({}).quote?.description).toMatch(/, FULL VERTICAL LIFT TRACK, FRONT TORSION SPRINGS/i);
     // 7'6" takes the 8FT figure; a 9'0" door the 9FT (torsion included at that height).
     const solid76 = specialDoorQuote({ ...base, height: "7.6", style: "solid", track: "r12" }).quote!.unitPrice;
     expect(fv({ height: "7.6" }).quote?.unitPrice).toBeCloseTo(solid76 + sell(119.95), 2);
@@ -143,7 +143,7 @@ describe("the 4138's track tables", () => {
     const rp = (extra: Record<string, unknown>) => specialDoorQuote({ ...base, style: "solid", track: "roof_pitch", ...extra } as never);
     expect(rp({ roofPitch: "4/12" }).quote?.unitPrice).toBeCloseTo(solid + sell(106.93), 2);
     expect(rp({ roofPitch: "6/12", trackMount: "reverse_angle" }).quote?.unitPrice).toBeCloseTo(solid + sell(218.12), 2);
-    expect(rp({ roofPitch: "4/12" }).quote?.description).toMatch(/, 4\/12 ROOF PITCH TRACK, TORSION SPRINGS/i);
+    expect(rp({ roofPitch: "4/12" }).quote?.description).toMatch(/, 4\/12 ROOF PITCH TRACK, FRONT TORSION SPRINGS/i);
     // No pitch given: the first, 1/12.
     expect(rp({}).quote?.unitPrice).toBeCloseTo(solid + sell(78.44), 2);
     expect(rp({}).quote?.description).toMatch(/1\/12 ROOF PITCH TRACK/i);
@@ -157,7 +157,7 @@ describe("the 4138's track tables", () => {
     const at = (track: string, trackMount = "bracket") => specialDoorQuote({ ...base, style: "solid", track, trackMount } as never);
     expect(at("low_headroom").quote?.unitPrice).toBeCloseTo(solid + sell(39.06), 2);          // not the stock book's 45
     expect(at("reverse_low_headroom").quote?.unitPrice).toBeCloseTo(solid + sell(45.06), 2);
-    expect(at("reverse_low_headroom").quote?.description).toMatch(/, LOW HEADROOM REAR TORSION TRACK, TORSION SPRINGS/i);
+    expect(at("reverse_low_headroom").quote?.description).toMatch(/, LOW HEADROOM REAR TORSION TRACK, REAR TORSION SPRINGS/i);
     expect(at("r12", "continuous_angle").quote?.unitPrice).toBeCloseTo(solid + sell(58.40), 2);
     expect(at("r15", "reverse_angle").quote?.unitPrice).toBeCloseTo(solid + sell(58.40), 2);
     expect(at("r12").quote?.unitPrice).toBe(solid);                                             // a bracket mount adds nothing

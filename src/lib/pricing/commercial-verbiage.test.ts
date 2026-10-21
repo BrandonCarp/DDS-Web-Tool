@@ -22,7 +22,7 @@ const complete = (model: string, o: Record<string, unknown> = {}) =>
 describe("ribbed steel verbiage", () => {
   it("words a 524 complete door as Brandon wrote it (9/10/2026): the insulation, then on like any door", () => {
     expect(complete("524")).toBe(
-      `Clopay Model 524, 9'2" x 14'0", non insulated, in the color white, solid no windows, 2" angle mount track to wood, 15" radius track, torsion springs, no lock`,
+      `Clopay Model 524, 9'2" x 14'0", non insulated, in the color white, solid no windows, 2" angle mount track to wood, 15" radius track, front torsion springs, no lock`,
     );
     expect(complete("524")).not.toContain("hollow");
     expect(complete("524")).not.toContain("ribbed"); // that wording is the sections' only

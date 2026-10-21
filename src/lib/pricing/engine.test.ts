@@ -127,7 +127,18 @@ describe("springs", () => {
   it("shows no zero-value line when torsion is included at 9ft", () => {
     const q = quoteResidential("4300", dim(16, 0, 9, 0), o("extension"));
     expect(q.lines.some((l) => /torsion/i.test(l.name))).toBe(false);
-    expect(q.description).toContain("torsion springs");
+    expect(q.description).toContain("front torsion springs");
+  });
+
+  it("says where the torsion springs sit: front, or rear on a reverse low headroom track (Brandon, 21/10/2026)", () => {
+    const q = (track: "r12" | "low_headroom" | "reverse_low_headroom", spring: "torsion" | "galvanized" | "extension") =>
+      quoteResidential("4050", dim(9, 0, 7, 0), { ...o("torsion"), track, spring }).description;
+    expect(q("r12", "torsion")).toContain(", 12″ radius track, front torsion springs, no lock");
+    expect(q("low_headroom", "torsion")).toContain(", low headroom track, front torsion springs, ");
+    expect(q("reverse_low_headroom", "torsion")).toContain(", reverse low headroom track, rear torsion springs, ");
+    expect(q("reverse_low_headroom", "galvanized")).toContain(", reverse low headroom track, galvanized rear torsion springs, ");
+    expect(q("r12", "galvanized")).toContain(", galvanized front torsion springs, ");
+    expect(q("reverse_low_headroom", "extension")).toContain(", reverse low headroom track, extension springs, ");
   });
 
   it("still charges the torsion adder below 9ft", () => {
@@ -158,7 +169,7 @@ describe("quoteResidential — full quote with add-on upcharges", () => {
     const single = priceResidential("T50S", dim(9, 0, 7, 0), "solid").price!;
     const q1 = quoteResidential("T50S", dim(9, 0, 7, 0), opts({ spring: "galvanized" }));
     expect(q1.unitPrice).toBeCloseTo(single + 40, 2);
-    expect(q1.description).toContain("galvanized torsion springs");
+    expect(q1.description).toContain("galvanized front torsion springs");
     const double = priceResidential("T50S", dim(16, 0, 7, 0), "solid").price!;
     expect(quoteResidential("T50S", dim(16, 0, 7, 0), opts({ spring: "galvanized" })).unitPrice).toBeCloseTo(double + 45, 2);
   });

@@ -876,11 +876,11 @@ describe("special order — the Coachman from CJ's sheet (12/10/2026)", () => {
     expect([...sel("so-spring").options].map((o) => o.value)).toEqual(["torsion", "galvanized"]);
     expect(sel("so-spring").value).toBe("torsion");
     expect(await total()).toBe(at(2127, true));
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/12″ RADIUS TRACK, TORSION SPRINGS, NO LOCK/i);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/12″ RADIUS TRACK, FRONT TORSION SPRINGS, NO LOCK/i);
     fireEvent.change(sel("so-spring"), { target: { value: "galvanized" } });
     await settle();
     expect(await total()).toBe(at(2127, true));
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/GALVANIZED TORSION SPRINGS/i);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/GALVANIZED FRONT TORSION SPRINGS/i);
     expect([...sel("so-color").options].map((o) => o.value)).not.toContain("Ultra-Grain Oak Medium Finish");
   });
 
@@ -1040,7 +1040,7 @@ describe("special order — high lift is the sheet-tracked doors' (the 4050 fami
     await settle();
     let line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(solid + 60, 2);
-    expect(line.description).toMatch(/, LOW HEADROOM REAR TORSION TRACK, TORSION SPRINGS/i);
+    expect(line.description).toMatch(/, LOW HEADROOM REAR TORSION TRACK, REAR TORSION SPRINGS/i);
     fireEvent.change(sel("so-track"), { target: { value: "r20" } });
     fireEvent.change(sel("so-track-mount"), { target: { value: "continuous_angle" } });
     await settle();
@@ -1057,7 +1057,7 @@ describe("special order — high lift is the sheet-tracked doors' (the 4050 fami
     await settle();
     line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(solid + sell(136.52), 2);
-    expect(line.description).toMatch(/36″ HIGH LIFT TRACK, TORSION SPRINGS/i);
+    expect(line.description).toMatch(/36″ HIGH LIFT TRACK, FRONT TORSION SPRINGS/i);
     fireEvent.change(sel("so-track"), { target: { value: "full_vertical" } });
     await settle();
     expect((await copiedQbLine(screen.getByTestId("copy-qb"))).rate).toBeCloseTo(solid + sell(104.96), 2);
@@ -1067,7 +1067,7 @@ describe("special order — high lift is the sheet-tracked doors' (the 4050 fami
     await settle();
     line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(solid + sell(137.63), 2);
-    expect(line.description).toMatch(/, 6\/12 ROOF PITCH TRACK, TORSION SPRINGS/i);
+    expect(line.description).toMatch(/, 6\/12 ROOF PITCH TRACK, FRONT TORSION SPRINGS/i);
   });
 });
 
@@ -1354,7 +1354,7 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     await settle();
     let lineRt = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(lineRt.rate).toBeCloseTo(solid + sell(45.06), 2);
-    expect(lineRt.description).toMatch(/, LOW HEADROOM REAR TORSION TRACK, TORSION SPRINGS/i);
+    expect(lineRt.description).toMatch(/, LOW HEADROOM REAR TORSION TRACK, REAR TORSION SPRINGS/i);
     fireEvent.change(sel("so-track"), { target: { value: "r15" } });
     fireEvent.change(sel("so-track-mount"), { target: { value: "continuous_angle" } });
     await settle();
@@ -1378,7 +1378,7 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     await settle();
     let line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(solid + sell(161.62), 2);
-    expect(line.description).toMatch(/60″ HIGH LIFT TRACK, TORSION SPRINGS/i);
+    expect(line.description).toMatch(/60″ HIGH LIFT TRACK, FRONT TORSION SPRINGS/i);
     fireEvent.change(sel("so-incline"), { target: { value: "deg25" } });
     await settle();
     expect(options("so-high-lift").map((o) => o.value).slice(-1)).toEqual(["72"]);
@@ -1397,7 +1397,7 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     expect(maybe("so-roof-pitch")).toBeNull();
     line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(solid + sell(158.62), 2);
-    expect(line.description).toMatch(/2" REVERSE ANGLE MOUNT TRACK TO STEEL, FULL VERTICAL LIFT TRACK, TORSION SPRINGS/i);
+    expect(line.description).toMatch(/2" REVERSE ANGLE MOUNT TRACK TO STEEL, FULL VERTICAL LIFT TRACK, FRONT TORSION SPRINGS/i);
     fireEvent.change(sel("so-track"), { target: { value: "roof_pitch" } });
     await settle();
     expect(options("so-roof-pitch").map((o) => o.value)).toEqual(["1/12", "2/12", "3/12", "4/12", "5/12", "6/12"]);
@@ -1406,7 +1406,7 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     await settle();
     line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(solid + sell(137.63), 2);
-    expect(line.description).toMatch(/, 5\/12 ROOF PITCH TRACK, TORSION SPRINGS/i);
+    expect(line.description).toMatch(/, 5\/12 ROOF PITCH TRACK, FRONT TORSION SPRINGS/i);
     // Glass on full vertical lift is not built: the reason shows and nothing prices.
     fireEvent.change(sel("so-track"), { target: { value: "full_vertical" } });
     fireEvent.change(sel("so-framing"), { target: { value: "short" } });

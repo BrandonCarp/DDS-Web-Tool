@@ -338,8 +338,11 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
       : "";
     winTxt = `${grade ? grade + " windows" : "windows"} in the top section${plain}${dn ? ", " + dn + " inserts" : ", no inserts"}`;
   }
-  const springTxt = galvanized ? "galvanized torsion springs"
-    : torsionOnly || opts.spring === "torsion" ? "torsion springs" : "extension springs";
+  // Torsion springs say where they sit (Brandon, 21/10/2026): front, or rear
+  // on a reverse low headroom track; galvanized the same with the word first.
+  const torsionTxt = opts.track === "reverse_low_headroom" ? "rear torsion springs" : "front torsion springs";
+  const springTxt = galvanized ? `galvanized ${torsionTxt}`
+    : torsionOnly || opts.spring === "torsion" ? torsionTxt : "extension springs";
   const lockTxt =
     ({ none: "no lock", slide: "inside slide lock", lockbar: "lockbar assembly", lockbar_installed: "lockbar installed" } as Record<string, string>)[opts.lock] ||
     "no lock";

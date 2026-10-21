@@ -202,7 +202,7 @@ describe("gridded door verbiage", () => {
 
   it("carries colour, options and the insert design through", () => {
     expect(d({ color: "Black", track: "low_headroom", spring: "torsion", lock: "lockbar_installed" }))
-      .toContain("in the color Black, solid no windows, low headroom track, torsion springs, lockbar installed");
+      .toContain("in the color Black, solid no windows, low headroom track, front torsion springs, lockbar installed");
     // A lockbar assembly says so, as the stock tab's line does (Brandon, 20/10/2026: it said "lockbar").
     expect(d({ lock: "lockbar" })).toMatch(/, extension springs, lockbar assembly$/);
     expect(d({ lock: "slide" })).toMatch(/, inside slide lock$/);
@@ -404,8 +404,19 @@ describe("9'0\" includes torsion", () => {
 
   it("says torsion springs at 9'0\" whatever was selected", () => {
     // The customer is getting torsion either way, so the line has to say so.
-    expect(q("9", "extension").description).toContain("torsion springs");
+    expect(q("9", "extension").description).toContain("front torsion springs");
     expect(q("9", "extension").description).not.toContain("extension springs");
+  });
+
+  it("says where the torsion springs sit: front, or rear on a low headroom rear torsion track (Brandon, 21/10/2026)", () => {
+    const q = (track: string, spring: string, variant = "4138") =>
+      specialDoorQuote({ model: variant === "4138" ? "4138" : "4050/4051/4053/4132", variant, width: "8", height: "7", color: "White", style: "solid", track, spring, lock: "none" } as never).quote!.description;
+    expect(q("r12", "torsion")).toContain(", 12″ radius track, front torsion springs, no lock");
+    expect(q("reverse_low_headroom", "torsion")).toContain(", low headroom rear torsion track, rear torsion springs, no lock");
+    expect(q("reverse_low_headroom", "galvanized")).toContain(", low headroom rear torsion track, galvanized rear torsion springs, no lock");
+    expect(q("low_headroom", "galvanized")).toContain(", low headroom track, galvanized front torsion springs, no lock");
+    expect(q("reverse_low_headroom", "torsion", "4050")).toContain(", low headroom rear torsion track, rear torsion springs, no lock");
+    expect(q("r12", "extension", "4050")).toContain(", 12″ radius track, extension springs, no lock");
   });
 
   it("matches the residential tab at 9'0\"", () => {
@@ -749,7 +760,7 @@ describe("galvanized torsion springs on special orders (5/10/2026)", () => {
   it("adds $40 on a single door and $45 on a double, and says so in the description", () => {
     expect(q("8", "7", "galvanized").unitPrice).toBeCloseTo(q("8", "7", "extension").unitPrice + 40, 2);
     expect(q("16", "7", "galvanized").unitPrice).toBeCloseTo(q("16", "7", "extension").unitPrice + 45, 2);
-    expect(q("8", "7", "galvanized").description).toContain("galvanized torsion springs");
+    expect(q("8", "7", "galvanized").description).toContain("galvanized front torsion springs");
   });
 
   it("charges only the difference where the height already includes torsion", () => {
@@ -777,7 +788,7 @@ describe("special order verbiage — Brandon's examples (8/10/2026)", () => {
 
   it("2. a 4050 with single strength windows and 32\" track", () => {
     expect(line({ style: "glass", track: "r32", spring: "torsion" })).toBe(
-      'CLOPAY MODEL 4050, 8\'0" X 7\'0", IN THE COLOR BLACK, SINGLE STRENGTH B GRADE WINDOWS IN THE TOP SECTION, NO INSERTS, 32″ RADIUS TRACK, TORSION SPRINGS, NO LOCK',
+      'CLOPAY MODEL 4050, 8\'0" X 7\'0", IN THE COLOR BLACK, SINGLE STRENGTH B GRADE WINDOWS IN THE TOP SECTION, NO INSERTS, 32″ RADIUS TRACK, FRONT TORSION SPRINGS, NO LOCK',
     );
   });
 
@@ -789,13 +800,13 @@ describe("special order verbiage — Brandon's examples (8/10/2026)", () => {
 
   it("4. a Gallery door names the collection, the grade and the insert design", () => {
     expect(line({ model: "GD1LP/GD1SP", variant: "GD1SP", width: "9", color: "White", style: "inserts", track: "r15", spring: "torsion", windesign: "ARCH1GRILLE" })).toBe(
-      'CLOPAY GALLERY COLLECTION, MODEL GD1SP, 9\'0" X 7\'0", IN THE COLOR WHITE, DOUBLE STRENGTH B GRADE WINDOWS IN THE TOP SECTION, ARCH 1 GRILLE INSERTS, 15″ RADIUS TRACK, TORSION SPRINGS, NO LOCK',
+      'CLOPAY GALLERY COLLECTION, MODEL GD1SP, 9\'0" X 7\'0", IN THE COLOR WHITE, DOUBLE STRENGTH B GRADE WINDOWS IN THE TOP SECTION, ARCH 1 GRILLE INSERTS, 15″ RADIUS TRACK, FRONT TORSION SPRINGS, NO LOCK',
     );
   });
 
   it("1. an angle mount reads before the radius, as the stock tab writes it", () => {
     expect(line({ style: "glass", track: "r32", spring: "torsion", trackMount: "continuous_angle" })).toContain(
-      'NO INSERTS, 2" CONTINUOUS ANGLE MOUNT TRACK TO WOOD, 32″ RADIUS TRACK, TORSION SPRINGS, NO LOCK',
+      'NO INSERTS, 2" CONTINUOUS ANGLE MOUNT TRACK TO WOOD, 32″ RADIUS TRACK, FRONT TORSION SPRINGS, NO LOCK',
     );
   });
 });

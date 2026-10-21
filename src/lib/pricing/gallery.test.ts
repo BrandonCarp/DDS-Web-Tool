@@ -68,8 +68,8 @@ describe("Gallery GD1SP/GD1LP special order grid (8/10/2026)", () => {
     expect(unit({ spring: "torsion", width: "16" })).toBe(unit({ spring: "extension", width: "16" }) + 75);
     expect(unit({ spring: "galvanized", width: "16" })).toBe(unit({ spring: "extension", width: "16" }) + 75);
     expect(unit({ spring: "torsion", width: "12" })).toBe(unit({ spring: "extension", width: "12" }) + 75);   // 12' is a double door
-    expect(q({ spring: "galvanized" }).quote?.description).toContain(", galvanized torsion springs");
-    expect(q({ spring: "torsion" }).quote?.description).toContain(", torsion springs");
+    expect(q({ spring: "galvanized" }).quote?.description).toContain(", galvanized front torsion springs");
+    expect(q({ spring: "torsion" }).quote?.description).toContain(", front torsion springs");
   });
 
   it("builds the GD1SP from 6'2\" and the GD1LP from 7'8\"", () => {

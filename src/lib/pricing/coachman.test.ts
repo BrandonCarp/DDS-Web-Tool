@@ -160,7 +160,7 @@ describe("Coachman special order grid (workbook of 12/10/2026)", () => {
     expect(price({ style: "inserts", windesign: "ARC1A", width: "16" })).toBe(win("ARC1A", { width: "16" }));
     // Worded like every other design — as inserts.
     expect(q({ style: "glass", windesign: "ARC1A", width: "16" }).quote?.description)
-      .toBe("Clopay Coachman Collection, Model CD, 16'0\" x 7'0\", in the color White, double strength b grade windows in the top section, ARC1A inserts, 12″ radius track, torsion springs, no lock");
+      .toBe("Clopay Coachman Collection, Model CD, 16'0\" x 7'0\", in the color White, double strength b grade windows in the top section, ARC1A inserts, 12″ radius track, front torsion springs, no lock");
   });
 
   it("offers one window layout, so there is no short-or-long choice", () => {
@@ -254,11 +254,11 @@ describe("Coachman special order grid (workbook of 12/10/2026)", () => {
     expect(unit({ spring: "galvanized", width: "16" })).toBe(plus(sell(door(2127)), 10));
     expect(unit({ spring: "torsion" })).toBe(unit({ spring: "galvanized" }));
     expect(unit({ spring: "torsion", width: "16" })).toBe(unit({ spring: "galvanized", width: "16" }));
-    expect(q({ spring: "torsion" }).quote?.description).toContain(", torsion springs, no lock");
-    expect(q({ spring: "galvanized" }).quote?.description).toContain(", galvanized torsion springs, no lock");
+    expect(q({ spring: "torsion" }).quote?.description).toContain(", front torsion springs, no lock");
+    expect(q({ spring: "galvanized" }).quote?.description).toContain(", galvanized front torsion springs, no lock");
     // No extension on a Coachman: one asked for is torsion, at the same price.
     expect(unit({ spring: "extension" })).toBe(unit({ spring: "galvanized" }));
-    expect(q({ spring: "extension" }).quote?.description).toContain(", torsion springs, no lock");
+    expect(q({ spring: "extension" }).quote?.description).toContain(", front torsion springs, no lock");
     // Only the Coachman: a Gallery door still offers extension.
     const gd = (spring: string) => specialDoorQuote({
       model: "GD1LP/GD1SP", variant: "GD1SP", width: "8", height: "7", color: "White", style: "solid",
@@ -294,19 +294,19 @@ describe("Coachman special order grid (workbook of 12/10/2026)", () => {
 
   it("names the design and the overlay colour on the line, and refuses a design Clopay does not build that way", () => {
     expect(q({ design: "12", overlayColor: "Sandtone" }).quote?.description)
-      .toBe("Clopay Coachman Collection, Model CD12, 8'0\" x 7'0\", in the color White, overlays in the color Sandtone, solid no windows, 12″ radius track, torsion springs, no lock");
+      .toBe("Clopay Coachman Collection, Model CD12, 8'0\" x 7'0\", in the color White, overlays in the color Sandtone, solid no windows, 12″ radius track, front torsion springs, no lock");
     expect(price({ design: "12", overlayColor: "Sandtone" })).toBe(price({}));   // the design and overlay change the words only
     expect(q({ design: "22", width: "12" }).reason).toMatch(/does not build design 22 at 12'0" x 7'0"/);
     expect(q({ design: "21", height: "8.3" }).reason).toMatch(/does not build design 21 at 8'0" x 8'3"/);
     expect(q({ design: "31", style: "glass" }).reason).toMatch(/series 3 and 4 designs with windows — design 31 is solid only/);
     expect(q({ design: "31" }).quote?.description).toContain("Model CD31,");
     expect(q({ design: "12", style: "glass", windesign: "SQ24", overlayColor: "White" }).quote?.description)
-      .toBe("Clopay Coachman Collection, Model CD12, 8'0\" x 7'0\", in the color White, overlays in the color White, double strength b grade windows in the top section, SQ24 inserts, 12″ radius track, torsion springs, no lock");
+      .toBe("Clopay Coachman Collection, Model CD12, 8'0\" x 7'0\", in the color White, overlays in the color White, double strength b grade windows in the top section, SQ24 inserts, 12″ radius track, front torsion springs, no lock");
   });
 
   it("words the line as a Coachman", () => {
     expect(q({}).quote?.description)
-      .toBe("Clopay Coachman Collection, Model CD, 8'0\" x 7'0\", in the color White, solid no windows, 12″ radius track, torsion springs, no lock");
+      .toBe("Clopay Coachman Collection, Model CD, 8'0\" x 7'0\", in the color White, solid no windows, 12″ radius track, front torsion springs, no lock");
     expect(q({ style: "glass", windesign: "SQ24" }).quote?.description).toContain("double strength b grade windows in the top section, SQ24 inserts");
   });
 });

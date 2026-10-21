@@ -821,6 +821,7 @@ export function specialDoorQuote(
   const modelText = modelWithDesign(input.model, input.variant || input.model, design);
   const secondName = secondColorName(input.model);
   const overlay = secondName && input.overlayColor ? `, ${secondName === "overlay" ? "overlays" : "inlay"} in the color ${input.overlayColor}` : "";
+  const torsionTxt = track === "reverse_low_headroom" ? "rear torsion springs" : "front torsion springs";
   const description =
     `Clopay ${collection}Model ${modelText}, ${feetInches(input.width)} x ${heightLabel(input.height)}, ` +
     `in the color ${input.color}${overlay}, ${winText}, ` +
@@ -831,7 +832,9 @@ export function specialDoorQuote(
         ? `${liftInches}\u2033 high lift track`
         : track === "roof_pitch" && lift.label ? lift.label
         : TRACK_TEXT[track] ?? TRACK_TEXT.r12}, ` +
-    `${spring === "galvanized" ? "galvanized torsion" : torsionOnly || spring === "torsion" ? "torsion" : "extension"} springs, ` +
+    // Torsion springs say where they sit (Brandon, 21/10/2026): front, or
+    // rear on a low headroom rear torsion track, as the residential line does.
+    `${spring === "galvanized" ? `galvanized ${torsionTxt}` : torsionOnly || spring === "torsion" ? torsionTxt : "extension springs"}, ` +
     `${LOCK_TEXT[input.lock] ?? "no lock"}`;
 
   return {
