@@ -251,7 +251,8 @@ export const SPECIAL: Record<string, SpecialSeries> = {
   // Collection on 16/10/2026, where CJ's workbook prices them. The 9208/9209
   // and 4308/4309 pairs and the 4138 are gridded off CJ's sheets of
   // 19/10/2026, a sheet a pair, so each pair is one group here as the
-  // Premium Steel families are; the 9138 and 9139 take the typed total.
+  // Premium Steel families are; the 9138/9139 pair joined off its sheet on
+  // 21/10/2026 (it took the typed total before).
   "Modern Collection": {
     "type": "margin",
     "models": {
@@ -263,11 +264,7 @@ export const SPECIAL: Record<string, SpecialSeries> = {
         "door": 45,
         "section": 49
       },
-      "9138": {
-        "door": 45,
-        "section": 49
-      },
-      "9139": {
+      "9138/9139": {
         "door": 45,
         "section": 49
       },

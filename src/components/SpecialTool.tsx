@@ -36,6 +36,7 @@ import { DoorDiagram } from "./DoorDiagram";
 import { modernFramingChoices, modernGlassForFraming, modernPanelsWide, modernPickerModel, modernStack, placeKey, type WindowPlace } from "@/lib/pricing/data/modern-steel";
 import { roofPitches, sheetInclines, sheetLiftChoices, sheetRearTorsion, sheetTrackChoices } from "@/lib/pricing/data/sheet-tracks";
 import { QtyStepper } from "./QtyStepper";
+import { BrochurePeek, MODERN_STEEL_PAGE } from "./BrochurePeek";
 
 const fmt = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -986,6 +987,8 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
             </>
           )}
         </div>
+        {/* Page 3 of the Modern Steel brochure beside every Modern Steel quote (Brandon, 21/10/2026). */}
+        {modernPickerModel(member) && <BrochurePeek page={MODERN_STEEL_PAGE} testId="so-brochure" />}
       </aside>
     </div>
   );

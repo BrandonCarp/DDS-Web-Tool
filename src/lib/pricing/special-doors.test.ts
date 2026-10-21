@@ -724,7 +724,7 @@ describe("the Modern Steel doors: the 9208/9209 and 4308/4309 pairs and the 4138
   const modern = SPECIAL["Modern Collection"].models!;
 
   it("keys the pairs as their sheets do, at the Modern Collection's 45%", () => {
-    expect(modelGroupsOf(modern)).toEqual(["4138", "4308/4309", "9138", "9139", "9208/9209"]);
+    expect(modelGroupsOf(modern)).toEqual(["4138", "4308/4309", "9138/9139", "9208/9209"]);
     for (const g of Object.keys(modern)) expect(modern[g].door, g).toBe(45);
     expect(hasGrid("9208/9209") && hasGrid("4308/4309") && hasGrid("4138")).toBe(true);
     expect(hasGrid("4308")).toBe(false);

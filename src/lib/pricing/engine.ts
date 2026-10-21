@@ -148,6 +148,8 @@ const STYLE_NAME: Record<WindowStyle, string> = {
   glass: "Glass",
   inserts: "Glass + inserts",
 };
+/** The incline on a high lift line (Brandon, 21/10/2026): "72″ high lift breakaway track". */
+const INCLINE_WORD: Record<string, string> = { straight_incline: "straight incline", breakaway: "breakaway", deg25: "25 degree" };
 const TRACK_NAME: Record<string, string> = {
   r10: "10″ radius track",
   r12: "12″ radius track",
@@ -350,7 +352,7 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
   // commercial tool has always phrased it, so the two read alike on a quote.
   const mountTxt = mountPhrase(opts.trackMount ?? "bracket");
   const baseTrack = opts.track === "high_lift"
-    ? `${opts.highLiftInches ?? 0}″ high lift track`
+    ? `${opts.highLiftInches ?? 0}″ high lift ${INCLINE_WORD[opts.incline ?? "straight_incline"]} track`
     : (TRACK_NAME[opts.track] || "12″ radius track").toLowerCase();
   const trackTxt = mountTxt ? `${mountTxt}, ${baseTrack}` : baseTrack;
   const coll = COLLECTIONS_RES[dataKey(model)] === "Gallery Collection" ? COLLECTIONS_RES[dataKey(model)] : "";

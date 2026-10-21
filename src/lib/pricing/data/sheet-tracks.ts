@@ -136,7 +136,8 @@ export function sheetTrackPrice(input: SheetTrackInput): { cost: number; label: 
     // SOLID ONLY on both mounts (CJ, 21/10/2026 — the top-section-glass
     // reverse angle build of the day before is gone from the sheet).
     if (incline === "breakaway" && input.glass !== "none") return { reason: "Breakaway high lift is built solid only." };
-    return { cost, label: `${inches}″ high lift track` };
+    // The line names the incline (Brandon, 21/10/2026): 72″ high lift breakaway track, 69″ high lift 25 degree track.
+    return { cost, label: `${inches}″ high lift ${incline === "deg25" ? "25 degree" : "breakaway"} track` };
   }
   if (input.track === "full_vertical") {
     const table = t.fullVertical[mount];
@@ -159,12 +160,14 @@ export function sheetTrackPrice(input: SheetTrackInput): { cost: number; label: 
 
 /**
  * Where a door's windows are: none, the top section alone, or elsewhere too.
- * A Modern Steel door's are where they were pressed into the drawing; any
- * other door's windows are in its top section.
+ * A Modern Steel door's are where they were pressed into the drawing — its
+ * sections numbered from the floor up, so the top section is the last of
+ * `sections`; any other door's windows are in its top section.
  */
-export function glassWhere(places: readonly { section: number }[] | undefined, glazed: boolean): GlassWhere {
+export function glassWhere(places: readonly { section: number }[] | undefined, glazed: boolean, sections?: number): GlassWhere {
   if (!glazed) return "none";
   if (!places) return "top";
   if (places.length === 0) return "none";
-  return places.every((p) => p.section === 1) ? "top" : "other";
+  const top = sections ?? Math.max(...places.map((p) => p.section));
+  return places.every((p) => p.section === top) ? "top" : "other";
 }

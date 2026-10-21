@@ -1739,6 +1739,18 @@ html, body { margin: 0; padding: 0; }
 .tool-shell .doorlb-foot { display: flex; align-items: center; gap: 10px; margin-top: 12px; font-size: 12.5px; color: var(--muted); }
 .tool-shell .doorlb-foot span { margin-right: auto; font-weight: 700; letter-spacing: .02em; }
 
+/* A brochure page beside a quote (BrochurePeek, 21/10/2026): a small picture
+   under the quote card that opens at reading size. */
+.tool-shell .brochure { margin-top: 12px; }
+.tool-shell .brochure-btn {
+  display: block; width: 100%; padding: 0; line-height: 0; overflow: hidden; cursor: zoom-in;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg);
+}
+.tool-shell .brochure-btn img { display: block; width: 100%; height: 230px; object-fit: cover; object-position: center 42%; }
+.tool-shell .modal.brochure-lb { width: auto; max-width: 94vw; padding: 12px; }
+.tool-shell .modal.brochure-lb img { display: block; width: auto; height: auto; max-width: 90vw; max-height: 86vh; border-radius: 4px; }
+.tool-shell .brochure-lb-foot { display: flex; justify-content: flex-end; margin-top: 10px; }
+
 /* The whole door, for a Modern Steel door's windows (19/10/2026): sections
    top to bottom at their own heights, drawn as a garage door's — raised steel
    with a joint between sections and a seam between panels — each split into

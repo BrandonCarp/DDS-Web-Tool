@@ -10,12 +10,15 @@
 // a window, by glass and framing — short or long, plain or with grilles, and
 // the 37" x 8" slim window in the glass it comes in — and go where they are
 // pressed into the door drawing (modern-steel.ts). A glass with no figure
-// for a framing is not built that way.
+// for a framing is not built that way. Every Modern Steel door takes the
+// slim window (Clopay's window configurations page); a sheet with no SLIM
+// WINDOWS block takes the 9208-9209 sheet's list at its own multiplier
+// (Brandon, 21/10/2026).
 
 import type { GlassOption, SheetTracks, SpringRates } from "./sheet-band";
 
 /** The groups these sheets price. */
-export const MODERN_GROUPS = ["9208/9209", "4138", "4308/4309"] as const;
+export const MODERN_GROUPS = ["9138/9139", "9208/9209", "4138", "4308/4309"] as const;
 
 /** The contemporary windows' glass, named and ordered as Clopay's list has it; the 9/16" glass is the slim window's. */
 export const MODERN_GLASS_TYPES: GlassOption[] = [
@@ -34,6 +37,20 @@ export const MODERN_GLASS_TYPES: GlassOption[] = [
 
 /** A window's cost: group -> glass id -> framing (short, short_grilles, long, long_grilles, slim). */
 export const MODERN_WINDOW_COST: Record<string, Record<string, Record<string, number>>> = {
+  // slim: the 9208-9209 sheet's 180 list at this sheet's multiplier.
+  "9138/9139": {
+    "tempered": { short: 60.28, short_grilles: 74.20, long: 120.57, long_grilles: 148.39 },
+    "insulated_tempered": { short: 98.31, short_grilles: 112.22, long: 196.62, long_grilles: 224.44, slim: 166.94 },
+    "tempered_frosted": { short: 75.12, short_grilles: 89.04, long: 150.25, long_grilles: 178.07 },
+    "insulated_tempered_frosted": { short: 112.22, short_grilles: 126.13, long: 224.44, long_grilles: 252.27, slim: 166.94 },
+    "insulated_tempered_obscure": { short: 111.29, short_grilles: 125.21, long: 222.59, long_grilles: 250.41 },
+    "tempered_narrow_reed": { short: 88.11, short_grilles: 102.02, long: 176.22, long_grilles: 204.04 },
+    "tempered_obscure": { short: 69.56, short_grilles: 83.47, long: 139.12, long_grilles: 166.94 },
+    "insulated_tempered_narrow_reed": { short: 129.84, short_grilles: 143.76, long: 259.69, long_grilles: 287.51 },
+    "tempered_midnight_gray": { short: 75.12, short_grilles: 89.04, long: 150.25, long_grilles: 178.07 },
+    "insulated_tempered_midnight_gray": { short: 112.22, short_grilles: 126.13, long: 224.44, long_grilles: 252.27 },
+    "insulated_tempered_midnight_gray_916": { slim: 166.94 },
+  },
   "9208/9209": {
     "tempered": { short: 57.18, short_grilles: 70.37, long: 114.36, long_grilles: 140.75 },
     "insulated_tempered": { short: 93.24, short_grilles: 106.44, long: 186.49, long_grilles: 212.88, slim: 158.34 },
@@ -47,17 +64,19 @@ export const MODERN_WINDOW_COST: Record<string, Record<string, Record<string, nu
     "insulated_tempered_midnight_gray": { short: 106.44, short_grilles: 119.63, long: 212.88, long_grilles: 239.27 },
     "insulated_tempered_midnight_gray_916": { slim: 158.34 },
   },
+  // slim: the 9208-9209 sheet's 180 list at this sheet's multiplier.
   "4138": {
     "tempered": { short: 51.29, short_grilles: 63.13, long: 102.59, long_grilles: 126.26 },
-    "insulated_tempered": { short: 83.65, short_grilles: 95.49, long: 167.30, long_grilles: 190.97 },
+    "insulated_tempered": { short: 83.65, short_grilles: 95.49, long: 167.30, long_grilles: 190.97, slim: 142.05 },
     "tempered_frosted": { short: 63.92, short_grilles: 75.76, long: 127.84, long_grilles: 151.52 },
-    "insulated_tempered_frosted": { short: 95.49, short_grilles: 107.32, long: 190.97, long_grilles: 214.65 },
+    "insulated_tempered_frosted": { short: 95.49, short_grilles: 107.32, long: 190.97, long_grilles: 214.65, slim: 142.05 },
     "insulated_tempered_obscure": { short: 94.70, short_grilles: 106.54, long: 189.40, long_grilles: 213.07 },
     "tempered_narrow_reed": { short: 74.97, short_grilles: 86.81, long: 149.94, long_grilles: 173.61 },
     "tempered_obscure": { short: 59.19, short_grilles: 71.02, long: 118.37, long_grilles: 142.05 },
     "insulated_tempered_narrow_reed": { short: 110.48, short_grilles: 122.32, long: 220.96, long_grilles: 244.64 },
     "tempered_midnight_gray": { short: 63.92, short_grilles: 75.76, long: 127.84, long_grilles: 151.52 },
     "insulated_tempered_midnight_gray": { short: 95.49, short_grilles: 107.32, long: 190.97, long_grilles: 214.65 },
+    "insulated_tempered_midnight_gray_916": { slim: 142.05 },
   },
   "4308/4309": {
     "tempered": { short: 46.54, short_grilles: 57.27, long: 93.07, long_grilles: 114.55 },
@@ -81,6 +100,7 @@ export const MODERN_WINDOW_COST: Record<string, Record<string, Record<string, nu
  * two height bands — up to 8'0", and over. Cost, before margin.
  */
 export const MODERN_ULTRA_GRAIN: Record<string, { upTo8ft: { single: number; double: number }; over8ft: { single: number; double: number } }> = {
+  "9138/9139": { upTo8ft: { single: 158.77, double: 317.53 }, over8ft: { single: 264.61, double: 529.22 } },
   "9208/9209": { upTo8ft: { single: 158.77, double: 317.53 }, over8ft: { single: 264.61, double: 529.22 } },
   "4138": { upTo8ft: { single: 158.77, double: 317.53 }, over8ft: { single: 264.61, double: 529.22 } },
   "4308/4309": { upTo8ft: { single: 158.77, double: 317.53 }, over8ft: { single: 264.61, double: 529.22 } },
@@ -95,6 +115,27 @@ export const MODERN_ULTRA_GRAIN: Record<string, { upTo8ft: { single: number; dou
  * and an angle mount on 12" or 15" radius track. Cost, before margin.
  */
 export const MODERN_TRACKS: Record<string, SheetTracks> = {
+  "9138/9139": {
+    highLift: {
+      breakaway: {
+        bracket: { 36: 160.45, 39: 160.45, 42: 160.45, 45: 160.45, 48: 160.45, 51: 160.45, 54: 160.45, 57: 175.20, 60: 189.94, 63: 204.69, 66: 219.44, 69: 234.18, 72: 248.93, 75: 263.68, 78: 278.42, 81: 293.17, 84: 307.92, 87: 322.66, 90: 337.41, 93: 352.16, 96: 366.90, 99: 381.65, 102: 396.40, 105: 411.14, 108: 425.89, 111: 440.64, 114: 455.38, 117: 470.13 },
+        angle: { 36: 260.62, 39: 260.62, 42: 260.62, 45: 260.62, 48: 260.62, 51: 260.62, 54: 260.62, 57: 275.36, 60: 290.11, 63: 304.86, 66: 319.60, 69: 334.35, 72: 349.10, 75: 363.84, 78: 378.59, 81: 393.33, 84: 408.08, 87: 422.83, 90: 437.57, 93: 452.32, 96: 467.07, 99: 481.81, 102: 496.56, 105: 511.31, 108: 526.05, 111: 540.80, 114: 555.55, 117: 570.29 },
+      },
+      deg25: {
+        bracket: { 36: 189.20, 39: 189.20, 42: 189.20, 45: 189.20, 48: 189.20, 51: 189.20, 54: 189.20, 57: 205.90, 60: 222.59, 63: 239.28, 66: 255.98, 69: 272.67, 72: 289.37 },
+        angle: { 36: 289.37, 39: 289.37, 42: 289.37, 45: 289.37, 48: 289.37, 51: 289.37, 54: 289.37, 57: 306.06, 60: 322.76, 63: 339.45, 66: 356.14, 69: 372.84, 72: 389.53 },
+      },
+    },
+    fullVertical: {
+      bracket: { "7": 123.35, "8": 140.97, "9": 158.60, "10": 176.22 },
+      angle: { "7": 186.42, "8": 204.04, "9": 221.66, "10": 239.28 },
+    },
+    roofPitch: {
+      bracket: { "1/12": 92.19, "2/12": 92.19, "3/12": 125.67, "4/12": 125.67, "5/12": 161.75, "6/12": 161.75 },
+      angle: { "1/12": 186.79, "2/12": 186.79, "3/12": 220.27, "4/12": 220.27, "5/12": 256.35, "6/12": 256.35 },
+    },
+    adders: { lowHeadroom: 45.91, lowHeadroomRearTorsion: 52.96, angleMount12r15r: 68.63 },
+  },
   "9208/9209": {
     highLift: {
       breakaway: {
@@ -167,6 +208,7 @@ export const MODERN_TRACKS: Record<string, SheetTracks> = {
  * are the one adder the margin does not lift (Brandon, 21/10/2026).
  */
 export const MODERN_SPRING_RATES: Record<string, SpringRates> = {
+  "9138/9139": { torsion: { single: 45, double: 55 }, galvanized: { single: 50, double: 70 } },
   "9208/9209": { torsion: { single: 45, double: 55 }, galvanized: { single: 50, double: 70 } },
   "4138": { torsion: { single: 45, double: 55 }, galvanized: { single: 50, double: 70 } },
   "4308/4309": { torsion: { single: 45, double: 55 }, galvanized: { single: 50, double: 70 } },

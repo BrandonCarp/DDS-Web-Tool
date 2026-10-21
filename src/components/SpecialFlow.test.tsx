@@ -1059,7 +1059,7 @@ describe("special order — high lift is the sheet-tracked doors' (the 4050 fami
     await settle();
     line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(sheetSolid + sell(136.52), 2);
-    expect(line.description).toMatch(/36″ HIGH LIFT TRACK,  FRONT TORSION SPRINGS/i);
+    expect(line.description).toMatch(/36″ HIGH LIFT BREAKAWAY TRACK,  FRONT TORSION SPRINGS/i);
     fireEvent.change(sel("so-track"), { target: { value: "full_vertical" } });
     await settle();
     expect((await copiedQbLine(screen.getByTestId("copy-qb"))).rate).toBeCloseTo(sheetSolid + sell(104.96), 2);
@@ -1086,7 +1086,7 @@ describe("special order — high lift is the sheet-tracked doors' (the 4050 fami
     expect(sel("so-incline").value).toBe("deg25");
     fireEvent.change(sel("so-high-lift"), { target: { value: "36" } });
     await settle();
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS IN THE TOP SECTION.*36″ HIGH LIFT TRACK/i);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS IN THE TOP SECTION.*36″ HIGH LIFT 25 DEGREE TRACK/i);
     fireEvent.change(sel("so-framing"), { target: { value: "" } });
     await settle();
     expect(options("so-incline").map((o) => o.value)).toEqual(["breakaway", "deg25"]);
@@ -1201,6 +1201,51 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     fireEvent.click(maybe("so-configure")!);
     await settle();
   }
+
+  it("shows page 3 of the Modern Steel brochure under the quote card on every Modern Steel door, full size when pressed (Brandon, 21/10/2026)", async () => {
+    await pickModern("9138");
+    const thumb = screen.getByTestId("so-brochure-open").querySelector("img")!;
+    expect(thumb.getAttribute("src")).toBe("/brochure/modern-steel-p3-thumb.jpg");
+    expect(maybe("so-brochure-lightbox")).toBeNull();
+    fireEvent.click(screen.getByTestId("so-brochure-open"));
+    expect(screen.getByTestId("so-brochure-lightbox").querySelector("img")!.getAttribute("src")).toBe("/brochure/modern-steel-p3.jpg");
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(maybe("so-brochure-lightbox")).toBeNull();
+    fireEvent.click(screen.getByTestId("so-brochure-open"));
+    fireEvent.click(screen.getByTestId("so-brochure-close"));
+    expect(maybe("so-brochure-lightbox")).toBeNull();
+    // Still there with the door priced; not on a Premium Steel door.
+    setWidth("8");
+    setHeight("7");
+    fireEvent.change(sel("so-color"), { target: { value: "White" } });
+    await settle();
+    await fillOptions();
+    expect(maybe("so-brochure")).toBeTruthy();
+    expect(maybe("copy-qb")).toBeTruthy();
+    cleanup();
+    await configured();
+    expect(maybe("so-brochure")).toBeNull();
+  });
+
+  it("prices the 9138 and 9139 off their sheet (CJ, 21/10/2026): 569 list the 8'0\" x 7'0\" door at .912 and 45, the windows a window, the slim window lent from the 9208's sheet", async () => {
+    await pickModern("9139");
+    setWidth("8");
+    setHeight("7");
+    fireEvent.change(sel("so-color"), { target: { value: "White" } });
+    await settle();
+    expect(options("so-framing").map((o) => o.value)).toEqual(["", "short", "long", "short_grilles:REC12", "long_grilles:REC14", "short_grilles:SQ22", "long_grilles:SQ24", "slim:black", "slim:silver"]);
+    await fillOptions();
+    const k = 0.99 / (1 - 0.0265);
+    const grid = (list: number) => Math.round((list * 0.912 * k / 0.55) * 100) / 100;
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).rate).toBe(grid(569));
+    fireEvent.change(sel("so-framing"), { target: { value: "short" } });
+    await settle();
+    fireEvent.click(screen.getByTestId("door-panel-1-1-add"));
+    await settle();
+    const line = await copiedQbLine(screen.getByTestId("copy-qb"));
+    expect(line.rate).toBeCloseTo(grid(569) + Math.round((Math.round(65 * 0.912 * k * 100) / 100 / 0.55) * 100) / 100, 2);
+    expect(line.description).toMatch(/CLOPAY MODERN COLLECTION,  MODEL 9139,  8'0" X 7'0",  IN THE COLOR WHITE,  1\/8" TEMPERED SHORT 19 1\/2X16 WINDOWS IN SECTION 1,  GL-SOL-SOL-SOL,  LEFT SIDE INSIDE LOOKING OUT,  NO INSERTS/i);
+  });
 
   it("draws the door as Clopay stacks it, takes a window per press, and prices each at CJ's rate", async () => {
     await pickModern("4308");
@@ -1331,7 +1376,7 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     await settle();
     expect(document.querySelectorAll(".dsec")).toHaveLength(5);
     expect(document.querySelectorAll("[data-testid='door-section-5'] .dpanel")).toHaveLength(3);
-    expect([1, 2, 3, 4, 5].map((i) => screen.getByTestId(`door-section-${i}-height`).textContent)).toEqual(["24″", "21″", "21″", "21″", "21″"]);
+    expect([1, 2, 3, 4, 5].map((i) => screen.getByTestId(`door-section-${i}-height`).textContent)).toEqual(["21″", "21″", "21″", "21″", "24″"]);   // numbered from the floor up (Brandon, 21/10/2026): the 24" top section is section 5
     fireEvent.click(screen.getByTestId("door-panel-5-1-add"));
     await settle();
     // CJ's sheet of 21/10/2026 prices the 9FT and 10FT doors under 8'0" as one band, 1116 list, so this one prices: the door and its one window.
@@ -1400,7 +1445,7 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     await settle();
     let line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(solid + sell(161.62), 2);
-    expect(line.description).toMatch(/60″ HIGH LIFT TRACK,  FRONT TORSION SPRINGS/i);
+    expect(line.description).toMatch(/60″ HIGH LIFT BREAKAWAY TRACK,  FRONT TORSION SPRINGS/i);
     fireEvent.change(sel("so-incline"), { target: { value: "deg25" } });
     await settle();
     expect(options("so-high-lift").map((o) => o.value).slice(-1)).toEqual(["72"]);
@@ -1411,7 +1456,7 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     await settle();
     line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(solid + sell(274.63), 2);
-    expect(line.description).toMatch(/2" REVERSE ANGLE MOUNT TRACK TO STEEL,  60″ HIGH LIFT TRACK/i);
+    expect(line.description).toMatch(/2" REVERSE ANGLE MOUNT TRACK TO STEEL,  60″ HIGH LIFT 25 DEGREE TRACK/i);
     // Full vertical lift, by the door's height; the pitch box only on roof pitch.
     fireEvent.change(sel("so-track"), { target: { value: "full_vertical" } });
     await settle();

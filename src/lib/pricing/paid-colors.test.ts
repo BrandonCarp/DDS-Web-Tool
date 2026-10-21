@@ -10,21 +10,24 @@ const LUSTRA = ["Lustra Black", "Lustra Charcoal", "Lustra Silver"];
 const PLANK = ["Ultra-Grain Plank Coastal Gray Finish", "Ultra-Grain Plank Natural Finish", "Ultra-Grain Plank Cedar Finish", "Ultra-Grain Plank Kona Finish", "Ultra-Grain Plank Barnwood Finish", "Ultra-Grain Plank Espresso Finish"];
 
 /** Brandon's list of 20/10/2026: the paid colours each model takes, and the group it is quoted under. */
+// Clopay's Modern Steel colour chart (Brandon, 21/10/2026), superseding his list of the 20th.
 const PAID: [string, string, string[]][] = [
   ["9208", "9208/9209", ["Iron Ore", ...LUSTRA, ...CYPRESS, ...PLANK]],
   ["9209", "9208/9209", ["Iron Ore", ...LUSTRA, ...CYPRESS]],
   ["9202", "9200/9201/9202/9203/9205", ["Iron Ore", ...CYPRESS]],
   ["9205", "9200/9201/9202/9203/9205", ["Iron Ore", ...CYPRESS]],
-  ["4301", "4300/4301/4302/4305/4310", ["Iron Ore", ...CYPRESS]],
+  ["4301", "4300/4301/4302/4305/4310", ["Iron Ore"]],
+  ["4302", "4300/4301/4302/4305/4310", ["Iron Ore", ...CYPRESS]],
   ["4305", "4300/4301/4302/4305/4310", ["Iron Ore", ...CYPRESS]],
   ["4308", "4308/4309", ["Iron Ore", ...CYPRESS]],
-  ["4132", "4050/4051/4053/4132", CYPRESS],
+  ["4309", "4308/4309", ["Iron Ore", ...CYPRESS]],
+  ["4132", "4050/4051/4053/4132", ["Iron Ore", ...CYPRESS]],
   ["9201", "9200/9201/9202/9203/9205", ["Iron Ore"]],
-  ["9131", "9130/9131/9132/9133", ["Iron Ore"]],
-  ["9132", "9130/9131/9132/9133", ["Iron Ore"]],
-  ["9138", "9138", ["Iron Ore"]],
-  ["9139", "9139", ["Iron Ore"]],
-  ["4138", "4138", ["Iron Ore"]],
+  ["9131", "9130/9131/9132/9133", ["Iron Ore", ...CYPRESS]],
+  ["9132", "9130/9131/9132/9133", ["Iron Ore", ...CYPRESS]],
+  ["9138", "9138/9139", ["Iron Ore", ...CYPRESS]],
+  ["9139", "9138/9139", ["Iron Ore", ...CYPRESS]],
+  ["4138", "4138", ["Iron Ore", ...CYPRESS]],
 ];
 
 const quote = (group: string, member: string, color: string, width = "8", height = "7") =>
@@ -48,7 +51,7 @@ describe("the paid colours by model (Brandon, 20/10/2026)", () => {
 
   it("charges each paid colour the sheet's ULTRA COLOR block over the paint colours, single or double, lifted by the group's margin", () => {
     for (const [model, group, paid] of PAID) {
-      if (!hasGrid(group)) continue;                                   // the 9138 and 9139 price on a typed total
+      expect(hasGrid(group), group).toBe(true);                        // every one is off a sheet now (the 9138/9139 since 21/10/2026)
       const ug = sheetUltraGrain(group)!;
       expect(ug, group).toBeTruthy();
       const lift = (cost: number) => Math.round((cost / (1 - (doorMargin(group) ?? 0) / 100)) * 100) / 100;
@@ -70,16 +73,22 @@ describe("the paid colours by model (Brandon, 20/10/2026)", () => {
     expect(colorKeyFor("9203")).toBeNull();
   });
 
-  it("keeps the paint colours its family's: the 9202 the 9200's, the 4301 the 4300's, the 4132 the 4050's, the 9138 the 4138's", () => {
+  it("paints each model as Clopay's chart has it (21/10/2026): Hunter Green on the 9201, 9131 and 4301 alone among them", () => {
     const paint = (key: string) => COLORS[key].filter((c) => !colorTakesPremium(key, c));
-    expect(paint("9202")).toEqual(paint("9200"));
+    const NO_HG = ["White", "Almond", "Desert Tan", "Sandtone", "Chocolate Brown", "Bronze", "Mocha Brown", "Charcoal", "Black"];
+    for (const k of ["9208", "9209", "4308", "4309", "9202", "9205", "9132", "4302", "4305", "4132"]) expect(paint(k), k).toEqual(NO_HG);
+    for (const k of ["9201", "9131", "4301"]) expect(paint(k), k).toContain("Hunter Green");
     expect(paint("9131")).toEqual(paint("9130-9133"));
     expect(paint("4301")).toEqual(paint("4300"));
-    expect(paint("4132")).toEqual(paint("4050-4051-4053"));
     expect(paint("9138")).toEqual(paint("4138"));
-    // The 4132 takes no Iron Ore; the 4050 family takes no premium colour at all.
-    expect(specialOrderColors("4132")).not.toContain("Iron Ore");
+    expect(paint("4138")).toEqual(expect.arrayContaining(NO_HG));
+    expect(paint("4138")).toHaveLength(NO_HG.length);
+    // The 4132 takes Iron Ore on the chart; the 4050 family takes no premium colour at all.
+    expect(specialOrderColors("4132")).toContain("Iron Ore");
     expect(specialOrderColors("4050-4051-4053").some((c) => colorTakesPremium("4050-4051-4053", c))).toBe(false);
+    // The 4301 no Cypress; the 9209 no Plank.
+    expect(specialOrderColors("4301").some((c) => /Cypress/.test(c))).toBe(false);
+    expect(specialOrderColors("9209").some((c) => /Plank/.test(c))).toBe(false);
   });
 
   it("prices the 4132's Cypress finishes off the block every Premium Steel sheet carries, which is one block", () => {

@@ -699,7 +699,7 @@ export function specialDoorQuote(
     if (track === "high_lift" && liftInches <= 0) return { value: 0, label: "" };
     const r = sheetTrackPrice({
       group: input.model, track, mount, incline: input.incline, inches: liftInches, heightFt: hf, heightIn: hi,
-      pitch: input.roofPitch, glass: glassWhere(input.windowsAt, style !== "solid"),
+      pitch: input.roofPitch, glass: glassWhere(input.windowsAt, style !== "solid", modern ? modernStack(hf, hi)?.length : undefined),
     });
     if ("reason" in r) return { value: 0, label: "", reason: r.reason };
     const margin = doorMargin(input.model);
@@ -827,9 +827,8 @@ export function specialDoorQuote(
     // An angle mount names what it fastens to, exactly as the commercial tool
     // phrases it, so the two read alike on a quote.
     (mountPhrase(mount) ? `${mountPhrase(mount)}, ` : "") +
-    `${track === "high_lift" && liftInches
-        ? `${liftInches}\u2033 high lift track`
-        : track === "roof_pitch" && lift.label ? lift.label
+    `${(track === "high_lift" && liftInches) || track === "roof_pitch"
+        ? lift.label || TRACK_TEXT[track]
         : TRACK_TEXT[track] ?? TRACK_TEXT.r12}, ` +
     // Torsion springs say where they sit (Brandon, 21/10/2026): front, or
     // rear on a low headroom rear torsion track, as the residential line does.

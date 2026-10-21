@@ -207,13 +207,15 @@ export const COLORS: Record<string, string[]> = {
   // colours Clopay's Modern Steel brochure lists, keyed a model since the
   // pairs are gridded as pairs but coloured alike. The Ultra-Grain finishes
   // are in PREMIUM_COLORS, where the sheet's ULTRA COLOR block prices them.
+  // Every list on this brochure's chart is as the chart has it (Brandon,
+  // 21/10/2026): no Hunter Green on the 9208, 9209, 4308, 4309, 9202, 9205,
+  // 9132, 4302, 4305 or 4132; the 9201, 9131 and 4301 keep it.
   "9208": [
     "White",
     "Almond",
     "Desert Tan",
     "Sandtone",
     "Chocolate Brown",
-    "Hunter Green",
     "Bronze",
     "Mocha Brown",
     "Charcoal",
@@ -226,7 +228,6 @@ export const COLORS: Record<string, string[]> = {
     "Desert Tan",
     "Sandtone",
     "Chocolate Brown",
-    "Hunter Green",
     "Bronze",
     "Mocha Brown",
     "Charcoal",
@@ -239,7 +240,6 @@ export const COLORS: Record<string, string[]> = {
     "Desert Tan",
     "Sandtone",
     "Chocolate Brown",
-    "Hunter Green",
     "Bronze",
     "Mocha Brown",
     "Charcoal",
@@ -252,7 +252,6 @@ export const COLORS: Record<string, string[]> = {
     "Desert Tan",
     "Sandtone",
     "Chocolate Brown",
-    "Hunter Green",
     "Bronze",
     "Mocha Brown",
     "Charcoal",
@@ -272,7 +271,7 @@ export const COLORS: Record<string, string[]> = {
     "Mocha Brown",
     "Charcoal"
   ],
-  // The 9138 and 9139 (special order on a typed Clopay total): the 4138's paint colours.
+  // The 9138 and 9139: the 4138's paint colours.
   "9138": [
     "White",
     "Chocolate Brown",
@@ -318,7 +317,6 @@ export const COLORS: Record<string, string[]> = {
     "Desert Tan",
     "Sandtone",
     "Chocolate Brown",
-    "Hunter Green",
     "Bronze",
     "Mocha Brown",
     "Charcoal",
@@ -331,7 +329,6 @@ export const COLORS: Record<string, string[]> = {
     "Desert Tan",
     "Sandtone",
     "Chocolate Brown",
-    "Hunter Green",
     "Bronze",
     "Mocha Brown",
     "Charcoal",
@@ -357,7 +354,6 @@ export const COLORS: Record<string, string[]> = {
     "Desert Tan",
     "Sandtone",
     "Chocolate Brown",
-    "Hunter Green",
     "Bronze",
     "Mocha Brown",
     "Charcoal",
@@ -382,7 +378,17 @@ export const COLORS: Record<string, string[]> = {
     "Desert Tan",
     "Sandtone",
     "Chocolate Brown",
-    "Hunter Green",
+    "Bronze",
+    "Mocha Brown",
+    "Charcoal",
+    "Black"
+  ],
+  "4302": [
+    "White",
+    "Almond",
+    "Desert Tan",
+    "Sandtone",
+    "Chocolate Brown",
     "Bronze",
     "Mocha Brown",
     "Charcoal",
@@ -391,10 +397,13 @@ export const COLORS: Record<string, string[]> = {
   "4132": [
     "White",
     "Almond",
+    "Desert Tan",
     "Sandtone",
     "Chocolate Brown",
-    "Black",
-    "Bronze"
+    "Bronze",
+    "Mocha Brown",
+    "Charcoal",
+    "Black"
   ]
 };
 
@@ -490,12 +499,11 @@ export const PREMIUM_COLORS: Record<string, string[]> = {
     "Ultra-Grain Classic Cherry Finish",
     "Ultra-Grain Classic Walnut Finish"
   ],
-  // Modern Steel (CJ's sheets of 19/10/2026): Iron Ore and, on the 9208 and
-  // 9209, the Ultra-Grain Cypress and Plank finishes Clopay's Modern Steel
-  // brochure lists, all at the sheet's ULTRA COLOR (AND PLANK) block. The
-  // 4308 and 4309 come in the paint colours alone, so Iron Ore is their one
-  // premium colour; the 4138's list is Clopay's order form's (20/10/2026).
-  // The Lustra finishes on the 9208 take the same adder as Iron Ore (Brandon, 20/10/2026).
+  // Modern Steel (CJ's sheets of 19/10/2026): Iron Ore and the Ultra-Grain
+  // finishes Clopay's Modern Steel brochure lists — the Cypress finishes, and
+  // the Plank finishes on the 9208 alone — all at the sheet's ULTRA COLOR
+  // (AND PLANK) block. The Lustra finishes on the 9208 and 9209 take the
+  // same adder as Iron Ore (Brandon, 20/10/2026).
   "9208": [
     "Iron Ore",
     "Lustra Black",
@@ -520,17 +528,13 @@ export const PREMIUM_COLORS: Record<string, string[]> = {
     "Ultra-Grain Cypress Medium Finish",
     "Ultra-Grain Cypress Cherry Finish",
     "Ultra-Grain Cypress Walnut Finish",
-    "Ultra-Grain Cypress Slate Finish",
-    "Ultra-Grain Plank Coastal Gray Finish",
-    "Ultra-Grain Plank Natural Finish",
-    "Ultra-Grain Plank Cedar Finish",
-    "Ultra-Grain Plank Kona Finish",
-    "Ultra-Grain Plank Barnwood Finish",
-    "Ultra-Grain Plank Espresso Finish"
+    "Ultra-Grain Cypress Slate Finish"
   ],
-  // The paid colours by model, Brandon's list of 20/10/2026: the 4308 (and the
-  // 9202, 9205, 4301 and 4305) Iron Ore and the Cypress finishes; the 4132 the
-  // Cypress finishes alone; the 9201, 9131, 9132, 9138 and 9139 Iron Ore alone.
+  // The paid colours by model, Clopay's Modern Steel colour chart (Brandon,
+  // 21/10/2026, superseding his list of the 20th): Iron Ore and the Cypress
+  // finishes on the 4308, 4309, 4138, 9138, 9139, 9131, 9132, 9202, 9205,
+  // 4302, 4305 and 4132; Iron Ore alone on the 9201 and 4301; the 9209 the
+  // Lustra finishes too, the Plank finishes the 9208's alone.
   "4308": [
     "Iron Ore",
     "Ultra-Grain Cypress Medium Finish",
@@ -539,7 +543,11 @@ export const PREMIUM_COLORS: Record<string, string[]> = {
     "Ultra-Grain Cypress Slate Finish"
   ],
   "4309": [
-    "Iron Ore"
+    "Iron Ore",
+    "Ultra-Grain Cypress Medium Finish",
+    "Ultra-Grain Cypress Cherry Finish",
+    "Ultra-Grain Cypress Walnut Finish",
+    "Ultra-Grain Cypress Slate Finish"
   ],
   "4138": [
     "Ultra-Grain Cypress Medium Finish",
@@ -563,13 +571,16 @@ export const PREMIUM_COLORS: Record<string, string[]> = {
     "Ultra-Grain Cypress Slate Finish"
   ],
   "4301": [
+    "Iron Ore"
+  ],
+  "4305": [
     "Iron Ore",
     "Ultra-Grain Cypress Medium Finish",
     "Ultra-Grain Cypress Cherry Finish",
     "Ultra-Grain Cypress Walnut Finish",
     "Ultra-Grain Cypress Slate Finish"
   ],
-  "4305": [
+  "4302": [
     "Iron Ore",
     "Ultra-Grain Cypress Medium Finish",
     "Ultra-Grain Cypress Cherry Finish",
@@ -580,22 +591,39 @@ export const PREMIUM_COLORS: Record<string, string[]> = {
     "Ultra-Grain Cypress Medium Finish",
     "Ultra-Grain Cypress Cherry Finish",
     "Ultra-Grain Cypress Walnut Finish",
-    "Ultra-Grain Cypress Slate Finish"
+    "Ultra-Grain Cypress Slate Finish",
+    "Iron Ore"
   ],
   "9201": [
     "Iron Ore"
   ],
   "9131": [
-    "Iron Ore"
+    "Iron Ore",
+    "Ultra-Grain Cypress Medium Finish",
+    "Ultra-Grain Cypress Cherry Finish",
+    "Ultra-Grain Cypress Walnut Finish",
+    "Ultra-Grain Cypress Slate Finish"
   ],
   "9132": [
-    "Iron Ore"
+    "Iron Ore",
+    "Ultra-Grain Cypress Medium Finish",
+    "Ultra-Grain Cypress Cherry Finish",
+    "Ultra-Grain Cypress Walnut Finish",
+    "Ultra-Grain Cypress Slate Finish"
   ],
   "9138": [
-    "Iron Ore"
+    "Iron Ore",
+    "Ultra-Grain Cypress Medium Finish",
+    "Ultra-Grain Cypress Cherry Finish",
+    "Ultra-Grain Cypress Walnut Finish",
+    "Ultra-Grain Cypress Slate Finish"
   ],
   "9139": [
-    "Iron Ore"
+    "Iron Ore",
+    "Ultra-Grain Cypress Medium Finish",
+    "Ultra-Grain Cypress Cherry Finish",
+    "Ultra-Grain Cypress Walnut Finish",
+    "Ultra-Grain Cypress Slate Finish"
   ]
 };
 
@@ -612,13 +640,12 @@ export const PREMIUM_COLORS: Record<string, string[]> = {
  */
 /**
  * Catalogue keys whose special orders list the premium colours their sheets
- * price — and the 9138 and 9139, priced on a typed Clopay total, where the
- * colour is wording the total already covers.
+ * price (the 9138 and 9139 off their sheet since 21/10/2026).
  */
 const SHEET_PRICED_KEYS = new Set([
   "GD1LP-GD1SP", "GD2LP-GD2SP", "GD1LU-GD1SU", "GD2LU-GD2SU",
   "BD1EU-BD1NU", "BD1CU", "BD2EU-BD2NU", "BD2CU",
-  "9130-9133", "9131", "9132", "9200", "9201", "9202", "9205", "4300", "4301", "4305", "4132",
+  "9130-9133", "9131", "9132", "9200", "9201", "9202", "9205", "4300", "4301", "4302", "4305", "4132",
   "9208", "9209", "4308", "4309", "4138", "9138", "9139",
 ]);
 export function specialOrderColors(catalogKey: string): string[] {

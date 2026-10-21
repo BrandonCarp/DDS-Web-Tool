@@ -1669,8 +1669,9 @@ def read_modern_sheet(ws, wsf, margins):
     slim_at = next(((r, c) for r in range(3, ws.max_row + 1) for c in range(12, ws.max_column + 1)
                     if str(ws.cell(r, c).value or "").strip().upper() == "SLIM WINDOWS"), None)
     slim_glass = []
+    slim_list = None
     if slim_at is None:
-        print(f"  note: {ws.title}: no SLIM WINDOWS block — no slim window on this door")
+        print(f"  note: {ws.title}: no SLIM WINDOWS block — the slim window is lent by a sheet that has one (lend_slim_window)")
     else:
         r, c = slim_at[0] + 1, slim_at[1]
         while isinstance(ws.cell(r, c).value, str):
@@ -1683,6 +1684,7 @@ def read_modern_sheet(ws, wsf, margins):
         if isinstance(ws.cell(r, c).value, (int, float)) and ws.cell(r, c + 2).value == "PER":
             cost = cost_of(r, c, c + 1, f"{ws.title} slim window")
             if cost is not None:
+                slim_list = ws.cell(r, c).value
                 for gid, label in slim_glass:
                     # The 9/16" glass is the slim window's alone: no block of its own.
                     windows.setdefault(gid, {})["slim"] = cost
@@ -1741,9 +1743,35 @@ def read_modern_sheet(ws, wsf, margins):
         "min_width": {}, "ug": ug, "only_to_8": False, "unavailable": [],
         "tiers": list(tiers), "bands": bands, "gaps": gaps, "no_windows": {}, "glass": {},
         "solid_grid_only": True, "windows": windows, "window_labels": labels, "slim_glass": [g for g, _ in slim_glass], "counts": counts,
+        "slim": {"list": slim_list, "glass": slim_glass} if slim_glass and slim_list is not None else None,
         "tracks": tracks, "springs": springs,
         "problems": problems,
     }
+
+
+def lend_slim_window(infos):
+    """
+    Every Modern Steel door takes the slim window (Clopay's window
+    configurations page: the 9208, 9209, 9138, 9139, 4308, 4309 and 4138),
+    but only the 9208-9209 and 4308-4309 sheets carry a SLIM WINDOWS block —
+    the same 180 list, in the same three glasses. A sheet without one takes
+    that list at its own multiplier (Brandon, 21/10/2026: "the pricing from
+    the 4309 or wherever we have it").
+    """
+    lender = next((i for i in infos if i.get("slim")), None)
+    if not lender:
+        return
+    for info in infos:
+        if info.get("slim") or "windows" not in info:
+            continue
+        lst = lender["slim"]["list"]
+        cost = money(lst * info["mult"] * K)
+        for gid, label in lender["slim"]["glass"]:
+            info["windows"].setdefault(gid, {})["slim"] = cost
+            info["window_labels"].setdefault(gid, label)
+        info["slim_glass"] = [g for g, _ in lender["slim"]["glass"]]
+        info["slim_from"] = (lender["sheet"], lst)
+        print(f"  note: {info['sheet']}: slim window from the {lender['sheet']} sheet — {lst:g} list at x{info['mult']}: {cost:.2f}, in {', '.join(info['slim_glass'])}")
 
 
 def grid_for(info, margin):
@@ -1978,7 +2006,10 @@ def write_modern_windows(fam, infos, workbook_name):
            "// a window, by glass and framing — short or long, plain or with grilles, and",
            "// the 37\" x 8\" slim window in the glass it comes in — and go where they are",
            "// pressed into the door drawing (modern-steel.ts). A glass with no figure",
-           "// for a framing is not built that way.",
+           "// for a framing is not built that way. Every Modern Steel door takes the",
+           "// slim window (Clopay's window configurations page); a sheet with no SLIM",
+           "// WINDOWS block takes the 9208-9209 sheet's list at its own multiplier",
+           "// (Brandon, 21/10/2026).",
            "",
            'import type { GlassOption, SheetTracks, SpringRates } from "./sheet-band";',
            "",
@@ -1993,6 +2024,8 @@ def write_modern_windows(fam, infos, workbook_name):
            "/** A window's cost: group -> glass id -> framing (short, short_grilles, long, long_grilles, slim). */",
            f"export const {const}_WINDOW_COST: Record<string, Record<string, Record<string, number>>> = {{"]
     for info in infos:
+        if info.get("slim_from"):
+            out.append(f'  // slim: the {info["slim_from"][0]} sheet\'s {info["slim_from"][1]:g} list at this sheet\'s multiplier.')
         out.append(f'  "{info["group"]}": {{')
         for gid in order:
             block = info["windows"].get(gid)
@@ -2114,6 +2147,8 @@ def main():
             continue
         info = reader(ws, wbf[ws.title], margins)
         infos.append(info)
+    if fam["layout"] == "modern":
+        lend_slim_window(infos)
     problems = [p for i in infos for p in i["problems"]]
     for info in infos:
         g = info["group"]

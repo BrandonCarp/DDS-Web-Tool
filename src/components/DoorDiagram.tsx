@@ -12,6 +12,9 @@ import { placeKey, type WindowPlace } from "@/lib/pricing/data/modern-steel";
  * (20/10/2026), each section's height off the chart at its right. A press on
  * a panel puts a window in it, drawn as glass, and the x at its corner takes
  * it out; ALL beside a section fills the row, or clears it when it is full.
+ *
+ * Sections are numbered from the floor up, as Clopay numbers them (Brandon,
+ * 21/10/2026): the bottom section is 1, the top the last.
  */
 export function DoorDiagram({
   stack, panels, windows, onToggle, onSetSection, widthIn, testId = "door-diagram",
@@ -39,7 +42,7 @@ export function DoorDiagram({
       <div className="ddiag-door" role={windows ? "group" : undefined} aria-label={windows ? "Windows by section and panel" : undefined}
         style={{ aspectRatio: `${ratio} / 1`, maxWidth: `${Math.round(ratio * 480)}px` }}>
         {stack.map((h, si) => {
-          const section = si + 1;
+          const section = stack.length - si;
           const full = !!windows && across.every((panel) => windows.has(placeKey({ section, panel })));
           return (
             <div key={section} className="dsec" data-testid={`door-section-${section}`} style={{ flex: `${h} ${h} 0` }}>

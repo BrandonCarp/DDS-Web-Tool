@@ -13,9 +13,9 @@
  * the drawing goes by the chart.
  *
  * The windows are priced a window, by glass and framing, from CJ's 9208-9209,
- * 4308-4309 and 4138 sheets (modern-windows.ts, 19/10/2026) — over the solid
- * door off the grid. A model with no sheet (the 9138, 9139) draws its windows
- * and asks for the Clopay total.
+ * 4308-4309 and 4138 sheets (modern-windows.ts, 19/10/2026) and the
+ * 9138-9139 sheet (21/10/2026) — over the solid door off the grid. A model
+ * with no sheet draws its windows and asks for the Clopay total.
  */
 
 import type { GlassOption } from "./sheet-band";
@@ -121,8 +121,13 @@ export interface ModernFraming {
   window: string;
 }
 
-/** Slim windows are the 9208, 9209, 4308 and 4309's alone. */
-const SLIM_MODELS: ReadonlySet<string> = new Set(["9208", "9209", "4308", "4309"]);
+/**
+ * Every Modern Steel door takes the slim window (Clopay's window
+ * configurations page, which names all seven; Brandon, 21/10/2026 — the
+ * stacking chart's footnote named four). The sheet says which glass, and a
+ * group with no slim figure offers none.
+ */
+const SLIM_MODELS: ReadonlySet<string> = MODERN_PICKER_MODELS;
 
 /**
  * The contemporary windows as Clopay's order list names them (Brandon,
@@ -180,7 +185,7 @@ export function modernFraming(group: string, model: string, glass: string | unde
   return modernFramings(group, model, glass).find((f) => f.value === value) ?? null;
 }
 
-/** A window's place: the section from the top and the panel from the left, both from 1. */
+/** A window's place: the section from the floor up (the bottom section is 1, as Clopay numbers them — Brandon, 21/10/2026) and the panel from the left, both from 1. */
 export interface WindowPlace { section: number; panel: number }
 
 export const placeKey = (p: WindowPlace) => `${p.section}:${p.panel}`;
@@ -231,7 +236,7 @@ export function describeModernWindows(places: readonly WindowPlace[], sections: 
 }
 
 /**
- * The windows on the line, by section from the top: "section 1 panels 1-4
+ * The windows on the line, by section from the floor up: "section 1 panels 1-4
  * and section 3 panels 2, 3" — three or more sections with commas and AND
  * before the last, as the vinyl pieces are listed. Panels in a run are
  * written as a range.

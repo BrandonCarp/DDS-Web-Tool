@@ -40,7 +40,7 @@ describe("the 4138's track tables", () => {
   });
 
   it("are every Premium and Modern Steel sheet's (CJ, 21/10/2026): the same list, at each sheet's own multiplier", () => {
-    const groups = ["9130/9131/9132/9133", "9200/9201/9202/9203/9205", "4050/4051/4053/4132", "4300/4301/4302/4305/4310", "9208/9209", "4138", "4308/4309"];
+    const groups = ["9130/9131/9132/9133", "9200/9201/9202/9203/9205", "4050/4051/4053/4132", "4300/4301/4302/4305/4310", "9208/9209", "4138", "4308/4309", "9138/9139"];
     for (const g of groups) {
       const t = sheetTracksFor(g)!;
       expect(t, g).not.toBeNull();
@@ -59,6 +59,8 @@ describe("the 4138's track tables", () => {
     const k = 0.99 / (1 - 0.0265);
     const at36 = (g: string) => sheetTracksFor(g)!.highLift.breakaway.bracket[36];
     expect(at36("9130/9131/9132/9133")).toBeCloseTo(173 * 0.912 * k, 2);
+    expect(at36("9138/9139")).toBeCloseTo(173 * 0.912 * k, 2);
+    expect(sheetTracksFor("9138/9139")!.adders).toEqual({ lowHeadroom: 45.91, lowHeadroomRearTorsion: 52.96, angleMount12r15r: 68.63 });
     expect(at36("9200/9201/9202/9203/9205")).toBeCloseTo(173 * 0.865 * k, 2);
     expect(at36("9208/9209")).toBeCloseTo(173 * 0.865 * k, 2);
     expect(at36("4050/4051/4053/4132")).toBe(136.52);
@@ -108,7 +110,8 @@ describe("the 4138's track tables", () => {
     // No amount chosen yet: the door prices without the lift, as the 4050 does.
     expect(q({ incline: "breakaway", highLiftInches: 0 }).quote?.unitPrice).toBe(solid);
     const line = q({ incline: "breakaway", highLiftInches: 36, trackMount: "reverse_angle" }).quote!.description;
-    expect(line).toMatch(/2" REVERSE ANGLE MOUNT TRACK TO STEEL, 36″ HIGH LIFT TRACK, FRONT TORSION SPRINGS/i);
+    expect(line).toMatch(/2" REVERSE ANGLE MOUNT TRACK TO STEEL, 36″ HIGH LIFT BREAKAWAY TRACK, FRONT TORSION SPRINGS/i);
+    expect(q({ incline: "deg25", highLiftInches: 69 }).quote!.description).toMatch(/, 69″ HIGH LIFT 25 DEGREE TRACK, FRONT TORSION SPRINGS/i);
   });
 
   it("builds breakaway high lift solid only, on either mount (CJ, 21/10/2026 — the top section glass build of the day before is off the sheet)", () => {
@@ -121,9 +124,11 @@ describe("the 4138's track tables", () => {
     // 25 degree takes glass anywhere, on any mount.
     expect(specialDoorQuote({ ...base, style: "glass", glassType: "tempered", modernFraming: "short", windowsAt: [{ section: 2, panel: 1 }], track: "high_lift", incline: "deg25", highLiftInches: 36 } as never).quote?.unitPrice)
       .toBeCloseTo(solid + sell(51.29) + sell(160.99), 2);
-    expect(glassWhere([{ section: 1 }, { section: 1 }], true)).toBe("top");
-    expect(glassWhere([{ section: 1 }, { section: 3 }], true)).toBe("other");
-    expect(glassWhere([{ section: 1 }], false)).toBe("none");
+    // Sections are numbered from the floor up (Brandon, 21/10/2026): the top section of a four-section door is 4.
+    expect(glassWhere([{ section: 4 }, { section: 4 }], true, 4)).toBe("top");
+    expect(glassWhere([{ section: 1 }, { section: 1 }], true, 4)).toBe("other");
+    expect(glassWhere([{ section: 1 }, { section: 3 }], true, 4)).toBe("other");
+    expect(glassWhere([{ section: 4 }], false, 4)).toBe("none");
     // A door whose windows are not placed on a drawing has them in the top section: the 4050 with windows takes no breakaway either (Brandon, 21/10/2026).
     expect(glassWhere(undefined, true)).toBe("top");
     expect(glassWhere([], true)).toBe("none");
