@@ -84,24 +84,27 @@ describe("residential track sets from the door size and radius", () => {
     expect(radiiFor(s, null)).toEqual([]);
   });
 
-  it("picks the set for the size and radius, and names the radius on the line", () => {
+  it("picks the set for the size, radius and door thickness, and words the line as Brandon has it (21/10/2026)", () => {
     const s = sets();
-    const pick = pickResidentialTrack(s, 9 * 12, 7 * 12, "10R")!;
+    const pick = pickResidentialTrack(s, 9 * 12, 7 * 12, "10R", "138")!;
     expect(pick.part.name).toBe("7',  10/12/15R,  7' TO 10' WIDE");
     expect(pick.part.price).toBe(114);
-    expect(pick.description).toBe('COMPLETE SET OF BRACKET MOUNTED TRACK,  7FT HIGH,  10" RADIUS');
-    expect(pickResidentialTrack(s, 9 * 12, 7 * 12, "15R")!.description).toBe('COMPLETE SET OF BRACKET MOUNTED TRACK,  7FT HIGH,  15" RADIUS');
-    expect(pickResidentialTrack(s, 16 * 12, 7 * 12 + 6, "12R")!.part.name).toBe("8',  10/12/15R,  12' AND UP");   // 7'6" x 16'
-    expect(pickResidentialTrack(s, 16 * 12, 8 * 12, "LHR")!.description).toBe("COMPLETE SET OF BRACKET MOUNTED TRACK,  8FT HIGH,  LOW HEADROOM");
-    expect(pickResidentialTrack(s, 10 * 12, 8 * 12, "32R")!.part.name).toBe("32R,  7' TO 10' WIDE");
-    // 20R and 32R on a 7' or 9' door: the one set the list carries, worded as the list has it.
-    expect(pickResidentialTrack(s, 9 * 12, 7 * 12, "20R")!.part.name).toBe("20R,  7' TO 10' WIDE");
-    expect(pickResidentialTrack(s, 9 * 12, 7 * 12, "20R")!.description).toBe('COMPLETE SET OF BRACKET MOUNTED TRACK,  8FT HIGH,  20" RADIUS');
-    expect(pickResidentialTrack(s, 16 * 12, 9 * 12, "32R")!.part.name).toBe("32R,  12' AND UP");
-    expect(pickResidentialTrack(s, 12 * 12, 9 * 12, "15R")!.part.name).toBe("9',  12/15R,  12' AND UP");
-    // Not stocked: a 9' door at 10" radius, a 10' high door, no radius yet.
-    expect(pickResidentialTrack(s, 9 * 12, 9 * 12, "10R")).toBeNull();
-    expect(pickResidentialTrack(s, 9 * 12, 10 * 12, "12R")).toBeNull();
-    expect(pickResidentialTrack(s, 9 * 12, 7 * 12, "")).toBeNull();
+    expect(pick.description).toBe('Complete set of 2" bracket mount track, 7FT high, 10" radius, 1-3/8" door');
+    expect(pickResidentialTrack(s, 9 * 12, 7 * 12, "15R", "2")!.description).toBe('Complete set of 2" bracket mount track, 7FT high, 15" radius, 2" door');
+    expect(pickResidentialTrack(s, 16 * 12, 7 * 12 + 6, "12R", "2")!.part.name).toBe("8',  10/12/15R,  12' AND UP");   // 7'6" x 16'
+    // 12' and up: full angle, before the thickness.
+    expect(pickResidentialTrack(s, 16 * 12, 7 * 12, "15R", "138")!.description).toBe('Complete set of 2" bracket mount track, 7FT high, 15" radius, full angle, 1-3/8" door');
+    expect(pickResidentialTrack(s, 16 * 12, 8 * 12, "LHR", "2")!.description).toBe('Complete set of 2" bracket mount track, 8FT high, low headroom, full angle, 2" door');
+    expect(pickResidentialTrack(s, 10 * 12, 8 * 12, "32R", "138")!.part.name).toBe("32R,  7' TO 10' WIDE");
+    // 20R and 32R on a 7' or 9' door: the one set the list carries, at the height the list words it.
+    expect(pickResidentialTrack(s, 9 * 12, 7 * 12, "20R", "138")!.part.name).toBe("20R,  7' TO 10' WIDE");
+    expect(pickResidentialTrack(s, 9 * 12, 7 * 12, "20R", "138")!.description).toBe('Complete set of 2" bracket mount track, 8FT high, 20" radius, 1-3/8" door');
+    expect(pickResidentialTrack(s, 16 * 12, 9 * 12, "32R", "2")!.part.name).toBe("32R,  12' AND UP");
+    expect(pickResidentialTrack(s, 12 * 12, 9 * 12, "15R", "2")!.part.name).toBe("9',  12/15R,  12' AND UP");
+    // Not stocked: a 9' door at 10" radius, a 10' high door; nothing until the radius and the thickness are chosen.
+    expect(pickResidentialTrack(s, 9 * 12, 9 * 12, "10R", "2")).toBeNull();
+    expect(pickResidentialTrack(s, 9 * 12, 10 * 12, "12R", "2")).toBeNull();
+    expect(pickResidentialTrack(s, 9 * 12, 7 * 12, "", "2")).toBeNull();
+    expect(pickResidentialTrack(s, 9 * 12, 7 * 12, "12R", "")).toBeNull();
   });
 });

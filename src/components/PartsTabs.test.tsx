@@ -221,7 +221,7 @@ describe("the Track buttons (6/10/2026)", () => {
     expect(screen.queryByTestId("parts-list")).toBeNull();
     expect(screen.getByTestId("track-res")).toBeTruthy();
     expect(screen.getByTestId("track-radius")).toHaveProperty("disabled", true);
-    expect(document.querySelector("aside.quote .emptymsg")?.textContent).toBe("Enter the door size and radius");
+    expect(document.querySelector("aside.quote .emptymsg")?.textContent).toBe("Enter the door size, radius and door thickness");
     fireEvent.change(screen.getByTestId("track-width-ft"), { target: { value: "16" } });
     fireEvent.change(screen.getByTestId("track-height-ft"), { target: { value: "7" } });
     fireEvent.change(screen.getByTestId("track-height-in"), { target: { value: "6" } });
@@ -229,13 +229,20 @@ describe("the Track buttons (6/10/2026)", () => {
     expect([...(screen.getByTestId("track-radius") as HTMLSelectElement).options].map((o) => o.value)).toEqual(["", "10R", "12R", "15R", "LHR", "20R", "32R"]);
     expect(screen.queryByTestId("parts-copy-qb")).toBeNull();
     fireEvent.change(screen.getByTestId("track-radius"), { target: { value: "10R" } });
-    expect(document.querySelector("aside.quote .qtitle")?.textContent).toBe("8' set, 10R");
+    // Nothing until the door thickness is chosen too (Brandon, 21/10/2026): 1-3/8" or 2", two buttons under the radius.
+    expect(screen.queryByTestId("parts-copy-qb")).toBeNull();
+    expect(screen.getByTestId("track-thick-138").textContent).toBe('1-3/8"');
+    expect(screen.getByTestId("track-thick-2").textContent).toBe('2"');
+    fireEvent.click(screen.getByTestId("track-thick-138"));
+    expect(document.querySelector("aside.quote .qtitle")?.textContent).toBe("8' set, 10R, 1-3/8\" door");
     let line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
-    expect(line.description).toBe('COMPLETE SET OF BRACKET MOUNTED TRACK,  8FT HIGH,  10" RADIUS');
+    // 16' wide: the 12' and up set, full angle on the line.
+    expect(line.description).toBe('COMPLETE SET OF 2" BRACKET MOUNT TRACK,  8FT HIGH,  10" RADIUS,  FULL ANGLE,  1-3/8" DOOR');
     expect(line.rate).toBe(183);                                   // 8', 10/12/15R, 12' and up
     fireEvent.change(screen.getByTestId("track-radius"), { target: { value: "32R" } });
+    fireEvent.click(screen.getByTestId("track-thick-2"));
     line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
-    expect(line.description).toBe('COMPLETE SET OF BRACKET MOUNTED TRACK,  8FT HIGH,  32" RADIUS');
+    expect(line.description).toBe('COMPLETE SET OF 2" BRACKET MOUNT TRACK,  8FT HIGH,  32" RADIUS,  FULL ANGLE,  2" DOOR');
     expect(line.rate).toBe(318);
     // A 9' door has no 10R set; the 32R just chosen stays, on the set the list carries for any height.
     fireEvent.change(screen.getByTestId("track-height-ft"), { target: { value: "9" } });
@@ -244,8 +251,13 @@ describe("the Track buttons (6/10/2026)", () => {
     expect((await copiedQbLine(screen.getByTestId("parts-copy-qb"))).rate).toBe(318);
     fireEvent.change(screen.getByTestId("track-radius"), { target: { value: "LHR" } });
     line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
-    expect(line.description).toBe("COMPLETE SET OF BRACKET MOUNTED TRACK,  9FT HIGH,  LOW HEADROOM");
+    expect(line.description).toBe('COMPLETE SET OF 2" BRACKET MOUNT TRACK,  9FT HIGH,  LOW HEADROOM,  FULL ANGLE,  2" DOOR');
     expect(line.rate).toBe(289.5);
+    // Under 12' wide: no full angle.
+    fireEvent.change(screen.getByTestId("track-width-ft"), { target: { value: "9" } });
+    line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
+    expect(line.description).toBe('COMPLETE SET OF 2" BRACKET MOUNT TRACK,  9FT HIGH,  LOW HEADROOM,  2" DOOR');
+    fireEvent.change(screen.getByTestId("track-width-ft"), { target: { value: "16" } });
     // Taller than any set: nothing stocked.
     fireEvent.change(screen.getByTestId("track-height-ft"), { target: { value: "10" } });
     expect(screen.queryByTestId("parts-copy-qb")).toBeNull();

@@ -22,7 +22,8 @@ import { feetLimits, isLockbar, isSolidShaft, measuredToInch, partColors, pieceC
 import { QtyStepper } from "./QtyStepper";
 import { PickInput, range } from "./PickInput";
 import { COMMERCIAL_TRACK, COMMERCIAL_TRACK_HEIGHTS, COMMERCIAL_TRACK_SUB, commercialTrackAt } from "@/lib/pricing/data/commercial-track";
-import { RESIDENTIAL_TRACK_SUB, pickResidentialTrack, radiiFor, residentialTrackSets, trackHeightFor } from "@/lib/pricing/data/residential-track";
+import { OptionButtons } from "./OptionButtons";
+import { DOOR_THICKNESSES, RESIDENTIAL_TRACK_SUB, pickResidentialTrack, radiiFor, residentialTrackSets, trackHeightFor, type DoorThickness } from "@/lib/pricing/data/residential-track";
 
 const fmt = (n: number) =>
   "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -104,6 +105,8 @@ export function PartsTool({
   const [trkHFt, setTrkHFt] = useState("");
   const [trkHIn, setTrkHIn] = useState("0");
   const [trkRadius, setTrkRadius] = useState("");
+  // The door's thickness, 1-3/8" or 2" (Brandon, 21/10/2026), on the line after the radius.
+  const [trkThick, setTrkThick] = useState<DoorThickness | "">("");
   const [trkHeight, setTrkHeight] = useState("");
 
   const onCable = catName === "CABLES" && pickedName === CUSTOM_CABLE;
@@ -131,7 +134,7 @@ export function PartsTool({
   const trkSetHeight = trackPage === "residential" ? trackHeightFor(resSets, trkHeightIn) : null;
   const trkRadii = radiiFor(resSets, trkSetHeight);
   const trkRadiusEff = trkRadii.includes(trkRadius) ? trkRadius : "";
-  const trackPick = trackPage === "residential" ? pickResidentialTrack(resSets, trkWidthIn, trkHeightIn, trkRadiusEff) : null;
+  const trackPick = trackPage === "residential" ? pickResidentialTrack(resSets, trkWidthIn, trkHeightIn, trkRadiusEff, trkThick) : null;
 
   const hit = onCable ? null : trackPick ? { part: trackPick.part, category: results[0].category } : results.find((r) => r.part.name === pickedName) ?? null;
   const part: Part | null = hit?.part ?? null;
@@ -171,7 +174,7 @@ export function PartsTool({
   // The complete-track pages name the set by what was chosen, not the shelf's name.
   const commPick = trackPage === "commercial" && part ? COMMERCIAL_TRACK.find((x) => x.part.name === part.name) ?? null : null;
   const title = onCable ? CUSTOM_CABLE
-    : trackPick ? `${trkSetHeight}' set, ${trkRadiusEff}`
+    : trackPick ? `${trkSetHeight}' set, ${trkRadiusEff}, ${DOOR_THICKNESSES.find((t) => t.value === trkThick)?.label ?? ""} door`
     : commPick ? `${commPick.height}FT — ${commPick.label}`
     : (part?.name ?? "");
   const showing = onCable || !!part;
@@ -232,7 +235,7 @@ export function PartsTool({
     setInches("0");
     setCabFt("");
     setCabIn("");
-    setTrkWFt(""); setTrkWIn("0"); setTrkHFt(""); setTrkHIn("0"); setTrkRadius("");
+    setTrkWFt(""); setTrkWIn("0"); setTrkHFt(""); setTrkHIn("0"); setTrkRadius(""); setTrkThick("");
   }
 
   return (
@@ -286,6 +289,10 @@ export function PartsTool({
                           {trkRadii.map((r) => <option key={r} value={r}>{r}</option>)}
                         </select>
                       </div>
+                    </div>
+                    <div className="grow"><label>Door thickness</label>
+                      <OptionButtons label="Door thickness" testid="track-thick" options={DOOR_THICKNESSES} value={trkThick || null}
+                        onChange={(v) => setTrkThick(v)} />
                     </div>
                   </div>
                 ) : trackPage === "commercial" ? (
@@ -428,7 +435,7 @@ export function PartsTool({
               <div className="empty">
                 <div className="emptymsg">
                   {trackPage === "residential"
-                    ? trkWidthIn > 0 && trkHeightIn > 0 && trkRadiusEff ? "No set stocked for this size" : "Enter the door size and radius"
+                    ? trkWidthIn > 0 && trkHeightIn > 0 && trkRadiusEff && trkThick ? "No set stocked for this size" : "Enter the door size, radius and door thickness"
                     : trackPage === "commercial" ? "Pick a height, then a set" : "Pick a part from the list"}
                 </div>
               </div>
