@@ -33,8 +33,9 @@ import { dataKey } from "@/lib/pricing/model-groups";
 import { homeownerMarkupForBand } from "@/lib/pricing/engine";
 import { OptionButtons, YES_NO, type ButtonOption } from "./OptionButtons";
 import { DoorDiagram } from "./DoorDiagram";
-import { designClause, shortWindowName } from "@/lib/pricing/data/inserts";
+import { DECORATIVE, designClause, shortWindowName } from "@/lib/pricing/data/inserts";
 import { modernFramingChoices, modernGlassForFraming, modernPanelsWide, modernPickerModel, modernStack, placeKey, type WindowPlace } from "@/lib/pricing/data/modern-steel";
+import { doorStack, glazedStack, rowsPickable, windowsWide } from "@/lib/pricing/data/door-stacks";
 import { roofPitches, sheetInclines, sheetLiftChoices, sheetRearTorsion, sheetTrackChoices, trackSolidOnly } from "@/lib/pricing/data/sheet-tracks";
 import { QtyStepper } from "./QtyStepper";
 import { BrochurePeek, MODERN_STEEL_PAGE } from "./BrochurePeek";
@@ -157,6 +158,9 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   // drawing, and their framing (Brandon, 19/10/2026).
   const [gWinPlaces, setGWinPlaces] = useState<ReadonlySet<string>>(new Set());
   const [gModernFraming, setGModernFraming] = useState("");
+  // On a Premium or Value Steel door the windows go in the top section
+  // unless the row under it is pressed on the drawing (Brandon, 22/10/2026).
+  const [gWinUnderTop, setGWinUnderTop] = useState(false);
   // Track mount, high lift and incline. These live on special order rather than
   // residential: a stock door ships on standard track, and anything else is an
   // order Clopay builds to spec.
@@ -195,7 +199,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const [struts, setStruts] = useState(0);
   const resetGrid = () => {
     setGWidthFt(""); setGWidthIn("0"); setGHeightFt(""); setGHeightIn("0"); setGColor(""); setGCdDesign(""); setGOverlay("");
-    setGGlass("solid"); setGFraming(""); setGVariant(""); setGWinPlaces(new Set()); setGModernFraming("");
+    setGGlass("solid"); setGFraming(""); setGVariant(""); setGWinPlaces(new Set()); setGModernFraming(""); setGWinUnderTop(false);
     setGSpring("extension"); setGTrack("r12"); setGMount("bracket"); setGIncline("straight_incline"); setGLift(0); setGPitch("1/12"); setGLock("none"); setHomeowner("no");
     setVinylOn(false); setOpBracket("none"); setStruts(0);
   };
@@ -287,6 +291,23 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
     : [];
   const choice = windowChoice(gGlassEff, gFramingEff);
   const gStyleEff = choice.style;
+  // Every other door drawn too (Brandon, 22/10/2026), by its own chart and
+  // rules: the Premium and Value Steel doors with the top two rows to press
+  // and a 21" glass section, the Gallery, Bridgeport and Coachman with the
+  // windows in the top section; the window across as the chart counts them.
+  const gChartStack = !gModern && gridded && gHeight && gGlazed && gFramingEff ? doorStack(member, vhf0, vhi0 ?? 0) : null;
+  const gLongWindow = gFramingEff?.panel ? gFramingEff.panel === "long"
+    : gFramingEff?.plainWindow ? /\bLONG\b|\bARCH\b/i.test(gFramingEff.plainWindow)
+    : !!gFramingEff?.design && DECORATIVE.some((d) => d.id === gFramingEff.design && d.cat === "long");
+  const gAcross = gChartStack && gWidth ? windowsWide(member, vwf0, vwi0 ?? 0, gLongWindow) : null;
+  const gRowsPick = rowsPickable(member);
+  const gTop = gChartStack?.length ?? 0;
+  const gWindowRow = gRowsPick && gChartStack && gWinUnderTop ? gTop - 1 : undefined;
+  const gDrawnStack = gChartStack ? (gRowsPick ? glazedStack(gChartStack, gWindowRow ?? gTop) : gChartStack) : null;
+  const gDrawnWindows = gDrawnStack && gAcross
+    ? new Set(Array.from({ length: gAcross }, (_, i) => placeKey({ section: gWindowRow ?? gTop, panel: i + 1 }))) : null;
+  const gWindowLabel = !gFramingEff ? "" : gFramingEff.kind === "plain" ? (gFramingEff.plainWindow ?? gFramingEff.label)
+    : gFramingEff.design ? (designClause(gFramingEff.design) ?? gFramingEff.label) : gFramingEff.label;
 
   // High lift is the sheet-tracked doors' (the 4138 on 20/10/2026, every
   // Premium and Modern Steel door on 21/10/2026), torsion only, and caps at
@@ -360,6 +381,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
         style: choice.style, glassType: choice.glassType, panelStyle: choice.panelStyle, windesign: choice.windesign, plainWindow: choice.plainWindow,
         windowSeries: choice.windowSeries,
         windowsAt: gModern ? gPlaces : undefined, modernFraming: gModern ? gModernFramingEff?.value : undefined,
+        windowRow: gWindowRow,
         variant: (modelMember || gVariant) || undefined,
         track: gTrackEff as never, spring: gSpringUsed as never, lock: gLock as never,
         trackMount: gMountEff, incline: gInclineEff, highLiftInches: gIsLift ? gEffLift : 0, roofPitch: gPitchEff })
@@ -831,6 +853,15 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                           for (const panel of panels) { const k = placeKey({ section, panel }); if (on) next.add(k); else next.delete(k); }
                           setGWinPlaces(next); setSaved(false);
                         }} />
+                    </div>
+                  )}
+                  {!gModern && gDrawnStack && gAcross && gDrawnWindows && (
+                    <div className="ggroup gwide">
+                      <div className="ghdr">Windows</div>
+                      <DoorDiagram stack={gDrawnStack} panels={gAcross} widthIn={vwf0 * 12 + (vwi0 ?? 0)}
+                        windows={gDrawnWindows} pickRows={new Set(gRowsPick ? [gTop, gTop - 1] : [])}
+                        windowLabel={gWindowLabel} windowLabelShort={shortWindowName(gWindowLabel)}
+                        onPickRow={(section) => { setGWinUnderTop(section === gTop - 1); setSaved(false); }} />
                     </div>
                   )}
                   {gResult?.reason && (

@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
-  CLASSIC_STACK, CLASSIC_STACK_MODELS, ENERGY_STACK, GALLERY_STACK, GALLERY_STACK_MODELS, INDUSTRIAL_STACK,
-  classicPanelsWide, classicStack, commercialStack, galleryPanelsWide, galleryStack, glazedStack, sectionOrdinal,
+  CLASSIC_STACK, CLASSIC_STACK_MODELS, COACHMAN_STACK, ENERGY_STACK, GALLERY_STACK, GALLERY_STACK_MODELS, INDUSTRIAL_STACK,
+  classicPanelsWide, classicStack, coachmanWindowsWide, commercialStack, doorStack, galleryPanelsWide, galleryStack, glazedStack,
+  rowsPickable, sectionOrdinal, stackFamily, stockGalleryStack, windowsWide,
 } from "./data/door-stacks";
 import { COMM_MATRIX_SIZES } from "./data/commercial-meta";
 import { stockedHeights } from "./data/stock-colors";
@@ -15,17 +16,59 @@ describe("door stacks — Clopay's stacking charts", () => {
   const sum = (a: readonly number[]) => a.reduce((x, y) => x + y, 0);
   const r24 = (n: number) => Array.from({ length: n }, () => 24);
 
-  it("adds each Classic Steel stack up to its height, 6'0\" to 9'0\" in 18s and 21s", () => {
+  it("adds each Classic Steel stack up to its height, 6'0\" to 16'0\" in 18s and 21s", () => {
     for (const [h, stack] of Object.entries(CLASSIC_STACK)) {
       expect(sum(stack), `${h}"`).toBe(Number(h));
       expect(stack.every((s) => s === 18 || s === 21), `${h}"`).toBe(true);
+      // The chart's shape: a 21 on top wherever there is one, the 18s, then the 21s.
+      const firstBottom21 = stack.findIndex((s, i) => i > 0 && s === 21);
+      if (firstBottom21 > 0) expect(stack.slice(firstBottom21).every((s) => s === 21), `${h}"`).toBe(true);
     }
+    expect(Object.keys(CLASSIC_STACK)).toHaveLength(40); // every 3" from 72 to 192 but 87
     expect(classicStack(7, 0)).toEqual([21, 21, 21, 21]);
     expect(classicStack(7, 6)).toEqual([18, 18, 18, 18, 18]);
     expect(classicStack(8, 0)).toEqual([21, 18, 18, 18, 21]);
     expect(classicStack(6, 6)).toEqual([21, 18, 18, 21]);
     expect(classicStack(7, 3)).toBeNull(); // not built
-    expect(classicStack(10, 0)).toBeNull();
+    expect(classicStack(10, 0)).toEqual([21, 18, 18, 21, 21, 21]);
+    expect(classicStack(12, 6)).toEqual([21, 18, 18, 18, 18, 18, 18, 21]);
+    expect(classicStack(14, 3)).toEqual([21, 18, 18, 18, 18, 18, 18, 21, 21]);
+    expect(classicStack(16, 0)).toEqual([21, 18, 18, 18, 18, 18, 18, 21, 21, 21]);
+    expect(classicStack(16, 3)).toBeNull();
+  });
+
+  it("stacks the Coachman's designs 11 to 23 off their own chart, 6'0\" to 16'0\"", () => {
+    for (const [h, stack] of Object.entries(COACHMAN_STACK)) {
+      expect(sum(stack), `${h}"`).toBe(Number(h));
+      expect(stack.every((s) => s === 18 || s === 21 || s === 24), `${h}"`).toBe(true);
+    }
+    expect(Object.keys(COACHMAN_STACK)).toHaveLength(41);
+    expect(doorStack("CD", 7, 0)).toEqual([24, 18, 24, 18]);
+    expect(doorStack("CD", 8, 6)).toEqual([24, 18, 21, 21, 18]);
+    expect(doorStack("CD", 12, 3)).toEqual([24, 18, 21, 18, 24, 18, 24]);
+    expect([8, 10, 14, 16, 20].map((w) => coachmanWindowsWide(w, 0))).toEqual([2, 3, 3, 4, 4]);
+  });
+
+  it("knows each door's family: the chart it stacks by, the windows across, and whether a row can be picked", () => {
+    for (const m of ["4050", "4132", "9201", "4302", "T50S", "T52L"]) expect(stackFamily(m), m).toBe("classic");
+    for (const m of ["GD1LP", "GD2SU", "GD4L", "BD1EU", "BD2CU", "BR1NU"]) expect(stackFamily(m), m).toBe("gallery");
+    for (const m of ["CD", "CG", "CGU"]) expect(stackFamily(m), m).toBe("coachman");
+    for (const m of ["4138", "9208", "3200", "AV"]) expect(stackFamily(m), m).toBeNull();
+    expect(doorStack("BD1EU", 7, 6)).toEqual([24, 21, 21, 24]);
+    expect(doorStack("4138", 7, 0)).toBeNull();
+    expect(windowsWide("4050", 9, 0, false)).toBe(4);
+    expect(windowsWide("GD1LP", 9, 0, true)).toBe(2);
+    expect(windowsWide("BD1EU", 16, 0, false)).toBe(8);
+    expect(windowsWide("CD", 9, 0, true)).toBe(2);
+    expect(windowsWide("4138", 9, 0, false)).toBeNull();
+    expect(rowsPickable("4050")).toBe(true);
+    expect(rowsPickable("T50S")).toBe(true);
+    expect(rowsPickable("GD1LP")).toBe(false);
+    expect(rowsPickable("CD")).toBe(false);
+    // The stock 8'0" Gallery is a five-section door; the rest of its heights the chart's.
+    expect(stockGalleryStack(8, 0)).toEqual([21, 18, 18, 18, 21]);
+    expect(stockGalleryStack(7, 0)).toEqual([21, 21, 21, 21]);
+    expect(stockGalleryStack(9, 0)).toEqual([24, 21, 21, 21, 21]);
   });
 
   it("covers every height the stock tab floors on the Premium and Value Steel doors", () => {

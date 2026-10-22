@@ -35,6 +35,7 @@ import { dataKey, RESIDENTIAL_HIDDEN } from "../model-groups";
 import { STOCK_PRICES } from "./stock-prices";
 import { colorInStock } from "./stock-colors";
 import { designClause, designName, specialPlainWindowsFor, specialWindowDesigns } from "./inserts";
+import { doorStack, rowsPickable, sectionOrdinal } from "./door-stacks";
 import { describeModernWindows, modernFraming, modernGlassLabel, modernPanelsWide, modernPickerModel, modernStack, modernWindowCost, type WindowPlace } from "./modern-steel";
 import { designBuilt, designTakesWindows, hasDesigns, modelWithDesign, secondColorName, secondColorPricedAs } from "./door-designs";
 import { SPECIAL_DOORS } from "./special-doors";
@@ -78,6 +79,12 @@ export interface SpecialDoorInput {
   windowsAt?: WindowPlace[];
   /** The Modern Steel window's framing — its size, plain or with grilles (modern-steel.ts). */
   modernFraming?: string;
+  /**
+   * The section the windows are in on a Premium or Value Steel door, numbered
+   * from the floor up (door-stacks.ts): the top section unless the row under
+   * it was pressed on the drawing (Brandon, 22/10/2026).
+   */
+  windowRow?: number;
 }
 
 export interface SpecialDoorQuote {
@@ -800,14 +807,21 @@ export function specialDoorQuote(
     const inserts = modernFramed.design ? `, ${designClause(modernFramed.design) ?? `${modernFramed.design} design`}` : modernFramed.size === "slim" ? "" : ", no inserts";
     return `${(glassName ?? "").toLowerCase()} ${modernFramed.window} windows in ${where}${inserts}`;
   })();
+  // Which section the windows are in: "top" unless the row under the top was
+  // picked on a Premium or Value Steel door's drawing (Brandon, 22/10/2026),
+  // which the line names by Clopay's floor-up number.
+  const [shf, shi] = input.height.split(".").map(Number);
+  const rowStack = rowsPickable(member) ? doorStack(member, shf, shi ?? 0) : null;
+  const row = input.windowRow;
+  const sectionText = rowStack && row && Number.isInteger(row) && row >= 1 && row < rowStack.length ? sectionOrdinal(row) : "top";
   const winText =
     style === "solid"
       ? "solid no windows"
       : modernWin
       ? modernWin
       : glassDesign
-      ? `${glassName ? glassName.toLowerCase() : grade || "single strength b grade"} windows in the top section${glassDesign}`
-      : `${glassName ? glassName.toLowerCase() : grade || "single strength b grade"} windows in the top section, ${plain}` +
+      ? `${glassName ? glassName.toLowerCase() : grade || "single strength b grade"} windows in the ${sectionText} section${glassDesign}`
+      : `${glassName ? glassName.toLowerCase() : grade || "single strength b grade"} windows in the ${sectionText} section, ${plain}` +
         (style === "inserts" && designId ? designClause(designId) : "no inserts");
   // Gallery, Bridgeport and Coachman doors carry the collection, as the stock tab
   // writes the Gallery ("CLOPAY GALLERY COLLECTION, MODEL GD1SU, ..." — Brandon, 8/10/2026).

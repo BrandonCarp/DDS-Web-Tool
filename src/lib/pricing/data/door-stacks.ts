@@ -4,12 +4,16 @@
  * (Brandon, 22/10/2026):
  *
  *   CLASSIC      Residential Door Stacking & Panel Configurations, Classic
- *                Steel: the 9200/9203, 9130/9133, 4300/4310, 4050/4053, T52S/
- *                T52L and T50S/T50L — 18" and 21" sections, 6'0" to 9'0" here
- *                (the stock tab's heights; 7'3" is not built).
+ *                Steel (page 7): the 9200/9203, 9130/9133, 4300/4310, 4050/
+ *                4053, T52S/T52L and T50S/T50L and their variants — 18" and
+ *                21" sections, 6'0" to 16'0" (7'3" is not built).
  *   GALLERY      Gallery Steel, 3 layer (page 8): the GD1SP/GD1LP, GD1SU/
  *                GD1LU, GD2SP/GD2LP and GD2SU/GD2LU — 18", 21" and 24"
- *                sections, 6'0" to 16'0".
+ *                sections, 6'0" to 16'0". The Gallery 1 and 2 layer chart
+ *                (page 9, GD4/GD5) and the Bridgeport Steel 3 layer chart
+ *                (page 10, BD1/BD2) are the same stacks, section for section.
+ *   COACHMAN     Coachman designs 11 to 23 (page 24) — 18", 21" and 24"
+ *                sections, 6'0" to 16'0"; designs 31 and up are built solid.
  *   ENERGY       the commercial energy series' chart (page 28): the 3150,
  *                3200 and 3220 — 18", 21" and 24" sections, 7'0" to 17'0".
  *   INDUSTRIAL   the industrial series' chart (page 32): the 520 to 525S —
@@ -36,6 +40,79 @@ export const CLASSIC_STACK: Record<number, readonly number[]> = {
   102: [21, 18, 21, 21, 21],
   105: [21, 21, 21, 21, 21],
   108: [18, 18, 18, 18, 18, 18],
+  111: [21, ...r(18, 5)],
+  114: [21, ...r(18, 4), 21],
+  117: [21, ...r(18, 3), 21, 21],
+  120: [21, 18, 18, ...r(21, 3)],
+  123: [21, 18, ...r(21, 4)],
+  126: r(21, 6),
+  129: [21, ...r(18, 6)],
+  132: [21, ...r(18, 5), 21],
+  135: [21, ...r(18, 4), 21, 21],
+  138: [21, ...r(18, 3), ...r(21, 3)],
+  141: [21, 18, 18, ...r(21, 4)],
+  144: [21, 18, ...r(21, 5)],
+  147: r(21, 7),
+  150: [21, ...r(18, 6), 21],
+  153: [21, ...r(18, 5), 21, 21],
+  156: [21, ...r(18, 4), ...r(21, 3)],
+  159: [21, ...r(18, 3), ...r(21, 4)],
+  162: [21, 18, 18, ...r(21, 5)],
+  165: [21, 18, ...r(21, 6)],
+  168: r(21, 8),
+  171: [21, ...r(18, 6), 21, 21],
+  174: [21, ...r(18, 5), ...r(21, 3)],
+  177: [21, ...r(18, 4), ...r(21, 4)],
+  180: [21, ...r(18, 3), ...r(21, 5)],
+  183: [21, 18, 18, ...r(21, 6)],
+  186: [21, 18, ...r(21, 7)],
+  189: r(21, 9),
+  192: [21, ...r(18, 6), ...r(21, 3)],
+};
+
+/** Section heights top to bottom, by door height in inches: the Coachman, designs 11 to 23. */
+export const COACHMAN_STACK: Record<number, readonly number[]> = {
+  72: r(24, 3),
+  75: [21, 18, 18, 18],
+  78: [24, 18, 18, 18],
+  81: [24, 18, 21, 18],
+  84: [24, 18, 24, 18],
+  87: [24, 21, 21, 21],
+  90: [24, 24, 18, 24],
+  93: [24, 24, 21, 24],
+  96: r(24, 4),
+  99: [24, 18, 18, 18, 21],
+  102: [24, 18, 21, 21, 18],
+  105: [24, 21, 18, 18, 24],
+  108: [24, 24, 18, 18, 24],
+  111: [24, 21, 21, 21, 24],
+  114: [24, 24, 21, 21, 24],
+  117: [24, 24, 21, 24, 24],
+  120: r(24, 5),
+  123: [24, 18, 18, 21, 18, 24],
+  126: [24, 18, 18, 24, 18, 24],
+  129: [24, 18, 21, 18, 24, 24],
+  132: [24, 18, 24, 18, 24, 24],
+  135: [24, 18, 24, 21, 24, 24],
+  138: [24, 18, ...r(24, 4)],
+  141: [24, 21, ...r(24, 4)],
+  144: r(24, 6),
+  147: [24, 18, 21, 18, 24, 18, 24],
+  150: [24, 18, 24, 18, 24, 18, 24],
+  153: [24, 18, 21, 18, 24, 24, 24],
+  156: [24, 18, 24, 18, 24, 24, 24],
+  159: [24, 18, 24, 21, 24, 24, 24],
+  162: [24, 18, ...r(24, 5)],
+  165: [24, 21, ...r(24, 5)],
+  168: r(24, 7),
+  171: [24, 18, 21, 18, 24, 18, 24, 24],
+  174: [24, 18, 24, 18, 24, 18, 24, 24],
+  177: [24, 18, 21, 18, 24, 24, 24, 24],
+  180: [24, 18, 24, 18, 24, 24, 24, 24],
+  183: [24, 18, 24, 21, 24, 24, 24, 24],
+  186: [24, 18, ...r(24, 6)],
+  189: [24, 21, ...r(24, 6)],
+  192: r(24, 8),
 };
 
 /** Section heights top to bottom, by door height in inches: the Gallery Steel 3 layer doors. */
@@ -182,8 +259,71 @@ export function galleryPanelsWide(widthFt: number, widthIn: number, long: boolea
   return w < 74 ? null : w <= 90 ? 3 : w <= 136 ? 4 : w <= 176 ? 6 : w <= 228 ? 8 : w <= 240 ? 10 : null;
 }
 
-/** The models the Classic Steel chart stacks, as the stock tab names them. */
-export const CLASSIC_STACK_MODELS: ReadonlySet<string> = new Set(["9200", "9203", "9130", "9133", "4300", "4310", "4050", "4051", "4053", "T52S", "T52L", "T50S", "T50L"]);
+/** The models the Classic Steel chart stacks: the Premium and Value Steel doors and their variants. */
+export const CLASSIC_STACK_MODELS: ReadonlySet<string> = new Set([
+  "9200", "9201", "9202", "9203", "9205", "9130", "9131", "9132", "9133",
+  "4300", "4301", "4302", "4305", "4310", "4050", "4051", "4053", "4132",
+  "T52S", "T52L", "T50S", "T50L",
+]);
+
+/** How a door stacks and takes its windows: by its family. */
+export type StackFamily = "classic" | "gallery" | "coachman";
+
+/**
+ * The chart a model stacks by: the Premium and Value Steel doors the Classic
+ * Steel chart, the Gallery and Bridgeport doors the Gallery chart, the
+ * Coachman its own; null for a door with none here (the Modern Steel doors
+ * have modern-steel.ts).
+ */
+export function stackFamily(model: string): StackFamily | null {
+  const m = String(model);
+  if (CLASSIC_STACK_MODELS.has(m)) return "classic";
+  if (/^(GD|GR|BD|BR)\d/.test(m)) return "gallery";
+  if (/^C[DG]U?$/.test(m)) return "coachman";
+  return null;
+}
+
+/** A model's sections, top to bottom, by its family's chart; null off the chart or for a model with none. */
+export function doorStack(model: string, heightFt: number, heightIn = 0): readonly number[] | null {
+  const inches = heightFt * 12 + heightIn;
+  switch (stackFamily(model)) {
+    case "classic": return CLASSIC_STACK[inches] ?? null;
+    case "gallery": return GALLERY_STACK[inches] ?? null;
+    case "coachman": return COACHMAN_STACK[inches] ?? null;
+    default: return null;
+  }
+}
+
+/** The Coachman's windows across, by width (the chart's PANELS/WINDOWS WIDE): 2, 3 or 4. */
+export function coachmanWindowsWide(widthFt: number, widthIn: number): number | null {
+  const w = widthFt * 12 + widthIn;
+  return w < 74 ? null : w <= 118 ? 2 : w <= 190 ? 3 : w <= 240 ? 4 : null;
+}
+
+/** A model's windows across, by its family's chart: `long` for a long window (a 42" one, or a long insert). */
+export function windowsWide(model: string, widthFt: number, widthIn: number, long: boolean): number | null {
+  switch (stackFamily(model)) {
+    case "classic": return classicPanelsWide(widthFt, widthIn, long);
+    case "gallery": return galleryPanelsWide(widthFt, widthIn, long);
+    case "coachman": return coachmanWindowsWide(widthFt, widthIn);
+    default: return null;
+  }
+}
+
+/** True where the windows may go in the top section or the one under it (the Premium and Value Steel doors); elsewhere the top section alone. */
+export function rowsPickable(model: string): boolean {
+  return stackFamily(model) === "classic";
+}
+
+/**
+ * The stock 8'0" Gallery door is a five-section door — "5 PANEL DESIGN" on
+ * its line (Brandon, 22/10/2026) — stacked 21-18-18-18-21 where the chart
+ * has four 24s; every other stock Gallery height is the chart's.
+ */
+export function stockGalleryStack(heightFt: number, heightIn = 0): readonly number[] | null {
+  if (heightFt * 12 + heightIn === 96) return [21, 18, 18, 18, 21];
+  return galleryStack(heightFt, heightIn);
+}
 
 /** A commercial door's sections, top to bottom, by model family; null off the chart or for a model with none. */
 export function commercialStack(model: string, heightFt: number, heightIn = 0): readonly number[] | null {

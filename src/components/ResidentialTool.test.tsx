@@ -671,6 +671,40 @@ describe("residential tool — the windows' row on the door drawing (Brandon, 22
     expect([...(screen.getByTestId("windesign") as HTMLSelectElement).options].map((o) => o.value).filter(Boolean)).toEqual(["SQ24", "REC14", "ARCH1VERT", "ARCH1GRILLE"]);
   });
 
+  it("offers a Premium Steel door to 10'0\", the heights past 9'0\" priced as special orders, with the track mount asked at 10'0\" alone (Brandon, 22/10/2026)", async () => {
+    await configure("4050");
+    const feet = () => [...(screen.getByTestId("height-ft") as HTMLSelectElement).options].map((o) => o.value).filter(Boolean);
+    expect(feet()).toEqual(["6", "7", "8", "9", "10"]);
+    fireEvent.change(screen.getByTestId("height-ft"), { target: { value: "9" } });
+    expect([...(screen.getByTestId("height-in") as HTMLSelectElement).options].map((o) => o.value)).toEqual(["0", "3", "6", "9"]);
+    size("9", "9", "6");
+    expect(screen.queryByTestId("track-mount")).toBeNull();
+    glass();
+    fireEvent.click(screen.getByTestId("get-price"));
+    await waitFor(() => expect(bodies.length).toBeGreaterThan(0));
+    expect(bodies[bodies.length - 1]).toMatchObject({ model: "4050", heightFt: 9, heightIn: 6, style: "glass" });
+    expect(bodies[bodies.length - 1].trackMount).toBeUndefined();
+    // 10'0": the mount, bracket unless changed, sent with the request; six sections drawn.
+    size("9", "10");
+    expect(screen.getByTestId("track-mount")).toBeTruthy();
+    expect([...(screen.getByTestId("track-mount") as HTMLSelectElement).options].map((o) => o.value)).toEqual(["bracket", "continuous_angle", "reverse_angle"]);
+    expect(sections()).toHaveLength(6);
+    fireEvent.change(screen.getByTestId("track-mount"), { target: { value: "reverse_angle" } });
+    fireEvent.click(screen.getByTestId("get-price"));
+    await waitFor(() => expect(bodies[bodies.length - 1].heightFt).toBe(10));
+    expect(bodies[bodies.length - 1]).toMatchObject({ trackMount: "reverse_angle" });
+    // Back under 10'0" the mount is not asked, and not sent.
+    size("9", "8");
+    expect(screen.queryByTestId("track-mount")).toBeNull();
+    fireEvent.click(screen.getByTestId("get-price"));
+    await waitFor(() => expect(bodies[bodies.length - 1].heightFt).toBe(8));
+    expect(bodies[bodies.length - 1].trackMount).toBeUndefined();
+    // A Value Steel door stops at 9'.
+    cleanup();
+    await configure("T50S");
+    expect(feet()).toEqual(["6", "7", "8", "9"]);
+  });
+
   it("offers 7'6\" and 9'0\" solid only, like 6'0\" (Brandon, 22/10/2026)", async () => {
     await configure("4050");
     const styles = () => [...(screen.getByTestId("style") as HTMLSelectElement).options].map((o) => o.value);
@@ -697,10 +731,13 @@ describe("residential tool — the windows' row on the door drawing (Brandon, 22
     expect(pickable()).toEqual([]);
     expect(document.querySelector('[data-testid$="-add"]')).toBeNull();
     expect((await lastBody()).windowRow).toBeUndefined();
-    // 8'0" Gallery: four 24s, as the chart has it; 16' wide, four across.
+    // 8'0" Gallery on the floor is a five-section door, 21-18-18-18-21 (Brandon, 22/10/2026); 16' wide, four across.
     size("16", "8");
-    expect(["5", "4", "3", "2", "1"].map((n) => screen.queryByTestId(`door-section-${n}-height`)?.textContent ?? null)).toEqual([null, "24″", "24″", "24″", "24″"]);
-    expect(glazed()).toEqual(["4-1", "4-2", "4-3", "4-4"]);
+    expect(["5", "4", "3", "2", "1"].map((n) => screen.queryByTestId(`door-section-${n}-height`)?.textContent ?? null)).toEqual(["21″", "18″", "18″", "18″", "21″"]);
+    expect(glazed()).toEqual(["5-1", "5-2", "5-3", "5-4"]);
+    // …and 9'0" is the chart's, solid only there, so no drawing.
+    size("16", "9");
+    expect(screen.queryByTestId("door-diagram")).toBeNull();
     cleanup();
     await configure("T50S");
     size("9", "7");

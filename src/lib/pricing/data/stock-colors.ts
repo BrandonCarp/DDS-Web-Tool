@@ -262,3 +262,17 @@ export function stockedHeights(model: string): string[] {
   if (!entry) return [];
   return [...new Set(Object.values(entry).flatMap((v) => v.heights))].sort(compareSizeCodes);
 }
+
+/**
+ * Heights past the floor the stock tab still offers (Brandon, 22/10/2026):
+ * the Premium Steel doors to 10'0". Nothing is floored there — a door at
+ * one prices as a special order, off its sheet — so they are not in the
+ * matrix, and the stock tab lists them after the floored heights.
+ */
+const TEN_FOOT: readonly string[] = ["9.3", "9.6", "9.9", "10"];
+export const SPECIAL_ORDER_HEIGHTS: Record<string, readonly string[]> = {
+  "4050": TEN_FOOT, "4051": TEN_FOOT, "4053": TEN_FOOT, "9130": TEN_FOOT, "9133": TEN_FOOT,
+};
+export function specialOrderHeights(model: string): readonly string[] {
+  return SPECIAL_ORDER_HEIGHTS[model] ?? [];
+}

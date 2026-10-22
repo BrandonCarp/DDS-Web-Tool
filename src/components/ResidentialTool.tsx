@@ -13,11 +13,12 @@ import { COLORS, COLLECTIONS } from "@/lib/pricing/data/catalog-meta";
 import type { ParsedDoor } from "@/lib/pricing/data/parse-request";
 import { dataKey, modelSort } from "@/lib/pricing/model-groups";
 import { windowDesigns, designWidthCode, designClause, plainWindowsFor, shortWindowName, takesInserts, stockLongAllowed } from "@/lib/pricing/data/inserts";
-import { CLASSIC_STACK_MODELS, GALLERY_STACK_MODELS, classicPanelsWide, classicStack, galleryPanelsWide, galleryStack, glazedStack } from "@/lib/pricing/data/door-stacks";
+import { CLASSIC_STACK_MODELS, GALLERY_STACK_MODELS, classicPanelsWide, classicStack, galleryPanelsWide, glazedStack, stockGalleryStack } from "@/lib/pricing/data/door-stacks";
 import { placeKey } from "@/lib/pricing/data/modern-steel";
 import { DoorDiagram } from "./DoorDiagram";
 import { RES_SECTION_WIDTHS, sectionWidthLabel, SECTION_ONLY_MODELS, NO_GLASS_AT_18 } from "@/lib/pricing/data/res-section-meta";
-import { stockedWidths, stockedHeights, sizeParts, sizeCode, stockedColors, solidOnlyHeight, torsionOnlyHeight, SECTION_STOCK_COLORS } from "@/lib/pricing/data/stock-colors";
+import { stockedWidths, stockedHeights, specialOrderHeights, sizeParts, sizeCode, stockedColors, solidOnlyHeight, torsionOnlyHeight, SECTION_STOCK_COLORS } from "@/lib/pricing/data/stock-colors";
+import { TRACK_MOUNTS, type TrackMount } from "@/lib/pricing/data/track-lift";
 import { OptionButtons, YES_NO, type ButtonOption } from "./OptionButtons";
 import type { SearchPick } from "@/lib/search";
 import { DoorSlideshow } from "./DoorSlideshow";
@@ -105,7 +106,9 @@ export function ResidentialTool({
   // boxes stay for models floored in nothing at all — the 4300 family — where
   // an empty dropdown would just be a dead end.
   const stockW = stockedWidths(model);
-  const stockH = stockedHeights(model);
+  // The floored heights, then the ones past the floor the tab still offers —
+  // the Premium Steel doors to 10'0", priced as special orders (Brandon, 22/10/2026).
+  const stockH = [...stockedHeights(model), ...specialOrderHeights(model)];
   const stockSizes = stockW.length > 0 && stockH.length > 0;
   // Distinct footages: 7'0" and 7'6" are both "7 ft", so the feet dropdown
   // lists 7 once and the inch dropdown carries the difference.
@@ -159,6 +162,9 @@ export function ResidentialTool({
   const [struts, setStruts] = useState(0);
   const [spring, setSpring] = useState<SpringKey>("extension");
   const [track, setTrack] = useState<TrackKey>("r12");
+  // The track mount, asked on a Premium Steel door at 10'0" alone (Brandon,
+  // 22/10/2026): bracket, continuous angle or reverse angle.
+  const [trackMount, setTrackMount] = useState<TrackMount>("bracket");
   const [lock, setLock] = useState<LockKey>("none");
   const [upgradedHardware, setUpgradedHardware] = useState(false);
   const [homeowner, setHomeowner] = useState(false);
@@ -181,7 +187,11 @@ export function ResidentialTool({
        ...(takesInserts(model) ? [{ value: "insert", label: "Inserts" }] : [])]
     : [{ value: "plain", label: "Plain (no insert)" }, { value: "insert", label: "Insert" }];
   const activeFraming = framingOpts.some((o) => o.value === framing) ? framing : framingOpts[0].value;
-  const style = styleFrom(glass, activeFraming);
+  // A height floored solid only (6'0", 7'6", 9'0") is a solid door whatever
+  // glass was chosen before the height changed — the dropdown shows Solid alone.
+  const assemblyNow = SECTION_ONLY_MODELS[model] ? "sections" : assembly;
+  const heightNow = heightFt === "" ? "" : Number(heightIn) === 0 ? heightFt : `${heightFt}.${heightIn}`;
+  const style = assemblyNow !== "sections" && solidOnlyHeight(heightNow) ? "solid" : styleFrom(glass, activeFraming);
   const collection = COLLECTIONS[dataKey(model)] ?? SECTION_ONLY_MODELS[model]?.collection ?? coll;
   const isGallery = collection === "Gallery Collection";
   // A model stocked only as sections (1500, 73) is a replacement section, always.
@@ -228,6 +238,9 @@ export function ResidentialTool({
   // torsion and quoteResidential charges no adder. The dropdown has to say so
   // rather than offering a choice the engine overrides silently.
   const springLocked = !sections && heightCode !== "" && torsionOnlyHeight(heightCode);
+  // A 10'0" Premium Steel door asks its track mount; any other door is bracket mount.
+  const mountAsked = !sections && heightCode === "10" && specialOrderHeights(model).includes("10");
+  const trackMountUsed: TrackMount = mountAsked ? trackMount : "bracket";
   const glassOptions = solidOnly ? baseGlass.filter((g) => g.value === "solid") : baseGlass;
   const wf = parseInt(widthFt, 10);
   const hf = parseInt(heightFt, 10);
@@ -254,8 +267,9 @@ export function ResidentialTool({
   // top where they trade. A Gallery door's windows stay in the top section.
   const drawn = !sections && style !== "solid" && Number.isFinite(hf);
   const isClassic = drawn && CLASSIC_STACK_MODELS.has(model);
+  // The stock 8'0" Gallery is a five-section door (stockGalleryStack).
   const chartStack = isClassic ? classicStack(hf, parseInt(heightIn, 10) || 0)
-    : drawn && GALLERY_STACK_MODELS.has(model) ? galleryStack(hf, parseInt(heightIn, 10) || 0) : null;
+    : drawn && GALLERY_STACK_MODELS.has(model) ? stockGalleryStack(hf, parseInt(heightIn, 10) || 0) : null;
   // The Gallery's windows are the long window, the arch or a long insert: two across at 8' and 9', four at 16'.
   const resLong = isGallery || (style === "inserts" ? wDesigns.find((d) => d.id === activeDesign)?.cat === "long" : /\bLONG\b/i.test(activeFraming));
   const resPanels = chartStack && Number.isFinite(wf)
@@ -306,7 +320,7 @@ export function ResidentialTool({
 
 
 
-  const cfgSig = JSON.stringify([model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, activeDesign, activeFraming, windowRow, assemblyUsed, secKind, secHeight, activeSecWidth, secGlass, secLock, upgradedHardware, homeowner]);
+  const cfgSig = JSON.stringify([model, widthFt, widthIn, heightFt, heightIn, style, color, track, trackMountUsed, spring, lock, activeDesign, activeFraming, windowRow, assemblyUsed, secKind, secHeight, activeSecWidth, secGlass, secLock, upgradedHardware, homeowner]);
   const result = resultRaw && resultSig === cfgSig ? resultRaw : null;
   const liveError = errorRaw && resultSig === cfgSig ? errorRaw : null;
 
@@ -384,6 +398,7 @@ export function ResidentialTool({
           windesign: activeDesign || undefined,
           plainWindow: style === "glass" && activeFraming !== "plain" ? activeFraming : undefined,
           windowRow,
+          trackMount: mountAsked ? trackMountUsed : undefined,
             // Sections carry no hinges or rollers, so the flag never goes out
             // for them even if it was left on from a complete-door quote.
             upgradedHardware: sectionsOnly ? false : upgradedHardware,
@@ -415,7 +430,7 @@ export function ResidentialTool({
       setResult(null);
       setResultSig(cfgSig);
     }
-  }, [model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, activeDesign, wDesigns, windowRow, qty, cfgSig, sizeComplete, sections, secKind, secHeight, activeSecWidth, secGlass, secLock, custName, custPo, custJob]);
+  }, [model, widthFt, widthIn, heightFt, heightIn, style, color, track, trackMountUsed, mountAsked, spring, lock, activeDesign, wDesigns, windowRow, qty, cfgSig, sizeComplete, sections, secKind, secHeight, activeSecWidth, secGlass, secLock, custName, custPo, custJob]);
 
   function onSeries(c: string) {
     setColl(c);
@@ -438,7 +453,7 @@ export function ResidentialTool({
     setSecKind("bt"); setSecHeight("18"); setSecWidth(""); setSecGlass("solid"); setSecLock("none");
     setColor("");
     setGlass("solid"); setFraming("plain"); setWindesign(""); setWinUnderTop(false); setVinylOn(false); setOpBracket("none"); setStruts(0);
-    setSpring("extension"); setTrack("r12"); setLock("none");
+    setSpring("extension"); setTrack("r12"); setTrackMount("bracket"); setLock("none");
     setQty(1);
     setResult(null); setError(null); setSaved(false);
   }
@@ -472,7 +487,7 @@ export function ResidentialTool({
     setWidthFt(""); setWidthIn("0"); setHeightFt(""); setHeightIn("0");
     setSecKind("bt"); setSecHeight("18"); setSecWidth(""); setSecGlass("solid"); setSecLock("none");
     setGlass("solid"); setFraming("plain"); setWindesign(""); setWinUnderTop(false); setVinylOn(false); setOpBracket("none"); setStruts(0);
-    setSpring("extension"); setTrack("r12"); setLock("none"); setQty(1);
+    setSpring("extension"); setTrack("r12"); setTrackMount("bracket"); setLock("none"); setQty(1);
   }
 
   // ---------------- STEP 1: SELECT YOUR DOOR ----------------
@@ -729,6 +744,16 @@ export function ResidentialTool({
                     </select>
                   </div>
                 </div>
+                {mountAsked && (
+                  <div className="grow">
+                    <label>Track mount</label>
+                    <div className="ctl selectwrap">
+                      <select data-testid="track-mount" value={trackMount} disabled={!optionsOpen} onChange={(e) => setTrackMount(e.target.value as TrackMount)}>
+                        {TRACK_MOUNTS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                )}
               </div>}
 
               <div className="ggroup">

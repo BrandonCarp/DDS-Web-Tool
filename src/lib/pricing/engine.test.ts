@@ -3,7 +3,8 @@ import { priceResidential, quoteResidential, quoteResidentialSection, quoteResid
 import { RESIDENTIAL_PRICES } from "./data/residential-prices";
 import { STOCK_PRICES } from "./data/stock-prices";
 import type { WindowStyle } from "./types";
-import { shortWindowName, windowDesigns } from "./data/inserts";
+import { plainWindowsFor, shortWindowName, windowDesigns } from "./data/inserts";
+import { specialDoorQuote } from "./data/special-door-pricing";
 
 const dim = (wf: number, wi: number, hf: number, hi: number) => ({
   widthFt: wf, widthIn: wi, heightFt: hf, heightIn: hi,
@@ -396,6 +397,52 @@ describe("window designs (inserts catalog from index.html)", () => {
     expect(line("4050", "509")).toContain("single strength b grade windows in the top section, Colonial 509 inserts");
     expect(line("4050", "608")).toContain(", Charleston 608 inserts");
     expect(quoteResidential("4050", dim(9, 0, 7, 0), { ...opts, style: "glass" }).description).toContain("windows in the top section, no inserts");
+  });
+});
+
+describe("a Premium Steel door past 9'0\" on the stock tab (Brandon, 22/10/2026): priced as a special order", () => {
+  const opts = { style: "glass" as const, color: "White", track: "r12" as const, spring: "torsion" as const, lock: "none" as const, plainWindow: 'PLAIN SHORT 19-1/2" X 12"' };
+  it("prices 9'3\" to 10'0\" off the sheet as the special order tab does, worded the same, and reads special order", () => {
+    for (const model of ["4050", "4051", "4053", "9130", "9133"]) {
+      // The model's own plain window, where it names one (the 4051 names none).
+      const plainWindow = plainWindowsFor(model)[0];
+      for (const [hf, hi] of [[9, 3], [9, 6], [9, 9], [10, 0]] as const) {
+        const q = quoteResidential(model, dim(9, 0, hf, hi), { ...opts, plainWindow });
+        const want = specialDoorQuote({ model: model.startsWith("9") ? "9130/9131/9132/9133" : "4050/4051/4053/4132", variant: model, width: "9", height: hi ? `${hf}.${hi}` : String(hf), color: "White",
+          style: "glass", glassType: "ssb", panelStyle: plainWindow && /LONG/.test(plainWindow) ? "long" : "short", plainWindow, track: "r12", spring: "torsion", lock: "none" });
+        expect(q.priced, `${model} ${hf}'${hi}"`).toBe(true);
+        expect(q.isStock, `${model} ${hf}'${hi}"`).toBe(false);
+        expect(q.unitPrice, `${model} ${hf}'${hi}"`).toBe(want.quote!.unitPrice);
+        expect(q.description, `${model} ${hf}'${hi}"`).toBe(want.quote!.description);
+        expect(q.description).toContain(`x ${hf}'${hi}"`);
+      }
+    }
+  });
+  it("keeps the stock tab's hardware and homeowner lines on top, the mount on the line, and the windows' row", () => {
+    const base = quoteResidential("4050", dim(9, 0, 10, 0), { ...opts, style: "solid" });
+    const more = quoteResidential("4050", dim(9, 0, 10, 0), { ...opts, style: "solid", upgradedHardware: true, homeowner: true, trackMount: "continuous_angle" });
+    expect(more.unitPrice).toBeGreaterThan(base.unitPrice);
+    expect(more.description).toMatch(/solid no windows, 2" continuous angle mount track to wood, 12″ radius track, front torsion springs, no lock, upgraded hardware$/);
+    expect(quoteResidential("4050", dim(9, 0, 10, 0), { ...opts, windowRow: 5 }).description).toContain("windows in the fifth section");
+    expect(quoteResidential("4050", dim(9, 0, 10, 0), { ...opts, windowRow: 6 }).description).toContain("windows in the top section");
+  });
+  it("prices nothing past 10'0\", nor a Value Steel or Gallery door past 9'0\"", () => {
+    expect(quoteResidential("4050", dim(9, 0, 10, 3), opts).priced).toBe(false);
+    expect(quoteResidential("T50S", dim(9, 0, 10, 0), opts).priced).toBe(false);
+    expect(quoteResidential("GD1LP", dim(9, 0, 10, 0), opts).priced).toBe(false);
+    expect(quoteResidential("4050", dim(9, 0, 9, 0), { ...opts, style: "solid" }).isStock).toBe(true); // the floor still
+  });
+});
+
+describe("the stock 8'0\" Gallery is a five-section door (Brandon, 22/10/2026)", () => {
+  const opts = { style: "solid" as const, color: "White", track: "r12" as const, spring: "extension" as const, lock: "none" as const };
+  it("says 5 PANEL DESIGN at the end of the line, at 8'0\" alone", () => {
+    expect(quoteResidential("GD1LP", dim(9, 0, 8, 0), opts).description).toMatch(/, no lock, 5 panel design$/);
+    expect(quoteResidential("GD1SP", dim(16, 0, 8, 0), { ...opts, upgradedHardware: true }).description).toMatch(/, upgraded hardware, 5 panel design$/);
+    expect(quoteResidential("GD1LP", dim(9, 0, 7, 0), opts).description).not.toContain("5 panel");
+    expect(quoteResidential("GD1LP", dim(9, 0, 8, 3), opts).description).not.toContain("5 panel");
+    expect(quoteResidential("4050", dim(9, 0, 8, 0), opts).description).not.toContain("5 panel");
+    expect(quoteResidentialSectionsOnly("GD1LP", dim(9, 0, 8, 0), opts).description).toMatch(/, sections only, 5 panel design$/);
   });
 });
 

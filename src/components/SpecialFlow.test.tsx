@@ -1507,3 +1507,109 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     expect(maybe("copy-qb")).toBeTruthy();
   });
 });
+
+describe("special order — every door drawn, by its own chart and rules (Brandon, 22/10/2026)", () => {
+  const sections = () => [...document.querySelectorAll('[data-testid^="door-section-"]')].map((el) => el.getAttribute("data-testid")!).filter((id) => /^door-section-\d+$/.test(id));
+  const glazed = () => [...document.querySelectorAll('[data-testid^="door-panel-"][data-on="true"]')].map((el) => el.getAttribute("data-testid")!.replace("door-panel-", ""));
+  const pickable = () => [...document.querySelectorAll('[data-testid$="-pick"]')].map((el) => el.getAttribute("data-testid")!);
+  const heights = () => sections().map((id) => screen.getByTestId(`${id}-height`).textContent);
+  const label = (id: string) => screen.queryByTestId(`door-panel-${id}-label`)?.textContent ?? null;
+  async function pick(series: string, member: string) {
+    render(<SpecialTool />);
+    fireEvent.change(sel("so-scope"), { target: { value: "residential" } });
+    fireEvent.change(sel("so-mfr"), { target: { value: "Clopay" } });
+    fireEvent.change(sel("so-series"), { target: { value: series } });
+    const m = sel("so-model");
+    const values = [...m.options].map((o) => o.value);
+    fireEvent.change(m, { target: { value: values.find((x) => x === member || x.endsWith(`:${member}`)) } });
+    await settle();
+    fireEvent.click(maybe("so-configure")!);
+    await settle();
+  }
+
+  it("draws a Premium Steel door off the Classic chart: the top two rows to press, the glass row a 21\", the row on the line", async () => {
+    await pick("Premium Steel Collection", "4050");
+    setWidth("9");
+    setHeight("6.6");
+    fireEvent.change(sel("so-color"), { target: { value: "White" } });
+    await settle();
+    expect(maybe("door-diagram")).toBeNull(); // solid: nothing to place
+    pickFraming('plain:short:PLAIN SHORT 19-1/2" X 12"');
+    await settle();
+    await fillOptions();
+    expect(heights()).toEqual(["21″", "18″", "18″", "21″"]);
+    expect(glazed()).toEqual(["4-1", "4-2", "4-3", "4-4"]);
+    expect(pickable()).toEqual(["door-section-4-pick", "door-section-3-pick"]);
+    expect(label("4-1")).toBe('PLAIN SHORT 19-1/2" X 12"');
+    expect(screen.getByTestId("door-panel-4-1-label-short").textContent).toBe("PLAIN SHORT");
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS IN THE TOP SECTION,  PLAIN SHORT 19-1\/2" X 12",  NO INSERTS/i);
+    fireEvent.click(screen.getByTestId("door-section-3-pick"));
+    await settle();
+    expect(heights()).toEqual(["18″", "21″", "18″", "21″"]);
+    expect(glazed()).toEqual(["3-1", "3-2", "3-3", "3-4"]);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS IN THE THIRD SECTION,  PLAIN SHORT 19-1\/2" X 12",  NO INSERTS/i);
+    // A long insert: two across, the design on each; the row kept.
+    fireEvent.change(sel("so-framing"), { target: { value: "insert:long:608" } });
+    await settle();
+    expect(glazed()).toEqual(["3-1", "3-2"]);
+    expect(label("3-1")).toBe("Charleston 608 inserts");
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS IN THE THIRD SECTION,  CHARLESTON 608 INSERTS/i);
+    // Solid takes the drawing away.
+    fireEvent.change(sel("so-framing"), { target: { value: "" } });
+    await settle();
+    expect(maybe("door-diagram")).toBeNull();
+  });
+
+  it("draws a Gallery door off its chart with the windows in the top section only, and a Bridgeport the same way", async () => {
+    await pick("Gallery Collection", "GD1SP");
+    setWidth("9");
+    setHeight("8");
+    fireEvent.change(sel("so-color"), { target: { value: "White" } });
+    await settle();
+    pickFraming('plain:long:PLAIN LONG 42" X 16"');
+    await settle();
+    await fillOptions();
+    expect(heights()).toEqual(["24″", "24″", "24″", "24″"]); // the chart's 8'0", not the stock tab's five
+    expect(glazed()).toEqual(["4-1", "4-2"]);
+    expect(pickable()).toEqual([]);
+    expect(label("4-1")).toBe('PLAIN LONG 42" X 16"');
+    fireEvent.change(sel("so-framing"), { target: { value: 'plain:short:PLAIN SHORT 19-1/2" X 16"' } });
+    await settle();
+    expect(glazed()).toEqual(["4-1", "4-2", "4-3", "4-4"]);
+    fireEvent.change(sel("so-framing"), { target: { value: "insert:long:SQ24" } });
+    await settle();
+    expect(glazed()).toEqual(["4-1", "4-2"]);
+    expect(label("4-1")).toBe("SQ24 design");
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS IN THE TOP SECTION,  SQ24 DESIGN/i);
+    cleanup();
+    await pick("Bridgeport Collection", "BD1EU");
+    setWidth("9");
+    setHeight("7.6");
+    fireEvent.change(sel("so-color"), { target: { value: "White" } });
+    await settle();
+    pickFraming();
+    await settle();
+    expect(heights()).toEqual(["24″", "21″", "21″", "24″"]);
+    expect(pickable()).toEqual([]);
+  });
+
+  it("draws the Coachman off its own chart, its windows across by width, the design on each", async () => {
+    await pick("Coachman Collection", "CD");
+    setWidth("16");
+    setHeight("7");
+    fireEvent.change(sel("so-design"), { target: { value: "12" } });
+    fireEvent.change(sel("so-color"), { target: { value: "White" } });
+    await settle();
+    pickFraming("design:ARCH1");
+    await settle();
+    expect(heights()).toEqual(["24″", "18″", "24″", "18″"]);
+    expect(glazed()).toEqual(["4-1", "4-2", "4-3", "4-4"]);
+    expect(pickable()).toEqual([]);
+    expect(label("4-1")).toBe("ARCH1 design");
+    setWidth("9");
+    await settle();
+    pickFraming("design:ARCH1");
+    await settle();
+    expect(glazed()).toEqual(["4-1", "4-2"]);
+  });
+});

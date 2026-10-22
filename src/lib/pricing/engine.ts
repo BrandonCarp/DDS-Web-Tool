@@ -8,8 +8,10 @@ import { STOCK_PRICES } from "./data/stock-prices";
 import { highLiftPrice, mountPhrase } from "./data/track-lift";
 import { ADDONS, ULTRAGRAIN, GRADE_RES, COLLECTIONS_RES } from "./data/addons";
 import { dataKey, expandModels, RESIDENTIAL_HIDDEN } from "./model-groups";
-import { windowDesigns, designClause, plainWindowsFor, stockLongAllowed } from "./data/inserts";
+import { DECORATIVE, windowDesigns, designClause, plainWindowsFor, stockLongAllowed } from "./data/inserts";
 import { CLASSIC_STACK_MODELS, classicStack, sectionOrdinal } from "./data/door-stacks";
+import { specialDoorQuote } from "./data/special-door-pricing";
+import { specialOrderHeights } from "./data/stock-colors";
 import { RES_SECTIONS } from "./data/res-sections";
 import { SECTION_ONLY_LIST, NO_GLASS_AT_18 } from "./data/res-section-meta";
 import { colorInStock, sectionColorInStock, sizeCode } from "./data/stock-colors";
@@ -165,6 +167,55 @@ function windowSectionText(model: string, dim: Dimensions, row?: number): string
   return sectionOrdinal(row);
 }
 
+/**
+ * The stock 8'0" Gallery door is a five-section door, and its line says so
+ * at the end: "…, no lock, 5 panel design" (Brandon, 22/10/2026).
+ */
+function fivePanelText(model: string, dim: Dimensions): string {
+  return /^GD1[LS]P$/.test(model) && dim.heightFt * 12 + (dim.heightIn || 0) === 96 ? ", 5 panel design" : "";
+}
+
+/** The special order group a Premium Steel stock model prices off past the floor. */
+const SPECIAL_GROUP_OF: Record<string, string> = {
+  "4050": "4050/4051/4053/4132", "4051": "4050/4051/4053/4132", "4053": "4050/4051/4053/4132",
+  "9130": "9130/9131/9132/9133", "9133": "9130/9131/9132/9133",
+};
+
+/**
+ * A Premium Steel stock door past the floor's heights — 9'3" to 10'0"
+ * (Brandon, 22/10/2026) — priced as the special order tab prices it: the
+ * sheet's door with the sheet's windows, track, springs and lock, worded
+ * the same way, with the stock tab's hardware and homeowner lines on top.
+ * Null for a door this does not cover, which stays unpriced here.
+ */
+function specialOrderPast(model: string, dim: Dimensions, opts: QuoteOptions): Quote | null {
+  const group = SPECIAL_GROUP_OF[model];
+  const height = sizeCode(dim.heightFt, dim.heightIn || 0);
+  if (!group || !specialOrderHeights(model).includes(height)) return null;
+  // The size as the 9' tier would key it: past the book's tiers, the width
+  // code is what the design lists go by.
+  const wf = Math.trunc(dim.widthFt), wi = Math.trunc(dim.widthIn || 0);
+  const widthCode = wi === 0 ? String(wf) : `${wf}.${wi}`;
+  const size: SizeCode = { code: `${widthCode}x${height}`, widthCode, tier: "9", wf, wi, hf: Math.trunc(dim.heightFt), hi: Math.trunc(dim.heightIn || 0) };
+  const validDesigns = windowDesigns(model, opts.style, size.widthCode).map((d) => d.id);
+  const windesign = opts.style === "inserts" && opts.windesign && validDesigns.includes(opts.windesign) ? opts.windesign : undefined;
+  const plainWindow = opts.style === "glass" && opts.plainWindow && plainWindowsFor(model).includes(opts.plainWindow) ? opts.plainWindow : undefined;
+  const long = plainWindow ? /\bLONG\b/i.test(plainWindow) : !!windesign && DECORATIVE.some((d) => d.id === windesign && d.cat === "long");
+  const r = specialDoorQuote({
+    model: group, variant: model, width: sizeCode(dim.widthFt, dim.widthIn || 0), height, color: opts.color,
+    style: opts.style, glassType: opts.style === "solid" ? undefined : "ssb", panelStyle: opts.style === "solid" ? undefined : long ? "long" : "short",
+    windesign, plainWindow, track: opts.track, spring: opts.spring, lock: opts.lock,
+    trackMount: opts.trackMount, windowRow: opts.windowRow,
+  });
+  if (!r.quote) return null;
+  const lines: QuoteLine[] = [{ name: "Special order door", value: r.quote.unitPrice }];
+  if (opts.upgradedHardware) lines.push({ name: "Upgraded hardware", value: upgradedHardwarePrice(dim), kind: "add" });
+  if (opts.homeowner) lines.push({ name: "Home owner surcharge", value: homeownerMarkup(dim.widthFt, dim.widthIn || 0, "special_door"), kind: "add" });
+  const unitPrice = Math.round(lines.reduce((t, l) => t + l.value, 0) * 100) / 100;
+  const description = `${r.quote.description}${opts.upgradedHardware ? ", upgraded hardware" : ""}`;
+  return { model, size, priced: true, isStock: false, source: "standard", lines: collapseUpcharges(lines), unitPrice, description };
+}
+
 /** The incline on a high lift line (Brandon, 21/10/2026): "2" bracket mount track with 72″ high lift breakaway". */
 const INCLINE_WORD: Record<string, string> = { straight_incline: "straight incline", breakaway: "breakaway", deg25: "25 degree breakaway" };
 const TRACK_NAME: Record<string, string> = {
@@ -246,7 +297,9 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
     lines: [], unitPrice: 0, description: "",
   };
   const size = resolveSizeCode(model, dim);
-  if (!size) return empty;
+  // Past the book's tiers: a Premium Steel door at 9'3" to 10'0" is priced
+  // as a special order (Brandon, 22/10/2026); anything else is not priced here.
+  if (!size) return specialOrderPast(model, dim, opts) ?? empty;
   const standard = RESIDENTIAL_PRICES[dataKey(model)]?.[size.code] ?? null;
   const stock = stockPriceFor(model, size);
   const triple = stock ?? standard;
@@ -405,7 +458,7 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
   // Upgraded hardware goes last, after the lock, so the line ends
   // "...NO LOCK, UPGRADED HARDWARE".
   const hardwareTxt = opts.upgradedHardware ? ", upgraded hardware" : "";
-  const description = `Clopay ${coll ? coll + ", " : ""}Model ${model}, ${dims(size)}, in the color ${opts.color}, ${winTxt}, ${trackTxt}, ${springTxt}, ${lockTxt}${hardwareTxt}`;
+  const description = `Clopay ${coll ? coll + ", " : ""}Model ${model}, ${dims(size)}, in the color ${opts.color}, ${winTxt}, ${trackTxt}, ${springTxt}, ${lockTxt}${hardwareTxt}${fivePanelText(model, dim)}`;
 
   return {
     model, size, priced: true, isStock: inStock,
@@ -540,7 +593,7 @@ export function quoteResidentialSectionsOnly(
   // fact that no hardware ships at the end of the line where it reads loudest.
   // Note this inverts the complete-door pattern, where the lock comes last.
   const head = plain.description.replace(/, 12″ radius track.*$/, "");
-  const description = `${head}, ${lockTxt}, sections only`;
+  const description = `${head}, ${lockTxt}, sections only${fivePanelText(model, dim)}`;
 
   return {
     model,
