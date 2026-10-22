@@ -220,7 +220,7 @@ describe("special order — glass types reach the price", () => {
       'PLAIN SHORT 19-1/2" X 12"', 'PLAIN LONG 40-1/2" X 12"', 'PLAIN SHORT 19-1/2" X 16"', 'PLAIN LONG 42" X 16"', "PLAIN ARCH 1", "Arch 2 Plain",
     ]);
     expect(framing).toContain("Colonial 509 inserts");
-    expect(framing).toContain("SQ24 inserts");
+    expect(framing).toContain("SQ24 design");
     // A standard window comes in the standard glass alone; an architectural one in its own.
     pickFraming('plain:short:PLAIN SHORT 19-1/2" X 12"');
     await settle();
@@ -239,7 +239,7 @@ describe("special order — glass types reach the price", () => {
     fireEvent.change(sel("so-framing"), { target: { value: "arch:insert:long:SQ24" } });
     await settle();
     expect(sel("so-glass").value).toBe("seeded");
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/SEEDED DSB WINDOWS IN THE TOP SECTION,  SQ24 INSERTS/i);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/SEEDED DSB WINDOWS IN THE TOP SECTION,  SQ24 DESIGN/i);
     // …and gives way to the first the window comes in where it does not.
     fireEvent.change(sel("so-framing"), { target: { value: "insert:short:509" } });
     await settle();
@@ -713,8 +713,8 @@ describe("special order — Bridgeport Steel from its own sheets (12/10/2026)", 
     // Short or long windows, a free choice, in the framing first: the plain windows, then each insert in its window.
     expect(framingLabels()).toEqual([
       'PLAIN SHORT 19-1/2" X 16"', 'PLAIN LONG 42" X 16"', "PLAIN ARCH 1", "Arch 2 Plain",
-      "SQ22 inserts", "REC12 inserts", "SQ24 inserts", "REC14 inserts",
-      "Arch 1 Grille inserts", "Arch 1 Vertical Grille inserts", "Arch 2 Grille inserts", "Arch 2 Vertical Grille inserts",
+      "SQ22 design", "REC12 design", "SQ24 design", "REC14 design",
+      "Arch 1 Grille design", "Arch 1 Vertical Grille design", "Arch 2 Grille design", "Arch 2 Vertical Grille design",
     ]);
     pickFraming();
     await settle();
@@ -961,7 +961,7 @@ describe("special order — the Coachman from CJ's sheet (12/10/2026)", () => {
     await settle();
     expect(await total()).toBe(at(2127, true, adder(870 + 550)));                        // the glass over the double strength door, 4 windows
     const line = await copiedQbLine(screen.getByTestId("copy-qb"));
-    expect(line.description).toMatch(/IN THE COLOR WHITE,  OVERLAYS IN THE COLOR WHITE,  SEEDED DSB WINDOWS IN THE TOP SECTION,  ARC1A INSERTS,  12″ RADIUS TRACK/i);
+    expect(line.description).toMatch(/IN THE COLOR WHITE,  OVERLAYS IN THE COLOR WHITE,  SEEDED DSB WINDOWS IN THE TOP SECTION,  ARC1A DESIGN,  12″ RADIUS TRACK/i);
     // 8'0": the two-window designs only, ARCH1 at 218 and ARCH4 at 436 — the arched section chosen is not among them, so the door is solid until one is.
     setWidth("8");
     await settle();
@@ -1309,7 +1309,7 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     await settle();
     line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(solid + lift(window(160)), 2);
-    expect(line.description).toMatch(/1\/8" TEMPERED LONG 42X16 WINDOWS IN SECTION 2,  GL-SOL,  LEFT SIDE inside looking out,  SQ24 INSERTS/i);
+    expect(line.description).toMatch(/1\/8" TEMPERED LONG 42X16 WINDOWS IN SECTION 2,  GL-SOL,  LEFT SIDE inside looking out,  SQ24 DESIGN/i);
     // Insulated tempered frosted over the long window: 272 list.
     fireEvent.change(sel("so-glass"), { target: { value: "insulated_tempered_frosted" } });
     await settle();
@@ -1394,7 +1394,7 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     const window = (list: number) => Math.round(list * 0.776 * k * 100) / 100;
     const line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(grid(796) + Math.round((window(96) / 0.55) * 100) / 100, 2);
-    expect(line.description).toMatch(/CLOPAY MODERN COLLECTION,  MODEL 4138,  7'6" X 8'0",  IN THE COLOR WHITE,  1\/8" TEMPERED FROSTED SHORT 19 1\/2X16 WINDOWS IN SECTION 2,  SOL-GL-SOL,  REC12 INSERTS/i);
+    expect(line.description).toMatch(/CLOPAY MODERN COLLECTION,  MODEL 4138,  7'6" X 8'0",  IN THE COLOR WHITE,  1\/8" TEMPERED FROSTED SHORT 19 1\/2X16 WINDOWS IN SECTION 2,  SOL-GL-SOL,  REC12 DESIGN/i);
   });
 
   it("offers the 4138 every mount, and CJ's track options off its sheet: high lift breakaway or 25 degree, full vertical lift, roof pitch — torsion only (20/10/2026)", async () => {

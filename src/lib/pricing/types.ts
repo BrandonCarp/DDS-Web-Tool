@@ -75,6 +75,12 @@ export interface QuoteOptions {
   incline?: InclineStyle;
   /** Inches of high lift, in 3" increments. 0 or absent means none. */
   highLiftInches?: number;
+  /**
+   * The section the windows are in, numbered from the floor up (door-stacks.ts):
+   * the top section unless a row under it was picked on the drawing — the
+   * Premium and Value Steel doors offer the top two (Brandon, 22/10/2026).
+   */
+  windowRow?: number;
 }
 
 /**

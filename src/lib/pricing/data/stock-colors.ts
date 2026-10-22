@@ -52,10 +52,14 @@ const WHITE_HEIGHTS = [...SHORT_HEIGHTS, "8.3", "8.6", "8.9", "9"];
  * to sell, so the style dropdown drops to Solid at that height rather than
  * offering something that has to be ordered in. Windows start at 6'3".
  *
+ * 7'6" and 9'0" too (Brandon, 22/10/2026): Clopay stacks them in 18" sections
+ * alone — five and six — and the stock glass sections come 21" only, so a
+ * glazed door at either height is a special order.
+ *
  * This is the one place in the matrix where style bears on stock at all, which
  * is why it is data rather than a condition buried in the lookup.
  */
-export const SOLID_ONLY_HEIGHTS = ["6"];
+export const SOLID_ONLY_HEIGHTS = ["6", "7.6", "9"];
 
 /**
  * True when a height's price already includes torsion springs.

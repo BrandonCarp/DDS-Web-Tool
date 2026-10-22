@@ -160,7 +160,7 @@ describe("Coachman special order grid (workbook of 12/10/2026)", () => {
     expect(price({ style: "inserts", windesign: "ARC1A", width: "16" })).toBe(win("ARC1A", { width: "16" }));
     // Worded like every other design — as inserts.
     expect(q({ style: "glass", windesign: "ARC1A", width: "16" }).quote?.description)
-      .toBe("Clopay Coachman Collection, Model CD, 16'0\" x 7'0\", in the color White, double strength b grade windows in the top section, ARC1A inserts, 12″ radius track, front torsion springs, no lock");
+      .toBe("Clopay Coachman Collection, Model CD, 16'0\" x 7'0\", in the color White, double strength b grade windows in the top section, ARC1A design, 12″ radius track, front torsion springs, no lock");
   });
 
   it("offers one window layout, so there is no short-or-long choice", () => {
@@ -191,7 +191,7 @@ describe("Coachman special order grid (workbook of 12/10/2026)", () => {
     expect(windowSectionCost("CD", "16", "ARC1A", "seeded")).toBe(plus(1055.5, 667.27));
     expect(windowSectionCost("CD", "16", "ARC1A", "dsb")).toBe(1055.5);
     expect(windowSectionCost("CD", "14", "ARCH1", "dsb")).toBeNull();
-    expect(q({ style: "glass", glassType: "rain", windesign: "ARCH1" }).quote?.description).toContain("rain dsb windows in the top section, ARCH1 inserts");
+    expect(q({ style: "glass", glassType: "rain", windesign: "ARCH1" }).quote?.description).toContain("rain dsb windows in the top section, ARCH1 design");
   });
 
   it("is solid only at 14'0\", where the sheet prices no window section; 14'2\" has three windows at the 4-window section figure", () => {
@@ -208,13 +208,13 @@ describe("Coachman special order grid (workbook of 12/10/2026)", () => {
     ]);
   });
 
-  it("names the design on the line after the glass, as inserts (Brandon, 13/10/2026)", () => {
+  it("names the design on the line after the glass, as a design (Brandon, 13/10/2026; \"design\" 22/10/2026)", () => {
     expect(q({ style: "glass", windesign: "REC13" }).quote?.description)
-      .toContain("in the color White, double strength b grade windows in the top section, REC13 inserts, 12″ radius track");
+      .toContain("in the color White, double strength b grade windows in the top section, REC13 design, 12″ radius track");
     expect(q({ style: "glass", glassType: "rain", windesign: "ARCH1", width: "16" }).quote?.description)
-      .toContain("rain dsb windows in the top section, ARCH1 inserts, 12″ radius track");
+      .toContain("rain dsb windows in the top section, ARCH1 design, 12″ radius track");
     expect(q({ style: "glass", glassType: "seeded", windesign: "ARC4A", width: "18" }).quote?.description)
-      .toContain("seeded dsb windows in the top section, ARC4A inserts, 12″ radius track");
+      .toContain("seeded dsb windows in the top section, ARC4A design, 12″ radius track");
   });
 
   it("prices a door with windows over 8'0\" up to 9'0\" as the 8'0\" door of the same build plus a flat $200 (Brandon, 14 and 16/10/2026)", () => {
@@ -230,7 +230,7 @@ describe("Coachman special order grid (workbook of 12/10/2026)", () => {
       }
     }
     // The line still says the width asked for; a solid door at these widths, and every other width, is as the sheet prices it.
-    expect(q({ width: "9", style: "glass", windesign: "REC13" }).quote?.description).toContain("Model CD, 9'0\" x 7'0\", in the color White, double strength b grade windows in the top section, REC13 inserts");
+    expect(q({ width: "9", style: "glass", windesign: "REC13" }).quote?.description).toContain("Model CD, 9'0\" x 7'0\", in the color White, double strength b grade windows in the top section, REC13 design");
     expect(q({ width: "8.6", style: "glass", windesign: "REC13" }).quote?.description).toContain("Model CD, 8'6\" x 7'0\", in the color White");
     expect(price({ width: "9" })).toBe(sell(door(1184)));
     expect(price({ width: "8.6" })).toBe(sell(door(1184)));
@@ -301,12 +301,12 @@ describe("Coachman special order grid (workbook of 12/10/2026)", () => {
     expect(q({ design: "31", style: "glass" }).reason).toMatch(/series 3 and 4 designs with windows — design 31 is solid only/);
     expect(q({ design: "31" }).quote?.description).toContain("Model CD31,");
     expect(q({ design: "12", style: "glass", windesign: "SQ24", overlayColor: "White" }).quote?.description)
-      .toBe("Clopay Coachman Collection, Model CD12, 8'0\" x 7'0\", in the color White, overlays in the color White, double strength b grade windows in the top section, SQ24 inserts, 12″ radius track, front torsion springs, no lock");
+      .toBe("Clopay Coachman Collection, Model CD12, 8'0\" x 7'0\", in the color White, overlays in the color White, double strength b grade windows in the top section, SQ24 design, 12″ radius track, front torsion springs, no lock");
   });
 
   it("words the line as a Coachman", () => {
     expect(q({}).quote?.description)
       .toBe("Clopay Coachman Collection, Model CD, 8'0\" x 7'0\", in the color White, solid no windows, 12″ radius track, front torsion springs, no lock");
-    expect(q({ style: "glass", windesign: "SQ24" }).quote?.description).toContain("double strength b grade windows in the top section, SQ24 inserts");
+    expect(q({ style: "glass", windesign: "SQ24" }).quote?.description).toContain("double strength b grade windows in the top section, SQ24 design");
   });
 });

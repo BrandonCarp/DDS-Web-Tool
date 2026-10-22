@@ -152,7 +152,7 @@ describe("Modern Steel — Clopay's stacking chart and panel counts (19/10/2026)
     const three = specialDoorQuote({ ...base, style: "glass", glassType: "tempered", modernFraming: "short_grilles:REC12",
       windowsAt: [{ section: 1, panel: 1 }, { section: 1, panel: 2 }, { section: 2, panel: 4 }] });
     expect(three.quote?.unitPrice).toBeCloseTo(solid + sell(cost(80, 0.865) * 3), 2);
-    expect(three.quote?.description).toContain('Clopay Modern Collection, Model 9208, 8\'0" x 7\'0", in the color White, 1/8" tempered short 19 1/2x16 windows in section 1 GL-GL-SOL-SOL and section 2 SOL-SOL-SOL-GL, REC12 inserts, 12″ radius track');
+    expect(three.quote?.description).toContain('Clopay Modern Collection, Model 9208, 8\'0" x 7\'0", in the color White, 1/8" tempered short 19 1/2x16 windows in section 1 GL-GL-SOL-SOL and section 2 SOL-SOL-SOL-GL, REC12 design, 12″ radius track');
     // Slim windows, in the glass the sheet prices them in; 16'0" takes four across.
     const slim = specialDoorQuote({ ...base, width: "16", style: "glass", glassType: "insulated_tempered", modernFraming: "slim:black",
       windowsAt: [{ section: 1, panel: 1 }, { section: 1, panel: 2 }, { section: 1, panel: 3 }, { section: 1, panel: 4 }] });
@@ -183,7 +183,7 @@ describe("Modern Steel — Clopay's stacking chart and panel counts (19/10/2026)
     expect(specialDoorQuote({ ...base, style: "solid" }).quote?.unitPrice).toBe(grid(569, 0.776));
     const r = specialDoorQuote({ ...base, style: "glass", glassType: "tempered", modernFraming: "short_grilles:SQ22", windowsAt: [{ section: 1, panel: 1 }, { section: 2, panel: 4 }] });
     expect(r.quote?.unitPrice).toBeCloseTo(grid(569, 0.776) + sell(cost(80, 0.776) * 2), 2);
-    expect(r.quote?.description).toContain('Clopay Modern Collection, Model 4138, 8\'0" x 7\'0", in the color White, 1/8" tempered short 19 1/2x16 windows in section 1 GL-SOL-SOL-SOL and section 2 SOL-SOL-SOL-GL, SQ22 inserts');
+    expect(r.quote?.description).toContain('Clopay Modern Collection, Model 4138, 8\'0" x 7\'0", in the color White, 1/8" tempered short 19 1/2x16 windows in section 1 GL-SOL-SOL-SOL and section 2 SOL-SOL-SOL-GL, SQ22 design');
     // 9FT and 10FT are priced at the whole feet; an odd width there is the whole-foot door below it and 200, as everywhere.
     expect(specialDoorQuote({ ...base, height: "9", style: "solid" }).quote?.unitPrice).toBe(grid(970, 0.776));
     expect(specialDoorQuote({ ...base, width: "8.6", height: "9", style: "solid" }).quote?.unitPrice).toBeCloseTo(grid(970, 0.776) + 200, 2);

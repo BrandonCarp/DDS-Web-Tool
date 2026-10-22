@@ -327,6 +327,11 @@ export function sectionColors(model: string): ("White" | "Brown")[] {
   return SECTION_COLORS[model] ?? ["White", "Brown"];
 }
 
+/** The colours a stock complete door (3200, 524) comes in: white alone (Brandon, 22/10/2026). */
+export function completeDoorColors(_model: string): ("White" | "Brown")[] {
+  return ["White"];
+}
+
 /**
  * The window sizes a model's sections take (Brandon, 14/10/2026): the 3200
  * 24x8 or 24x12, the 524 and 2415 families 24x12 or 24x6, listed in the order

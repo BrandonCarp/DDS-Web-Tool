@@ -226,6 +226,23 @@ export function designName(id: string | undefined | null): string | null {
   return d ? d.name : null;
 }
 
+/**
+ * The word after a design on the line (Brandon, 22/10/2026): an
+ * architectural window — the 16" windows' grilles (REC12, SQ22, REC14,
+ * SQ24) on the Premium and Modern Steel doors, the Gallery's and Bridgeport's
+ * arch windows, the Coachman's window designs — is a "design"; the
+ * decorative inserts (509, 608…) are "inserts", as they have always been.
+ */
+export function designWord(id: string | undefined | null): "design" | "inserts" {
+  return !!id && [...ARCHITECTURAL, ...COACHMAN_ARCH, ...COACHMAN_GLASS_DESIGNS].some((x) => x.id === id) ? "design" : "inserts";
+}
+
+/** "SQ24 design", "Colonial 509 inserts": a design named with its word. */
+export function designClause(id: string | undefined | null): string | null {
+  const name = designName(id);
+  return name ? `${name} ${designWord(id)}` : null;
+}
+
 
 /**
  * The plain (no-insert) windows each stock model takes, by the name they go on

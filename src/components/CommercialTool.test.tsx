@@ -7,7 +7,7 @@ import { CommercialTool } from "./CommercialTool";
  * The commercial tab's wiring, after CJ's RIBBED SECTIONS sheet (Brandon,
  * 15/10/2026): complete door or replacement section comes first, as two
  * buttons; sections are 24" unless changed; a complete door's windows are
- * placed GL/SOL a panel, a section's by pressing the panels on the diagram;
+ * pressed into the door drawing (22/10/2026), a section's by pressing the panels on the diagram;
  * a 524 or 2415 asks for its stile locations, one row a stile — the inches
  * and the quarter — with more to add, or says they are needed. Fetch is
  * stubbed and the request body inspected, as the residential tests do — the
@@ -212,40 +212,79 @@ describe("commercial tab — a section's windows, pressed into the drawing once 
   });
 });
 
-describe("commercial tab — a complete door's windows, placed GL or SOL a panel", () => {
-  it("asks the window section and the placement under Glass type, with every panel glass to begin with", async () => {
+describe("commercial tab — a complete door's windows, pressed into the door drawing (Brandon, 22/10/2026)", () => {
+  const doorOn = () => [...document.querySelectorAll('[data-testid^="door-panel-"][data-on="true"]')].map((el) => el.getAttribute("data-testid")!.replace("door-panel-", ""));
+  const doorSections = () => [...document.querySelectorAll('[data-testid^="door-section-"]')].map((el) => el.getAttribute("data-testid")!).filter((id) => /^door-section-\d+$/.test(id));
+
+  it("draws the door as Clopay stacks it under Glass type, with the third section glass to begin with, and takes a row at a time", async () => {
     configure("complete", "Clopay", "524");
-    expect(screen.queryByTestId("comm-win-section")).toBeNull();
+    expect(screen.queryByTestId("comm-door-drawing")).toBeNull();
     change("comm-size", "10′2″ × 10′0″");
+    expect(screen.queryByTestId("comm-door-drawing")).toBeNull(); // solid: no drawing
     change("comm-glass", "glass");
-    expect(panelsDrawn()).toBe(0); // no diagram on a complete door
-    expect(options("comm-win-section")).toEqual(["1", "2", "3", "4", "5", "6"]);
-    expect(sel("comm-win-section").value).toBe("3");
-    expect(options("comm-placement")).toEqual(["GL,GL,GL", "GL,GL,SOL", "GL,SOL,GL", "SOL,GL,GL", "GL,SOL,SOL", "SOL,GL,SOL", "SOL,SOL,GL"]);
-    expect(sel("comm-placement").value).toBe("GL,GL,GL");
-    change("comm-placement", "SOL,GL,SOL");
-    change("comm-win-section", "4");
-    const body = await getPrice();
-    expect(body).toMatchObject({ order: "complete", model: "524", size: "10′2″ × 10′0″", glass: "glass", winSection: 4, windowPanels: [2], windowSize: "24x12" });
-    // A new size starts over with every panel glass, and lists that width's placements.
-    change("comm-size", "8′2″ × 8′0″");
-    expect(options("comm-placement")).toEqual(["GL,GL", "GL,SOL", "SOL,GL"]);
-    expect(sel("comm-placement").value).toBe("GL,GL");
-    // Solid hides them all and sends no panels.
-    change("comm-glass", "solid");
-    expect(screen.queryByTestId("comm-placement")).toBeNull();
+    expect(panelsDrawn()).toBe(0); // the section drawing is the replacement section's
+    // The old section and placement dropdowns are gone.
     expect(screen.queryByTestId("comm-win-section")).toBeNull();
+    expect(screen.queryByTestId("comm-placement")).toBeNull();
+    expect(screen.queryByTestId("comm-window-size")).toBeNull();
+    // A 10'0" 524: five sections off the industrial chart, three panels across; the third row glass.
+    expect(doorSections()).toEqual(["door-section-5", "door-section-4", "door-section-3", "door-section-2", "door-section-1"]);
+    expect(screen.getByTestId("door-section-5-height").textContent).toBe("24″");
+    expect(screen.getByTestId("door-section-1-height").textContent).toBe("24″");
+    expect(doorOn()).toEqual(["3-1", "3-2", "3-3"]);
+    // Each window shows its size in the panel: 24x12, with 24x6 to pick.
+    expect(options("door-panel-3-2-size")).toEqual(["24x12", "24x6"]);
+    // A panel comes out on its x; a press in another row starts that row.
+    fireEvent.click(screen.getByTestId("door-panel-3-1-remove"));
+    fireEvent.click(screen.getByTestId("door-panel-3-3-remove"));
+    expect(doorOn()).toEqual(["3-2"]);
+    fireEvent.click(screen.getByTestId("door-panel-4-2-add"));
+    expect(doorOn()).toEqual(["4-2"]);
+    fireEvent.click(screen.getByTestId("door-panel-4-3-add"));
+    expect(doorOn()).toEqual(["4-2", "4-3"]);
+    change("door-panel-4-2-size", "24x6");
+    const body = await getPrice();
+    expect(body).toMatchObject({ order: "complete", model: "524", size: "10′2″ × 10′0″", glass: "glass", winSection: 4, windowPanels: [2, 3], windowSize: "24x6" });
+    // ALL beside a row fills it, and clears any other.
+    fireEvent.click(screen.getByTestId("door-section-5-all"));
+    expect(doorOn()).toEqual(["5-1", "5-2", "5-3"]);
+    expect(await getPrice()).toMatchObject({ winSection: 5, windowPanels: [1, 2, 3] });
+    // A new size starts over with every panel of the third section glass.
+    change("comm-size", "8′2″ × 8′0″");
+    expect(doorSections()).toHaveLength(4);
+    expect(doorOn()).toEqual(["3-1", "3-2"]);
+    // Solid takes the drawing away and sends no panels.
+    change("comm-glass", "solid");
+    expect(screen.queryByTestId("comm-door-drawing")).toBeNull();
     expect(await getPrice()).toMatchObject({ glass: "solid", windowPanels: [] });
   });
 
-  it("offers a 3200 complete door 24x12 windows first, as the line reads", async () => {
+  it("offers a complete door in white alone, and sends white (Brandon, 22/10/2026)", async () => {
+    configure("complete", "Clopay", "524");
+    expect(options("comm-door-color")).toEqual(["White"]);
+    expect(sel("comm-door-color").disabled).toBe(true);
+    change("comm-size", "8′2″ × 8′0″");
+    expect(await getPrice()).toMatchObject({ order: "complete", model: "524", color: "White" });
+    cleanup();
+    configure("complete", "Clopay", "3200");
+    expect(options("comm-door-color")).toEqual(["White"]);
+    // Sections still come in brown where the table lists it.
+    cleanup();
+    configure("section", "Clopay", "524");
+    expect(options("comm-color")).toEqual(["White", "Brown"]);
+  });
+
+  it("offers a 3200 complete door 24x12 windows first in the panel, as the line reads, off the energy chart", async () => {
     configure("complete", "Clopay", "3200");
     change("comm-size", "12′2″ × 10′0″");
     change("comm-glass", "glass");
-    expect(options("comm-window-size")).toEqual(["24x12", "24x8"]);
-    expect(sel("comm-window-size").value).toBe("24x12");
-    expect(options("comm-placement")).toHaveLength(7);
-    expect(await getPrice()).toMatchObject({ model: "3200", windowSize: "24x12", windowPanels: [1, 2, 3] });
+    expect(doorSections()).toHaveLength(5);
+    expect(screen.getByTestId("door-section-5-height").textContent).toBe("24″");
+    expect(screen.getByTestId("door-section-1-height").textContent).toBe("24″");
+    expect(options("door-panel-3-1-size")).toEqual(["24x12", "24x8"]);
+    expect(sel("door-panel-3-1-size").value).toBe("24x12");
+    expect(doorOn()).toEqual(["3-1", "3-2", "3-3"]);
+    expect(await getPrice()).toMatchObject({ model: "3200", windowSize: "24x12", winSection: 3, windowPanels: [1, 2, 3] });
   });
 });
 

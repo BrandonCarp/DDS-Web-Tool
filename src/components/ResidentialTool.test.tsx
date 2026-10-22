@@ -559,3 +559,108 @@ describe("residential tool — the stock 4050's long panels (6/10/2026)", () => 
     expect(designs(other)).not.toMatch(/608|610|611|612|613/);
   });
 });
+
+describe("residential tool — the windows' row on the door drawing (Brandon, 22/10/2026)", () => {
+  const SHORT = 'PLAIN SHORT 19-1/2" X 12"', LONG = 'PLAIN LONG 40-1/2" X 12"';
+  const size = (w: string, h: string, inch = "0") => {
+    fireEvent.change(screen.getByTestId("width-ft"), { target: { value: w } });
+    fireEvent.change(screen.getByTestId("height-ft"), { target: { value: h } });
+    fireEvent.change(screen.getByTestId("height-in"), { target: { value: inch } });
+    fireEvent.change(screen.getByTestId("color"), { target: { value: "White" } });
+  };
+  const glass = () => {
+    const v = [...(screen.getByTestId("style") as HTMLSelectElement).options].map((o) => o.value).find((x) => x !== "solid")!;
+    fireEvent.change(screen.getByTestId("style"), { target: { value: v } });
+  };
+  const sections = () => [...document.querySelectorAll('[data-testid^="door-section-"]')].map((el) => el.getAttribute("data-testid")!).filter((id) => /^door-section-\d+$/.test(id));
+  const glazed = () => [...document.querySelectorAll('[data-testid^="door-panel-"][data-on="true"]')].map((el) => el.getAttribute("data-testid")!.replace("door-panel-", ""));
+  const pickable = () => [...document.querySelectorAll('[data-testid$="-pick"]')].map((el) => el.getAttribute("data-testid")!);
+  async function lastBody() {
+    fireEvent.click(screen.getByTestId("get-price"));
+    await waitFor(() => expect(bodies.length).toBeGreaterThan(0));
+    return bodies[bodies.length - 1];
+  }
+
+  it("draws a 4050 with windows as Clopay stacks it, the top row glass, and sends no row until the one under it is pressed", async () => {
+    await configure("4050");
+    size("9", "7");
+    expect(screen.queryByTestId("door-diagram")).toBeNull(); // solid: nothing to place
+    glass();
+    // 7'0": four sections, 21" each; short windows four across at 9'0".
+    expect(sections()).toEqual(["door-section-4", "door-section-3", "door-section-2", "door-section-1"]);
+    expect(screen.getByTestId("door-section-4-height").textContent).toBe("21″");
+    expect(glazed()).toEqual(["4-1", "4-2", "4-3", "4-4"]);
+    // Only the top two rows can be pressed, as whole rows: no panel buttons, no ALL, no x.
+    expect(pickable()).toEqual(["door-section-4-pick", "door-section-3-pick"]);
+    expect(document.querySelector('[data-testid$="-add"]')).toBeNull();
+    expect(document.querySelector('[data-testid$="-all"]')).toBeNull();
+    expect(document.querySelector('[data-testid$="-remove"]')).toBeNull();
+    expect((await lastBody()).windowRow).toBeUndefined();
+    fireEvent.click(screen.getByTestId("door-section-3-pick"));
+    expect(glazed()).toEqual(["3-1", "3-2", "3-3", "3-4"]);
+    expect((await lastBody()).windowRow).toBe(3);
+    // A taller door keeps the row under the top: the fourth of five.
+    size("9", "8");
+    expect(sections()).toHaveLength(5);
+    expect(glazed()).toEqual(["4-1", "4-2", "4-3", "4-4"]);
+    expect((await lastBody()).windowRow).toBe(4);
+    fireEvent.click(screen.getByTestId("door-section-5-pick"));
+    expect(glazed()).toEqual(["5-1", "5-2", "5-3", "5-4"]);
+    expect((await lastBody()).windowRow).toBeUndefined();
+  });
+
+  it("draws the long window two across at 9'0\" and the short one four, and a 6'6\" door its 21-18-18-21 — 18-21-18-21 with the windows in the third", async () => {
+    await configure("4050");
+    size("9", "6", "6");
+    glass();
+    expect(sections()).toHaveLength(4);
+    const heights = () => ["4", "3", "2", "1"].map((s) => screen.getByTestId(`door-section-${s}-height`).textContent);
+    expect(heights()).toEqual(["21″", "18″", "18″", "21″"]);
+    // The glass section is a 21": the third row takes the top's 21" and the 18" goes up (Brandon, 22/10/2026).
+    fireEvent.click(screen.getByTestId("door-section-3-pick"));
+    expect(heights()).toEqual(["18″", "21″", "18″", "21″"]);
+    expect(glazed()).toEqual(["3-1", "3-2", "3-3", "3-4"]);
+    fireEvent.click(screen.getByTestId("door-section-4-pick"));
+    expect(heights()).toEqual(["21″", "18″", "18″", "21″"]);
+    fireEvent.change(screen.getByTestId("framing"), { target: { value: SHORT } });
+    expect(glazed()).toHaveLength(4);
+    fireEvent.change(screen.getByTestId("framing"), { target: { value: LONG } });
+    expect(glazed()).toEqual(["4-1", "4-2"]);
+    // A long insert is a long window too.
+    fireEvent.change(screen.getByTestId("framing"), { target: { value: "insert" } });
+    fireEvent.change(screen.getByTestId("windesign"), { target: { value: "608" } });
+    expect(glazed()).toEqual(["4-1", "4-2"]);
+    fireEvent.change(screen.getByTestId("windesign"), { target: { value: "509" } });
+    expect(glazed()).toHaveLength(4);
+  });
+
+  it("offers 7'6\" and 9'0\" solid only, like 6'0\" (Brandon, 22/10/2026)", async () => {
+    await configure("4050");
+    const styles = () => [...(screen.getByTestId("style") as HTMLSelectElement).options].map((o) => o.value);
+    size("9", "7");
+    expect(styles().length).toBeGreaterThan(1);
+    size("9", "7", "6");
+    expect(styles()).toEqual(["solid"]);
+    expect(screen.queryByTestId("door-diagram")).toBeNull();
+    size("9", "9");
+    expect(styles()).toEqual(["solid"]);
+    size("9", "8", "9");
+    expect(styles().length).toBeGreaterThan(1);
+    size("9", "6");
+    expect(styles()).toEqual(["solid"]);
+  });
+
+  it("draws no Gallery door, and takes the drawing away with the windows", async () => {
+    await configure("GD1SP");
+    size("9", "7");
+    glass();
+    expect(screen.queryByTestId("door-diagram")).toBeNull();
+    cleanup();
+    await configure("T50S");
+    size("9", "7");
+    glass();
+    expect(screen.queryByTestId("door-diagram")).not.toBeNull();
+    fireEvent.change(screen.getByTestId("style"), { target: { value: "solid" } });
+    expect(screen.queryByTestId("door-diagram")).toBeNull();
+  });
+});

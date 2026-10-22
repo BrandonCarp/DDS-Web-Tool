@@ -5,7 +5,7 @@ import { collapseUpcharges } from "./types";
 import { COMM_MATRIX, COMM_SECTIONS, COMM_SECTION_STOCK, COMM_SLAB, STOCK_COMM, GRADE_COMM } from "./data/commercial";
 import { ADDONS } from "./data/addons";
 import {
-  COMM_COMPLETE, panelCount, panelsPhrase, joinAnd, roundedFeet, slabBilledFeet, SLAB_MIN_FEET, SECTION_MAX_WIDTH_IN, maxWidthLabel, sectionColors,
+  COMM_COMPLETE, panelCount, panelsPhrase, joinAnd, roundedFeet, slabBilledFeet, SLAB_MIN_FEET, SECTION_MAX_WIDTH_IN, maxWidthLabel, sectionColors, completeDoorColors,
   sectionWindowSizes, stileLocationCount,
 } from "./data/commercial-meta";
 
@@ -179,7 +179,9 @@ export function quoteCommercial(input: CommInput): CommQuote {
           ? `${countWord(picked.length)} ${glassWord}${winSize} ${picked.length === 1 ? "window" : "windows"} ${panelsPhrase(panels, picked)} of the ${ordinal(input.winSection)} section`
           : `${glassWord}${winSize} windows in the ${ordinal(input.winSection)} section`
         : "solid no windows";
-    const colorTxt = `in the color ${(input.color || "White").toLowerCase()}`;
+    // A stock complete door comes in white alone (Brandon, 22/10/2026).
+    const doorColor = completeDoorColors(model).find((c) => c === input.color) ?? "White";
+    const colorTxt = `in the color ${doorColor.toLowerCase()}`;
     // Ribbed models say the insulation and no grade word; then the colour and
     // the windows (or SOLID NO WINDOWS) like any other door, and the
     // track/spring/lock tail. "Steel ribbed" is for the section lines only.

@@ -222,7 +222,7 @@ describe("Bridgeport wording", () => {
     expect(q({ variant: "BD1EU", style: "glass" }).quote?.description)
       .toContain("Model BD1EU, 8'0\" x 7'0\", in the color White, double strength b grade windows in the top section, no inserts");
     expect(q({ model: "BD2CU", variant: "BD2CU", style: "inserts", glassType: "insulated", windesign: "ARCH1GRILLE" }).quote?.description)
-      .toContain("Model BD2CU, 8'0\" x 7'0\", in the color White, insulated windows in the top section, Arch 1 Grille inserts");
+      .toContain("Model BD2CU, 8'0\" x 7'0\", in the color White, insulated windows in the top section, Arch 1 Grille design");
   });
 
   it("names the plain window the Gallery and Bridgeport share — short, long or arch (Brandon, 14/10/2026)", () => {

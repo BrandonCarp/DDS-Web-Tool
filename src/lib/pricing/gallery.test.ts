@@ -101,7 +101,7 @@ describe("Gallery glass", () => {
   it("words the line as the stock tab does: the grade, then the design or NO INSERTS", () => {
     expect(q({ style: "glass" }).quote?.description).toContain("double strength b grade windows in the top section, no inserts");
     expect(q({ style: "inserts", glassType: "insulated", windesign: "ARCH1GRILLE" }).quote?.description)
-      .toContain("insulated windows in the top section, Arch 1 Grille inserts");
+      .toContain("insulated windows in the top section, Arch 1 Grille design");
     expect(q({ style: "inserts" }).quote?.description).toContain("double strength b grade windows in the top section, no inserts");
   });
 

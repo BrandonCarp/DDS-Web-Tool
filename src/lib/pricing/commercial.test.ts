@@ -266,8 +266,10 @@ describe("complete-door description format", () => {
     expect(d).not.toContain("section");
   });
 
-  it("carries the colour through", () => {
-    expect(door({ color: "Brown" }).description).toContain("in the color brown");
+  it("is white whatever colour is sent — the stock complete doors come in white alone (Brandon, 22/10/2026)", () => {
+    expect(door({ color: "Brown" }).description).toContain("in the color white");
+    expect(door({ color: "White" }).description).toContain("in the color white");
+    expect(door({ color: undefined }).description).toContain("in the color white");
   });
 
   it("uses plain ASCII inch marks — this gets pasted into QuickBooks", () => {

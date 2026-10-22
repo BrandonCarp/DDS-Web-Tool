@@ -17,7 +17,7 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
-  const { model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, windesign, plainWindow, upgradedHardware, homeowner, trackMount, incline, highLiftInches } = body;
+  const { model, widthFt, widthIn, heightFt, heightIn, style, color, track, spring, lock, windesign, plainWindow, upgradedHardware, homeowner, trackMount, incline, highLiftInches, windowRow } = body;
   if (typeof model !== "string") return NextResponse.json({ error: "model is required" }, { status: 400 });
 
   // Sections-only quotes: stock-size dropdown widths, priced from the workbook
@@ -57,6 +57,8 @@ export async function POST(req: Request) {
     trackMount: typeof trackMount === "string" ? (trackMount as never) : undefined,
     incline: typeof incline === "string" ? (incline as never) : undefined,
     highLiftInches: typeof highLiftInches === "number" ? highLiftInches : 0,
+    // Checked against the door's own stack in the engine.
+    windowRow: typeof windowRow === "number" ? windowRow : undefined,
     homeowner: homeowner === true,
   };
   const dims = {

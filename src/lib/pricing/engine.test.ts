@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { priceResidential, quoteResidential, quoteResidentialSection, resolveSizeCode, tierForHeight, listModels } from "./engine";
+import { priceResidential, quoteResidential, quoteResidentialSection, quoteResidentialSectionsOnly, resolveSizeCode, tierForHeight, listModels } from "./engine";
 import { RESIDENTIAL_PRICES } from "./data/residential-prices";
 import { STOCK_PRICES } from "./data/stock-prices";
 import type { WindowStyle } from "./types";
@@ -386,7 +386,47 @@ describe("window designs (inserts catalog from index.html)", () => {
     const q = quoteResidential("GD1LP", dim(8, 0, 7, 0), { ...opts, style: "glass", windesign: "SQ24" });
     expect(q.description).not.toContain("SQ24");
     const q2 = quoteResidential("GD1LP", dim(8, 0, 7, 0), { ...opts, style: "inserts", windesign: "SQ24" });
-    expect(q2.description).toContain("SQ24 inserts");
+    expect(q2.description).toContain("SQ24 design");
+  });
+  it("calls an architectural window a design and a decorative insert inserts (Brandon, 22/10/2026)", () => {
+    const line = (model: string, id: string) => quoteResidential(model, dim(9, 0, 7, 0), { ...opts, windesign: id }).description;
+    expect(line("GD1LP", "SQ24")).toContain("double strength b grade windows in the top section, SQ24 design");
+    expect(line("GD1LP", "ARCH1GRILLE")).toContain(", Arch 1 Grille design");
+    expect(line("GD1LP", "REC12")).toContain(", REC12 design");
+    expect(line("4050", "509")).toContain("single strength b grade windows in the top section, Colonial 509 inserts");
+    expect(line("4050", "608")).toContain(", Charleston 608 inserts");
+    expect(quoteResidential("4050", dim(9, 0, 7, 0), { ...opts, style: "glass" }).description).toContain("windows in the top section, no inserts");
+  });
+});
+
+describe("the windows' row (Brandon, 22/10/2026): the top section, or the one under it off the drawing", () => {
+  const opts = { style: "glass" as const, color: "White", track: "r12" as const, spring: "extension" as const, lock: "none" as const };
+  const line = (model: string, h: number, row?: number, hi = 0) => quoteResidential(model, dim(9, 0, h, hi), { ...opts, windowRow: row }).description;
+  it("names the section under the top by Clopay's floor-up number: the third of a 7'0\" door's four, the fourth of an 8'0\" door's five", () => {
+    expect(line("4050", 7)).toContain("windows in the top section, no inserts");
+    expect(line("4050", 7, 3)).toContain("windows in the third section, no inserts");
+    expect(line("4050", 8, 4)).toContain("windows in the fourth section, no inserts");
+    expect(line("4050", 7, 3, 6)).toContain("windows in the third section"); // 7'6": five 18" sections, no insert
+    expect(line("4050", 7, 4, 6)).toContain("windows in the fourth section");
+    expect(line("9133", 7, 3)).toContain("windows in the third section");
+    expect(line("T50S", 7, 3)).toContain("windows in the third section");
+  });
+  it("reads top for the top row itself, a row the door does not have, and a door not on the chart", () => {
+    expect(line("4050", 7, 4)).toContain("windows in the top section");
+    expect(line("4050", 7, 5)).toContain("windows in the top section");
+    expect(line("4050", 7, 0)).toContain("windows in the top section");
+    expect(line("4050", 7, 2.5)).toContain("windows in the top section");
+    expect(line("GD1LP", 7, 3)).toContain("windows in the top section");
+  });
+  it("keeps the row on a sections-only door", () => {
+    const q = quoteResidentialSectionsOnly("4050", dim(9, 0, 7, 0), { ...opts, windowRow: 3 });
+    expect(q.description).toContain("windows in the third section, no inserts, no lock, sections only");
+  });
+  it("prices the same wherever the row is", () => {
+    const top = quoteResidential("4050", dim(9, 0, 7, 0), opts);
+    const under = quoteResidential("4050", dim(9, 0, 7, 0), { ...opts, windowRow: 3 });
+    expect(under.unitPrice).toBe(top.unitPrice);
+    expect(under.isStock).toBe(top.isStock);
   });
 });
 

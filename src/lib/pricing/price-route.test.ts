@@ -99,6 +99,12 @@ describe("price route — option threading", () => {
     const { json } = await post(door({ style: "inserts", windesign: "not-a-design" }));
     expect(json.description).not.toContain("not-a-design");
   });
+
+  it("threads the windows' row, a number only (22/10/2026)", async () => {
+    expect((await post(door({ style: "glass", windowRow: 3 }))).json.description).toContain("windows in the third section");
+    expect((await post(door({ style: "glass" }))).json.description).toContain("windows in the top section");
+    expect((await post(door({ style: "glass", windowRow: "3" }))).json.description).toContain("windows in the top section");
+  });
 });
 
 describe("price route — sections", () => {

@@ -8,7 +8,8 @@ import { STOCK_PRICES } from "./data/stock-prices";
 import { highLiftPrice, mountPhrase } from "./data/track-lift";
 import { ADDONS, ULTRAGRAIN, GRADE_RES, COLLECTIONS_RES } from "./data/addons";
 import { dataKey, expandModels, RESIDENTIAL_HIDDEN } from "./model-groups";
-import { windowDesigns, designName, plainWindowsFor, stockLongAllowed } from "./data/inserts";
+import { windowDesigns, designClause, plainWindowsFor, stockLongAllowed } from "./data/inserts";
+import { CLASSIC_STACK_MODELS, classicStack, sectionOrdinal } from "./data/door-stacks";
 import { RES_SECTIONS } from "./data/res-sections";
 import { SECTION_ONLY_LIST, NO_GLASS_AT_18 } from "./data/res-section-meta";
 import { colorInStock, sectionColorInStock, sizeCode } from "./data/stock-colors";
@@ -148,6 +149,22 @@ const STYLE_NAME: Record<WindowStyle, string> = {
   glass: "Glass",
   inserts: "Glass + inserts",
 };
+/**
+ * Which section the windows are in, as the line says it: "top" unless a row
+ * under the top was picked on the door drawing (Brandon, 22/10/2026 — the
+ * Premium and Value Steel doors take their windows in the top section or the
+ * one under it: "windows in the third section" on a 7'0" door, "in the
+ * fourth section" on an 8'0"). Rows are numbered from the floor up, as
+ * Clopay numbers them; a row the door does not have, or its top row, reads
+ * "top", so the line never names a section that is not there.
+ */
+function windowSectionText(model: string, dim: Dimensions, row?: number): string {
+  if (!row || !Number.isInteger(row) || !CLASSIC_STACK_MODELS.has(model)) return "top";
+  const stack = classicStack(dim.heightFt, dim.heightIn || 0);
+  if (!stack || row < 1 || row >= stack.length) return "top";
+  return sectionOrdinal(row);
+}
+
 /** The incline on a high lift line (Brandon, 21/10/2026): "2" bracket mount track with 72″ high lift breakaway". */
 const INCLINE_WORD: Record<string, string> = { straight_incline: "straight incline", breakaway: "breakaway", deg25: "25 degree breakaway" };
 const TRACK_NAME: Record<string, string> = {
@@ -328,7 +345,9 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
   let winTxt = "solid no windows"; // no comma — Brandon's door lines, 8-9/10/2026
   if (opts.style !== "solid") {
     const validDesigns = windowDesigns(model, opts.style, size.widthCode).map((d) => d.id);
-    const dn = opts.windesign && validDesigns.includes(opts.windesign) ? designName(opts.windesign) : null;
+    // The design named with its word (Brandon, 22/10/2026): "SQ24 design"
+    // for an architectural window, "Colonial 509 inserts" for an insert.
+    const dn = opts.windesign && validDesigns.includes(opts.windesign) ? designClause(opts.windesign) : null;
     // Windows with no insert design chosen says NO INSERTS outright. Trailing
     // off after "in the top section" left the installer unable to tell a plain
     // glazed door from one whose insert nobody filled in.
@@ -338,7 +357,7 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
     const plain = opts.style === "glass" && opts.plainWindow && plainWindowsFor(model).includes(opts.plainWindow)
       ? ", " + opts.plainWindow.toLowerCase()
       : "";
-    winTxt = `${grade ? grade + " windows" : "windows"} in the top section${plain}${dn ? ", " + dn + " inserts" : ", no inserts"}`;
+    winTxt = `${grade ? grade + " windows" : "windows"} in the ${windowSectionText(model, dim, opts.windowRow)} section${plain}${dn ? ", " + dn : ", no inserts"}`;
   }
   // Torsion springs say where they sit (Brandon, 21/10/2026): front, or rear
   // on a reverse low headroom track; galvanized the same with the word first.

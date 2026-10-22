@@ -67,9 +67,19 @@ describe("special order door grid", () => {
     expect(specialDoorQuote({ ...base, width: "8", style: "glass", panelStyle: "long" }).quote?.unitPrice).toBeCloseTo(747.62 + glassAdderSell(M, "long", "8", "ssb")!, 2);
     for (const [w, h] of [["8", "7"], ["16", "8"], ["12", "9"], ["7.6", "8"]]) {
       for (const style of ["solid", "glass", "inserts"] as const) {
+        // 9'0" is floored solid only (22/10/2026): with windows it is the sheet's door, not the stock book's.
+        if (h === "9" && style !== "solid") continue;
         const r = quoteResidential("4050", { widthFt: Number(w.split(".")[0]), widthIn: Number(w.split(".")[1] ?? 0), heightFt: Number(h), heightIn: 0 }, { style, color: "White", track: "r12", spring: "extension", lock: "none", windesign: style === "inserts" ? "509" : undefined });
         expect(specialDoorQuote({ ...base, width: w, height: h, style, windesign: style === "inserts" ? "509" : undefined }).quote?.unitPrice, `${w}x${h} ${style}`).toBe(r.unitPrice);
       }
+    }
+    // 7'6" and 9'0" are floored solid only (Brandon, 22/10/2026): a glazed
+    // door at either height is a special order off the sheet, as the 4132 is.
+    for (const [w, h] of [["12", "9"], ["8", "7.6"]]) {
+      expect(specialDoorQuote({ ...base, width: w, height: h, style: "glass" }).quote?.unitPrice, `${w}x${h} glass`)
+        .toBe(specialDoorQuote({ ...base, variant: "4132", width: w, height: h, style: "glass" }).quote?.unitPrice);
+      expect(specialDoorQuote({ ...base, width: w, height: h, style: "solid" }).quote?.unitPrice, `${w}x${h} solid`)
+        .not.toBe(specialDoorQuote({ ...base, variant: "4132", width: w, height: h, style: "solid" }).quote?.unitPrice);
     }
     // The 4053 is floored at 8, 9 and 16 in White or Black; the 4132 is not stocked.
     expect(specialDoorQuote({ ...base, variant: "4053", width: "8", style: "solid" }).quote?.unitPrice).toBe(STOCK["8"]["7"].solid);
@@ -646,7 +656,8 @@ describe("9ft and 10ft on CJ's sheet (16/10/2026)", () => {
   it("prices the torsion heights off the TORSION columns, glass over the solid door", () => {
     // 15'0" x 9'0": 1577 list; seven short single strength windows at 33 —
     // and 15'6" is that door and $200 (19/10/2026).
-    // Off the 4132: the 4050 is stocked at 15'0" x 9'0" (the stock book's there).
+    // Off the 4132: the 4050 is stocked at 15'0" x 9'0" solid (the stock
+    // book's there); glazed, 9'0" is a special order too (22/10/2026).
     const r = specialDoorQuote({ model: M, variant: "4132", width: "15", height: "9", color: "White",
       style: "glass", track: "r12", spring: "torsion", lock: "none" });
     expect(r.quote?.base).toBeCloseTo(sheet(1577) + windows(7, 33), 2);
@@ -655,7 +666,9 @@ describe("9ft and 10ft on CJ's sheet (16/10/2026)", () => {
       style: "glass", track: "r12", spring: "torsion", lock: "none" });
     expect(odd.quote?.unitPrice).toBeCloseTo(r.quote!.unitPrice + 200, 2);
     expect(specialDoorQuote({ model: M, width: "15", height: "9", color: "White",
-      style: "glass", track: "r12", spring: "torsion", lock: "none" }).quote?.unitPrice).toBe(STOCK["15"]["9"].glass);
+      style: "glass", track: "r12", spring: "torsion", lock: "none" }).quote?.unitPrice).toBe(r.quote?.unitPrice);
+    expect(specialDoorQuote({ model: M, width: "15", height: "9", color: "White",
+      style: "solid", track: "r12", spring: "torsion", lock: "none" }).quote?.unitPrice).toBe(STOCK["15"]["9"].solid);
     const ten = specialDoorQuote({ model: M, width: "10", height: "10", color: "White",
       style: "glass", track: "r12", spring: "torsion", lock: "none" });
     expect(ten.quote?.base).toBeCloseTo(sheet(1187) + windows(5, 33), 2);
@@ -818,7 +831,7 @@ describe("special order verbiage — Brandon's examples (8/10/2026)", () => {
 
   it("4. a Gallery door names the collection, the grade and the insert design", () => {
     expect(line({ model: "GD1LP/GD1SP", variant: "GD1SP", width: "9", color: "White", style: "inserts", track: "r15", spring: "torsion", windesign: "ARCH1GRILLE" })).toBe(
-      'CLOPAY GALLERY COLLECTION, MODEL GD1SP, 9\'0" X 7\'0", IN THE COLOR WHITE, DOUBLE STRENGTH B GRADE WINDOWS IN THE TOP SECTION, ARCH 1 GRILLE INSERTS, 15″ RADIUS TRACK, FRONT TORSION SPRINGS, NO LOCK',
+      'CLOPAY GALLERY COLLECTION, MODEL GD1SP, 9\'0" X 7\'0", IN THE COLOR WHITE, DOUBLE STRENGTH B GRADE WINDOWS IN THE TOP SECTION, ARCH 1 GRILLE DESIGN, 15″ RADIUS TRACK, FRONT TORSION SPRINGS, NO LOCK',
     );
   });
 

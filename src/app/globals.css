@@ -1798,4 +1798,25 @@ html, body { margin: 0; padding: 0; }
   background: var(--surface); color: var(--muted); font-size: 14px; line-height: 1; cursor: pointer; opacity: .75;
 }
 .tool-shell .dremove:hover { color: var(--ink); border-color: var(--ink); opacity: 1; }
+/* The window's size in the panel, under the x (the stock commercial doors,
+   22/10/2026): the section drawing's dropdown, sized to a door's panel. */
+.tool-shell .dsize { position: absolute; inset: 0; z-index: 1; display: grid; place-content: center; padding: 16px 4px 2px; pointer-events: none; }
+.tool-shell .dsize .selectwrap { pointer-events: auto; width: 66px; max-width: 100%; }
+.tool-shell .dsize select {
+  width: 100%; min-height: 26px; padding: 2px 18px 2px 6px;
+  border: 1px solid var(--accent); border-radius: 4px; background: var(--accent); color: var(--on-accent);
+  font-size: 12px; font-weight: 700; letter-spacing: .02em;
+}
+.tool-shell .dsize .selectwrap::after { right: 6px; width: 6px; height: 6px; border-color: var(--on-accent); }
+/* Row-pick mode (the stock Premium and Value Steel doors, 22/10/2026): a
+   section that can take the row of windows is one button, outlined on
+   hover; the row with the windows shows them as glass. */
+.tool-shell .ddiag.rowpick { padding-left: 16px; }
+.tool-shell .drow {
+  position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; padding: 0; margin: 0;
+  border: 2px dashed transparent; border-radius: 3px; background: transparent; cursor: pointer;
+}
+.tool-shell .dsec.pickable:not(.picked):hover .drow, .tool-shell .drow:focus-visible { border-color: var(--muted-2); }
+.tool-shell .dsec.pickable:not(.picked):hover .dface { background: linear-gradient(180deg, var(--surface-3) 0%, var(--surface-2) 40%, var(--surface-2) 100%); }
+.tool-shell .dsec.picked .drow { cursor: default; }
 .tool-shell .ggroup.gwide { grid-column: 1 / -1; }

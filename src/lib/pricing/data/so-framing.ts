@@ -18,7 +18,7 @@ import {
   glassOptionsFor, glassTakesInserts, isSheetGroup, panelStylesFor, windowSeriesFor, type GlassOption, type PanelStyle, type WindowSeries,
 } from "./so-glass";
 import { sectionDesignsAt, windowSectionGroup } from "./coachman-windows";
-import { specialPlainWindowsFor, specialWindowDesigns, takesInserts, type InsertDesign } from "./inserts";
+import { designWord, specialPlainWindowsFor, specialWindowDesigns, takesInserts, type InsertDesign } from "./inserts";
 import type { WindowStyle } from "../types";
 
 /** "8.2" -> ["8", "2"]; "7" -> ["7", "0"]. */
@@ -171,7 +171,7 @@ function seriesFraming(group: string, member: string, width: string, glass: stri
     for (const p of panels) {
       if (!glassTakesInserts(group, p, width, glass, series)) continue;
       for (const d of designs.filter((x) => !plainDesign(x) && designPanel(x) === p)) {
-        out.push({ value: `${tag}insert:${p}:${d.id}`, label: `${d.name} inserts`, kind: "insert", panel: p, design: d.id, ...marked });
+        out.push({ value: `${tag}insert:${p}:${d.id}`, label: `${d.name} ${designWord(d.id)}`, kind: "insert", panel: p, design: d.id, ...marked });
       }
     }
     return out;
@@ -181,7 +181,7 @@ function seriesFraming(group: string, member: string, width: string, glass: stri
   const out: FramingOption[] = named.length
     ? named.map((n) => ({ value: `plain::${n}`, label: n, kind: "plain", plainWindow: n }))
     : [{ value: "plain:", label: "Plain (no insert)", kind: "plain" }];
-  for (const d of designs) out.push({ value: `insert::${d.id}`, label: `${d.name} inserts`, kind: "insert", design: d.id });
+  for (const d of designs) out.push({ value: `insert::${d.id}`, label: `${d.name} ${designWord(d.id)}`, kind: "insert", design: d.id });
   return out;
 }
 

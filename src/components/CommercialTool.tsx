@@ -13,12 +13,15 @@ import { QB_ITEMS } from "@/lib/qb/iif";
 import { useCustomerJob } from "@/components/CustomerJobFields";
 import {
   COMM_COMPLETE, COMM_COMPLETE_MODELS, COMM_SECTION_MODELS, COMM_MATRIX_SIZES,
-  SLAB_RATE, SLAB_LABEL, panelCount, placementOf, placementPanels, windowPlacements,
-  SECTION_MAX_WIDTH_IN, maxWidthLabel, sectionColors,
+  SLAB_RATE, SLAB_LABEL, panelCount,
+  SECTION_MAX_WIDTH_IN, maxWidthLabel, sectionColors, completeDoorColors,
   STOCK_SECTION_WIDTHS, sectionWidthLabel, sectionWindowSizes, stileLocationCount,
   stileLocationText,
 } from "@/lib/pricing/data/commercial-meta";
 import { PanelDiagram, type StileValue } from "./PanelDiagram";
+import { DoorDiagram } from "./DoorDiagram";
+import { commercialStack } from "@/lib/pricing/data/door-stacks";
+import { placeKey } from "@/lib/pricing/data/modern-steel";
 import { homeownerMarkup } from "@/lib/pricing/engine";
 import { QtyStepper } from "./QtyStepper";
 import { PickInput, range } from "./PickInput";
@@ -46,7 +49,9 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const [cspring, setCspring] = useState<"torsion" | "extension">("torsion");
   const [clock, setClock] = useState<"none" | "slide">("none");
   const [cColor, setCColor] = useState("White");
-  // Windows are called out by section on the description; third is the common one.
+  // Windows are called out by section on the description; third is the common
+  // one. Pressed on the door drawing from 22/10/2026 (Brandon): one row of
+  // windows, in whichever section is pressed, each panel of it on its own.
   const [winSection, setWinSection] = useState("3");
   // section config
   const [order, setOrder] = useState<"complete" | "section">(start ? (COMM_COMPLETE.has(start.model) ? "complete" : "section") : "section");
@@ -108,6 +113,12 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const widthIn = order === "complete"
     ? (sizeDims ? Number(sizeDims[1]) * 12 + Number(sizeDims[2]) : 0)
     : (parseInt(manFt, 10) || 0) * 12 + (parseInt(manIn, 10) || 0);
+  // A complete door drawn whole for its windows (22/10/2026): Clopay's
+  // section stack for the model and height, the panels across for the width.
+  const sizeHeight = String(size).match(/\u00d7\s*(\d+)\u2032(\d+)\u2033/);
+  const cStack = order === "complete" && sizeHeight ? commercialStack(model, Number(sizeHeight[1]), Number(sizeHeight[2])) : null;
+  // The row the windows are in, as pressed; a row the door does not have reads third.
+  const winRow = cStack && Number(winSection) >= 1 && Number(winSection) <= cStack.length ? Number(winSection) : 3;
   const stileCount = order === "section" ? stileLocationCount(model, parseInt(manFt, 10) || 0, parseInt(manIn, 10) || 0) : 0;
   // The window panels are the width's alone (Brandon, 20/10/2026): a stile
   // added by hand is another stile line on the drawing and another box, not
@@ -154,16 +165,23 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
   // Widest section this model may be ordered in, for the input hint and the
   // number field's max. quoteCommercial() enforces it regardless.
   const colorOpts = sectionColors(model);
+  // A stock complete door comes in white alone (Brandon, 22/10/2026).
+  const doorColorOpts = completeDoorColors(model);
   const maxIn = SECTION_MAX_WIDTH_IN[model] ?? null;
   const maxFt = maxIn != null ? Math.floor(maxIn / 12) : null;
   const overMax = maxIn != null && manFt !== "" && (Number(manFt) * 12 + (Number(manIn) || 0)) > maxIn;
   // 24x12 unless another size is picked — the model's first, as the engine reads it.
   const winSizes = sectionWindowSizes(model);
   const winSizeUsed = winSizes.includes(windowSize) ? windowSize : winSizes[0];
-  const placements = order === "complete" ? windowPlacements(panels) : [];
-  const placement = placementOf(panels, winPanelsUsed);
+  // The door drawing's windows: the panels pressed, in their row.
+  const doorWindows = new Set(winPanelsUsed.map((panel) => placeKey({ section: winRow, panel })));
+  /** A press on a panel: in the windows' row it goes in or out; in another row it starts that row. */
+  function toggleDoorPanel(section: number, panel: number) {
+    if (section === winRow) { togglePanel(panel); return; }
+    setWinSection(String(section)); setWinPanels([panel]);
+  }
 
-  const cfgSig = JSON.stringify([mfr, model, order, size, glass, track, mount, cspring, clock, cColor, winSection, manFt, manIn, secKind, secHeight, winPanelsUsed, winSizeUsed, stile, stileLocationsUsed, secColor, lockUsed, homeowner]);
+  const cfgSig = JSON.stringify([mfr, model, order, size, glass, track, mount, cspring, clock, cColor, winRow, manFt, manIn, secKind, secHeight, winPanelsUsed, winSizeUsed, stile, stileLocationsUsed, secColor, lockUsed, homeowner]);
   const result = resultRaw && resultSig === cfgSig ? resultRaw : null;
   const liveError = errorRaw && resultSig === cfgSig ? errorRaw : null;
   const priced = result?.priced ?? false;
@@ -200,7 +218,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
     setWinPanels([]);
   }
   function resetConfig() {
-    setSize(""); setGlass("solid"); setTrack("15R"); setMount("continuous"); setCspring("torsion"); setClock("none");
+    setSize(""); setGlass("solid"); setTrack("15R"); setMount("continuous"); setCspring("torsion"); setClock("none"); setWinSection("3");
     setManFt(""); setManIn("0");
     setSecKind("bt"); setSecHeight("24"); setWinPanels([]); setAddingWindows(false); setWindowSize(""); setStile("single"); setSecColor("White");
     setStileVals([]); setExtraStiles(0); setEndVals([BLANK, BLANK]); setLock("none");
@@ -213,7 +231,7 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
     try {
       const body =
         order === "complete"
-          ? { order, mfr, model, size, glass, track, mount, cspring, clock, color: cColor, winSection: Number(winSection) || 3, windowPanels: winPanelsUsed, windowSize: winSizeUsed }
+          ? { order, mfr, model, size, glass, track, mount, cspring, clock, color: doorColorOpts.includes(cColor as "White") ? cColor : doorColorOpts[0], winSection: winRow, windowPanels: winPanelsUsed, windowSize: winSizeUsed }
           : { order, mfr, model, manFt: Number(manFt), manIn: Number(manIn) || 0, secKind, secHeight, windowPanels: winPanelsUsed, windowSize: winSizeUsed, stile,
               stileLocations: stileLocationsUsed, color: secColor, lock: lockUsed };
       const res = await fetch("/api/price/commercial", {
@@ -366,8 +384,9 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
                       <div className="grow">
                         <label>Color</label>
                         <div className="ctl selectwrap">
-                          <select data-testid="comm-door-color" value={cColor} onChange={(e) => setCColor(e.target.value)}>
-                            {colorOpts.map((c) => <option key={c} value={c}>{c}</option>)}
+                          <select data-testid="comm-door-color" value={doorColorOpts.includes(cColor as "White") ? cColor : doorColorOpts[0]} disabled={doorColorOpts.length === 1}
+                            onChange={(e) => setCColor(e.target.value)}>
+                            {doorColorOpts.map((c) => <option key={c} value={c}>{c}</option>)}
                           </select>
                         </div>
                       </div>
@@ -417,41 +436,6 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
                           </select>
                         </div>
                       </div>
-                      {glass === "glass" && (
-                        <>
-                          <div className="grow">
-                            <label>Window section</label>
-                            <div className="ctl selectwrap">
-                              <select data-testid="comm-win-section" value={winSection} onChange={(e) => setWinSection(e.target.value)}>
-                                {["1","2","3","4","5","6"].map((n) => (
-                                  <option key={n} value={n}>{["First","Second","Third","Fourth","Fifth","Sixth"][Number(n)-1]}</option>
-                                ))}
-                              </select>
-                            </div>
-                          </div>
-                          {/* GL or SOL a panel, left to right, as Clopay's order form has it (15/10/2026). */}
-                          {placements.length > 0 && (
-                            <div className="grow">
-                              <label>Window placement</label>
-                              <div className="ctl selectwrap">
-                                <select data-testid="comm-placement" value={placement} onChange={(e) => setWinPanels(placementPanels(e.target.value))}>
-                                  {placements.map((pl) => <option key={pl} value={pl}>{pl}</option>)}
-                                </select>
-                              </div>
-                            </div>
-                          )}
-                          {winSizes.length > 1 && (
-                            <div className="grow">
-                              <label>Window size</label>
-                              <div className="ctl selectwrap">
-                                <select data-testid="comm-window-size" value={winSizeUsed} onChange={(e) => setWindowSize(e.target.value)}>
-                                  {winSizes.map((w) => <option key={w} value={w}>{w}</option>)}
-                                </select>
-                              </div>
-                            </div>
-                          )}
-                        </>
-                      )}
                     </div>
                     <div className="ggroup">
                       <div className="ghdr">Additional options</div>
@@ -466,6 +450,19 @@ export function CommercialTool({ openOn }: { openOn?: SearchPick } = {}) {
                       </div>
                     </div>
                   </div>
+
+                  {/* The door drawn whole, across both columns, once it has glass
+                      (Brandon, 22/10/2026): one row of windows, in the section
+                      pressed — the third to start, every panel — each panel on
+                      its own, its size in the panel; ALL fills or clears a row. */}
+                  {glass === "glass" && cStack && panels > 0 && (
+                    <div className="ggroup span" data-testid="comm-door-drawing">
+                      <DoorDiagram stack={cStack} panels={panels} widthIn={widthIn} windows={doorWindows}
+                        sizes={winSizes} size={winSizeUsed} onSize={setWindowSize}
+                        onToggle={(place) => toggleDoorPanel(place.section, place.panel)}
+                        onSetSection={(section, all, on) => { setWinSection(String(section)); setWinPanels(on ? all : []); }} />
+                    </div>
+                  )}
                 </>
               ) : (
                 <>

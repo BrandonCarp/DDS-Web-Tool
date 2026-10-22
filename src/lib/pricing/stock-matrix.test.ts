@@ -30,12 +30,25 @@ describe("4050 family at 6'0\"", () => {
   });
 
   it("leaves 6'3\" and 6'6\" glazed doors in stock", () => {
-    // The solid-only rule is scoped to 6'0" and must not leak upward.
-    for (const [hf, hi] of [[6, 3], [6, 6], [7, 0]] as const) {
+    // The solid-only rule is scoped to its heights and must not leak upward.
+    for (const [hf, hi] of [[6, 3], [6, 6], [7, 0], [7, 9], [8, 0], [8, 9]] as const) {
       expect(
         quoteResidential("4050", dim(9, hf, hi), opts({ style: "glass" })).isStock,
         `${hf}'${hi}"`,
       ).toBe(true);
+    }
+  });
+
+  it("floors 7'6\" and 9'0\" solid only too — all 18\" sections on Clopay's chart, and the stock glass is 21\" (Brandon, 22/10/2026)", () => {
+    for (const h of ["7.6", "9"]) expect(solidOnlyHeight(h), h).toBe(true);
+    for (const h of ["6.3", "7", "7.9", "8", "8.9"]) expect(solidOnlyHeight(h), h).toBe(false);
+    for (const model of ["4050", "T50S", "9133", "GD1LP"]) {
+      for (const [hf, hi] of [[7, 6], [9, 0]] as const) {
+        expect(quoteResidential(model, dim(9, hf, hi), opts()).isStock, `${model} ${hf}'${hi}" solid`).toBe(true);
+        for (const style of ["glass", "inserts"]) {
+          expect(quoteResidential(model, dim(9, hf, hi), opts({ style })).isStock, `${model} ${hf}'${hi}" ${style}`).toBe(false);
+        }
+      }
     }
   });
 

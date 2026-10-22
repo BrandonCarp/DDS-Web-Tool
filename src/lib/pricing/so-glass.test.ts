@@ -149,7 +149,7 @@ describe("inserts", () => {
       ...base, width: "9", style: "inserts", glassType: "seeded", windowSeries: "architectural",
       panelStyle: "long", windesign: "SQ24",
     });
-    expect(arch.quote?.description).toContain("seeded dsb windows in the top section, SQ24 inserts");
+    expect(arch.quote?.description).toContain("seeded dsb windows in the top section, SQ24 design");
   });
 });
 

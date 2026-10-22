@@ -34,7 +34,7 @@ import { ADDONS, GRADE_RES, COLLECTIONS_RES } from "./addons";
 import { dataKey, RESIDENTIAL_HIDDEN } from "../model-groups";
 import { STOCK_PRICES } from "./stock-prices";
 import { colorInStock } from "./stock-colors";
-import { designName, specialPlainWindowsFor, specialWindowDesigns } from "./inserts";
+import { designClause, designName, specialPlainWindowsFor, specialWindowDesigns } from "./inserts";
 import { describeModernWindows, modernFraming, modernGlassLabel, modernPanelsWide, modernPickerModel, modernStack, modernWindowCost, type WindowPlace } from "./modern-steel";
 import { designBuilt, designTakesWindows, hasDesigns, modelWithDesign, secondColorName, secondColorPricedAs } from "./door-designs";
 import { SPECIAL_DOORS } from "./special-doors";
@@ -764,16 +764,16 @@ export function specialDoorQuote(
   // Worded exactly as the stock tab words the same door (Brandon, 8/10/2026):
   //   SOLID NO WINDOWS
   //   SINGLE STRENGTH B GRADE WINDOWS IN THE TOP SECTION, NO INSERTS
-  //   DOUBLE STRENGTH B GRADE WINDOWS IN THE TOP SECTION, ARCH 1 GRILLE INSERTS
+  //   DOUBLE STRENGTH B GRADE WINDOWS IN THE TOP SECTION, ARCH 1 GRILLE DESIGN
   // A named glass type takes the grade's place: "insulated windows in the top
   // section". The design is named where one was chosen, from the same list the
   // stock tab offers (the Gallery's arches and grilles included).
   const grade = GRADE_RES[dataKey(member)] || "";
   // A Coachman window design — a window design or an arched section — is its
-  // own clause after the windows, worded as the stock tab words an insert:
-  // "double strength b grade windows in the top section, ARCH4 inserts"
-  // (Brandon, 13/10/2026; "SQ24 design" on the 12th).
-  const glassDesign = style === "glass" && designId ? `, ${designName(designId)} inserts` : "";
+  // own clause after the windows, worded as the stock tab words a design:
+  // "double strength b grade windows in the top section, ARCH4 design"
+  // (Brandon, 13/10/2026; "design" for every architectural window, 22/10/2026).
+  const glassDesign = style === "glass" && designId ? `, ${designClause(designId)}` : "";
   // A plain window named by its order name, as the stock tab words it (its own
   // clause after "in the top section" — Brandon, 25/9/2026 there, 12/10/2026
   // here). The Gallery's and Bridgeport's other plain arch windows (Arch 2
@@ -788,8 +788,8 @@ export function specialDoorQuote(
   // 19/10/2026): the glass, the window, where they are and the row looking
   // out — "9/16" insulated tempered midnight gray black slim 37x8 windows in
   // all sections, GL-SOL, left side looking out" — then the inserts clause
-  // the other doors carry, "no inserts" or "REC12 inserts"; the slim window
-  // takes none and says nothing.
+  // the other doors carry, "no inserts" or "REC12 design" (22/10/2026); the
+  // slim window takes none and says nothing.
   const modernWin = (() => {
     if (!modernFramed) return null;
     const [hf, hi] = input.height.split(".").map(Number);
@@ -797,7 +797,7 @@ export function specialDoorQuote(
     const sections = modernStack(hf, hi ?? 0)?.length ?? 0;
     const across = modernPanelsWide(wf, wi ?? 0, modernFramed.size) ?? 0;
     const where = describeModernWindows(modernPlaces, sections, across);
-    const inserts = modernFramed.design ? `, ${modernFramed.design} inserts` : modernFramed.size === "slim" ? "" : ", no inserts";
+    const inserts = modernFramed.design ? `, ${designClause(modernFramed.design) ?? `${modernFramed.design} design`}` : modernFramed.size === "slim" ? "" : ", no inserts";
     return `${(glassName ?? "").toLowerCase()} ${modernFramed.window} windows in ${where}${inserts}`;
   })();
   const winText =
@@ -808,7 +808,7 @@ export function specialDoorQuote(
       : glassDesign
       ? `${glassName ? glassName.toLowerCase() : grade || "single strength b grade"} windows in the top section${glassDesign}`
       : `${glassName ? glassName.toLowerCase() : grade || "single strength b grade"} windows in the top section, ${plain}` +
-        (style === "inserts" && designId ? `${designName(designId)} inserts` : "no inserts");
+        (style === "inserts" && designId ? designClause(designId) : "no inserts");
   // Gallery, Bridgeport and Coachman doors carry the collection, as the stock tab
   // writes the Gallery ("CLOPAY GALLERY COLLECTION, MODEL GD1SU, ..." — Brandon, 8/10/2026).
   const collectionName = COLLECTIONS_RES[dataKey(member)];
