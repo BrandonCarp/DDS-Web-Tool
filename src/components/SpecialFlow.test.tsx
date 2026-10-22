@@ -75,7 +75,9 @@ async function pickDoor(model = "4050") {
   fireEvent.change(sel("so-mfr"), { target: { value: "Clopay" } });
   fireEvent.change(sel("so-series"), { target: { value: "Premium Steel Collection" } });
   const m = maybe("so-model") as HTMLSelectElement | null;
-  const v = [...(m?.options ?? [])].map((o) => o.value).find((x) => x.includes(model));
+  // The member itself where the group is split ("4050/4051/4053/4132:4132"), else the first value naming it.
+  const values = [...(m?.options ?? [])].map((o) => o.value);
+  const v = values.find((x) => x === model || x.endsWith(`:${model}`)) ?? values.find((x) => x.includes(model));
   if (m && v) fireEvent.change(m, { target: { value: v } });
   await settle();
 }
@@ -202,7 +204,8 @@ describe("special order — glass types reach the price", () => {
   });
 
   it("offers the architectural windows on a Premium Steel door in the one framing list, with their glass in the one glass list (19/10/2026)", async () => {
-    await pickDoor();
+    // The 4132: the 4050, 4051 and 4053 never take the architectural windows (Brandon, 22/10/2026).
+    await pickDoor("4132");
     fireEvent.click(maybe("so-configure")!);
     await settle();
     setWidth("8");
@@ -247,7 +250,7 @@ describe("special order — glass types reach the price", () => {
   });
 
   it("offers the standard glass behind a standard window and the architectural behind an architectural one, sixteen types in all at a priced width", async () => {
-    await pickDoor();
+    await pickDoor("4132");
     fireEvent.click(maybe("so-configure")!);
     await settle();
     setWidth("9");
@@ -278,11 +281,13 @@ describe("special order — glass types reach the price", () => {
     fireEvent.change(sel("so-color"), { target: { value: "White" } });
     await settle();
     await fillOptions();
-    // Only short windows at 7'0": the plain short windows, then the short inserts, each its own entry.
+    // Only short windows at 7'0": the plain short window, then the short inserts, each its own entry — and
+    // on the 4050 the standard windows alone, no 16" window and no grille (Brandon, 22/10/2026).
     let framing = framingLabels();
     expect(framing[0]).toBe('PLAIN SHORT 19-1/2" X 12"');
-    expect(framing[1]).toBe('PLAIN SHORT 19-1/2" X 16"');
-    expect(framing.slice(2, 5)).toEqual(["Colonial 509 inserts", "Charleston 508 inserts", "Prairie 510 inserts"]);
+    expect(framing).not.toContain('PLAIN SHORT 19-1/2" X 16"');
+    expect(framing).not.toContain("SQ22 design");
+    expect(framing.slice(1, 4)).toEqual(["Colonial 509 inserts", "Charleston 508 inserts", "Prairie 510 inserts"]);
     expect(framing).not.toContain("Charleston 608 inserts");
     expect(maybe("so-windesign")).toBeNull();                                 // no second drop-down for the design
     setWidth("12");
@@ -1074,7 +1079,7 @@ describe("special order — high lift is the sheet-tracked doors' (the 4050 fami
     fireEvent.change(sel("so-track"), { target: { value: "r12" } });
     await settle();
     expect((await copiedQbLine(screen.getByTestId("copy-qb"))).rate).toBe(solid);
-    // A door with windows cannot pick breakaway (Brandon, 21/10/2026): the incline list drops it, and one chosen before the windows becomes 25 degree.
+    // The sheet's SOLID ONLY on breakaway is the Modern Steel doors' (Brandon, 22/10/2026): a 4050 with windows keeps breakaway, and it prices.
     fireEvent.change(sel("so-track"), { target: { value: "high_lift" } });
     await settle();
     fireEvent.change(sel("so-incline"), { target: { value: "breakaway" } });
@@ -1082,14 +1087,18 @@ describe("special order — high lift is the sheet-tracked doors' (the 4050 fami
     expect(sel("so-incline").value).toBe("breakaway");
     pickFraming();
     await settle();
-    expect(options("so-incline").map((o) => o.value)).toEqual(["deg25"]);
-    expect(sel("so-incline").value).toBe("deg25");
+    expect(options("so-incline").map((o) => o.value)).toEqual(["breakaway", "deg25"]);
+    expect(sel("so-incline").value).toBe("breakaway");
     fireEvent.change(sel("so-high-lift"), { target: { value: "36" } });
     await settle();
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS IN THE TOP SECTION.*2" BRACKET MOUNT TRACK WITH 36″ HIGH LIFT 25 DEGREE BREAKAWAY,  FRONT TORSION SPRINGS/i);
-    fireEvent.change(sel("so-framing"), { target: { value: "" } });
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS IN THE TOP SECTION.*2" BRACKET MOUNT TRACK WITH 36″ HIGH LIFT BREAKAWAY,  FRONT TORSION SPRINGS/i);
+    fireEvent.change(sel("so-incline"), { target: { value: "deg25" } });
     await settle();
-    expect(options("so-incline").map((o) => o.value)).toEqual(["breakaway", "deg25"]);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS IN THE TOP SECTION.*2" BRACKET MOUNT TRACK WITH 36″ HIGH LIFT 25 DEGREE BREAKAWAY,  FRONT TORSION SPRINGS/i);
+    // Full vertical lift with windows too.
+    fireEvent.change(sel("so-track"), { target: { value: "full_vertical" } });
+    await settle();
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS IN THE TOP SECTION.*FULL VERTICAL LIFT TRACK,  FRONT TORSION SPRINGS/i);
   });
 });
 

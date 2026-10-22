@@ -34,7 +34,7 @@ import { homeownerMarkupForBand } from "@/lib/pricing/engine";
 import { OptionButtons, YES_NO, type ButtonOption } from "./OptionButtons";
 import { DoorDiagram } from "./DoorDiagram";
 import { modernFramingChoices, modernGlassForFraming, modernPanelsWide, modernPickerModel, modernStack, placeKey, type WindowPlace } from "@/lib/pricing/data/modern-steel";
-import { roofPitches, sheetInclines, sheetLiftChoices, sheetRearTorsion, sheetTrackChoices } from "@/lib/pricing/data/sheet-tracks";
+import { roofPitches, sheetInclines, sheetLiftChoices, sheetRearTorsion, sheetTrackChoices, trackSolidOnly } from "@/lib/pricing/data/sheet-tracks";
 import { QtyStepper } from "./QtyStepper";
 import { BrochurePeek, MODERN_STEEL_PAGE } from "./BrochurePeek";
 
@@ -309,12 +309,12 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
   const gIsLift = gTrackEff === "high_lift";
   const gHeightFtN = Number(gHeightFt || "0");
   const gHeightInN = Number(gHeightIn || "0");
-  // Breakaway high lift is built solid only (CJ's sheet; Brandon, 21/10/2026:
-  // a door with windows cannot pick it), so a door with windows — pressed into
-  // the drawing on a Modern Steel door, in the top section on any other — is
-  // offered the other inclines alone.
+  // Breakaway high lift is built solid only on a Modern Steel door (CJ's
+  // sheet; Brandon, 21/10/2026: a door with windows cannot pick it; the
+  // other doors take it with glass, 22/10/2026), so a Modern Steel door with
+  // windows pressed into the drawing is offered the other inclines alone.
   const gHasWindows = gStyleEff !== "solid" && (!gModern || gPlaces.length > 0);
-  const gInclines = (sheetInclines(modelGroup) ?? INCLINE_STYLES.map((i) => i.value)).filter((i) => !(gHasWindows && i === "breakaway"));
+  const gInclines = (sheetInclines(modelGroup) ?? INCLINE_STYLES.map((i) => i.value)).filter((i) => !(gHasWindows && i === "breakaway" && trackSolidOnly(modelGroup)));
   const gInclineEff: InclineStyle = gInclines.includes(gIncline) ? gIncline : gInclines[0] ?? "deg25";
   const gLiftSteps = sheetLiftChoices(modelGroup, gInclineEff, gHeightFtN, gHeightInN) ?? highLiftChoices(gHeightFtN, gHeightInN);
   const gEffLift = gLiftSteps.includes(gLift) ? gLift : 0;

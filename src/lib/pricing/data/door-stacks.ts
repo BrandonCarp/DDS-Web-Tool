@@ -7,6 +7,9 @@
  *                Steel: the 9200/9203, 9130/9133, 4300/4310, 4050/4053, T52S/
  *                T52L and T50S/T50L — 18" and 21" sections, 6'0" to 9'0" here
  *                (the stock tab's heights; 7'3" is not built).
+ *   GALLERY      Gallery Steel, 3 layer (page 8): the GD1SP/GD1LP, GD1SU/
+ *                GD1LU, GD2SP/GD2LP and GD2SU/GD2LU — 18", 21" and 24"
+ *                sections, 6'0" to 16'0".
  *   ENERGY       the commercial energy series' chart (page 28): the 3150,
  *                3200 and 3220 — 18", 21" and 24" sections, 7'0" to 17'0".
  *   INDUSTRIAL   the industrial series' chart (page 32): the 520 to 525S —
@@ -33,6 +36,51 @@ export const CLASSIC_STACK: Record<number, readonly number[]> = {
   102: [21, 18, 21, 21, 21],
   105: [21, 21, 21, 21, 21],
   108: [18, 18, 18, 18, 18, 18],
+};
+
+/** Section heights top to bottom, by door height in inches: the Gallery Steel 3 layer doors. */
+export const GALLERY_STACK: Record<number, readonly number[]> = {
+  72: r(24, 3),
+  75: [21, 18, 18, 18],
+  78: [21, 18, 18, 21],
+  81: [21, 18, 21, 21],
+  84: r(21, 4),
+  87: [24, 21, 21, 21],
+  90: [24, 21, 21, 24],
+  93: [24, 21, 24, 24],
+  96: r(24, 4),
+  99: [21, 18, 18, 21, 21],
+  102: [21, 18, 21, 21, 21],
+  105: r(21, 5),
+  108: [24, 21, 21, 21, 21],
+  111: [24, 21, 21, 21, 24],
+  114: [24, 21, 21, 24, 24],
+  117: [24, 21, 24, 24, 24],
+  120: r(24, 5),
+  123: [21, 18, 21, 21, 21, 21],
+  126: r(21, 6),
+  129: [24, ...r(21, 5)],
+  132: [24, ...r(21, 4), 24],
+  135: [24, ...r(21, 3), 24, 24],
+  138: [24, 21, 21, ...r(24, 3)],
+  141: [24, 21, ...r(24, 4)],
+  144: r(24, 6),
+  147: r(21, 7),
+  150: [24, ...r(21, 6)],
+  153: [24, ...r(21, 5), 24],
+  156: [24, ...r(21, 4), 24, 24],
+  159: [24, ...r(21, 3), ...r(24, 3)],
+  162: [24, 21, 21, ...r(24, 4)],
+  165: [24, 21, ...r(24, 5)],
+  168: r(24, 7),
+  171: [24, ...r(21, 7)],
+  174: [24, ...r(21, 6), 24],
+  177: [24, ...r(21, 5), 24, 24],
+  180: [24, ...r(21, 4), ...r(24, 3)],
+  183: [24, ...r(21, 3), ...r(24, 4)],
+  186: [24, 21, 21, ...r(24, 5)],
+  189: [24, 21, ...r(24, 6)],
+  192: r(24, 8),
 };
 
 /** The energy series' commercial doors (3150, 3200, 3220), 7'0" to 17'0". */
@@ -114,6 +162,24 @@ export function glazedStack(stack: readonly number[], row: number): readonly num
   const out = [...stack];
   out[0] = 18; out[i] = 21;
   return out;
+}
+
+/** The Gallery Steel 3 layer doors' sections, top to bottom; null off the chart. */
+export function galleryStack(heightFt: number, heightIn = 0): readonly number[] | null {
+  return GALLERY_STACK[heightFt * 12 + heightIn] ?? null;
+}
+
+/** The models the Gallery Steel 3 layer chart stacks. */
+export const GALLERY_STACK_MODELS: ReadonlySet<string> = new Set(["GD1SP", "GD1LP", "GD1SU", "GD1LU", "GD2SP", "GD2LP", "GD2SU", "GD2LU"]);
+
+/**
+ * The Gallery doors' windows across, by width and window (the chart's
+ * PANELS/WINDOWS WIDE): short windows 3 to 10, long 2 to 5.
+ */
+export function galleryPanelsWide(widthFt: number, widthIn: number, long: boolean): number | null {
+  const w = widthFt * 12 + widthIn;
+  if (long) return w < 92 ? null : w <= 136 ? 2 : w <= 176 ? 3 : w <= 228 ? 4 : w <= 240 ? 5 : null;
+  return w < 74 ? null : w <= 90 ? 3 : w <= 136 ? 4 : w <= 176 ? 6 : w <= 228 ? 8 : w <= 240 ? 10 : null;
 }
 
 /** The models the Classic Steel chart stacks, as the stock tab names them. */

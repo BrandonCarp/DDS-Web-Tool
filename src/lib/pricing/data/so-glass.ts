@@ -25,6 +25,7 @@
  */
 
 import { SPECIAL } from "./special-orders";
+import { NO_ARCHITECTURAL_WINDOWS } from "./inserts";
 import { GALLERY_GLASS, GALLERY_GLASS_TYPES, GALLERY_GROUPS, GALLERY_ULTRA_GRAIN } from "./gallery-glass";
 import { BRIDGEPORT_GLASS, BRIDGEPORT_GLASS_TYPES, BRIDGEPORT_GROUPS, BRIDGEPORT_ULTRA_GRAIN } from "./bridgeport-glass";
 import { COACHMAN_GLASS, COACHMAN_GLASS_TYPES, COACHMAN_GROUPS, COACHMAN_ULTRA_GRAIN } from "./coachman-glass";
@@ -125,8 +126,13 @@ export function isSheetGroup(group: string): boolean {
   return group in SHEET_GLASS;
 }
 
-/** The window series a group's sheet prices: standard, and architectural where it has that list too. */
-export function windowSeriesFor(group: string): WindowSeries[] {
+/**
+ * The window series a group's sheet prices: standard, and architectural
+ * where it has that list too — unless the member is one that never takes
+ * the architectural windows (the 4050, 4051 and 4053; Brandon, 22/10/2026).
+ */
+export function windowSeriesFor(group: string, member?: string): WindowSeries[] {
+  if (member && NO_ARCHITECTURAL_WINDOWS.has(String(member))) return ["standard"];
   return group in SHEET_ARCH_GLASS ? ["standard", "architectural"] : ["standard"];
 }
 

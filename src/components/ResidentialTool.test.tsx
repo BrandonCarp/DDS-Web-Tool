@@ -375,8 +375,8 @@ describe("residential tool — framing, by model", () => {
       "9130": [SHORT, LONG, "Inserts"],
       "4053": [LONG, "Inserts"],
       "9133": [LONG, "Inserts"],
-      GD1SP: ['PLAIN LONG 42" X 16"', "PLAIN ARCH 1", "Inserts"],
-      GD1LP: ['PLAIN LONG 42" X 16"', "PLAIN ARCH 1", "Inserts"],
+      GD1SP: ['PLAIN LONG 42" X 16"', "ARCH 1", "Inserts"],
+      GD1LP: ['PLAIN LONG 42" X 16"', "ARCH 1", "Inserts"],
     };
     for (const [model, want] of Object.entries(expected)) {
       cleanup();
@@ -634,6 +634,36 @@ describe("residential tool — the windows' row on the door drawing (Brandon, 22
     expect(glazed()).toHaveLength(4);
   });
 
+  it("says what the windows are across the glass row: the plain window by its name, or the insert design (Brandon, 22/10/2026)", async () => {
+    await configure("4050");
+    size("9", "7");
+    glass();
+    const label = () => screen.queryByTestId("door-section-4-label")?.textContent ?? null;
+    expect(label()).toBe(SHORT);
+    fireEvent.change(screen.getByTestId("framing"), { target: { value: LONG } });
+    expect(label()).toBe(LONG);
+    fireEvent.change(screen.getByTestId("framing"), { target: { value: "insert" } });
+    expect(label()).toBe("Inserts");
+    fireEvent.change(screen.getByTestId("windesign"), { target: { value: "509" } });
+    expect(label()).toBe("Colonial 509 inserts");
+    // The label follows the row.
+    fireEvent.click(screen.getByTestId("door-section-3-pick"));
+    expect(label()).toBeNull();
+    expect(screen.getByTestId("door-section-3-label").textContent).toBe("Colonial 509 inserts");
+    cleanup();
+    await configure("GD1SP");
+    size("9", "7");
+    glass();
+    expect(label()).toBe('PLAIN LONG 42" X 16"');
+    fireEvent.change(screen.getByTestId("framing"), { target: { value: "ARCH 1" } });
+    expect(label()).toBe("ARCH 1");
+    fireEvent.change(screen.getByTestId("framing"), { target: { value: "insert" } });
+    fireEvent.change(screen.getByTestId("windesign"), { target: { value: "SQ24" } });
+    expect(label()).toBe("SQ24 design");
+    // The stock Gallery's four inserts, and nothing else.
+    expect([...(screen.getByTestId("windesign") as HTMLSelectElement).options].map((o) => o.value).filter(Boolean)).toEqual(["SQ24", "REC14", "ARCH1VERT", "ARCH1GRILLE"]);
+  });
+
   it("offers 7'6\" and 9'0\" solid only, like 6'0\" (Brandon, 22/10/2026)", async () => {
     await configure("4050");
     const styles = () => [...(screen.getByTestId("style") as HTMLSelectElement).options].map((o) => o.value);
@@ -650,11 +680,20 @@ describe("residential tool — the windows' row on the door drawing (Brandon, 22
     expect(styles()).toEqual(["solid"]);
   });
 
-  it("draws no Gallery door, and takes the drawing away with the windows", async () => {
+  it("draws a Gallery door off its own chart, the windows in the top section and nowhere else, and takes the drawing away with the windows", async () => {
     await configure("GD1SP");
     size("9", "7");
     glass();
-    expect(screen.queryByTestId("door-diagram")).toBeNull();
+    // 7'0" Gallery: 21-21-21-21; the long window two across at 9'0"; no row to press.
+    expect(sections()).toHaveLength(4);
+    expect(glazed()).toEqual(["4-1", "4-2"]);
+    expect(pickable()).toEqual([]);
+    expect(document.querySelector('[data-testid$="-add"]')).toBeNull();
+    expect((await lastBody()).windowRow).toBeUndefined();
+    // 8'0" Gallery: four 24s, as the chart has it; 16' wide, four across.
+    size("16", "8");
+    expect(["5", "4", "3", "2", "1"].map((n) => screen.queryByTestId(`door-section-${n}-height`)?.textContent ?? null)).toEqual([null, "24″", "24″", "24″", "24″"]);
+    expect(glazed()).toEqual(["4-1", "4-2", "4-3", "4-4"]);
     cleanup();
     await configure("T50S");
     size("9", "7");

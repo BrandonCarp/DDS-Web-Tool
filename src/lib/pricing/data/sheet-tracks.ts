@@ -12,10 +12,14 @@ import { isAngleMount, maxHighLift, type InclineStyle, type TrackMount } from ".
  * modern-windows.ts). The headings' build rules are here: what each is
  * built with.
  *
- *   breakaway high lift   solid only, bracket or angle mount
+ *   breakaway high lift   solid only on a Modern Steel door, bracket or angle mount
  *   25 degree high lift   solid or glass, lift to 72"
- *   full vertical lift    solid only
+ *   full vertical lift    solid only on a Modern Steel door
  *   roof pitch            solid or glass
+ *
+ * The sheets' SOLID ONLY is the Modern Steel doors' (Brandon, 22/10/2026):
+ * the Premium Steel doors take breakaway high lift and full vertical lift
+ * with glass.
  *
  * And the sheet's own adders (CJ, 21/10/2026), in place of the stock book's
  * on a door DDS does not stock: low headroom track, low headroom rear
@@ -32,6 +36,11 @@ const SHEET_SPRINGS: Record<string, SpringRates> = { ...PREMIUM_SPRING_RATES, ..
 
 export function sheetTracksFor(group: string): SheetTracks | null {
   return SHEET_TRACKS[group] ?? null;
+}
+
+/** True where breakaway high lift and full vertical lift are built solid only: the Modern Steel doors. */
+export function trackSolidOnly(group: string): boolean {
+  return group in MODERN_TRACKS;
 }
 
 /** The spring rates a sheet prices for a group (its TORSION SPRINGS table), null where it has none. */
@@ -133,9 +142,10 @@ export function sheetTrackPrice(input: SheetTrackInput): { cost: number; label: 
       const max = Math.max(...Object.keys(table[mount]).map(Number));
       return { reason: `${incline === "deg25" ? "25 degree" : "Breakaway"} high lift is priced to ${max}" on this door.` };
     }
-    // SOLID ONLY on both mounts (CJ, 21/10/2026 — the top-section-glass
-    // reverse angle build of the day before is gone from the sheet).
-    if (incline === "breakaway" && input.glass !== "none") return { reason: "Breakaway high lift is built solid only." };
+    // SOLID ONLY on both mounts on a Modern Steel door (CJ, 21/10/2026 — the
+    // top-section-glass reverse angle build of the day before is gone from
+    // the sheet); the other doors take it with glass (Brandon, 22/10/2026).
+    if (incline === "breakaway" && input.glass !== "none" && trackSolidOnly(input.group)) return { reason: "Breakaway high lift is built solid only." };
     // The line names the incline (Brandon, 21/10/2026, afternoon): "2" bracket
     // mount track with 72″ high lift breakaway", "… with 72″ high lift 25
     // degree breakaway" — the mount is the quote's to say.
@@ -144,7 +154,7 @@ export function sheetTrackPrice(input: SheetTrackInput): { cost: number; label: 
   if (input.track === "full_vertical") {
     const table = t.fullVertical[mount];
     if (!table) return { reason: "Full vertical lift is not priced on this mount." };
-    if (input.glass !== "none") return { reason: "Full vertical lift is built solid only." };
+    if (input.glass !== "none" && trackSolidOnly(input.group)) return { reason: "Full vertical lift is built solid only." };
     // Priced by door height in whole feet; 7'6" takes the 8FT figure.
     const ft = Math.ceil((input.heightFt * 12 + (input.heightIn ?? 0)) / 12 - 1e-9);
     const cost = table[String(ft)];

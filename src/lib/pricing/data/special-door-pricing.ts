@@ -560,7 +560,7 @@ export function specialDoorQuote(
   // and not the other at a width: the standard windows stop at 18'0" and the
   // architectural skip 10'2" to 11'4" and 14'8".
   const sheet = isSheetGroup(input.model);
-  const series: WindowSeries = input.windowSeries && windowSeriesFor(input.model).includes(input.windowSeries) ? input.windowSeries : "standard";
+  const series: WindowSeries = input.windowSeries && windowSeriesFor(input.model, member).includes(input.windowSeries) ? input.windowSeries : "standard";
   if (sheet && input.style !== "solid" && panelStylesFor(input.model, input.width, series).length === 0) {
     const name = input.variant || input.model;
     if (windowsPricedAt(input.model, input.width)) {

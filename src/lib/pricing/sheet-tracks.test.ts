@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { specialDoorQuote } from "./data/special-door-pricing";
-import { glassWhere, roofPitches, sheetInclines, sheetLiftChoices, sheetRearTorsion, sheetTrackAdder, sheetTrackChoices, sheetTrackPrice, sheetTracksFor } from "./data/sheet-tracks";
+import { glassWhere, roofPitches, sheetInclines, sheetLiftChoices, sheetRearTorsion, sheetTrackAdder, sheetTrackChoices, sheetTrackPrice, sheetTracksFor, trackSolidOnly } from "./data/sheet-tracks";
 import { trackMountsFor } from "./data/track-lift";
 import { MODERN_SPRING_RATES, MODERN_TRACKS } from "./data/modern-windows";
 import { PREMIUM_SPRING_RATES, PREMIUM_TRACKS } from "./data/premium-glass";
@@ -116,7 +116,7 @@ describe("the 4138's track tables", () => {
     expect(q({ incline: "breakaway", highLiftInches: 0 }).quote!.description).toMatch(/SOLID NO WINDOWS, HIGH LIFT TRACK, FRONT TORSION SPRINGS/i);
   });
 
-  it("builds breakaway high lift solid only, on either mount (CJ, 21/10/2026 — the top section glass build of the day before is off the sheet)", () => {
+  it("builds breakaway high lift solid only on a Modern Steel door, on either mount (CJ, 21/10/2026); the Premium Steel doors take it with glass (22/10/2026)", () => {
     const glazed = (places: { section: number; panel: number }[], extra: Record<string, unknown>) =>
       specialDoorQuote({ ...base, style: "glass", glassType: "tempered", modernFraming: "short", windowsAt: places, track: "high_lift", incline: "breakaway", highLiftInches: 36, ...extra } as never);
     expect(glazed([{ section: 1, panel: 1 }], {}).reason).toMatch(/Breakaway high lift is built solid only/);
@@ -131,12 +131,22 @@ describe("the 4138's track tables", () => {
     expect(glassWhere([{ section: 1 }, { section: 1 }], true, 4)).toBe("other");
     expect(glassWhere([{ section: 1 }, { section: 3 }], true, 4)).toBe("other");
     expect(glassWhere([{ section: 4 }], false, 4)).toBe("none");
-    // A door whose windows are not placed on a drawing has them in the top section: the 4050 with windows takes no breakaway either (Brandon, 21/10/2026).
+    // A door whose windows are not placed on a drawing has them in the top section.
     expect(glassWhere(undefined, true)).toBe("top");
     expect(glassWhere([], true)).toBe("none");
-    const g4050 = (incline: string) => specialDoorQuote({ model: "4050/4051/4053/4132", variant: "4050", width: "9", height: "7", color: "White", style: "glass", spring: "torsion", lock: "none", track: "high_lift", incline, highLiftInches: 36 } as never);
-    expect(g4050("breakaway").reason).toMatch(/Breakaway high lift is built solid only/);
-    expect(g4050("deg25").quote).toBeTruthy();
+    // The sheets' SOLID ONLY is the Modern Steel doors' alone (Brandon, 22/10/2026): a Premium Steel door takes breakaway and full vertical lift with glass.
+    for (const [model, variant] of [["4050/4051/4053/4132", "4050"], ["9130/9131/9132/9133", "9130"], ["9200/9201/9202/9203/9205", "9200"], ["4300/4301/4302/4305/4310", "4300"]] as const) {
+      const q = (track: string, incline?: string) => specialDoorQuote({ model, variant, width: "9", height: "7", color: "White", style: "glass", spring: "torsion", lock: "none", track, incline, highLiftInches: incline ? 36 : undefined } as never);
+      const plain = specialDoorQuote({ model, variant, width: "9", height: "7", color: "White", style: "glass", spring: "torsion", lock: "none", track: "r12" } as never).quote!.unitPrice;
+      expect(q("high_lift", "breakaway").reason, variant).toBeUndefined();
+      expect(q("high_lift", "breakaway").quote?.description, variant).toMatch(/WINDOWS IN THE TOP SECTION.*WITH 36″ HIGH LIFT BREAKAWAY/i);
+      expect(q("high_lift", "deg25").quote, variant).toBeTruthy();
+      expect(q("full_vertical").reason, variant).toBeUndefined();
+      expect(q("full_vertical").quote?.description, variant).toMatch(/WINDOWS IN THE TOP SECTION.*FULL VERTICAL LIFT TRACK/i);
+      expect(q("full_vertical").quote!.unitPrice, variant).toBeGreaterThan(plain);
+    }
+    expect(trackSolidOnly("4050/4051/4053/4132")).toBe(false);
+    for (const g of ["4138", "4308/4309", "9208/9209", "9138/9139"]) expect(trackSolidOnly(g), g).toBe(true);
   });
 
   it("prices full vertical lift by the door's height, solid only, and the line says so", () => {

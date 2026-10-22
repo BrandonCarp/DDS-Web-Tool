@@ -19,13 +19,16 @@ import { placeKey, type WindowPlace } from "@/lib/pricing/data/modern-steel";
  *   - `pickRows`: whole rows only — the sections listed can be pressed, and
  *     a press puts the row of windows there; no panel can be pressed on its
  *     own (the stock Premium and Value Steel doors: the top section or the
- *     one under it).
+ *     one under it; none listed on a Gallery door, whose windows stay in
+ *     the top section).
+ *   - `rowLabel`: what the windows are, said once across a row that is all
+ *     glass — the plain window by its order name, or the insert design.
  *
  * Sections are numbered from the floor up, as Clopay numbers them (Brandon,
  * 21/10/2026): the bottom section is 1, the top the last.
  */
 export function DoorDiagram({
-  stack, panels, windows, onToggle, onSetSection, sizes, size, onSize, pickRows, onPickRow, widthIn, testId = "door-diagram",
+  stack, panels, windows, onToggle, onSetSection, sizes, size, onSize, pickRows, onPickRow, rowLabel, widthIn, testId = "door-diagram",
 }: {
   /** Section heights top to bottom, in inches. */
   stack: readonly number[];
@@ -43,6 +46,8 @@ export function DoorDiagram({
   /** Row-pick mode: the sections a row of windows can be put in by a press. */
   pickRows?: ReadonlySet<number>;
   onPickRow?: (section: number) => void;
+  /** What the windows are, shown across a row that is all glass. */
+  rowLabel?: string;
   /** The door's width in inches, for its proportions. */
   widthIn: number;
   testId?: string;
@@ -80,6 +85,10 @@ export function DoorDiagram({
               )}
               {/* The section's height, off Clopay's stacking chart, at its right (Brandon, 20/10/2026). */}
               <span className="dheight" data-testid={`door-section-${section}-height`}>{h}″</span>
+              {/* What the windows are, across the glass row (Brandon, 22/10/2026). */}
+              {rowLabel && full && (
+                <span className="dlabel" data-testid={`door-section-${section}-label`}>{rowLabel}</span>
+              )}
               <div className="dface">
                 {across.map((panel) => {
                   const key = placeKey({ section, panel });

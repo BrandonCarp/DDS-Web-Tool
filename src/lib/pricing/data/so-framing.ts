@@ -57,10 +57,10 @@ export const SINGLE_STRENGTH: GlassOption = { id: "ssb", label: "Single strength
  * strength only, the grid's own column. A width built solid only offers
  * Solid alone.
  */
-export function glassTypeOptions(group: string, width: string, windowsOk: boolean): GlassOption[] {
+export function glassTypeOptions(group: string, width: string, windowsOk: boolean, member?: string): GlassOption[] {
   if (!windowsOk) return [SOLID];
   const named: GlassOption[] = [];
-  for (const series of windowSeriesFor(group)) {
+  for (const series of windowSeriesFor(group, member)) {
     const panels = panelStylesFor(group, width, series);
     if (!panels.length) continue;
     for (const g of glassOptionsFor(group, panels[0], width, series)) {
@@ -134,7 +134,7 @@ export function framingOptions(group: string, member: string, width: string, gla
       value: `design:${d.id}`, label: d.cat === "arch" ? `${d.name} arch section` : d.name, kind: "design", design: d.id,
     }));
   }
-  const bySeries = windowSeriesFor(group)
+  const bySeries = windowSeriesFor(group, member)
     .filter((series) => panelStylesFor(group, width, series).some((p) => glassOptionsFor(group, p, width, series).some((g) => g.id === glass)))
     .map((series) => seriesFraming(group, member, width, glass, series));
   // A sheet-priced door with no window priced at the width, or none at this
@@ -152,7 +152,7 @@ function seriesFraming(group: string, member: string, width: string, glass: stri
   // The standard windows keep the values they have always had; the
   // architectural series' say so, so the two lists never share one.
   const tag = series === "architectural" ? "arch:" : "";
-  const marked = windowSeriesFor(group).length > 1 ? { series } : {};
+  const marked = windowSeriesFor(group, member).length > 1 ? { series } : {};
   if (panels.length) {
     const out: FramingOption[] = [];
     for (const p of panels) {
@@ -194,7 +194,7 @@ function seriesFraming(group: string, member: string, width: string, glass: stri
 export function framingChoices(group: string, member: string, width: string, windowsOk: boolean): FramingOption[] {
   if (!width || !windowsOk) return [];
   const out: FramingOption[] = [];
-  for (const g of glassTypeOptions(group, width, true)) {
+  for (const g of glassTypeOptions(group, width, true, member)) {
     if (g.id === SOLID.id) continue;
     for (const f of framingOptions(group, member, width, g.id)) if (!out.some((o) => o.value === f.value)) out.push(f);
   }
@@ -204,7 +204,7 @@ export function framingChoices(group: string, member: string, width: string, win
 /** The glass a window comes in at the width, in the glass list's order; Solid alone where no window is chosen. */
 export function glassForFraming(group: string, member: string, width: string, framing: FramingOption | undefined): GlassOption[] {
   if (!framing || !width) return [SOLID];
-  return glassTypeOptions(group, width, true).filter((g) => g.id !== SOLID.id && framingOptions(group, member, width, g.id).some((f) => f.value === framing.value));
+  return glassTypeOptions(group, width, true, member).filter((g) => g.id !== SOLID.id && framingOptions(group, member, width, g.id).some((f) => f.value === framing.value));
 }
 
 /** "PLAIN ARCH 1" and "Arch 1 Plain" are the same window. */

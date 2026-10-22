@@ -118,6 +118,18 @@ export const PREMIUM_STEEL_MEMBERS: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * The Premium Steel doors that take the standard windows alone, never the
+ * architectural series (Brandon, 22/10/2026): the 4050, 4051 and 4053. Their
+ * sheet prices the series for the group, which the 4132 keeps.
+ */
+export const NO_ARCHITECTURAL_WINDOWS: ReadonlySet<string> = new Set(["4050", "4051", "4053"]);
+
+/** True where a Premium Steel member takes the architectural series on a special order. */
+export function takesArchitecturalSeries(member: string): boolean {
+  return PREMIUM_STEEL_MEMBERS.has(String(member)) && !NO_ARCHITECTURAL_WINDOWS.has(String(member));
+}
+
+/**
  * The designs a SPECIAL ORDER door takes at a width (a size key, "11.6").
  *
  * A Gallery or Bridgeport door takes the architectural windows as Clopay's
@@ -136,7 +148,7 @@ const ARCH3_FROM_INCHES = 11 * 12 + 6;
  */
 export function specialWindowDesigns(unit: string, style: string, width: string | null, series: "standard" | "architectural" = "standard"): InsertDesign[] {
   const [wf, wi] = (width ?? "").split(".");
-  const architectural = /^(GD|BD)/.test(String(unit)) || (series === "architectural" && PREMIUM_STEEL_MEMBERS.has(String(unit)));
+  const architectural = /^(GD|BD)/.test(String(unit)) || (series === "architectural" && takesArchitecturalSeries(String(unit)));
   if (style !== "inserts" || !architectural) {
     return windowDesigns(unit, style, width ? designWidthCode(Number(wf), Number(wi ?? 0)) : null);
   }
@@ -183,6 +195,12 @@ const MODEL_EXCLUDED_DESIGNS: Record<string, string[]> = {
   T52S: ["507"], T52L: ["507"],
 };
 
+/** The inserts the stock Gallery doors take, in the order the dropdown lists them (Brandon, 22/10/2026). */
+const STOCK_GALLERY_INSERTS: Record<string, readonly string[]> = {
+  GD1SP: ["SQ24", "REC14", "ARCH1VERT", "ARCH1GRILLE"],
+  GD1LP: ["SQ24", "REC14", "ARCH1VERT", "ARCH1GRILLE"],
+};
+
 /** Designs a specific model will not take. */
 export function excludedDesignsFor(unit: string): string[] {
   return MODEL_EXCLUDED_DESIGNS[unit] ?? [];
@@ -201,6 +219,11 @@ export function windowDesigns(unit: string, style: string, widthCode: string | n
   // "insert" (style === "inserts"). Plain glass gets no design on any model,
   // Gallery included — otherwise an insert could ride along at the glass price.
   if (style !== "inserts") return [];
+  // The stock Gallery doors take four inserts (Brandon, 22/10/2026): SQ24,
+  // REC14, the vertical grille on Arch 1 and the grille on Arch 1 — no plain
+  // window and no other arch on the stock tab.
+  const stockGallery = STOCK_GALLERY_INSERTS[String(unit)];
+  if (stockGallery) return stockGallery.map((id) => ARCHITECTURAL.find((d) => d.id === id)!);
   if (/^(GD|BD)/.test(String(unit))) {
     // Gallery and Bridgeport Steel take the architectural windows (Clopay's
     // Bridgeport sheet lists the same SQ, REC and Arch designs). Their width
@@ -256,6 +279,7 @@ export function designClause(id: string | undefined | null): string | null {
 const PLAIN_SHORT = 'PLAIN SHORT 19-1/2" X 12"';
 const PLAIN_LONG = 'PLAIN LONG 40-1/2" X 12"';
 const GALLERY_LONG = 'PLAIN LONG 42" X 16"';
+const GALLERY_ARCH = "ARCH 1";
 export const PLAIN_WINDOWS: Record<string, readonly string[]> = {
   T50S: [PLAIN_SHORT],
   "4050": [PLAIN_SHORT, PLAIN_LONG],
@@ -263,9 +287,10 @@ export const PLAIN_WINDOWS: Record<string, readonly string[]> = {
   "4053": [PLAIN_LONG],
   "9133": [PLAIN_LONG],
   // Both Gallery doors take the long window or the arch, then Inserts —
-  // GD1LP from 25/9/2026, GD1SP matched to it on 28/9/2026 (Brandon).
-  GD1SP: [GALLERY_LONG, "PLAIN ARCH 1"],
-  GD1LP: [GALLERY_LONG, "PLAIN ARCH 1"],
+  // GD1LP from 25/9/2026, GD1SP matched to it on 28/9/2026 (Brandon); the
+  // arch is "ARCH 1" on the stock tab (22/10/2026).
+  GD1SP: [GALLERY_LONG, GALLERY_ARCH],
+  GD1LP: [GALLERY_LONG, GALLERY_ARCH],
 };
 
 /** Models offered no inserts at all. None today: the GD1SP took them from 28/9/2026. */
@@ -297,7 +322,7 @@ const PREMIUM_PLAIN_WINDOWS: readonly string[] = [PLAIN_SHORT, PLAIN_LONG];
 export function specialPlainWindowsFor(model: string, series: "standard" | "architectural" = "standard"): readonly string[] {
   if (/^(GD|BD)/.test(model)) return SPECIAL_PLAIN_WINDOWS;
   if (PREMIUM_STEEL_MEMBERS.has(model)) {
-    if (series === "architectural") return SPECIAL_PLAIN_WINDOWS;
+    if (series === "architectural" && takesArchitecturalSeries(model)) return SPECIAL_PLAIN_WINDOWS;
     return PLAIN_WINDOWS[model] ?? PREMIUM_PLAIN_WINDOWS;
   }
   return plainWindowsFor(model);

@@ -392,7 +392,7 @@ describe("window designs (inserts catalog from index.html)", () => {
     const line = (model: string, id: string) => quoteResidential(model, dim(9, 0, 7, 0), { ...opts, windesign: id }).description;
     expect(line("GD1LP", "SQ24")).toContain("double strength b grade windows in the top section, SQ24 design");
     expect(line("GD1LP", "ARCH1GRILLE")).toContain(", Arch 1 Grille design");
-    expect(line("GD1LP", "REC12")).toContain(", REC12 design");
+    expect(line("GD1LP", "REC14")).toContain(", REC14 design");
     expect(line("4050", "509")).toContain("single strength b grade windows in the top section, Colonial 509 inserts");
     expect(line("4050", "608")).toContain(", Charleston 608 inserts");
     expect(quoteResidential("4050", dim(9, 0, 7, 0), { ...opts, style: "glass" }).description).toContain("windows in the top section, no inserts");

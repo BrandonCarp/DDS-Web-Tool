@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
-  CLASSIC_STACK, CLASSIC_STACK_MODELS, ENERGY_STACK, INDUSTRIAL_STACK,
-  classicPanelsWide, classicStack, commercialStack, glazedStack, sectionOrdinal,
+  CLASSIC_STACK, CLASSIC_STACK_MODELS, ENERGY_STACK, GALLERY_STACK, GALLERY_STACK_MODELS, INDUSTRIAL_STACK,
+  classicPanelsWide, classicStack, commercialStack, galleryPanelsWide, galleryStack, glazedStack, sectionOrdinal,
 } from "./data/door-stacks";
 import { COMM_MATRIX_SIZES } from "./data/commercial-meta";
 import { stockedHeights } from "./data/stock-colors";
@@ -13,6 +13,7 @@ import { stockedHeights } from "./data/stock-colors";
  */
 describe("door stacks — Clopay's stacking charts", () => {
   const sum = (a: readonly number[]) => a.reduce((x, y) => x + y, 0);
+  const r24 = (n: number) => Array.from({ length: n }, () => 24);
 
   it("adds each Classic Steel stack up to its height, 6'0\" to 9'0\" in 18s and 21s", () => {
     for (const [h, stack] of Object.entries(CLASSIC_STACK)) {
@@ -37,6 +38,36 @@ describe("door stacks — Clopay's stacking charts", () => {
     }
     expect(CLASSIC_STACK_MODELS.has("GD1LP")).toBe(false);
     expect(CLASSIC_STACK_MODELS.has("CD")).toBe(false);
+  });
+
+  it("adds each Gallery Steel 3 layer stack up to its height, 6'0\" to 16'0\" in 18s, 21s and 24s, and covers the stock heights", () => {
+    for (const [h, stack] of Object.entries(GALLERY_STACK)) {
+      expect(sum(stack), `${h}"`).toBe(Number(h));
+      expect(stack.every((s) => s === 18 || s === 21 || s === 24), `${h}"`).toBe(true);
+    }
+    expect(Object.keys(GALLERY_STACK)).toHaveLength(41); // every 3" from 72 to 192
+    expect(galleryStack(6, 0)).toEqual([24, 24, 24]);
+    expect(galleryStack(7, 0)).toEqual([21, 21, 21, 21]);
+    expect(galleryStack(7, 6)).toEqual([24, 21, 21, 24]);
+    expect(galleryStack(8, 0)).toEqual([24, 24, 24, 24]);
+    expect(galleryStack(9, 0)).toEqual([24, 21, 21, 21, 21]);
+    expect(galleryStack(10, 3)).toEqual([21, 18, 21, 21, 21, 21]);
+    expect(galleryStack(16, 0)).toEqual(r24(8));
+    expect(galleryStack(16, 3)).toBeNull();
+    for (const m of ["GD1LP", "GD1SP"]) {
+      expect(GALLERY_STACK_MODELS.has(m), m).toBe(true);
+      for (const h of stockedHeights(m)) {
+        const [f, i] = h.split(".").map(Number);
+        expect(galleryStack(f, i || 0), `${m} ${h}`).not.toBeNull();
+      }
+    }
+    // Windows across: the long window two at 8' and 9', four at 16'; short 4, 4, 8.
+    expect([8, 9, 16].map((w) => galleryPanelsWide(w, 0, true))).toEqual([2, 2, 4]);
+    expect([8, 9, 16].map((w) => galleryPanelsWide(w, 0, false))).toEqual([4, 4, 8]);
+    expect(galleryPanelsWide(7, 0, true)).toBeNull();
+    expect(galleryPanelsWide(7, 0, false)).toBe(3);
+    expect(galleryPanelsWide(12, 0, false)).toBe(6);
+    expect(galleryPanelsWide(20, 0, true)).toBe(5);
   });
 
   it("adds each energy and industrial stack up to its height, 7'0\" to 17'0\"", () => {

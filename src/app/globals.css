@@ -1819,4 +1819,12 @@ html, body { margin: 0; padding: 0; }
 .tool-shell .dsec.pickable:not(.picked):hover .drow, .tool-shell .drow:focus-visible { border-color: var(--muted-2); }
 .tool-shell .dsec.pickable:not(.picked):hover .dface { background: linear-gradient(180deg, var(--surface-3) 0%, var(--surface-2) 40%, var(--surface-2) 100%); }
 .tool-shell .dsec.picked .drow { cursor: default; }
+/* What the windows are, said once across the glass row (22/10/2026). */
+.tool-shell .dlabel {
+  position: absolute; left: 50%; top: 50%; z-index: 3; transform: translate(-50%, -50%);
+  max-width: calc(100% - 16px); padding: 3px 9px; border-radius: 3px;
+  background: rgba(10, 10, 12, .72); color: #fff;
+  font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; line-height: 1.2;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none;
+}
 .tool-shell .ggroup.gwide { grid-column: 1 / -1; }

@@ -145,11 +145,18 @@ describe("inserts", () => {
       panelStyle: "short", windesign: "509",
     });
     expect(q.quote?.description).toContain("double strength b grade windows in the top section, Colonial 509 inserts");
+    // On the 4132: the 4050 itself never takes the architectural windows (22/10/2026).
     const arch = specialDoorQuote({
-      ...base, width: "9", style: "inserts", glassType: "seeded", windowSeries: "architectural",
+      ...base, variant: "4132", width: "9", style: "inserts", glassType: "seeded", windowSeries: "architectural",
       panelStyle: "long", windesign: "SQ24",
     });
     expect(arch.quote?.description).toContain("seeded dsb windows in the top section, SQ24 design");
+    const on4050 = specialDoorQuote({
+      ...base, variant: "4050", width: "9", style: "inserts", glassType: "seeded", windowSeries: "architectural",
+      panelStyle: "long", windesign: "SQ24",
+    });
+    expect(on4050.quote).toBeUndefined();
+    expect(on4050.reason).toMatch(/not priced/);
   });
 });
 
@@ -183,10 +190,12 @@ describe("what is not priced", () => {
     const r = specialDoorQuote({ ...base, width: "9", style: "glass", glassType: "seeded", panelStyle: "short" });
     expect(r.quote).toBeUndefined();
     expect(r.reason).toMatch(/not priced on the short standard windows/);
-    const a = specialDoorQuote({ ...base, width: "10.2", style: "glass", glassType: "dsb", panelStyle: "short", windowSeries: "architectural" });
+    const a = specialDoorQuote({ ...base, variant: "4132", width: "10.2", style: "glass", glassType: "dsb", panelStyle: "short", windowSeries: "architectural" });
     expect(a.quote).toBeUndefined();
     expect(a.reason).toContain("no architectural windows");
     expect(a.reason).toContain("standard");
+    // The 4050 has no architectural series to ask for: the series asked is read as standard, which 10'2" prices.
+    expect(specialDoorQuote({ ...base, variant: "4050", width: "10.2", style: "glass", glassType: "dsb", panelStyle: "short", windowSeries: "architectural" }).quote).toBeTruthy();
   });
 
   it("gives every type a label", () => {
@@ -198,6 +207,9 @@ describe("what is not priced", () => {
       expect(isSheetGroup(g), g).toBe(true);
       expect(windowSeriesFor(g), g).toEqual(["standard", "architectural"]);
     }
+    // …but the 4050, 4051 and 4053 take the standard series alone (Brandon, 22/10/2026).
+    for (const m of ["4050", "4051", "4053"]) expect(windowSeriesFor(G, m), m).toEqual(["standard"]);
+    expect(windowSeriesFor(G, "4132")).toEqual(["standard", "architectural"]);
   });
 });
 
