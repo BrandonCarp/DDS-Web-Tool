@@ -12,7 +12,7 @@ import type { LockKey, Quote, SpringKey, TrackKey, WindowStyle } from "@/lib/pri
 import { COLORS, COLLECTIONS } from "@/lib/pricing/data/catalog-meta";
 import type { ParsedDoor } from "@/lib/pricing/data/parse-request";
 import { dataKey, modelSort } from "@/lib/pricing/model-groups";
-import { windowDesigns, designWidthCode, designClause, plainWindowsFor, takesInserts, stockLongAllowed } from "@/lib/pricing/data/inserts";
+import { windowDesigns, designWidthCode, designClause, plainWindowsFor, shortWindowName, takesInserts, stockLongAllowed } from "@/lib/pricing/data/inserts";
 import { CLASSIC_STACK_MODELS, GALLERY_STACK_MODELS, classicPanelsWide, classicStack, galleryPanelsWide, galleryStack, glazedStack } from "@/lib/pricing/data/door-stacks";
 import { placeKey } from "@/lib/pricing/data/modern-steel";
 import { DoorDiagram } from "./DoorDiagram";
@@ -265,8 +265,8 @@ export function ResidentialTool({
   const resStack = chartStack ? (isClassic ? glazedStack(chartStack, windowRow ?? resTop) : chartStack) : null;
   const resWindows = resStack && resPanels
     ? new Set(Array.from({ length: resPanels }, (_, i) => placeKey({ section: windowRow ?? resTop, panel: i + 1 }))) : null;
-  // What the windows are, across the glass row: the plain window by its
-  // order name, or the insert design as the line words it.
+  // What the windows are, on each one: the plain window by its order name,
+  // or the insert design as the line words it.
   const resWindowLabel = style === "inserts" ? (designClause(activeDesign) ?? "Inserts")
     : activeFraming !== "plain" ? activeFraming : "Plain glass";
 
@@ -827,7 +827,7 @@ export function ResidentialTool({
                 <div className="ggroup gwide">
                   <div className="ghdr">Windows</div>
                   <DoorDiagram stack={resStack} panels={resPanels} widthIn={wf * 12 + (parseInt(widthIn, 10) || 0)}
-                    windows={resWindows} pickRows={new Set(isClassic ? [resTop, resTop - 1] : [])} rowLabel={resWindowLabel}
+                    windows={resWindows} pickRows={new Set(isClassic ? [resTop, resTop - 1] : [])} windowLabel={resWindowLabel} windowLabelShort={shortWindowName(resWindowLabel)}
                     onPickRow={(section) => setWinUnderTop(section === resTop - 1)} />
                 </div>
               )}

@@ -634,22 +634,28 @@ describe("residential tool — the windows' row on the door drawing (Brandon, 22
     expect(glazed()).toHaveLength(4);
   });
 
-  it("says what the windows are across the glass row: the plain window by its name, or the insert design (Brandon, 22/10/2026)", async () => {
+  it("says what the windows are on each one: the plain window by its name, or the insert design (Brandon, 22/10/2026)", async () => {
     await configure("4050");
     size("9", "7");
     glass();
-    const label = () => screen.queryByTestId("door-section-4-label")?.textContent ?? null;
+    const label = () => screen.queryByTestId("door-panel-4-1-label")?.textContent ?? null;
+    const labels = () => [...document.querySelectorAll('[data-testid$="-label"]')].map((el) => el.textContent);
     expect(label()).toBe(SHORT);
+    expect(labels()).toEqual([SHORT, SHORT, SHORT, SHORT]);
+    // …and the name without its size, for a window too narrow for the whole name.
+    expect(screen.getByTestId("door-panel-4-1-label-short").textContent).toBe("PLAIN SHORT");
     fireEvent.change(screen.getByTestId("framing"), { target: { value: LONG } });
-    expect(label()).toBe(LONG);
+    expect(labels()).toEqual([LONG, LONG]);
+    expect(screen.getByTestId("door-panel-4-1-label-short").textContent).toBe("PLAIN LONG");
     fireEvent.change(screen.getByTestId("framing"), { target: { value: "insert" } });
     expect(label()).toBe("Inserts");
     fireEvent.change(screen.getByTestId("windesign"), { target: { value: "509" } });
     expect(label()).toBe("Colonial 509 inserts");
-    // The label follows the row.
+    expect(screen.queryByTestId("door-panel-4-1-label-short")).toBeNull(); // a design has no size to drop
+    // The labels follow the row.
     fireEvent.click(screen.getByTestId("door-section-3-pick"));
     expect(label()).toBeNull();
-    expect(screen.getByTestId("door-section-3-label").textContent).toBe("Colonial 509 inserts");
+    expect(screen.getByTestId("door-panel-3-2-label").textContent).toBe("Colonial 509 inserts");
     cleanup();
     await configure("GD1SP");
     size("9", "7");
@@ -657,6 +663,7 @@ describe("residential tool — the windows' row on the door drawing (Brandon, 22
     expect(label()).toBe('PLAIN LONG 42" X 16"');
     fireEvent.change(screen.getByTestId("framing"), { target: { value: "ARCH 1" } });
     expect(label()).toBe("ARCH 1");
+    expect(screen.queryByTestId("door-panel-4-1-label-short")).toBeNull();
     fireEvent.change(screen.getByTestId("framing"), { target: { value: "insert" } });
     fireEvent.change(screen.getByTestId("windesign"), { target: { value: "SQ24" } });
     expect(label()).toBe("SQ24 design");

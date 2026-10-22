@@ -1254,6 +1254,15 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     const line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(grid(569) + Math.round((Math.round(65 * 0.912 * k * 100) / 100 / 0.55) * 100) / 100, 2);
     expect(line.description).toMatch(/CLOPAY MODERN COLLECTION,  MODEL 9139,  8'0" X 7'0",  IN THE COLOR WHITE,  1\/8" TEMPERED SHORT 19 1\/2X16 WINDOWS IN SECTION 1,  GL-SOL-SOL-SOL,  LEFT SIDE INSIDE LOOKING OUT,  NO INSERTS/i);
+    // Each window says what it is (Brandon, 22/10/2026): the window as the line names it, or its grille design.
+    expect(screen.getByTestId("door-panel-1-1-label").textContent).toBe("short 19 1/2x16");
+    expect(screen.getByTestId("door-panel-1-1-label-short").textContent).toBe("short");
+    expect(maybe("door-panel-1-2-label")).toBeNull();
+    fireEvent.change(sel("so-framing"), { target: { value: "short_grilles:REC12" } });
+    await settle();
+    fireEvent.click(screen.getByTestId("door-panel-1-2-add")); // a new window starts the drawing over
+    await settle();
+    expect(screen.getByTestId("door-panel-1-2-label").textContent).toBe("REC12 design");
   });
 
   it("draws the door as Clopay stacks it, takes a window per press, and prices each at CJ's rate", async () => {

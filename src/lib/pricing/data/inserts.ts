@@ -260,6 +260,16 @@ export function designWord(id: string | undefined | null): "design" | "inserts" 
   return !!id && [...ARCHITECTURAL, ...COACHMAN_ARCH, ...COACHMAN_GLASS_DESIGNS].some((x) => x.id === id) ? "design" : "inserts";
 }
 
+/**
+ * A window's name without its size, for where the whole name will not fit
+ * (Brandon, 22/10/2026 — the label on a narrow window of the drawing):
+ * PLAIN SHORT 19-1/2" X 12" is "PLAIN SHORT", short 19 1/2x16 is "short",
+ * black slim 37x8 is "black slim"; a name with no size (ARCH 1) is itself.
+ */
+export function shortWindowName(name: string): string {
+  return name.replace(/\s+[\d\s\-\/]+"?\s*x\s*[\d\s\-\/]+"?\s*$/i, "").trim() || name;
+}
+
 /** "SQ24 design", "Colonial 509 inserts": a design named with its word. */
 export function designClause(id: string | undefined | null): string | null {
   const name = designName(id);

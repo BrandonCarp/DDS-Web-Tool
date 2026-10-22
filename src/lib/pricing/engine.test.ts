@@ -3,7 +3,7 @@ import { priceResidential, quoteResidential, quoteResidentialSection, quoteResid
 import { RESIDENTIAL_PRICES } from "./data/residential-prices";
 import { STOCK_PRICES } from "./data/stock-prices";
 import type { WindowStyle } from "./types";
-import { windowDesigns } from "./data/inserts";
+import { shortWindowName, windowDesigns } from "./data/inserts";
 
 const dim = (wf: number, wi: number, hf: number, hi: number) => ({
   widthFt: wf, widthIn: wi, heightFt: hf, heightIn: hi,
@@ -396,6 +396,22 @@ describe("window designs (inserts catalog from index.html)", () => {
     expect(line("4050", "509")).toContain("single strength b grade windows in the top section, Colonial 509 inserts");
     expect(line("4050", "608")).toContain(", Charleston 608 inserts");
     expect(quoteResidential("4050", dim(9, 0, 7, 0), { ...opts, style: "glass" }).description).toContain("windows in the top section, no inserts");
+  });
+});
+
+describe("a window's name without its size (Brandon, 22/10/2026)", () => {
+  it("drops the size and keeps a name that has none", () => {
+    expect(shortWindowName('PLAIN SHORT 19-1/2" X 12"')).toBe("PLAIN SHORT");
+    expect(shortWindowName('PLAIN LONG 40-1/2" X 12"')).toBe("PLAIN LONG");
+    expect(shortWindowName('PLAIN LONG 42" X 16"')).toBe("PLAIN LONG");
+    expect(shortWindowName('PLAIN SHORT 19-1/2" X 16"')).toBe("PLAIN SHORT");
+    expect(shortWindowName("ARCH 1")).toBe("ARCH 1");
+    expect(shortWindowName("short 19 1/2x16")).toBe("short");
+    expect(shortWindowName("long 42x16")).toBe("long");
+    expect(shortWindowName("black slim 37x8")).toBe("black slim");
+    expect(shortWindowName("Colonial 509 inserts")).toBe("Colonial 509 inserts");
+    expect(shortWindowName("SQ24 design")).toBe("SQ24 design");
+    expect(shortWindowName("Plain glass")).toBe("Plain glass");
   });
 });
 

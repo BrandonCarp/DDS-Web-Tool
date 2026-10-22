@@ -33,6 +33,7 @@ import { dataKey } from "@/lib/pricing/model-groups";
 import { homeownerMarkupForBand } from "@/lib/pricing/engine";
 import { OptionButtons, YES_NO, type ButtonOption } from "./OptionButtons";
 import { DoorDiagram } from "./DoorDiagram";
+import { designClause, shortWindowName } from "@/lib/pricing/data/inserts";
 import { modernFramingChoices, modernGlassForFraming, modernPanelsWide, modernPickerModel, modernStack, placeKey, type WindowPlace } from "@/lib/pricing/data/modern-steel";
 import { roofPitches, sheetInclines, sheetLiftChoices, sheetRearTorsion, sheetTrackChoices, trackSolidOnly } from "@/lib/pricing/data/sheet-tracks";
 import { QtyStepper } from "./QtyStepper";
@@ -817,6 +818,8 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                       <div className="ghdr">Windows</div>
                       <DoorDiagram stack={gStack} panels={gPanelsWide} widthIn={vwf0 * 12 + (vwi0 ?? 0)}
                         windows={new Set(gPlaces.map(placeKey))}
+                        windowLabel={gModernFramingEff.design ? designClause(gModernFramingEff.design) ?? gModernFramingEff.window : gModernFramingEff.window}
+                        windowLabelShort={gModernFramingEff.design ? undefined : shortWindowName(gModernFramingEff.window)}
                         onToggle={(place) => {
                           const k = placeKey(place);
                           const next = new Set(gPlaces.map(placeKey));
