@@ -3,17 +3,21 @@
  * works out what covers a given door opening.
  *
  * A door takes three pieces: one across the header at the door's WIDTH, and two
- * legs down the sides at the door's HEIGHT. Each piece is filled with the
- * smallest stock length that reaches, and stock lengths differ sharply by
- * colour — white runs 7' to 18' while most colours are 16' only. That means a
- * 12' wide door is one 12' piece in white and a 16' piece in anything else.
+ * legs down the sides at the door's HEIGHT. Stock lengths differ sharply by
+ * colour — white runs 7' to 18' while most colours are 16' only.
  *
- * Pieces are NOT cut down to make two legs out of one long length: a 12'x8' black
- * door bills [1] - 16FT and [2] - 8FT, which is the figure Brandon confirmed
- * off a real order.
+ * What is pulled from stock is whatever covers the whole order's cut list in
+ * the fewest feet (Brandon, 22/10/2026): pieces may be cut out of one stock
+ * length — two 7' legs out of a 16', an 8' header and a 7' leg out of one,
+ * two 8' legs out of a 16' exactly — and the list is packed across every door
+ * on the order, so three 9' x 7' doors take five 16s where one door at a
+ * time would take six. Where cutting saves nothing, nothing is cut: a 12' x 8'
+ * black door is still [1] - 16FT and [2] - 8FT, the figure Brandon confirmed
+ * off a real order, not a 16' and another 16' sawn in two.
  *
  * Price is per LINEAR FOOT, so the QuickBooks line carries the total footage as
- * its quantity and the per-foot figure as its rate.
+ * its quantity and the per-foot figure as its rate, and names what is pulled —
+ * the stock lengths and how many of each — never the cuts.
  */
 
 /** Stock lengths carried per colour, in feet, ascending. */
@@ -134,21 +138,11 @@ export function piecesText(pieces: { ft: number; count: number }[]): string {
 
 export interface VinylQuote {
   color: string;
-  /** Stock length used for the header piece, in feet — the longest, when the
-      header takes more than one piece (see headerPieces). */
-  headerFt: number;
-  /** Stock length used for each of the two side pieces, in feet. */
-  legFt: number;
-  /** Every stock length the header takes: one, unless the opening is wider
-      than the colour is stocked long. */
-  headerPieces: number[];
-  /** The same for each side piece. */
-  legPieces: number[];
-  /** Each stock length used and how many of it, header first then the legs —
-      what the description and the quote card both read out. */
+  /** Each stock length used and how many of it, longest first — what the
+      description and the quote card both read out. */
   pieces: { ft: number; count: number }[];
-  /** Total linear feet for one door, before the quantity multiplier. */
-  feetPerDoor: number;
+  /** Every stock length pulled, with the cut pieces that come out of it. */
+  bins: VinylBin[];
   /** Total linear feet actually ordered — this is the QuickBooks quantity. */
   feet: number;
   pricePerFt: number;
@@ -157,36 +151,130 @@ export interface VinylQuote {
   description: string;
 }
 
+/** One stock length pulled, and the pieces cut from it (one piece: nothing cut). */
+export interface VinylBin {
+  ft: number;
+  pieces: number[];
+}
+
+const EPS = 1e-9;
+const key = (n: number) => Math.round(n * 10000) / 10000;
+
 /**
- * Stock lengths that cover `need`: the smallest one that reaches. Past the
- * longest length the colour is stocked in — 18' in white and black, 16' in the
- * rest — it is the longest, plus the smallest that covers what is left
- * (Brandon, 25/9/2026). Null only for a colour that is not stocked at all.
+ * Pack pieces into a colour's stock lengths for the fewest feet.
+ *
+ * Every way of filling one stock length from the pieces on hand is a
+ * pattern — a 9 and a 7 in a 16, two 7s in a 16, a 7 on its own in a 7 — and
+ * the order is covered by patterns until nothing is left. The patterns are
+ * chosen by a table over what remains of each piece size, so the answer is
+ * the least footage, not a guess; on equal footage the one with the fewest
+ * sawn lengths wins, then the fewest lengths. A piece is never put in a
+ * longer length than the shortest that holds the pattern.
+ *
+ * A piece longer than the longest length stocked takes whole lengths first
+ * and only its remainder goes in the list — a 20' header in white is an 18'
+ * and a 2' piece, and the 2' may share a length with the legs.
  */
-function coveringLengths(color: string, need: number): number[] | null {
-  const stock = VINYL_STOCK[color];
-  if (!stock?.length) return null;
-  const longest = stock[stock.length - 1];
+export function packVinyl(stock: readonly number[], needs: readonly number[]): VinylBin[] | null {
+  if (!stock.length) return null;
+  const lengths = [...stock].sort((a, b) => a - b);
+  const longest = lengths[lengths.length - 1];
+  const bins: VinylBin[] = [];
   const pieces: number[] = [];
-  let left = need;
-  while (left > longest) {
-    pieces.push(longest);
-    left -= longest;
+  for (const need of needs) {
+    let left = need;
+    while (left > longest + EPS) {
+      bins.push({ ft: longest, pieces: [longest] });
+      left -= longest;
+    }
+    if (left > EPS) pieces.push(key(left));
   }
-  if (left > 0) pieces.push(stock.find((s) => s >= left)!);
-  return pieces;
+  if (!pieces.length) return bins;
+
+  // The distinct piece sizes and how many of each, longest first.
+  const sizes = [...new Set(pieces)].sort((a, b) => b - a);
+  const counts = sizes.map((v) => pieces.filter((p) => p === v).length);
+  const fits = (sum: number) => lengths.find((l) => l + EPS >= sum)!;
+
+  // Every pattern: a count of each size that fits one stock length.
+  const patterns: { take: number[]; ft: number; n: number; idx: number }[] = [];
+  const stride = counts.map((_, i) => counts.slice(0, i).reduce((a, c) => a * (c + 1), 1));
+  const walk = (i: number, take: number[], sum: number, n: number) => {
+    if (i === sizes.length) {
+      if (n > 0) patterns.push({ take: [...take], ft: fits(sum), n, idx: take.reduce((a, t, j) => a + t * stride[j], 0) });
+      return;
+    }
+    for (let k = 0; k <= counts[i]; k++) {
+      const next = sum + k * sizes[i];
+      if (next > longest + EPS) break;
+      take[i] = k;
+      walk(i + 1, take, next, n + k);
+    }
+    take[i] = 0;
+  };
+  walk(0, sizes.map(() => 0), 0, 0);
+
+  // The table: for what remains (as one index over the counts), the least
+  // footage and the pattern that starts it; built from nothing left upward.
+  const states = counts.reduce((a, c) => a * (c + 1), 1);
+  if (states > 400_000) return bins.concat(packGreedy(lengths, pieces));
+  const feet = new Float64Array(states);
+  const sawn = new Int32Array(states);
+  const used = new Int32Array(states);
+  const via = new Int32Array(states).fill(-1);
+  const remaining = new Array<number>(sizes.length);
+  for (let st = 1; st < states; st++) {
+    let r = st;
+    for (let i = sizes.length - 1; i >= 0; i--) { remaining[i] = Math.floor(r / stride[i]); r -= remaining[i] * stride[i]; }
+    let bestFeet = Infinity, bestSawn = 0, bestUsed = 0, bestPat = -1;
+    for (let pi = 0; pi < patterns.length; pi++) {
+      const p = patterns[pi];
+      let ok = true;
+      for (let i = 0; i < sizes.length; i++) if (p.take[i] > remaining[i]) { ok = false; break; }
+      if (!ok) continue;
+      const prev = st - p.idx;
+      const f = feet[prev] + p.ft, sw = sawn[prev] + (p.n > 1 ? 1 : 0), u = used[prev] + 1;
+      if (f < bestFeet - EPS || (Math.abs(f - bestFeet) <= EPS && (sw < bestSawn || (sw === bestSawn && u < bestUsed)))) {
+        bestFeet = f; bestSawn = sw; bestUsed = u; bestPat = pi;
+      }
+    }
+    feet[st] = bestFeet; sawn[st] = bestSawn; used[st] = bestUsed; via[st] = bestPat;
+  }
+  // Read the patterns back off the table.
+  for (let st = states - 1; st > 0; ) {
+    const p = patterns[via[st]];
+    const cut: number[] = [];
+    p.take.forEach((t, i) => { for (let k = 0; k < t; k++) cut.push(sizes[i]); });
+    bins.push({ ft: p.ft, pieces: cut });
+    st -= p.idx;
+  }
+  return bins;
+}
+
+/** Past the table's size: each piece, longest first, into the first length with room, then each length the shortest that holds its pieces. */
+function packGreedy(lengths: readonly number[], pieces: readonly number[]): VinylBin[] {
+  const longest = lengths[lengths.length - 1];
+  const open: { sum: number; pieces: number[] }[] = [];
+  for (const p of [...pieces].sort((a, b) => b - a)) {
+    const bin = open.find((b) => b.sum + p <= longest + EPS);
+    if (bin) { bin.sum += p; bin.pieces.push(p); } else open.push({ sum: p, pieces: [p] });
+  }
+  return open.map((b) => ({ ft: lengths.find((l) => l + EPS >= b.sum)!, pieces: b.pieces }));
+}
+
+/** The stock lengths pulled and how many of each, longest first. */
+function countBins(bins: readonly VinylBin[]): { ft: number; count: number }[] {
+  const counts = new Map<number, number>();
+  for (const b of bins) counts.set(b.ft, (counts.get(b.ft) ?? 0) + 1);
+  return [...counts].sort((a, b) => b[0] - a[0]).map(([ft, count]) => ({ ft, count }));
 }
 
 /**
- * Work out the molding for one door opening.
- *
- * `sets` covers more than one identical opening: it multiplies the footage and
- * the piece counts, never the piece sizes. The Vinyl tab's Number of doors
- * feeds it (7/10/2026): two 8x7 doors are "[2] - 8FT AND [4] - 7FT".
- *
- * An opening longer than the colour is stocked in takes the longest length
- * plus extra pieces (coveringLengths). Returns null only for a colour that is
- * not stocked.
+ * Work out the molding for a door opening, or for `sets` identical openings
+ * packed as one order (the Vinyl tab's Number of doors, the quote's quantity):
+ * a header the door's width and two legs its height, each, pulled from the
+ * colour's stock lengths in the fewest feet (packVinyl). Null only for a
+ * colour that is not stocked.
  */
 export function vinylForDoor(
   color: string,
@@ -194,36 +282,27 @@ export function vinylForDoor(
   heightFt: number,
   setCount = 1,
 ): VinylQuote | null {
-  const headerPieces = coveringLengths(color, widthFt);
-  const legPieces = coveringLengths(color, heightFt);
-  if (headerPieces == null || legPieces == null) return null;
-
+  const stock = VINYL_STOCK[color];
+  if (!stock?.length) return null;
   const sets = Math.max(1, Math.trunc(setCount) || 1);
-  const sum = (a: number[]) => a.reduce((t, x) => t + x, 0);
-  const feetPerDoor = sum(headerPieces) + sum(legPieces) * 2;
-  const feet = feetPerDoor * sets;
+  const needs: number[] = [];
+  for (let i = 0; i < sets; i++) needs.push(widthFt, heightFt, heightFt);
+  const bins = packVinyl(stock, needs);
+  if (!bins) return null;
+  // Longest length first; within a length, the one holding the longest piece, then the fullest.
+  const sum = (b: VinylBin) => b.pieces.reduce((t, x) => t + x, 0);
+  const sorted = [...bins].sort((a, b) => b.ft - a.ft || Math.max(...b.pieces) - Math.max(...a.pieces) || sum(b) - sum(a));
+  const pieces = countBins(sorted);
+  const feet = sorted.reduce((t, b) => t + b.ft, 0);
   const pricePerFt = VINYL_PRICE_PER_FT[color] ?? 0;
-
-  // One count per stock length, header first then the legs, so pieces that
-  // land on the same length read as one count: three 16s are "[3] - 16FT",
-  // never the same number twice.
-  const counts = new Map<number, number>();
-  for (const ft of [...headerPieces, ...legPieces, ...legPieces]) counts.set(ft, (counts.get(ft) ?? 0) + 1);
-  const pieces = [...counts].map(([ft, n]) => ({ ft, count: n * sets }));
-  const body = piecesText(pieces);
-
   return {
     color,
-    headerFt: headerPieces[0],
-    legFt: legPieces[0],
-    headerPieces,
-    legPieces,
     pieces,
-    feetPerDoor,
+    bins: sorted,
     feet,
     pricePerFt,
     total: Math.round(feet * pricePerFt * 100) / 100,
-    description: `${color} VINYL STOP MOLDING,  ${body}`,
+    description: `${color} VINYL STOP MOLDING,  ${piecesText(pieces)}`,
   };
 }
 
