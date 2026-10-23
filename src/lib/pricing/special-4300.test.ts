@@ -4,7 +4,7 @@ import {
   specialDoorQuote,
 } from "./data/special-door-pricing";
 import { COLORS, specialOrderColors } from "./data/catalog-meta";
-import { windowDesigns } from "./data/inserts";
+import { designName, windowDesigns } from "./data/inserts";
 import { SPECIAL } from "./data/special-orders";
 
 const G = "4300/4301/4302/4305/4310";
@@ -112,9 +112,10 @@ describe("4300 family — options", () => {
     }
   });
 
-  it("excludes Sunset 507, as the 4050 does", () => {
-    for (const m of ["4300", "4301", "4310"]) {
+  it("offers no Sunset 507: there is none (Brandon, 23/10/2026)", () => {
+    for (const m of ["4300", "4301", "4310", "4050", "4053", "9133", "T50S"]) {
       expect(windowDesigns(m, "inserts", "9").map((d) => d.id), m).not.toContain("507");
     }
+    expect(designName("507")).toBeNull();
   });
 });

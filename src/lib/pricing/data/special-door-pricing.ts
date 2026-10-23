@@ -826,11 +826,11 @@ export function specialDoorQuote(
   const glassDesign = style === "glass" && designId ? `, ${designClause(designId)}` : "";
   // A plain window named by its order name, as the stock tab words it (its own
   // clause after "in the top section" — Brandon, 25/9/2026 there, 12/10/2026
-  // here). The Gallery's and Bridgeport's other plain arch windows (Arch 2
-  // Plain, Arch 3 Plain) are named from the window list the same way.
+  // here). The Gallery's and Bridgeport's other plain arch windows (Arch 2,
+  // Arch 3) are named from the window list the same way.
   const plainNames = [
     ...specialPlainWindowsFor(member, series),
-    ...specialWindowDesigns(member, "inserts", input.width, series).filter((d) => d.cat === "arch" && /\bPLAIN\b/i.test(d.name)).map((d) => d.name),
+    ...specialWindowDesigns(member, "inserts", input.width, series).filter((d) => d.cat === "arch" && d.id.includes("PLAIN")).map((d) => d.name),
   ];
   const plain = style === "glass" && input.plainWindow && plainNames.includes(input.plainWindow)
     ? `${input.plainWindow.toLowerCase()}, ` : "";

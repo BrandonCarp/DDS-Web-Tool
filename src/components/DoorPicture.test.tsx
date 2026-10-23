@@ -41,7 +41,7 @@ describe("DoorPicture", () => {
   });
 
   it("keeps the drawing where the door cannot be drawn", async () => {
-    render(<DoorPicture spec={{ ...base, window: "507" }} alt="door" fallback={<div data-testid="door-diagram">drawing</div>} />);
+    render(<DoorPicture spec={{ ...base, window: "SQ23" }} alt="door" fallback={<div data-testid="door-diagram">drawing</div>} />);
     await new Promise((r) => setTimeout(r, 20));
     expect(screen.getByTestId("door-diagram").textContent).toBe("drawing");
     expect(screen.queryByTestId("door-picture")).toBeNull();

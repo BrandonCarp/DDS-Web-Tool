@@ -231,8 +231,8 @@ describe("Bridgeport wording", () => {
       .toContain('double strength b grade windows in the top section, plain short 19-1/2" x 16", no inserts');
     expect(line({ panelStyle: "long", plainWindow: 'PLAIN LONG 42" X 16"' }))
       .toContain('windows in the top section, plain long 42" x 16", no inserts');
-    expect(line({ panelStyle: "long", plainWindow: "PLAIN ARCH 1" })).toContain("windows in the top section, plain arch 1, no inserts");
-    expect(line({ panelStyle: "long", plainWindow: "Arch 2 Plain" })).toContain("windows in the top section, arch 2 plain, no inserts");
+    expect(line({ panelStyle: "long", plainWindow: "ARCH 1" })).toContain("windows in the top section, arch 1, no inserts");
+    expect(line({ panelStyle: "long", plainWindow: "Arch 2" })).toContain("windows in the top section, arch 2, no inserts");
     // A window the door does not name is not written.
     expect(line({ panelStyle: "short", plainWindow: 'PLAIN SHORT 19-1/2" X 12"' })).toContain("windows in the top section, no inserts");
     // The same on a Gallery door; the short window is priced at its short band.

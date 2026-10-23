@@ -5,25 +5,29 @@
 
 export type InsertDesign = { id: string; name: string; cat?: string; w?: string[] };
 
+/**
+ * The Classic Steel inserts, in the order every list shows them (Brandon,
+ * 23/10/2026): 501 up to the last 500, then the 600s from the lowest. There
+ * is no Sunset 507.
+ */
 export const DECORATIVE: InsertDesign[] = [
-  { id: "509", name: "Colonial 509", cat: "short" },
-  { id: "508", name: "Charleston 508", cat: "short" },
-  { id: "510", name: "Prairie 510", cat: "short" },
-  { id: "608", name: "Charleston 608", cat: "long" },
-  { id: "610", name: "Prairie 610", cat: "long" },
-  { id: "612", name: "Stockton 612", cat: "long" },
-  { id: "611", name: "Madison 611", cat: "long" },
-  { id: "613", name: "Madison Arch 613", cat: "long" },
   { id: "501", name: "Sunset 501", cat: "sunset", w: ["8", "9", "12", "16", "17", "18", "20"] },
   { id: "502", name: "Sunset 502", cat: "sunset", w: ["7", "7.6", "12"] },
   { id: "503", name: "Sunset 503", cat: "sunset", w: ["8", "9", "16", "17", "18"] },
   { id: "504", name: "Sunset 504", cat: "sunset", w: ["14", "15", "15.6"] },
   { id: "505", name: "Sunset 505", cat: "sunset", w: ["16", "17", "18"] },
   { id: "506", name: "Sunset 506", cat: "sunset", w: ["10", "20"] },
-  { id: "507", name: "Sunset 507", cat: "sunset" },
+  { id: "508", name: "Charleston 508", cat: "short" },
+  { id: "509", name: "Colonial 509", cat: "short" },
+  { id: "510", name: "Prairie 510", cat: "short" },
   { id: "601", name: "Sunset 601", cat: "sunset" },
   { id: "603", name: "Sunset 603", cat: "sunset" },
   { id: "605", name: "Sunset 605", cat: "sunset", w: ["15", "15.6", "16", "17", "18"] },
+  { id: "608", name: "Charleston 608", cat: "long" },
+  { id: "610", name: "Prairie 610", cat: "long" },
+  { id: "611", name: "Madison 611", cat: "long" },
+  { id: "612", name: "Stockton 612", cat: "long" },
+  { id: "613", name: "Madison Arch 613", cat: "long" },
 ];
 
 /**
@@ -40,13 +44,14 @@ export const ARCHITECTURAL: InsertDesign[] = [
   { id: "REC12", name: "REC12", cat: "arch" },
   { id: "PLAINLONG", name: "Plain Long", cat: "arch" },
   { id: "PLAINSHORT", name: "Plain Short", cat: "arch" },
-  { id: "ARCH1PLAIN", name: "Arch 1 Plain", cat: "arch" },
+  // The plain arches go by their number alone (Brandon, 23/10/2026: no "Plain").
+  { id: "ARCH1PLAIN", name: "Arch 1", cat: "arch" },
   { id: "ARCH1GRILLE", name: "Arch 1 Grille", cat: "arch" },
   { id: "ARCH1VERT", name: "Arch 1 Vertical Grille", cat: "arch" },
-  { id: "ARCH2PLAIN", name: "Arch 2 Plain", cat: "arch", w: ["8", "9"] },
+  { id: "ARCH2PLAIN", name: "Arch 2", cat: "arch", w: ["8", "9"] },
   { id: "ARCH2GRILLE", name: "Arch 2 Grille", cat: "arch", w: ["8", "9"] },
   { id: "ARCH2VERT", name: "Arch 2 Vertical Grille", cat: "arch", w: ["8", "9"] },
-  { id: "ARCH3PLAIN", name: "Arch 3 Plain", cat: "arch", w: ["16"] },
+  { id: "ARCH3PLAIN", name: "Arch 3", cat: "arch", w: ["16"] },
   { id: "ARCH3GRILLE", name: "Arch 3 Grille", cat: "arch", w: ["16"] },
   { id: "ARCH3VERT", name: "Arch 3 Vertical Grille", cat: "arch", w: ["16"] },
 ];
@@ -134,7 +139,7 @@ export function takesArchitecturalSeries(member: string): boolean {
  *
  * A Gallery or Bridgeport door takes the architectural windows as Clopay's
  * size chart has them (Brandon, 15/10/2026): every one on a single or a
- * double door, except the Arch 3s — Arch 3 Plain, Grille on Arch 3, Vertical
+ * double door, except the Arch 3s — Arch 3, Grille on Arch 3, Vertical
  * Grille on Arch 3 — which the chart shows on double doors only, 11'6" and
  * wider. The stock tab keeps the stock widths (Arch 2 at 8' and 9', Arch 3 at
  * 16'); every other model keeps its own list.
@@ -182,18 +187,11 @@ export function designWidthCode(wf: number, wi: number): string {
 }
 
 /**
- * Designs a model does not take, whatever the width rules would otherwise allow.
- *
- * DDS floors Sunset 507 in white, but not for the 4050 — Brandon's call from the
- * stocked-insert list, 10/9/2026.
+ * Designs a model does not take, whatever the width rules would otherwise
+ * allow. None today: the one there was, Sunset 507, is no design at all
+ * (Brandon, 23/10/2026).
  */
-const MODEL_EXCLUDED_DESIGNS: Record<string, string[]> = {
-  "4050": ["507"],
-  // Same list as the 4050, so the same exclusion.
-  "4300": ["507"], "4301": ["507"], "4310": ["507"],
-  // Same list as the 4050, so the same exclusion — Brandon, 16/9/2026.
-  T52S: ["507"], T52L: ["507"],
-};
+const MODEL_EXCLUDED_DESIGNS: Record<string, string[]> = {};
 
 /** The inserts the stock Gallery doors take, in the order the dropdown lists them (Brandon, 22/10/2026). */
 const STOCK_GALLERY_INSERTS: Record<string, readonly string[]> = {
@@ -318,7 +316,7 @@ export function plainWindowsFor(model: string): readonly string[] {
  * 9', Arch 3 at 16') come off the architectural list as they do today.
  */
 const SHEET_PLAIN_SHORT = 'PLAIN SHORT 19-1/2" X 16"';
-export const SPECIAL_PLAIN_WINDOWS: readonly string[] = [SHEET_PLAIN_SHORT, GALLERY_LONG, "PLAIN ARCH 1"];
+export const SPECIAL_PLAIN_WINDOWS: readonly string[] = [SHEET_PLAIN_SHORT, GALLERY_LONG, GALLERY_ARCH];
 /** The standard windows every Premium Steel door takes, where PLAIN_WINDOWS does not say otherwise. */
 const PREMIUM_PLAIN_WINDOWS: readonly string[] = [PLAIN_SHORT, PLAIN_LONG];
 

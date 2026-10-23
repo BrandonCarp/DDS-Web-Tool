@@ -38,11 +38,11 @@
 
 import { classicPanelsWide, coachmanWindowsWide, galleryPanelsWide } from "./door-stacks";
 import { modernPanelsWide } from "./modern-steel";
-import { doorArt, frameTint, frameTintNeeded, isWoodGrain, type DoorArt, type DoorStyle } from "./door-images";
+import { doorArt, frameTint, frameTintNeeded, isUltraGrain, isWoodGrain, type DoorArt, type DoorStyle } from "./door-images";
 import { SPAN_LONG, STRIP_SEQ, STRIP_SOURCES, type StripSource } from "./door-strips";
 
-/** One copy: a rectangle of an image onto the picture. */
-export interface Blit { src: string; sx: number; sy: number; sw: number; sh: number; dx: number; dy: number; dw: number; dh: number }
+/** One copy: a rectangle of an image onto the picture, upside down where `flipY`. */
+export interface Blit { src: string; sx: number; sy: number; sw: number; sh: number; dx: number; dy: number; dw: number; dh: number; flipY?: boolean }
 
 /** A section's place on the picture, numbered from the floor up (top = the last). */
 export interface SectionBox { section: number; y: number; h: number; inches: number }
@@ -51,10 +51,13 @@ export interface SectionBox { section: number; y: number; h: number; inches: num
  * Where windows sit on the picture, and what their frames take: the windows
  * were captured white, and on another face the frames are painted to match.
  *   paint  the colour given, by brightness — the glass, dark, keeps its look
- *   under  the face under them (`under`), a grain's or a texture's own
+ *   under  the face under them (`under`), a texture's own (Lustra)
+ *   grain  an Ultra-Grain door's, as Clopay draws them: the frames and grilles
+ *          one flat wood tone off the grain, the face round them the grain
+ *          (`under`); `whole` where the area is the window alone
  *   metal  nothing: a slim window's frame is black or silver whatever the door
  */
-export interface WindowArea { x: number; y: number; w: number; h: number; mode: "paint" | "under" | "metal"; rgb?: [number, number, number]; ref: number }
+export interface WindowArea { x: number; y: number; w: number; h: number; mode: "paint" | "under" | "grain" | "metal"; rgb?: [number, number, number]; ref: number; whole?: boolean }
 
 export interface DoorLayout {
   art: DoorArt;
@@ -131,7 +134,11 @@ function splitCell(src: RowSource, cell: number): { src: RowSource; cell: number
   return cells.map((_, i) => ({ src: sub, cell: i }));
 }
 
-/** A grain face's rail over its panels, plain: what the face of a section of windows is on a grain door. */
+/**
+ * A grain face's rail over its panels, plain: the face of a section of
+ * windows on a grain door, laid down the section a rail at a time, every
+ * other one upside down so each meets the next at its own grain.
+ */
 const GRAIN_RAIL: [number, number] = [2, 15];
 
 /**
@@ -391,6 +398,7 @@ export function doorLayout(spec: DoorPictureSpec): DoorLayout | null {
   const rows: number[] = key === null || placed ? [] : [...new Set(spec.windowRows?.length ? spec.windowRows : [spec.windowRow ?? top])];
   // How the frames take the door's colour.
   const grain = isWoodGrain(spec.colour);
+  const ultra = isUltraGrain(spec.colour);
   let frameMode: Omit<WindowArea, "x" | "y" | "w" | "h" | "ref"> = { mode: "paint", rgb: art.kind === "tint" ? art.rgb : undefined };
   if (key !== null) {
     if (!key) return null;
@@ -400,7 +408,8 @@ export function doorLayout(spec: DoorPictureSpec): DoorLayout | null {
       const anyRow = fam === "classic" || fam === "modern";
       if (rows.length > (anyRow ? 2 : 1) || rows.some((r) => !Number.isInteger(r) || r > top || (anyRow ? r < 2 : r !== top))) return null;
     }
-    if (fam === "modern" || grain) frameMode = { mode: "under" };
+    if (ultra) frameMode = { mode: "grain" };
+    else if (fam === "modern" || grain) frameMode = { mode: "under" };
     else if (art.kind === "image" && frameTintNeeded(spec.colour)) {
       const rgb = frameTint(spec.colour);
       if (!rgb) return null;
@@ -580,9 +589,20 @@ export function doorLayout(spec: DoorPictureSpec): DoorLayout | null {
   const sections: SectionBox[] = [];
   let inches = 0;
   let y = 0;
-  const put = (hb: HBlit[], sy: number, sh: number, dy: number, dh: number, to = blits) => {
+  const put = (hb: HBlit[], sy: number, sh: number, dy: number, dh: number, to = blits, flipY = false) => {
     if (dh <= 0 || sh <= 0) return;
-    for (const b of hb) to.push({ src: b.url, sx: b.sx, sy, sw: b.sw, sh, dx: b.dx, dy, dw: b.dw, dh });
+    for (const b of hb) to.push({ src: b.url, sx: b.sx, sy, sw: b.sw, sh, dx: b.dx, dy, dw: b.dw, dh, ...(flipY ? { flipY } : {}) });
+  };
+  // A grain's plain face down a section [dy, dy + dh): its rail, every other one upside down.
+  const plainGrain = (dy: number, dh: number) => {
+    const band = GRAIN_RAIL[1] - GRAIN_RAIL[0];
+    const step = Math.max(1, Math.round((band * dh) / 96));
+    for (let k = 0, ty = dy; ty < dy + dh; k++, ty += step) {
+      const h = Math.min(step, dy + dh - ty);
+      const sh = (band * h) / step;
+      const flip = k % 2 === 1;
+      put(faceRow, T.top[0] + (flip ? GRAIN_RAIL[1] - sh : GRAIN_RAIL[0]), sh, ty, h, under, flip);
+    }
   };
   const refFor = fam === "gallery" ? 232 : fam === "coachman" ? 213 : 216;
   // A window alone, centred down its section, the face under it for its frame.
@@ -599,7 +619,7 @@ export function doorLayout(spec: DoorPictureSpec): DoorLayout | null {
     const cut = clipRow(faceRow, x, x + ww);
     if (art.style === "modern-grooved") put(cut, GROOVED_FLAT_ROW, 1, wy, bh, under);
     else put(cut, tpl[0] + ((wy - secY) * (tpl[1] - tpl[0])) / dh, (bh * (tpl[1] - tpl[0])) / dh, wy, bh, under);
-    windows.push({ x, y: wy, w: ww, h: bh, mode: "under", ref: 216 });
+    windows.push(ultra ? { x, y: wy, w: ww, h: bh, mode: "grain", ref: 216, whole: true } : { x, y: wy, w: ww, h: bh, mode: "under", ref: 216 });
   };
   stack.forEach((h, i) => {
     inches += h;
@@ -621,17 +641,17 @@ export function doorLayout(spec: DoorPictureSpec): DoorLayout | null {
         }
       }
     } else if (stripH && rows.includes(section)) {
-      // a grain's windows are on its plain face: the rail over the panels, drawn down the section
-      if (grain) put(faceRow, T.top[0] + GRAIN_RAIL[0], GRAIN_RAIL[1] - GRAIN_RAIL[0], y, dh, under);
-      if (i === 0) {
-        put(stripH, 0, stripRows, y, dh);
-      } else {
-        // a middle section's joint over the strip's own window rows
-        const j = Math.max(1, Math.round((T.joint * dh) / stripRows));
+      // a grain's windows are on its plain face: the rail over the panels, laid down the section
+      if (grain) plainGrain(y, dh);
+      // a middle section keeps its own joint over the strip's window rows
+      const j = i === 0 ? 0 : Math.max(1, Math.round((T.joint * dh) / stripRows));
+      if (j) {
         put(faceRow, T.mid[0], T.joint, y, j);
         put(stripH, T.joint, stripRows - T.joint, y + j, dh - j);
+      } else {
+        put(stripH, 0, stripRows, y, dh);
       }
-      windows.push({ x: 0, y, w: W, h: dh, ...frameMode, ref: refFor });
+      windows.push({ x: 0, y: y + j, w: W, h: dh - j, ...frameMode, ref: refFor });
     } else {
       put(faceRow, tpl[0], srcH, y, dh);
       if (fam === "modern") {

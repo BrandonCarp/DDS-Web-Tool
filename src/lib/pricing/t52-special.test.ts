@@ -69,7 +69,7 @@ describe("T52S / T52L — special order", () => {
     expect(sell("14.2", "glass")).toBeCloseTo(1357.54 + 200, 2);
   });
 
-  it("offers the 4050's short-window designs, 507 excluded", () => {
+  it("offers the 4050's short-window designs", () => {
     // Short windows only on the T52S, so none of the long-panel inserts the
     // 4050 took on 5/10/2026.
     for (const w of ["7", "9", "12", "16"]) {

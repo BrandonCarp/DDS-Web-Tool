@@ -39,7 +39,7 @@ describe("door pictures — the window by its name", () => {
     expect(windowKey("glass", undefined, 'PLAIN SHORT 19-1/2" X 16"', "GD1LP")).toBe("PS16");
     expect(windowKey("glass", undefined, 'PLAIN LONG 42" X 16"', "GD1LP")).toBe("PL16");
     expect(windowKey("glass", undefined, "ARCH 1", "GD1LP")).toBe("ARCH1PLAIN");
-    expect(windowKey("glass", undefined, "Arch 2 Plain", "GD1LP")).toBe("ARCH2PLAIN");
+    expect(windowKey("glass", undefined, "Arch 2", "GD1LP")).toBe("ARCH2PLAIN");
     expect(windowKey("glass", undefined, undefined, "4050")).toBe("PS12");
     expect(windowKey("glass", undefined, undefined, "GD1SP")).toBe("PL16");
     expect(windowKey("glass", undefined, "black slim 37x8", "4308")).toBe("");
@@ -78,11 +78,12 @@ describe("door pictures — the layout", () => {
     const top = doorLayout(spec({ model: "4050", widthIn: 108, stack, window: "PS12" }))!;
     const under = doorLayout(spec({ model: "4050", widthIn: 108, stack, window: "PS12", windowRow: 3 }))!;
     expect(top.windows.map((w) => [w.y, w.y + w.h])).toEqual([[top.sections[0].y, top.sections[0].y + top.sections[0].h]]);
+    // a middle section keeps its own joint, two rows deep, over the windows
     const s3 = under.sections.find((s) => s.section === 3)!;
-    expect(under.windows.map((w) => [w.y, w.y + w.h])).toEqual([[s3.y, s3.y + s3.h]]);
+    expect(under.windows.map((w) => [w.y, w.y + w.h])).toEqual([[s3.y + 2, s3.y + s3.h]]);
     // two rows, any but the bottom (Brandon, 23/10/2026); the bottom, or under the top on a Gallery, is not drawn
     const two = doorLayout(spec({ model: "4050", widthIn: 108, stack, window: "PS12", windowRows: [4, 2] }))!;
-    expect(two.windows.map((w) => w.y)).toEqual([two.sections[0].y, two.sections[2].y]);
+    expect(two.windows.map((w) => w.y)).toEqual([two.sections[0].y, two.sections[2].y + 2]);
     expect(doorLayout(spec({ model: "4050", widthIn: 108, stack, window: "PS12", windowRow: 1 }))).toBeNull();
     expect(doorLayout(spec({ model: "4050", widthIn: 108, stack, window: "PS12", windowRows: [4, 3, 2] }))).toBeNull();
     expect(doorLayout(spec({ model: "GD1LP", widthIn: 96, window: "PL16", windowRow: 3 }))).toBeNull();
@@ -186,13 +187,21 @@ describe("door pictures — the layout", () => {
     expect(frames[1][0] - frames[0][1]).toBeGreaterThanOrEqual(4.5);
   });
 
-  it("puts a grain door's windows on its plain face, not over the panels of a solid section", () => {
+  it("puts a grain door's windows on its plain face, not over the panels of a solid section, their frames one flat tone as Clopay draws them", () => {
     const L = doorLayout(spec({ model: "4300", widthIn: 216, window: "PL12", colour: "Ultra-Grain Classic Cherry Finish" }))!;
     const top = L.sections[0];
-    const under = L.under.filter((b) => b.dy === top.y);
+    const under = L.under.filter((b) => b.dy >= top.y && b.dy < top.y + top.h);
     expect(under.length).toBeGreaterThan(0);
-    // the rail over the panels, drawn down the section — never the rows the panels are in
-    expect(under.every((b) => b.sy >= 2 && b.sy + b.sh <= 15)).toBe(true);
+    // the rail over the panels, laid down the section at its own size, every other one upside down — never the rows the panels are in
+    expect(under.every((b) => b.sy >= 2 && b.sy + b.sh <= 15.0001)).toBe(true);
+    expect(under.every((b) => b.dh <= 14)).toBe(true);
+    expect(under.some((b) => b.flipY)).toBe(true);
+    const rows = [...new Set(under.map((b) => b.dy))].sort((a, b) => a - b);
+    expect(rows[0]).toBe(top.y);
+    expect(Math.max(...under.map((b) => b.dy + b.dh))).toBe(top.y + top.h);
+    expect(L.windows.map((w) => w.mode)).toEqual(["grain"]);
+    // a Lustra frame keeps its texture
+    expect(doorLayout({ model: "9209", colour: "Lustra Silver", widthIn: 192, stack: [21, 21, 21, 21], window: "PL16", places: [{ section: 4, panel: 1 }], across: 4 })!.windows[0].mode).toBe("under");
   });
 
   it("draws a Bridgeport with the architectural windows, a Coachman with its own", () => {
@@ -210,9 +219,9 @@ describe("door pictures — the layout", () => {
   });
 
   it("declines what no capture shows rather than guess", () => {
-    expect(doorLayout(spec({ model: "4050", widthIn: 96, window: "507" }))).toBeNull(); // no Sunset 507 anywhere
+    expect(doorLayout(spec({ model: "4050", widthIn: 96, window: "SQ23" }))).toBeNull(); // the Coachman's window, captured on no Premium Steel door
     expect(doorLayout(spec({ model: "GD1LP", widthIn: 144, window: "ARCH1PLAIN" }))).toBeNull(); // Arch 1 three across
-    expect(doorLayout(spec({ model: "4300", widthIn: 96, window: "PS12", colour: "Ultra-Grain Classic Medium Finish" }))!.windows[0].mode).toBe("under");
+    expect(doorLayout(spec({ model: "4300", widthIn: 96, window: "PS12", colour: "Ultra-Grain Classic Medium Finish" }))!.windows[0].mode).toBe("grain");
     expect(doorLayout(spec({ model: "4300", widthIn: 96, colour: "Ultra-Grain Classic Medium Finish" }))).not.toBeNull();
     expect(doorLayout(spec({ model: "4300", widthIn: 96, colour: "Purple" }))).toBeNull();
     expect(doorLayout(spec({ model: "GD1LP", widthIn: 84 }))).toBeNull(); // the long panel starts at 7'8"
@@ -243,10 +252,10 @@ describe("door pictures — the Modern Steel doors", () => {
     expect(wins[1].dx).toBeGreaterThan(wins[0].dx + 400);
   });
 
-  it("paints a window's frame the door's own face — its grain or texture too", () => {
+  it("paints a window's frame off the door's own face — one flat tone on an Ultra-Grain, as Clopay draws it", () => {
     const L = doorLayout({ model: "9209", colour: "Ultra-Grain Cypress Walnut Finish", widthIn: 192, stack, window: "SQ24", places: [{ section: 4, panel: 2 }], across: 4 })!;
     expect(L.windows).toHaveLength(1);
-    expect(L.windows[0].mode).toBe("under");
+    expect(L.windows[0]).toMatchObject({ mode: "grain", whole: true });
     expect(L.under.length).toBeGreaterThan(0);
     expect(L.art.src).toBe("/doors/modern-grooved--ug-cypress-walnut.webp");
   });
@@ -264,7 +273,7 @@ describe("door pictures — the Modern Steel doors", () => {
 });
 
 describe("door pictures — every stock door", () => {
-  it("draws every stocked door, colour and window but Sunset 507, which Clopay shows nowhere", () => {
+  it("draws every stocked door, colour and window", () => {
     const missing = new Set<string>();
     for (const model of Object.keys(STOCK_MATRIX)) {
       if (!styleOf(model)) continue;
@@ -281,7 +290,7 @@ describe("door pictures — every stock door", () => {
         }
       }
     }
-    expect([...missing].sort()).toEqual(["507"]);
+    expect([...missing].sort()).toEqual([]);
   });
 
   it("ships every image a layout can ask for", () => {

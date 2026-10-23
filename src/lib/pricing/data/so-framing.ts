@@ -101,11 +101,11 @@ export function designPanel(d: InsertDesign): PanelStyle {
 }
 
 /**
- * A Gallery or Bridgeport "insert" whose name says Plain is a plain window
- * (Clopay prices windows with or without inserts; Plain Long has none), so it
- * is offered as one — priced without the inserts adder.
+ * A Gallery or Bridgeport "insert" that is a plain window — Plain Long, Plain
+ * Short, the plain arches (Clopay prices windows with or without inserts;
+ * these have none) — is offered as one, priced without the inserts adder.
  */
-const plainDesign = (d: InsertDesign) => d.cat === "arch" && /\bPLAIN\b/i.test(d.name);
+const plainDesign = (d: InsertDesign) => d.cat === "arch" && d.id.includes("PLAIN");
 
 /**
  * The Framing list for a door at a width with a glass type chosen.
@@ -114,7 +114,7 @@ const plainDesign = (d: InsertDesign) => d.cat === "arch" && /\bPLAIN\b/i.test(d
  * long windows apart, so each plain window and each insert says which. The
  * model's own plain window names (PLAIN SHORT 19-1/2" X 12"…) are used where
  * it has them, as the stock tab does — every Gallery and Bridgeport door the
- * one list (PLAIN SHORT 19-1/2" X 16", PLAIN LONG 42" X 16", PLAIN ARCH 1;
+ * one list (PLAIN SHORT 19-1/2" X 16", PLAIN LONG 42" X 16", ARCH 1;
  * Brandon, 14/10/2026); the inserts follow, one entry each, in the window
  * their design goes in. The Coachman has one window layout: the
  * window designs and arched sections its sheet builds at the width, each
@@ -161,8 +161,8 @@ function seriesFraming(group: string, member: string, width: string, glass: stri
       const names = named.filter((n) => (p === "long" ? /\bLONG\b|\bARCH\b/i : /\bSHORT\b/i).test(n));
       if (names.length) names.forEach((n) => out.push({ value: `${tag}plain:${p}:${n}`, label: n, kind: "plain", panel: p, plainWindow: n, ...marked }));
       else out.push({ value: `${tag}plain:${p}`, label: panelLabel(p), kind: "plain", panel: p, ...marked });
-      // The sheet doors' other plain windows (Arch 2 Plain at 8' and 9', Arch 3
-      // Plain at 16'), less the ones the order names already cover.
+      // The sheet doors' other plain windows (Arch 2 at 8' and 9', Arch 3 at
+      // 16'), less the ones the order names already cover.
       for (const d of designs.filter((x) => plainDesign(x) && designPanel(x) === p)) {
         if (names.some((n) => sameWindow(n, d.name)) || /^PLAIN (SHORT|LONG)$/i.test(d.name)) continue;
         out.push({ value: `${tag}plain:${p}:${d.name}`, label: d.name, kind: "plain", panel: p, plainWindow: d.name, ...marked });
@@ -207,7 +207,7 @@ export function glassForFraming(group: string, member: string, width: string, fr
   return glassTypeOptions(group, width, true, member).filter((g) => g.id !== SOLID.id && framingOptions(group, member, width, g.id).some((f) => f.value === framing.value));
 }
 
-/** "PLAIN ARCH 1" and "Arch 1 Plain" are the same window. */
+/** "ARCH 1" and "Arch 1" are the same window. */
 function sameWindow(orderName: string, designName: string): boolean {
   const words = (s: string) => s.toUpperCase().replace(/[^A-Z0-9 ]/g, "").split(/\s+/).filter(Boolean).sort().join(" ");
   return words(orderName) === words(designName);

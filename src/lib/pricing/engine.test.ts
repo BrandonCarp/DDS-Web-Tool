@@ -835,7 +835,7 @@ describe("replacement section verbiage", () => {
       .toBe('Clopay Model 4050, 16\'0" x 21", plain short 19-1/2" x 12" intermediate section, in the color White');
     // The window must be the model's own, and a long one only where a stock door takes it (8', 9', 16').
     expect(sec({ kind: "int", glazed: true, plainWindow: LONG, widthKey: "7.6" })).toContain("glazed intermediate section");
-    expect(sec({ kind: "int", glazed: true, plainWindow: "PLAIN ARCH 1" })).toContain("glazed intermediate section");
+    expect(sec({ kind: "int", glazed: true, plainWindow: "ARCH 1" })).toContain("glazed intermediate section");
     expect(sec({ kind: "int", glazed: false, plainWindow: LONG })).toContain("solid intermediate section");
     expect(sec({ kind: "bt", plainWindow: LONG })).toContain(", bottom section,");
     // A Gallery section carries the collection, as its door line does.

@@ -186,6 +186,16 @@ export function isWoodGrain(colour: string): boolean {
 }
 
 /**
+ * True for an Ultra-Grain finish, whose window frames Clopay draws in one
+ * flat wood tone rather than the grain (Brandon's captures, 23/10/2026: the
+ * 9200 16x7 in Classic Medium, the Modern Steel in Cypress Walnut). A Lustra
+ * frame keeps its texture.
+ */
+export function isUltraGrain(colour: string): boolean {
+  return /^ug-/.test(COLOUR_KEY[colour] ?? "");
+}
+
+/**
  * The window a Modern Steel door's drawing places, as the picture's key, by
  * the framing's value (modern-steel.ts): the 16" windows and their grilles,
  * the slim window in its black or silver frame.
@@ -206,7 +216,7 @@ export function modernWindowKey(framing: string | undefined | null): string | nu
  *     are the 16" windows (PL16, PS16).
  *   - plain glass: by the window's order name — PLAIN SHORT 19-1/2" X 12" is
  *     PS12, PLAIN LONG 40-1/2" X 12" PL12, the 16" ones PS16 and PL16, an
- *     arch by its number and grille (ARCH 1, Arch 2 Plain); no name is the door's own window (the short on a
+ *     arch by its number and grille (ARCH 1, Arch 2, Arch 2 Grille); no name is the door's own window (the short on a
  *     Premium or Value Steel door, the long on a Gallery or Bridgeport).
  */
 export function windowKey(style: string, design: string | undefined | null, plainWindow: string | undefined | null, model: string): string | null {

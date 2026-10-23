@@ -220,7 +220,7 @@ describe("special order — glass types reach the price", () => {
     expect(options("so-framing")[0].textContent).toBe("Solid — no windows");
     const framing = framingLabels();
     expect(framing.slice(0, 6)).toEqual([
-      'PLAIN SHORT 19-1/2" X 12"', 'PLAIN LONG 40-1/2" X 12"', 'PLAIN SHORT 19-1/2" X 16"', 'PLAIN LONG 42" X 16"', "PLAIN ARCH 1", "Arch 2 Plain",
+      'PLAIN SHORT 19-1/2" X 12"', 'PLAIN LONG 40-1/2" X 12"', 'PLAIN SHORT 19-1/2" X 16"', 'PLAIN LONG 42" X 16"', "ARCH 1", "Arch 2",
     ]);
     expect(framing).toContain("Colonial 509 inserts");
     expect(framing).toContain("SQ24 design");
@@ -287,14 +287,15 @@ describe("special order — glass types reach the price", () => {
     expect(framing[0]).toBe('PLAIN SHORT 19-1/2" X 12"');
     expect(framing).not.toContain('PLAIN SHORT 19-1/2" X 16"');
     expect(framing).not.toContain("SQ22 design");
-    expect(framing.slice(1, 4)).toEqual(["Colonial 509 inserts", "Charleston 508 inserts", "Prairie 510 inserts"]);
+    // 501 up to the last 500, then the 600s (Brandon, 23/10/2026): at 7'0" the Sunset 502 first.
+    expect(framing.slice(1, 5)).toEqual(["Sunset 502 inserts", "Charleston 508 inserts", "Colonial 509 inserts", "Prairie 510 inserts"]);
     expect(framing).not.toContain("Charleston 608 inserts");
     expect(maybe("so-windesign")).toBeNull();                                 // no second drop-down for the design
     setWidth("12");
     await settle();
     framing = framingLabels();
     expect(framing.slice(0, 2)).toEqual(['PLAIN SHORT 19-1/2" X 12"', 'PLAIN LONG 40-1/2" X 12"']);
-    expect(framing.filter((l) => /\b6\d\d inserts$/.test(l ?? ""))).toEqual(["Charleston 608 inserts", "Prairie 610 inserts", "Stockton 612 inserts", "Madison 611 inserts", "Madison Arch 613 inserts"]);
+    expect(framing.filter((l) => /\b6\d\d inserts$/.test(l ?? ""))).toEqual(["Charleston 608 inserts", "Prairie 610 inserts", "Madison 611 inserts", "Stockton 612 inserts", "Madison Arch 613 inserts"]);
     // Picking an insert from the framing is the whole choice: the line names it, in the first glass it comes in.
     fireEvent.change(sel("so-framing"), { target: { value: "insert:long:608" } });
     await settle();
@@ -717,7 +718,7 @@ describe("special order — Bridgeport Steel from its own sheets (12/10/2026)", 
     expect(await total()).toBe(Math.round((569 * 0.898 * (0.99 / (1 - 0.0265))) / 0.57 * 100) / 100);   // 569 list x .898 x k at 43%, no flat
     // Short or long windows, a free choice, in the framing first: the plain windows, then each insert in its window.
     expect(framingLabels()).toEqual([
-      'PLAIN SHORT 19-1/2" X 16"', 'PLAIN LONG 42" X 16"', "PLAIN ARCH 1", "Arch 2 Plain",
+      'PLAIN SHORT 19-1/2" X 16"', 'PLAIN LONG 42" X 16"', "ARCH 1", "Arch 2",
       "SQ22 design", "REC12 design", "SQ24 design", "REC14 design",
       "Arch 1 Grille design", "Arch 1 Vertical Grille design", "Arch 2 Grille design", "Arch 2 Vertical Grille design",
     ]);
