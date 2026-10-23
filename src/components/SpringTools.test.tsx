@@ -6,6 +6,7 @@ import { TorsionTool } from "./TorsionTool";
 import { AppShell } from "./AppShell";
 import { CustomerJobProvider } from "./CustomerJobFields";
 import { EXTENSION_SPRINGS, STOCK_TORSION_SPRINGS } from "@/lib/pricing/data/springs";
+import { estimateText } from "@/lib/pricing/data/quickbooks";
 import { copiedQbLine } from "./test-clipboard";
 
 // The last runtime crash on this tool (part!.name with no branch for the custom
@@ -35,7 +36,7 @@ describe("Extension Springs tab", () => {
     expect(screen.queryByTestId("ext-desc")).toBeNull();
     expect(screen.getByTestId("ext-price").textContent).toContain(first.price.toFixed(2));
     const line = await copiedQbLine(screen.getByTestId("ext-copy-qb"));
-    expect(line.description).toBe(first.desc);
+    expect(line.description).toBe(estimateText(first.desc));
     expect(line.rate).toBeCloseTo(first.price, 2);
   });
 
@@ -109,7 +110,7 @@ describe("Torsion Springs tab", () => {
 
     expect(screen.getByTestId("stock-price").textContent).toContain((handed?.price ?? 0).toFixed(2));
     const line = await copiedQbLine(screen.getByTestId("stock-copy-qb"));
-    expect(line.description).toContain("[1] - RIGHT WOUND");
+    expect(line.description).toContain("[1]  -  RIGHT  WOUND");
     expect(line.rate).toBeCloseTo(handed?.price ?? 0, 2);
     expect(screen.queryByTestId("tor-copy-qb")).toBeNull();
   });
@@ -215,7 +216,7 @@ describe("Torsion Springs tab — the quantity is the springs counted", () => {
     expect(screen.queryByTestId("stock-copy-qb-qty")).toBeNull();
     let line = await copiedQbLine(screen.getByTestId("stock-copy-qb"));
     expect(line.qty).toBe(2);
-    expect(line.description).toContain("[1] - RIGHT WOUND AND [1] - LEFT WOUND");
+    expect(line.description).toContain("[1]  -  RIGHT  WOUND  AND  [1]  -  LEFT  WOUND");
     fireEvent.change(screen.getByTestId("stock-right"), { target: { value: "2" } });
     fireEvent.change(screen.getByTestId("stock-left"), { target: { value: "2" } });
     line = await copiedQbLine(screen.getByTestId("stock-copy-qb"));
@@ -268,7 +269,7 @@ describe("cut spring length — whole inches and a fraction (1/10/2026)", () => 
     }
     length("22", "0.5");
     // The length cut, written as the counter picked it (descriptions.test.ts).
-    expect((await copiedQbLine(screen.getByTestId("tor-copy-qb"))).description).toContain('22-1/2" LONG');
+    expect((await copiedQbLine(screen.getByTestId("tor-copy-qb"))).description).toContain('22-1/2"  LONG');
     length("22", "0");
     expect((await copiedQbLine(screen.getByTestId("tor-copy-qb"))).rate).toBeLessThan(at23);
   });

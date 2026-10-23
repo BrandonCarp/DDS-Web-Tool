@@ -37,6 +37,16 @@ export const QB_EXTENSION = QB_SPRINGS;
 export const QB_PARTS = "PARTS";
 
 /**
+ * A description as it goes on an estimate: two spaces after every word and
+ * every comma (Brandon, 21/10/2026 for the commas, as the spring lines have
+ * always been typed; 23/10/2026 for every word), whichever tool wrote it — a
+ * tab or a line break a space first, so no field is split.
+ */
+export function estimateText(description: string): string {
+  return description.replace(/[\t\r\n]+/g, " ").replace(/,/g, ", ").trim().replace(/\s+/g, "  ");
+}
+
+/**
  * Build the clipboard line.
  *
  * Tab-separated, no currency symbol, no thousands separator — QuickBooks wants
@@ -49,9 +59,7 @@ export function quickBooksRow(
   qty: number,
   rate: number,
 ): string {
-  // Two spaces after every comma (Brandon, 21/10/2026), as the spring lines
-  // have always been typed — the whole description, whichever tool wrote it.
-  const clean = description.replace(/[\t\r\n]+/g, " ").replace(/,\s*/g, ",  ").trim();
+  const clean = estimateText(description);
   // Math.max(1, NaN) is NaN, so guard the value itself rather than the floor —
   // a blank or broken quantity field would otherwise put "NaN" in the column.
   const n = Number.isFinite(qty) ? Math.max(1, Math.floor(qty)) : 1;

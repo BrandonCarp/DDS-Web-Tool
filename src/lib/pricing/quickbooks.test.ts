@@ -1,24 +1,26 @@
 import { describe, it, expect } from "vitest";
 import { SHELF_PART_CATEGORIES, TRACK_CATEGORY } from "./data/springs";
 import {
-  quickBooksRow, categoryItem,
+  quickBooksRow, categoryItem, estimateText,
   QB_STOCK_DOORS, QB_SPECIAL_ORDERS, QB_TORSION, QB_EXTENSION, QB_VINYL, QB_SPRINGS, QB_OPERATORS,
 } from "./data/quickbooks";
 
 describe("QuickBooks row", () => {
   it("is four tab-separated fields", () => {
     const row = quickBooksRow(QB_STOCK_DOORS, "Clopay 4050", 1, 784.89);
-    expect(row.split("\t")).toEqual(["STOCK DOOR", "CLOPAY 4050", "1", "784.89"]);
+    expect(row.split("\t")).toEqual(["STOCK DOOR", "CLOPAY  4050", "1", "784.89"]);
   });
 
-  it("puts two spaces after every comma in the description, whatever the tool wrote (Brandon, 21/10/2026)", () => {
+  it("puts two spaces after every word and every comma in the description, whatever the tool wrote (Brandon, 21/10/2026 and 23/10/2026)", () => {
     const desc = (d: string) => quickBooksRow(QB_STOCK_DOORS, d, 1, 1).split("\t")[1];
     expect(desc('Clopay Model 4050, 9\'0" x 7\'0", in the color White, solid no windows, 12″ radius track, front torsion springs, no lock'))
-      .toBe('CLOPAY MODEL 4050,  9\'0" X 7\'0",  IN THE COLOR WHITE,  SOLID NO WINDOWS,  12″ RADIUS TRACK,  FRONT TORSION SPRINGS,  NO LOCK');
-    // One already spaced the spring lines' way stays as it is; one with no space, or several, is made the same.
-    expect(desc('TORSION SPRINGS,  2" ID,  218 WIRE')).toBe('TORSION SPRINGS,  2" ID,  218 WIRE');
+      .toBe('CLOPAY  MODEL  4050,  9\'0"  X  7\'0",  IN  THE  COLOR  WHITE,  SOLID  NO  WINDOWS,  12″  RADIUS  TRACK,  FRONT  TORSION  SPRINGS,  NO  LOCK');
+    // One already spaced so stays as it is; one with no space, or several, is made the same.
+    expect(desc('TORSION  SPRINGS,  2"  ID,  218  WIRE')).toBe('TORSION  SPRINGS,  2"  ID,  218  WIRE');
     expect(desc("a,b,   c")).toBe("A,  B,  C");
-    expect(desc("no comma here")).toBe("NO COMMA HERE");
+    expect(desc("no comma here")).toBe("NO  COMMA  HERE");
+    expect(desc("  trailing and leading  ")).toBe("TRAILING  AND  LEADING");
+    expect(estimateText("stile locations 59\"  82-1/4\" and 90-1/2\"")).toBe('stile  locations  59"  82-1/4"  and  90-1/2"');
   });
 
   it("sends the rate bare, with no currency symbol", () => {
@@ -52,11 +54,11 @@ describe("QuickBooks row", () => {
     // A stray tab would shift every field after it into the wrong column.
     const row = quickBooksRow("X", "line one\tline\ntwo", 1, 1);
     expect(row.split("\t")).toHaveLength(4);
-    expect(row.split("\t")[1]).toBe("LINE ONE LINE TWO");
+    expect(row.split("\t")[1]).toBe("LINE  ONE  LINE  TWO");
   });
 
   it("uppercases the description, as the counter reads it", () => {
-    expect(quickBooksRow("X", "clopay 4050", 1, 1).split("\t")[1]).toBe("CLOPAY 4050");
+    expect(quickBooksRow("X", "clopay 4050", 1, 1).split("\t")[1]).toBe("CLOPAY  4050");
   });
 });
 

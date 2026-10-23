@@ -5,6 +5,7 @@ import { SpecialTool } from "./SpecialTool";
 import { copiedQbLine, copyFrom } from "./test-clipboard";
 import { MODERN_GLASS_TYPES } from "@/lib/pricing/data/modern-windows";
 import { QB_PARTS, QB_VINYL } from "@/lib/pricing/data/quickbooks";
+import { SO_OUTSIDE_MFRS, SPECIAL_COMMERCIAL_SERIES, hasSingleSeries, seriesFor } from "@/lib/pricing/data/special-orders";
 
 /**
  * Special order follows the same two steps as the stock tabs: choose the door,
@@ -71,7 +72,7 @@ async function pickDoor(model = "4050") {
   render(<SpecialTool />);
   // Residential or commercial comes first now; nothing else shows until it is
   // chosen, and it greys out once it is.
-  fireEvent.change(sel("so-scope"), { target: { value: "residential" } });
+  fireEvent.click(maybe("so-scope-residential")!);
   fireEvent.change(sel("so-mfr"), { target: { value: "Clopay" } });
   fireEvent.change(sel("so-series"), { target: { value: "Premium Steel Collection" } });
   const m = maybe("so-model") as HTMLSelectElement | null;
@@ -85,7 +86,7 @@ async function pickDoor(model = "4050") {
 describe("special order — two steps", () => {
   it("opens on the order type, nothing else", () => {
     render(<SpecialTool />);
-    expect(maybe("so-scope")).toBeTruthy();
+    expect(maybe("so-scope-residential")).toBeTruthy();
     expect(maybe("so-mfr")).toBeNull();
     expect(maybe("so-width-ft")).toBeNull();
     expect(maybe("so-configure")).toBeNull();
@@ -141,13 +142,15 @@ describe("special order — two steps", () => {
     await settle();
     fireEvent.click(maybe("so-back")!);
     await settle();
-    for (const t of ["so-mfr", "so-series", "so-model"]) expect(maybe(t), t).toBeTruthy();
-    expect(screen.queryByText("Residential")).toBeTruthy();
+    // the model to change, under what was picked before it
+    expect(maybe("so-model")).toBeTruthy();
+    expect(maybe("so-picked")?.textContent).toBe("Residential › Clopay › Premium Steel Collection");
   });
 
-  it("numbers the step it is on", async () => {
+  it("heads the first step with the order type and Back, as the stock commercial tab does, and numbers the configurator", async () => {
     await pickDoor();
-    expect(document.querySelector(".step-n")?.textContent).toBe("1");
+    expect(maybe("so-back-scope")).toBeTruthy();
+    expect(document.querySelector(".step-h h3")?.textContent).toBe("Residential › Clopay › Premium Steel Collection");
     fireEvent.click(maybe("so-configure")!);
     await settle();
     expect(document.querySelector(".step-n")?.textContent).toBe("2");
@@ -242,7 +245,7 @@ describe("special order — glass types reach the price", () => {
     fireEvent.change(sel("so-framing"), { target: { value: "arch:insert:long:SQ24" } });
     await settle();
     expect(sel("so-glass").value).toBe("seeded");
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/SEEDED DSB WINDOWS IN THE TOP SECTION,  SQ24 DESIGN/i);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/SEEDED  DSB  WINDOWS  IN  THE  TOP  SECTION,  SQ24  DESIGN/i);
     // …and gives way to the first the window comes in where it does not.
     fireEvent.change(sel("so-framing"), { target: { value: "insert:short:509" } });
     await settle();
@@ -300,7 +303,7 @@ describe("special order — glass types reach the price", () => {
     fireEvent.change(sel("so-framing"), { target: { value: "insert:long:608" } });
     await settle();
     expect(sel("so-glass").value).toBe("ssb");
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS IN THE TOP SECTION,  CHARLESTON 608 INSERTS/i);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS  IN  THE  TOP  SECTION,  CHARLESTON  608  INSERTS/i);
   });
 });
 
@@ -372,11 +375,19 @@ describe("special order — condensed layout", () => {
 });
 
 describe("special order — reads like the stock tabs", () => {
-  it("asks for the assembly in step 1, as buttons, before Configure", async () => {
+  it("asks for the assembly in step 1, as larger buttons in a column, before Configure (Brandon, 23/10/2026)", async () => {
     await pickDoor();
     const opts = ["door", "section"].map((v) => screen.getByTestId(`so-assembly-${v}`));
     expect(opts.map((b) => b.textContent)).toEqual(["Complete door", "Replacement section"]);
     expect(opts[0].getAttribute("aria-checked")).toBe("true");
+    // the stock commercial tab's own big buttons, stacked
+    expect(opts.every((b) => b.classList.contains("pnav-page") && b.parentElement?.classList.contains("pnav-pages"))).toBe(true);
+    expect(opts[0].classList.contains("on")).toBe(true);
+    fireEvent.click(opts[1]);
+    expect(opts[1].getAttribute("aria-checked")).toBe("true");
+    expect(opts[1].classList.contains("on")).toBe(true);
+    expect(opts[0].classList.contains("on")).toBe(false);
+    fireEvent.click(opts[0]);
     // Buttons first, then Configure — the order the stock tabs use.
     const configure = maybe("so-configure")!;
     expect(opts[1].compareDocumentPosition(configure) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -444,37 +455,77 @@ describe("special order — looks like the stock configurator", () => {
 });
 
 describe("special order — order type comes first", () => {
-  it("shows nothing until residential or commercial is chosen", () => {
+  it("opens on two buttons, residential or commercial, as the stock commercial tab opens (Brandon, 23/10/2026)", () => {
     render(<SpecialTool />);
-    expect(maybe("so-scope")).toBeTruthy();
+    expect(maybe("so-scope-residential")?.textContent).toBe("Residential");
+    expect(maybe("so-scope-commercial")?.textContent).toBe("Commercial");
+    expect(maybe("so-scope")).toBeNull();
     for (const t of ["so-mfr", "so-series", "so-model", "so-configure"]) {
       expect(maybe(t), t).toBeNull();
     }
   });
 
-  it("greys out once chosen, like Clopay on the stock tabs", () => {
+  it("goes on to the door once one is pressed, the buttons gone", () => {
     render(<SpecialTool />);
-    const s = sel("so-scope");
-    expect(s.disabled).toBe(false);
-    fireEvent.change(s, { target: { value: "residential" } });
-    expect(sel("so-scope").disabled).toBe(true);
-    expect(sel("so-scope").value).toBe("residential");
+    fireEvent.click(maybe("so-scope-residential")!);
+    expect(maybe("so-scope-residential")).toBeNull();
     expect(maybe("so-mfr")).toBeTruthy();
   });
 
-  it("can be changed back", () => {
+  it("goes back to them", () => {
     render(<SpecialTool />);
-    fireEvent.change(sel("so-scope"), { target: { value: "commercial" } });
-    expect(sel("so-scope").disabled).toBe(true);
-    fireEvent.click(maybe("so-change-scope")!);
-    expect(sel("so-scope").disabled).toBe(false);
+    fireEvent.click(maybe("so-scope-commercial")!);
+    expect(maybe("so-comm-series")).toBeTruthy();
+    fireEvent.click(maybe("so-back-scope")!);
+    expect(maybe("so-scope-commercial")).toBeTruthy();
+    expect(maybe("so-comm-series")).toBeNull();
     expect(maybe("so-mfr")).toBeNull();
   });
 
-  it("offers commercial as well", () => {
+  it("collapses the order type, then the manufacturer and collection, into the heading once chosen; Back opens the last again (Brandon, 23/10/2026)", () => {
     render(<SpecialTool />);
-    expect([...sel("so-scope").options].map((o) => o.value))
-      .toEqual(expect.arrayContaining(["residential", "commercial"]));
+    fireEvent.click(maybe("so-scope-residential")!);
+    expect(maybe("so-picked")?.textContent).toBe("Residential");
+    fireEvent.change(sel("so-series"), { target: { value: "Gallery Collection" } });
+    expect(maybe("so-mfr")).toBeNull();
+    expect(maybe("so-series")).toBeNull();
+    expect(maybe("so-picked")?.textContent).toBe("Residential › Clopay › Gallery Collection");
+    expect(maybe("so-model")).toBeTruthy();
+    // Back: the manufacturer and collection again, the maker kept
+    fireEvent.click(maybe("so-back-scope")!);
+    expect(sel("so-mfr").value).toBe("Clopay");
+    expect(sel("so-series").value).toBe("");
+    expect(maybe("so-model")).toBeNull();
+    expect(maybe("so-picked")?.textContent).toBe("Residential");
+    // and again: the order type
+    fireEvent.click(maybe("so-back-scope")!);
+    expect(maybe("so-scope-residential")).toBeTruthy();
+  });
+
+  it("collapses a maker with one series as soon as it is picked, and Back offers the makers again", () => {
+    render(<SpecialTool />);
+    fireEvent.click(maybe("so-scope-residential")!);
+    const outside = SO_OUTSIDE_MFRS.find((m) => hasSingleSeries(m))!;
+    fireEvent.change(sel("so-mfr"), { target: { value: outside } });
+    expect(maybe("so-mfr")).toBeNull();
+    expect(maybe("so-picked")?.textContent).toBe(`Residential › ${outside} › ${seriesFor(outside)[0]}`);
+    fireEvent.click(maybe("so-back-scope")!);
+    expect(sel("so-mfr").value).toBe("Clopay");
+    fireEvent.change(sel("so-mfr"), { target: { value: outside } });
+    expect(maybe("so-picked")?.textContent).toBe(`Residential › ${outside} › ${seriesFor(outside)[0]}`);
+  });
+
+  it("collapses a commercial manufacturer and series the same way, the model left to pick", () => {
+    render(<SpecialTool />);
+    fireEvent.click(maybe("so-scope-commercial")!);
+    const series = SPECIAL_COMMERCIAL_SERIES[0].name;
+    fireEvent.change(sel("so-comm-series"), { target: { value: series } });
+    expect(maybe("so-comm-series")).toBeNull();
+    expect(maybe("so-picked")?.textContent).toBe(`Commercial › Clopay › ${series}`);
+    expect(maybe("so-comm-model")).toBeTruthy();
+    fireEvent.click(maybe("so-back-scope")!);
+    expect(sel("so-comm-series").value).toBe("");
+    expect(maybe("so-picked")?.textContent).toBe("Commercial");
   });
 });
 
@@ -592,7 +643,7 @@ describe("special order — nothing prices before Configure", () => {
     render(<SpecialTool />);
     const note = () => maybe("so-not-ready")?.textContent ?? "";
     expect(note()).toMatch(/residential or commercial/i);
-    fireEvent.change(sel("so-scope"), { target: { value: "residential" } });
+    fireEvent.click(maybe("so-scope-residential")!);
     expect(note()).toMatch(/collection/i);
   });
 
@@ -627,7 +678,7 @@ describe("special order — the Clopay total is always reachable", () => {
   /** Pick a manufacturer and collection, then whatever model it offers. */
   async function pick(mfr: string, collection: string) {
     render(<SpecialTool />);
-    fireEvent.change(sel("so-scope"), { target: { value: "residential" } });
+    fireEvent.click(maybe("so-scope-residential")!);
     fireEvent.change(sel("so-mfr"), { target: { value: mfr } });
     const ser = maybe("so-series") as HTMLSelectElement | null;
     if (ser && [...ser.options].some((o) => o.value === collection)) {
@@ -673,7 +724,7 @@ describe("special order — the Clopay total is always reachable", () => {
   it("shows nothing before a model is chosen", async () => {
     render(<SpecialTool />);
     expect(totalField()).toBeNull();
-    fireEvent.change(sel("so-scope"), { target: { value: "residential" } });
+    fireEvent.click(maybe("so-scope-residential")!);
     expect(totalField()).toBeNull();
   });
 });
@@ -681,7 +732,7 @@ describe("special order — the Clopay total is always reachable", () => {
 describe("special order — Bridgeport Steel from its own sheets (12/10/2026)", () => {
   async function pickBridgeport(member = "BD1NU") {
     render(<SpecialTool />);
-    fireEvent.change(sel("so-scope"), { target: { value: "residential" } });
+    fireEvent.click(maybe("so-scope-residential")!);
     fireEvent.change(sel("so-mfr"), { target: { value: "Clopay" } });
     fireEvent.change(sel("so-series"), { target: { value: "Bridgeport Collection" } });
     const m = sel("so-model");
@@ -764,11 +815,11 @@ describe("special order — Bridgeport Steel from its own sheets (12/10/2026)", 
     expect(options("so-overlay").map((o) => o.value)).not.toContain("Ultra-Grain Oak Medium Finish");
     // Priced at the defaults as soon as the design is chosen (20/10/2026).
     const line = await copiedQbLine(screen.getByTestId("copy-qb"));
-    expect(line.description).toMatch(/MODEL BD2CU,  DESIGN V,  8'0" X 7'0",  IN THE COLOR WHITE,  INLAY IN THE COLOR WHITE,  SOLID NO WINDOWS/i);
+    expect(line.description).toMatch(/MODEL  BD2CU,  DESIGN  V,  8'0"  X  7'0",  IN  THE  COLOR  WHITE,  INLAY  IN  THE  COLOR  WHITE,  SOLID  NO  WINDOWS/i);
     const extension = line.rate;
     fireEvent.change(sel("so-overlay"), { target: { value: "Charcoal" } });
     await settle();
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/IN THE COLOR WHITE,  INLAY IN THE COLOR CHARCOAL/i);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/IN  THE  COLOR  WHITE,  INLAY  IN  THE  COLOR  CHARCOAL/i);
     expect(await total()).toBe(extension);                        // a standard inlay colour: words only
     // A premium inlay prices the door as a premium colour would.
     fireEvent.change(sel("so-overlay"), { target: { value: "Iron Ore" } });
@@ -804,7 +855,7 @@ describe("special order — Bridgeport Steel from its own sheets (12/10/2026)", 
 describe("special order — the four Gallery pairs from CJ's workbook (12/10/2026)", () => {
   async function pickGallery(member: string) {
     render(<SpecialTool />);
-    fireEvent.change(sel("so-scope"), { target: { value: "residential" } });
+    fireEvent.click(maybe("so-scope-residential")!);
     fireEvent.change(sel("so-mfr"), { target: { value: "Clopay" } });
     fireEvent.change(sel("so-series"), { target: { value: "Gallery Collection" } });
     const m = sel("so-model");
@@ -846,7 +897,7 @@ describe("special order — the four Gallery pairs from CJ's workbook (12/10/202
 describe("special order — the Coachman from CJ's sheet (12/10/2026)", () => {
   async function pickCoachman() {
     render(<SpecialTool />);
-    fireEvent.change(sel("so-scope"), { target: { value: "residential" } });
+    fireEvent.click(maybe("so-scope-residential")!);
     fireEvent.change(sel("so-mfr"), { target: { value: "Clopay" } });
     fireEvent.change(sel("so-series"), { target: { value: "Coachman Collection" } });
     const m = sel("so-model");
@@ -882,11 +933,11 @@ describe("special order — the Coachman from CJ's sheet (12/10/2026)", () => {
     expect([...sel("so-spring").options].map((o) => o.value)).toEqual(["torsion", "galvanized"]);
     expect(sel("so-spring").value).toBe("torsion");
     expect(await total()).toBe(at(2127, true));
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/12″ RADIUS TRACK,  FRONT TORSION SPRINGS,  NO LOCK/i);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/12″  RADIUS  TRACK,  FRONT  TORSION  SPRINGS,  NO  LOCK/i);
     fireEvent.change(sel("so-spring"), { target: { value: "galvanized" } });
     await settle();
     expect(await total()).toBe(at(2127, true));
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/GALVANIZED FRONT TORSION SPRINGS/i);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/GALVANIZED  FRONT  TORSION  SPRINGS/i);
     expect([...sel("so-color").options].map((o) => o.value)).not.toContain("Ultra-Grain Oak Medium Finish");
   });
 
@@ -909,10 +960,10 @@ describe("special order — the Coachman from CJ's sheet (12/10/2026)", () => {
     expect(sel("so-overlay").value).toBe("White");
     await fillOptions({ spring: "torsion" });
     expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description)
-      .toMatch(/COACHMAN COLLECTION,  MODEL CD12,  16'0" X 7'0",  IN THE COLOR WHITE,  OVERLAYS IN THE COLOR WHITE,  SOLID NO WINDOWS/i);
+      .toMatch(/COACHMAN  COLLECTION,  MODEL  CD12,  16'0"  X  7'0",  IN  THE  COLOR  WHITE,  OVERLAYS  IN  THE  COLOR  WHITE,  SOLID  NO  WINDOWS/i);
     fireEvent.change(sel("so-overlay"), { target: { value: "Sandtone" } });
     await settle();
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/IN THE COLOR WHITE,  OVERLAYS IN THE COLOR SANDTONE/i);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/IN  THE  COLOR  WHITE,  OVERLAYS  IN  THE  COLOR  SANDTONE/i);
     expect(await total()).toBe(at(2127, true));                              // words only
     // Designs 22, 23, 34 and 35 are not built at 12'0"; design 21 is not built at 8'3".
     setWidth("12");
@@ -967,7 +1018,7 @@ describe("special order — the Coachman from CJ's sheet (12/10/2026)", () => {
     await settle();
     expect(await total()).toBe(at(2127, true, adder(870 + 550)));                        // the glass over the double strength door, 4 windows
     const line = await copiedQbLine(screen.getByTestId("copy-qb"));
-    expect(line.description).toMatch(/IN THE COLOR WHITE,  OVERLAYS IN THE COLOR WHITE,  SEEDED DSB WINDOWS IN THE TOP SECTION,  ARC1A DESIGN,  12″ RADIUS TRACK/i);
+    expect(line.description).toMatch(/IN  THE  COLOR  WHITE,  OVERLAYS  IN  THE  COLOR  WHITE,  SEEDED  DSB  WINDOWS  IN  THE  TOP  SECTION,  ARC1A  DESIGN,  12″  RADIUS  TRACK/i);
     // 8'0": the two-window designs only, ARCH1 at 218 and ARCH4 at 436 — the arched section chosen is not among them, so the door is solid until one is.
     setWidth("8");
     await settle();
@@ -994,7 +1045,7 @@ describe("special order — the Coachman from CJ's sheet (12/10/2026)", () => {
 describe("special order — high lift is the sheet-tracked doors' (the 4050 family's since 13/10/2026, off its sheet since 21/10/2026)", () => {
   async function pickGallery(member: string) {
     render(<SpecialTool />);
-    fireEvent.change(sel("so-scope"), { target: { value: "residential" } });
+    fireEvent.click(maybe("so-scope-residential")!);
     fireEvent.change(sel("so-mfr"), { target: { value: "Clopay" } });
     fireEvent.change(sel("so-series"), { target: { value: "Gallery Collection" } });
     const m = sel("so-model");
@@ -1046,13 +1097,13 @@ describe("special order — high lift is the sheet-tracked doors' (the 4050 fami
     await settle();
     let line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(solid + 60, 2);
-    expect(line.description).toMatch(/,  LOW HEADROOM REAR TORSION TRACK,  REAR TORSION SPRINGS/i);
+    expect(line.description).toMatch(/,  LOW  HEADROOM  REAR  TORSION  TRACK,  REAR  TORSION  SPRINGS/i);
     fireEvent.change(sel("so-track"), { target: { value: "r20" } });
     fireEvent.change(sel("so-track-mount"), { target: { value: "continuous_angle" } });
     await settle();
     line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(solid + 200, 2);
-    expect(line.description).toMatch(/2" CONTINUOUS ANGLE MOUNT TRACK TO WOOD,  20″ RADIUS TRACK/i);
+    expect(line.description).toMatch(/2"  CONTINUOUS  ANGLE  MOUNT  TRACK  TO  WOOD,  20″  RADIUS  TRACK/i);
     fireEvent.change(sel("so-track-mount"), { target: { value: "bracket" } });
     // High lift is not a stock track, so the door is no longer the floored one (782.19 in the stock book): the sheet's 9' x 7' (808.54) with the sheet's torsion (45), under high lift off the 4050's sheet (.776, the 4138's figures) at the 43%: breakaway or 25 degree, the sheet's inches.
     const sheetSolid = 808.54 + 45;
@@ -1065,7 +1116,7 @@ describe("special order — high lift is the sheet-tracked doors' (the 4050 fami
     await settle();
     line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(sheetSolid + sell(136.52), 2);
-    expect(line.description).toMatch(/SOLID NO WINDOWS,  2" BRACKET MOUNT TRACK WITH 36″ HIGH LIFT BREAKAWAY,  FRONT TORSION SPRINGS/i);
+    expect(line.description).toMatch(/SOLID  NO  WINDOWS,  2"  BRACKET  MOUNT  TRACK  WITH  36″  HIGH  LIFT  BREAKAWAY,  FRONT  TORSION  SPRINGS/i);
     fireEvent.change(sel("so-track"), { target: { value: "full_vertical" } });
     await settle();
     expect((await copiedQbLine(screen.getByTestId("copy-qb"))).rate).toBeCloseTo(sheetSolid + sell(104.96), 2);
@@ -1075,7 +1126,7 @@ describe("special order — high lift is the sheet-tracked doors' (the 4050 fami
     await settle();
     line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(sheetSolid + sell(137.63), 2);
-    expect(line.description).toMatch(/,  6\/12 ROOF PITCH TRACK,  FRONT TORSION SPRINGS/i);
+    expect(line.description).toMatch(/,  6\/12  ROOF  PITCH  TRACK,  FRONT  TORSION  SPRINGS/i);
     // Back on a stock track it is the floored door again.
     fireEvent.change(sel("so-track"), { target: { value: "r12" } });
     await settle();
@@ -1092,14 +1143,14 @@ describe("special order — high lift is the sheet-tracked doors' (the 4050 fami
     expect(sel("so-incline").value).toBe("breakaway");
     fireEvent.change(sel("so-high-lift"), { target: { value: "36" } });
     await settle();
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS IN THE TOP SECTION.*2" BRACKET MOUNT TRACK WITH 36″ HIGH LIFT BREAKAWAY,  FRONT TORSION SPRINGS/i);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS  IN  THE  TOP  SECTION.*2"  BRACKET  MOUNT  TRACK  WITH  36″  HIGH  LIFT  BREAKAWAY,  FRONT  TORSION  SPRINGS/i);
     fireEvent.change(sel("so-incline"), { target: { value: "deg25" } });
     await settle();
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS IN THE TOP SECTION.*2" BRACKET MOUNT TRACK WITH 36″ HIGH LIFT 25 DEGREE BREAKAWAY,  FRONT TORSION SPRINGS/i);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS  IN  THE  TOP  SECTION.*2"  BRACKET  MOUNT  TRACK  WITH  36″  HIGH  LIFT  25  DEGREE  BREAKAWAY,  FRONT  TORSION  SPRINGS/i);
     // Full vertical lift with windows too.
     fireEvent.change(sel("so-track"), { target: { value: "full_vertical" } });
     await settle();
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS IN THE TOP SECTION.*FULL VERTICAL LIFT TRACK,  FRONT TORSION SPRINGS/i);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS  IN  THE  TOP  SECTION.*FULL  VERTICAL  LIFT  TRACK,  FRONT  TORSION  SPRINGS/i);
   });
 });
 
@@ -1117,7 +1168,7 @@ describe("special order — vinyl molding on a configured door (Brandon, 14/10/2
     const rows = (await copyFrom(screen.getByTestId("copy-qb"))).split("\n");
     expect(rows).toHaveLength(3);
     expect(rows[1]).toBe("");
-    expect(rows[2].split("\t")).toEqual([QB_VINYL, "WHITE VINYL STOP MOLDING,  [1] - 9FT AND [2] - 7FT", "23", "0.95"]);
+    expect(rows[2].split("\t")).toEqual([QB_VINYL, "WHITE  VINYL  STOP  MOLDING,  [1]  -  9FT  AND  [2]  -  7FT", "23", "0.95"]);
     // A change of track keeps the answer; No drops the line.
     fireEvent.change(sel("so-track"), { target: { value: "r15" } });
     await settle();
@@ -1142,21 +1193,21 @@ describe("special order — vinyl molding on a configured door (Brandon, 14/10/2
     const rows = (await copyFrom(screen.getByTestId("copy-qb"))).split("\n");
     // The bracket, then two struts the door's width — a 9'0" door takes the 9FT strut.
     expect(rows).toHaveLength(5);
-    expect(rows[2].split("\t")).toEqual([QB_PARTS, "ARB BRACKET", "1", "12.95"]);
-    expect(rows[4].split("\t")).toEqual([QB_PARTS, '2-1/4" GALVANIZED STRUT,  [2] - 9FT', "2", "17.95"]);
+    expect(rows[2].split("\t")).toEqual([QB_PARTS, "ARB  BRACKET", "1", "12.95"]);
+    expect(rows[4].split("\t")).toEqual([QB_PARTS, '2-1/4"  GALVANIZED  STRUT,  [2]  -  9FT', "2", "17.95"]);
     // Vinyl on as well: its line sits first, the add-ons after it.
     fireEvent.click(screen.getByTestId("so-vinyl-yes"));
     await settle();
     const withVinyl = (await copyFrom(screen.getByTestId("copy-qb"))).split("\n");
     expect(withVinyl).toHaveLength(7);
     expect(withVinyl[2].split("\t")[0]).toBe(QB_VINYL);
-    expect(withVinyl[4].split("\t")).toEqual([QB_PARTS, "ARB BRACKET", "1", "12.95"]);
+    expect(withVinyl[4].split("\t")).toEqual([QB_PARTS, "ARB  BRACKET", "1", "12.95"]);
     // Two doors: two brackets, four struts.
     fireEvent.change(document.getElementById("soqty")!, { target: { value: "2" } });
     await settle();
     const twice = (await copyFrom(screen.getByTestId("copy-qb"))).split("\n");
-    expect(twice[4].split("\t")).toEqual([QB_PARTS, "ARB BRACKET", "2", "12.95"]);
-    expect(twice[6].split("\t")).toEqual([QB_PARTS, '2-1/4" GALVANIZED STRUT,  [4] - 9FT', "4", "17.95"]);
+    expect(twice[4].split("\t")).toEqual([QB_PARTS, "ARB  BRACKET", "2", "12.95"]);
+    expect(twice[6].split("\t")).toEqual([QB_PARTS, '2-1/4"  GALVANIZED  STRUT,  [4]  -  9FT', "4", "17.95"]);
     // A typed-in total keeps the door line alone.
     fireEvent.change(document.querySelector('input[inputmode="decimal"]')!, { target: { value: "1500" } });
     await settle();
@@ -1183,7 +1234,7 @@ describe("special order — vinyl molding on a configured door (Brandon, 14/10/2
     expect(sel("so-homeowner").value).toBe("no");
     expect(maybe("copy-qb")).toBeTruthy();
     expect(screen.getByTestId("so-vinyl-row")).toBeTruthy();
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/SOLID NO WINDOWS,  12″ RADIUS TRACK,  EXTENSION SPRINGS,  NO LOCK/i);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/SOLID  NO  WINDOWS,  12″  RADIUS  TRACK,  EXTENSION  SPRINGS,  NO  LOCK/i);
     // A window picked takes the first glass it comes in until another is picked.
     pickFraming();
     await settle();
@@ -1202,7 +1253,7 @@ describe("special order — vinyl molding on a configured door (Brandon, 14/10/2
 describe("special order — a Modern Steel door's windows on the door drawing (Brandon, 19/10/2026)", () => {
   async function pickModern(model: string) {
     render(<SpecialTool />);
-    fireEvent.change(sel("so-scope"), { target: { value: "residential" } });
+    fireEvent.click(maybe("so-scope-residential")!);
     fireEvent.change(sel("so-mfr"), { target: { value: "Clopay" } });
     fireEvent.change(sel("so-series"), { target: { value: "Modern Collection" } });
     const m = sel("so-model");
@@ -1254,7 +1305,7 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     await settle();
     const line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(grid(569) + Math.round((Math.round(65 * 0.912 * k * 100) / 100 / 0.55) * 100) / 100, 2);
-    expect(line.description).toMatch(/CLOPAY MODERN COLLECTION,  MODEL 9139,  8'0" X 7'0",  IN THE COLOR WHITE,  1\/8" TEMPERED SHORT 19 1\/2X16 WINDOWS IN SECTION 1,  GL-SOL-SOL-SOL,  LEFT SIDE INSIDE LOOKING OUT,  NO INSERTS/i);
+    expect(line.description).toMatch(/CLOPAY  MODERN  COLLECTION,  MODEL  9139,  8'0"  X  7'0",  IN  THE  COLOR  WHITE,  1\/8"  TEMPERED  SHORT  19  1\/2X16  WINDOWS  IN  SECTION  1,  GL-SOL-SOL-SOL,  LEFT  SIDE  INSIDE  LOOKING  OUT,  NO  INSERTS/i);
     // Each window says what it is (Brandon, 22/10/2026): the window as the line names it, or its grille design.
     expect(screen.getByTestId("door-panel-1-1-label").textContent).toBe("short 19 1/2x16");
     expect(screen.getByTestId("door-panel-1-1-label-short").textContent).toBe("short");
@@ -1303,7 +1354,7 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     const lift = (c: number) => Math.round((c / 0.55) * 100) / 100;
     let line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(solid + lift(window(65) * 3), 2);
-    expect(line.description).toMatch(/CLOPAY MODERN COLLECTION,  MODEL 4308,  8'0" X 7'0",  IN THE COLOR WHITE,  1\/8" TEMPERED SHORT 19 1\/2X16 WINDOWS IN SECTION 1 GL-GL-SOL-SOL AND SECTION 3 SOL-SOL-SOL-GL,  NO INSERTS/i);
+    expect(line.description).toMatch(/CLOPAY  MODERN  COLLECTION,  MODEL  4308,  8'0"  X  7'0",  IN  THE  COLOR  WHITE,  1\/8"  TEMPERED  SHORT  19  1\/2X16  WINDOWS  IN  SECTION  1  GL-GL-SOL-SOL  AND  SECTION  3  SOL-SOL-SOL-GL,  NO  INSERTS/i);
     // The x takes one out again, and the price follows.
     fireEvent.click(screen.getByTestId("door-panel-1-2-remove"));
     await settle();
@@ -1314,7 +1365,7 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     fireEvent.click(screen.getByTestId("door-section-2-all"));
     await settle();
     expect(document.querySelectorAll(".dpanel.on")).toHaveLength(6);
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS IN SECTION 1 GL-SOL-SOL-SOL,  SECTION 2 GL-GL-GL-GL AND SECTION 3 SOL-SOL-SOL-GL/i);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS  IN  SECTION  1  GL-SOL-SOL-SOL,  SECTION  2  GL-GL-GL-GL  AND  SECTION  3  SOL-SOL-SOL-GL/i);
     fireEvent.click(screen.getByTestId("door-section-2-all"));
     await settle();
     expect(document.querySelectorAll(".dpanel.on")).toHaveLength(2);
@@ -1328,7 +1379,7 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     await settle();
     line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(solid + lift(window(160)), 2);
-    expect(line.description).toMatch(/1\/8" TEMPERED LONG 42X16 WINDOWS IN SECTION 2,  GL-SOL,  LEFT SIDE inside looking out,  SQ24 DESIGN/i);
+    expect(line.description).toMatch(/1\/8"  TEMPERED  LONG  42X16  WINDOWS  IN  SECTION  2,  GL-SOL,  LEFT  SIDE  inside  looking  out,  SQ24  DESIGN/i);
     // Insulated tempered frosted over the long window: 272 list.
     fireEvent.change(sel("so-glass"), { target: { value: "insulated_tempered_frosted" } });
     await settle();
@@ -1343,7 +1394,7 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     await settle();
     line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(solid + lift(window(180) * 2), 2);
-    expect(line.description).toMatch(/INSULATED TEMPERED FROSTED BLACK SLIM 37X8 WINDOWS IN SECTION 1,  12/i);
+    expect(line.description).toMatch(/INSULATED  TEMPERED  FROSTED  BLACK  SLIM  37X8  WINDOWS  IN  SECTION  1,  12/i);
     // Back to a short window in the slim window's own 9/16" glass: the first glass the short window comes in stands in.
     fireEvent.change(sel("so-glass"), { target: { value: "insulated_tempered_midnight_gray_916" } });
     await settle();
@@ -1360,7 +1411,7 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
 
   it("lists the pairs a model each, in number order; the 9208 in the Cypress and Plank finishes at the sheet's adder", async () => {
     render(<SpecialTool />);
-    fireEvent.change(sel("so-scope"), { target: { value: "residential" } });
+    fireEvent.click(maybe("so-scope-residential")!);
     fireEvent.change(sel("so-mfr"), { target: { value: "Clopay" } });
     fireEvent.change(sel("so-series"), { target: { value: "Modern Collection" } });
     expect(options("so-model").map((o) => o.textContent)).toEqual(["Select…", "4138", "4308", "4309", "9138", "9139", "9208", "9209"]);
@@ -1378,7 +1429,7 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     const line = await copiedQbLine(screen.getByTestId("copy-qb"));
     // 16'0" x 7'0" 9208: 1272 list at .865 at 45%, and the double door's up-to-8ft adder, 240 list at 1.301, lifted.
     expect(line.rate).toBeCloseTo(2034.42 + Math.round((317.53 / 0.55) * 100) / 100, 2);
-    expect(line.description).toMatch(/CLOPAY MODERN COLLECTION,  MODEL 9208,  16'0" X 7'0",  IN THE COLOR ULTRA-GRAIN PLANK KONA FINISH,  SOLID NO WINDOWS/i);
+    expect(line.description).toMatch(/CLOPAY  MODERN  COLLECTION,  MODEL  9208,  16'0"  X  7'0",  IN  THE  COLOR  ULTRA-GRAIN  PLANK  KONA  FINISH,  SOLID  NO  WINDOWS/i);
   });
 
   it("offers short windows alone under 7'8\", and a 9'0\" door five sections; the 4138 off its own sheet", async () => {
@@ -1413,7 +1464,7 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     const window = (list: number) => Math.round(list * 0.776 * k * 100) / 100;
     const line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(grid(796) + Math.round((window(96) / 0.55) * 100) / 100, 2);
-    expect(line.description).toMatch(/CLOPAY MODERN COLLECTION,  MODEL 4138,  7'6" X 8'0",  IN THE COLOR WHITE,  1\/8" TEMPERED FROSTED SHORT 19 1\/2X16 WINDOWS IN SECTION 2,  SOL-GL-SOL,  REC12 DESIGN/i);
+    expect(line.description).toMatch(/CLOPAY  MODERN  COLLECTION,  MODEL  4138,  7'6"  X  8'0",  IN  THE  COLOR  WHITE,  1\/8"  TEMPERED  FROSTED  SHORT  19  1\/2X16  WINDOWS  IN  SECTION  2,  SOL-GL-SOL,  REC12  DESIGN/i);
   });
 
   it("offers the 4138 every mount, and CJ's track options off its sheet: high lift breakaway or 25 degree, full vertical lift, roof pitch — torsion only (20/10/2026)", async () => {
@@ -1440,13 +1491,13 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     await settle();
     let lineRt = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(lineRt.rate).toBeCloseTo(solid + sell(45.06), 2);
-    expect(lineRt.description).toMatch(/,  LOW HEADROOM REAR TORSION TRACK,  REAR TORSION SPRINGS/i);
+    expect(lineRt.description).toMatch(/,  LOW  HEADROOM  REAR  TORSION  TRACK,  REAR  TORSION  SPRINGS/i);
     fireEvent.change(sel("so-track"), { target: { value: "r15" } });
     fireEvent.change(sel("so-track-mount"), { target: { value: "continuous_angle" } });
     await settle();
     lineRt = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(lineRt.rate).toBeCloseTo(solid + sell(58.40), 2);
-    expect(lineRt.description).toMatch(/2" CONTINUOUS ANGLE MOUNT TRACK TO WOOD,  15″ RADIUS TRACK/i);
+    expect(lineRt.description).toMatch(/2"  CONTINUOUS  ANGLE  MOUNT  TRACK  TO  WOOD,  15″  RADIUS  TRACK/i);
     fireEvent.change(sel("so-track"), { target: { value: "r20" } });
     await settle();
     expect(maybe("copy-qb")).toBeNull();
@@ -1464,7 +1515,7 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     await settle();
     let line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(solid + sell(161.62), 2);
-    expect(line.description).toMatch(/SOLID NO WINDOWS,  2" BRACKET MOUNT TRACK WITH 60″ HIGH LIFT BREAKAWAY,  FRONT TORSION SPRINGS/i);
+    expect(line.description).toMatch(/SOLID  NO  WINDOWS,  2"  BRACKET  MOUNT  TRACK  WITH  60″  HIGH  LIFT  BREAKAWAY,  FRONT  TORSION  SPRINGS/i);
     fireEvent.change(sel("so-incline"), { target: { value: "deg25" } });
     await settle();
     expect(options("so-high-lift").map((o) => o.value).slice(-1)).toEqual(["72"]);
@@ -1475,7 +1526,7 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     await settle();
     line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(solid + sell(274.63), 2);
-    expect(line.description).toMatch(/SOLID NO WINDOWS,  2" REVERSE ANGLE MOUNT TRACK TO STEEL WITH 60″ HIGH LIFT 25 DEGREE BREAKAWAY,  FRONT TORSION SPRINGS/i);
+    expect(line.description).toMatch(/SOLID  NO  WINDOWS,  2"  REVERSE  ANGLE  MOUNT  TRACK  TO  STEEL  WITH  60″  HIGH  LIFT  25  DEGREE  BREAKAWAY,  FRONT  TORSION  SPRINGS/i);
     // Full vertical lift, by the door's height; the pitch box only on roof pitch.
     fireEvent.change(sel("so-track"), { target: { value: "full_vertical" } });
     await settle();
@@ -1483,7 +1534,7 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     expect(maybe("so-roof-pitch")).toBeNull();
     line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(solid + sell(158.62), 2);
-    expect(line.description).toMatch(/2" REVERSE ANGLE MOUNT TRACK TO STEEL,  FULL VERTICAL LIFT TRACK,  FRONT TORSION SPRINGS/i);
+    expect(line.description).toMatch(/2"  REVERSE  ANGLE  MOUNT  TRACK  TO  STEEL,  FULL  VERTICAL  LIFT  TRACK,  FRONT  TORSION  SPRINGS/i);
     fireEvent.change(sel("so-track"), { target: { value: "roof_pitch" } });
     await settle();
     expect(options("so-roof-pitch").map((o) => o.value)).toEqual(["1/12", "2/12", "3/12", "4/12", "5/12", "6/12"]);
@@ -1492,7 +1543,7 @@ describe("special order — a Modern Steel door's windows on the door drawing (B
     await settle();
     line = await copiedQbLine(screen.getByTestId("copy-qb"));
     expect(line.rate).toBeCloseTo(solid + sell(137.63), 2);
-    expect(line.description).toMatch(/,  5\/12 ROOF PITCH TRACK,  FRONT TORSION SPRINGS/i);
+    expect(line.description).toMatch(/,  5\/12  ROOF  PITCH  TRACK,  FRONT  TORSION  SPRINGS/i);
     // Glass on full vertical lift is not built: the reason shows and nothing prices.
     fireEvent.change(sel("so-track"), { target: { value: "full_vertical" } });
     fireEvent.change(sel("so-framing"), { target: { value: "short" } });
@@ -1517,7 +1568,7 @@ describe("special order — every door drawn, by its own chart and rules (Brando
   const label = (id: string) => screen.queryByTestId(`door-panel-${id}-label`)?.textContent ?? null;
   async function pick(series: string, member: string) {
     render(<SpecialTool />);
-    fireEvent.change(sel("so-scope"), { target: { value: "residential" } });
+    fireEvent.click(maybe("so-scope-residential")!);
     fireEvent.change(sel("so-mfr"), { target: { value: "Clopay" } });
     fireEvent.change(sel("so-series"), { target: { value: series } });
     const m = sel("so-model");
@@ -1543,24 +1594,24 @@ describe("special order — every door drawn, by its own chart and rules (Brando
     expect(pickable()).toEqual(["door-section-4-pick", "door-section-3-pick", "door-section-2-pick"]);
     expect(label("4-1")).toBe('PLAIN SHORT 19-1/2" X 12"');
     expect(screen.getByTestId("door-panel-4-1-label-short").textContent).toBe("PLAIN SHORT");
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS IN THE TOP SECTION,  PLAIN SHORT 19-1\/2" X 12",  NO INSERTS/i);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS  IN  THE  TOP  SECTION,  PLAIN  SHORT  19-1\/2"  X  12",  NO  INSERTS/i);
     // A special order may always take a second row (Brandon, 23/10/2026)…
     fireEvent.click(screen.getByTestId("door-section-3-pick"));
     await settle();
     expect(glazed()).toEqual(["4-1", "4-2", "4-3", "4-4", "3-1", "3-2", "3-3", "3-4"]);
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS IN THE TOP AND THIRD SECTIONS,  PLAIN SHORT 19-1\/2" X 12",  NO INSERTS/i);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS  IN  THE  TOP  AND  THIRD  SECTIONS,  PLAIN  SHORT  19-1\/2"  X  12",  NO  INSERTS/i);
     // …and the top row taken out leaves the third, a 21" with the 18" gone up.
     fireEvent.click(screen.getByTestId("door-section-4-pick"));
     await settle();
     expect(heights()).toEqual(["18″", "21″", "18″", "21″"]);
     expect(glazed()).toEqual(["3-1", "3-2", "3-3", "3-4"]);
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS IN THE THIRD SECTION,  PLAIN SHORT 19-1\/2" X 12",  NO INSERTS/i);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS  IN  THE  THIRD  SECTION,  PLAIN  SHORT  19-1\/2"  X  12",  NO  INSERTS/i);
     // A long insert: two across, the design on each; the row kept.
     fireEvent.change(sel("so-framing"), { target: { value: "insert:long:608" } });
     await settle();
     expect(glazed()).toEqual(["3-1", "3-2"]);
     expect(label("3-1")).toBe("Charleston 608 inserts");
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS IN THE THIRD SECTION,  CHARLESTON 608 INSERTS/i);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS  IN  THE  THIRD  SECTION,  CHARLESTON  608  INSERTS/i);
     // Solid takes the drawing away.
     fireEvent.change(sel("so-framing"), { target: { value: "" } });
     await settle();
@@ -1587,7 +1638,7 @@ describe("special order — every door drawn, by its own chart and rules (Brando
     await settle();
     expect(glazed()).toEqual(["4-1", "4-2"]);
     expect(label("4-1")).toBe("SQ24 design");
-    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS IN THE TOP SECTION,  SQ24 DESIGN/i);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS  IN  THE  TOP  SECTION,  SQ24  DESIGN/i);
     cleanup();
     await pick("Bridgeport Collection", "BD1EU");
     setWidth("9");

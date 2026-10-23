@@ -291,6 +291,8 @@ const GALLERY_ARCH = "ARCH 1";
 export const PLAIN_WINDOWS: Record<string, readonly string[]> = {
   T50S: [PLAIN_SHORT],
   "4050": [PLAIN_SHORT, PLAIN_LONG],
+  // The flush 4051 takes the short or the long window too, named as the 4050's (Brandon, 23/10/2026).
+  "4051": [PLAIN_SHORT, PLAIN_LONG],
   "9130": [PLAIN_SHORT, PLAIN_LONG],
   "4053": [PLAIN_LONG],
   "9133": [PLAIN_LONG],

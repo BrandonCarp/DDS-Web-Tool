@@ -405,7 +405,7 @@ describe("a Premium Steel door past 9'0\" on the stock tab (Brandon, 22/10/2026)
   const opts = { style: "glass" as const, color: "White", track: "r12" as const, spring: "torsion" as const, lock: "none" as const, plainWindow: 'PLAIN SHORT 19-1/2" X 12"' };
   it("prices 9'3\" to 10'0\" off the sheet as the special order tab does, worded the same, and reads special order", () => {
     for (const model of ["4050", "4051", "4053", "9130", "9133"]) {
-      // The model's own plain window, where it names one (the 4051 names none).
+      // The model's own plain window: the short where it names both.
       const plainWindow = plainWindowsFor(model)[0];
       for (const [hf, hi] of [[9, 3], [9, 6], [9, 9], [10, 0]] as const) {
         const q = quoteResidential(model, dim(9, 0, hf, hi), { ...opts, plainWindow });

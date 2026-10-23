@@ -28,7 +28,7 @@ describe("Copy for QuickBooks", () => {
     fireEvent.change(qty, { target: { value: "3" } });
     fireEvent.click(el("t")!);
     await settle();
-    expect(copied.split("\t")).toEqual(["STOCK DOOR", "A DOOR", "3", "100.00"]);
+    expect(copied.split("\t")).toEqual(["STOCK DOOR", "A  DOOR", "3", "100.00"]);
   });
 
   it("uses the tool's quantity where there is one, and shows no box", async () => {
@@ -81,7 +81,7 @@ describe("QuickBooks button — more than one line", () => {
     render(<CopyQuickBooks item="STOCK DOOR" description="a door" rate={100} qty={1} testId="m"
       extraLines={[{ item: "VINYL", description: "white molding", qty: 23, rate: 0.95 }]} />);
     const copied = await copyFrom(screen.getByTestId("m"));
-    expect(copied).toBe("STOCK DOOR\tA DOOR\t1\t100.00\n\nVINYL\tWHITE MOLDING\t23\t0.95");
+    expect(copied).toBe("STOCK DOOR\tA  DOOR\t1\t100.00\n\nVINYL\tWHITE  MOLDING\t23\t0.95");
   });
 
   it("is labelled QuickBooks", () => {
@@ -112,7 +112,7 @@ describe("Copy price and Copy description, for Aimee's account only (6/10/2026)"
     expect(copied).toBe("1,234.50");
     fireEvent.click(screen.getByTestId("door-desc"));
     await settle();
-    expect(copied).toBe("CLOPAY MODEL 4050, 8'0\" X 7'0\"");
+    expect(copied).toBe("CLOPAY  MODEL  4050,  8'0\"  X  7'0\"");
   });
 
   it("shows neither for anyone else, or outside a signed-in shell", () => {

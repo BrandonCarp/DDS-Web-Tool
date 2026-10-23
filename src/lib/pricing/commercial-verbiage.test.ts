@@ -28,16 +28,16 @@ describe("ribbed steel verbiage", () => {
     expect(complete("524")).not.toContain("ribbed"); // that wording is the sections' only
   });
 
-  it("puts a 524 complete door's windows after the colour, like any other door", () => {
+  it("puts a 524 complete door's windows after the colour, like any other door, its glass named as its sections name it (23/10/2026)", () => {
     expect(complete("524", { glass: "glass", winSection: 3 })).toContain(
-      `non insulated, in the color white, 24x12 windows in the third section, 2" angle`,
+      `non insulated, in the color white, 24x12 double strength b grade windows in the third section, 2" angle`,
     );
     // The panels pressed, where not every one has a window (15/10/2026): a 9'2" door has two.
     expect(complete("524", { glass: "glass", winSection: 3, windowPanels: [1] })).toContain(
-      "in the color white, one 24x12 window in the left panel of the third section, 2\" angle",
+      "in the color white, one 24x12 double strength b grade window in the left panel of the third section, 2\" angle",
     );
-    expect(complete("524", { glass: "glass", winSection: 2, windowPanels: [1, 2] })).toContain("in the color white, 24x12 windows in the second section,");
-    expect(complete("524", { glass: "glass", winSection: 3, windowSize: "24x6", windowPanels: [2] })).toContain("one 24x6 window in the right panel of the third section");
+    expect(complete("524", { glass: "glass", winSection: 2, windowPanels: [1, 2] })).toContain("in the color white, 24x12 double strength b grade windows in the second section,");
+    expect(complete("524", { glass: "glass", winSection: 3, windowSize: "24x6", windowPanels: [2] })).toContain("one 24x6 double strength b grade window in the right panel of the third section");
     // A complete door's windows stay 24x12 unless another size is picked, whatever the model's section sizes lead with.
     expect(complete("3200", { glass: "glass", winSection: 3, windowPanels: [2] })).toContain("one insulated 24x12 window in the right panel of the third section");
     expect(complete("3200", { glass: "glass", winSection: 3 })).toContain("insulated 24x12 windows in the third section");
@@ -180,7 +180,7 @@ describe("ribbed steel verbiage", () => {
     expect(placementOf(3, [2])).toBe("SOL,GL,SOL");
     expect(placementOf(3, [1, 2, 3])).toBe("GL,GL,GL");
     // The placement is the panels the complete door's line names.
-    expect(complete("524", { glass: "glass", winSection: 3, windowPanels: placementPanels("GL,SOL,SOL") })).toContain("one 24x12 window in the left panel of the third section");
+    expect(complete("524", { glass: "glass", winSection: 3, windowPanels: placementPanels("GL,SOL,SOL") })).toContain("one 24x12 double strength b grade window in the left panel of the third section");
     expect(stileLocationText("59", "0")).toBe('59"');
     expect(stileLocationText("82", "1/4")).toBe('82-1/4"');
     expect(stileLocationText("82", "3/8")).toBe('82-3/8"');

@@ -34,7 +34,7 @@ describe("Vinyl tab, by the piece (7/10/2026)", () => {
     size(1, "7");
     fireEvent.change(screen.getByTestId("vinyl-count-1"), { target: { value: "4" } }); // typed
     const line = await copiedQbLine(screen.getByTestId("vinyl-copy-qb"));
-    expect(line.description).toBe("WHITE VINYL STOP MOLDING,  [2] - 8FT AND [4] - 7FT");
+    expect(line.description).toBe("WHITE  VINYL  STOP  MOLDING,  [2]  -  8FT  AND  [4]  -  7FT");
     expect([line.qty, line.rate]).toEqual([44, 0.95]); // 16 + 28 ft, by the foot
     expect(screen.getByTestId("vinyl-qty").textContent).toBe("44");
   });
@@ -47,7 +47,7 @@ describe("Vinyl tab, by the piece (7/10/2026)", () => {
     fireEvent.click(screen.getByTestId("vinyl-add-line"));
     size(2, "16");
     const line = await copiedQbLine(screen.getByTestId("vinyl-copy-qb"));
-    expect(line.description).toBe("WHITE VINYL STOP MOLDING,  [1] - 16FT,  [1] - 8FT AND [1] - 7FT");
+    expect(line.description).toBe("WHITE  VINYL  STOP  MOLDING,  [1]  -  16FT,  [1]  -  8FT  AND  [1]  -  7FT");
   });
 
   it("never steps a count below one", () => {
@@ -69,7 +69,7 @@ describe("Vinyl tab, by the piece (7/10/2026)", () => {
     fireEvent.click(screen.getByTestId("vinyl-remove-2"));
     expect(screen.getAllByTestId("vinyl-line")).toHaveLength(2);
     const line = await copiedQbLine(screen.getByTestId("vinyl-copy-qb"));
-    expect(line.description).toBe("WHITE VINYL STOP MOLDING,  [2] - 16FT");
+    expect(line.description).toBe("WHITE  VINYL  STOP  MOLDING,  [2]  -  16FT");
   });
 
   it("follows the colour: its stock lengths, and a size it does not stock is cleared", () => {

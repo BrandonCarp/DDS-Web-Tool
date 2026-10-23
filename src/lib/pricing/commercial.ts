@@ -171,13 +171,16 @@ export function quoteCommercial(input: CommInput): CommQuote {
     const picked = [...new Set((input.windowPanels ?? []).map((n) => Math.trunc(n)))].filter((n) => n >= 1 && n <= panels);
     const partial = picked.length > 0 && picked.length < panels;
     const glassWord = model === "3200" ? "insulated " : insulation ? "" : `${cgrade} `;
+    // The 524 names its glass after the size, as its sections do: "24x12 double
+    // strength b grade windows" (Brandon, 23/10/2026).
+    const gradeAfter = insulation === "non insulated" ? ` ${sectionGlassWord(model)}` : "";
     // "solid no windows" with no comma, as the door lines read everywhere
     // (Brandon, 9/10/2026).
     const winTxt =
       input.glass === "glass"
         ? partial
-          ? `${countWord(picked.length)} ${glassWord}${winSize} ${picked.length === 1 ? "window" : "windows"} ${panelsPhrase(panels, picked)} of the ${ordinal(input.winSection)} section`
-          : `${glassWord}${winSize} windows in the ${ordinal(input.winSection)} section`
+          ? `${countWord(picked.length)} ${glassWord}${winSize}${gradeAfter} ${picked.length === 1 ? "window" : "windows"} ${panelsPhrase(panels, picked)} of the ${ordinal(input.winSection)} section`
+          : `${glassWord}${winSize}${gradeAfter} windows in the ${ordinal(input.winSection)} section`
         : "solid no windows";
     // A stock complete door comes in white alone (Brandon, 22/10/2026).
     const doorColor = completeDoorColors(model).find((c) => c === input.color) ?? "White";

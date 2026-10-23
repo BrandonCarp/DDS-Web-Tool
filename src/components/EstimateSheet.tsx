@@ -1,6 +1,7 @@
 "use client";
 
 import { useCustomerJob } from "./CustomerJobFields";
+import { estimateText } from "@/lib/pricing/data/quickbooks";
 
 /** Print-only replica of a DOORS DIRECT SOUTH QuickBooks estimate, matched
  *  against a real printed estimate (42887). Hidden on screen; "Print quote"
@@ -81,7 +82,7 @@ export function EstimateSheet({
           {lines.map((l, i) => (
             <tr key={i}>
               <td>{l.item}</td>
-              <td>{stripStatus(l.desc).toUpperCase()}</td>
+              <td className="es-desc">{estimateText(stripStatus(l.desc)).toUpperCase()}</td>
               <td className="r">{l.qty}</td>
               <td className="r">{usd(l.rate)}</td>
               <td className="r">{usd(l.qty * l.rate)}T</td>

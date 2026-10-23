@@ -76,7 +76,7 @@ describe("raw track on the Track tab", () => {
     expect(screen.queryByTestId("parts-feet-note")).toBeNull();
     expect(screen.getByTestId("parts-price").textContent).toBe("$90.00"); // the 24FT stick at 3.75
     const line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
-    expect(line.description).toBe('2" RAW TRACK,  16\'6"');
+    expect(line.description).toBe('2"  RAW  TRACK,  16\'6"');
     expect(line.rate).toBe(90);
     // 24'1" is past the longest stick.
     feet("24");
@@ -108,7 +108,7 @@ describe("cable rolls on the Cables tab (6/10/2026)", () => {
     fireEvent.click(screen.getByText('5/32" CABLE, 250FT ROLL').closest("button")!);
     expect(screen.getByTestId("parts-price").textContent).toBe("$149.95");
     const line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
-    expect([line.description, line.rate]).toEqual(['5/32" CABLE,  250FT ROLL', 149.95]);
+    expect([line.description, line.rate]).toEqual(['5/32"  CABLE,  250FT  ROLL', 149.95]);
     expect(screen.queryByText(/500FT/)).toBeNull();
   });
 });
@@ -164,12 +164,12 @@ describe("the Parts buttons (6/10/2026)", () => {
     fireEvent.change(screen.getByTestId("parts-inches"), { target: { value: "6" } });
     expect(screen.getByTestId("parts-price").textContent).toBe("$106.25");          // the 12'6" stick at 8.50
     let line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
-    expect(line.description).toBe('1" SOLID SHAFT,  12\'6"');
+    expect(line.description).toBe('1"  SOLID  SHAFT,  12\'6"');
     expect(line.rate).toBe(106.25);
     fireEvent.change(screen.getByTestId("parts-inches"), { target: { value: "7" } });
     expect(screen.getByTestId("parts-price").textContent).toBe("$204.00");          // past 12'6": the 24FT stick
     line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
-    expect(line.description).toBe('1" SOLID SHAFT,  12\'7"');
+    expect(line.description).toBe('1"  SOLID  SHAFT,  12\'7"');
     fireEvent.change(screen.getByTestId("parts-feet"), { target: { value: "25" } });
     expect(screen.getByTestId("parts-feet-error").textContent).toContain("Solid shaft is sold from 1 to 24 ft");
     expect(screen.queryByTestId("parts-copy-qb")).toBeNull();
@@ -206,12 +206,12 @@ describe("the Track buttons (6/10/2026)", () => {
     fireEvent.click(document.querySelectorAll("ul.partlist .partrow")[3] as HTMLElement);
     expect(document.querySelector("aside.quote .qtitle")?.textContent).toBe("9FT — Complete set, full vertical lift");
     const line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
-    expect(line.description).toBe('COMPLETE SET OF 2" ANGLE MOUNT TRACK TO WOOD,  9FT HIGH,  FULL VERTICAL LIFT');
+    expect(line.description).toBe('COMPLETE  SET  OF  2"  ANGLE  MOUNT  TRACK  TO  WOOD,  9FT  HIGH,  FULL  VERTICAL  LIFT');
     expect(line.rate).toBe(699.95);
     fireEvent.click(screen.getByTestId("track-height-14"));
     expect(screen.queryByTestId("parts-copy-qb")).toBeNull();   // a new height, nothing picked yet
     fireEvent.click(document.querySelectorAll("ul.partlist .partrow")[1] as HTMLElement);
-    expect((await copiedQbLine(screen.getByTestId("parts-copy-qb"))).description).toBe('2" ANGLE MOUNT TRACK TO WOOD,  14FT HIGH,  VERTICAL TRACK ONLY');
+    expect((await copiedQbLine(screen.getByTestId("parts-copy-qb"))).description).toBe('2"  ANGLE  MOUNT  TRACK  TO  WOOD,  14FT  HIGH,  VERTICAL  TRACK  ONLY');
   });
 
   it("picks a residential set from the door size and radius, like the residential configuration (12/10/2026)", async () => {
@@ -237,12 +237,12 @@ describe("the Track buttons (6/10/2026)", () => {
     expect(document.querySelector("aside.quote .qtitle")?.textContent).toBe("8' set, 10R, 1-3/8\" door");
     let line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
     // 16' wide: the 12' and up set, full angle on the line.
-    expect(line.description).toBe('COMPLETE SET OF 2" BRACKET MOUNT TRACK,  8FT HIGH,  10" RADIUS,  FULL ANGLE,  1-3/8" DOOR');
+    expect(line.description).toBe('COMPLETE  SET  OF  2"  BRACKET  MOUNT  TRACK,  8FT  HIGH,  10"  RADIUS,  FULL  ANGLE,  1-3/8"  DOOR');
     expect(line.rate).toBe(183);                                   // 8', 10/12/15R, 12' and up
     fireEvent.change(screen.getByTestId("track-radius"), { target: { value: "32R" } });
     fireEvent.click(screen.getByTestId("track-thick-2"));
     line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
-    expect(line.description).toBe('COMPLETE SET OF 2" BRACKET MOUNT TRACK,  8FT HIGH,  32" RADIUS,  FULL ANGLE,  2" DOOR');
+    expect(line.description).toBe('COMPLETE  SET  OF  2"  BRACKET  MOUNT  TRACK,  8FT  HIGH,  32"  RADIUS,  FULL  ANGLE,  2"  DOOR');
     expect(line.rate).toBe(318);
     // A 9' door has no 10R set; the 32R just chosen stays, on the set the list carries for any height.
     fireEvent.change(screen.getByTestId("track-height-ft"), { target: { value: "9" } });
@@ -251,12 +251,12 @@ describe("the Track buttons (6/10/2026)", () => {
     expect((await copiedQbLine(screen.getByTestId("parts-copy-qb"))).rate).toBe(318);
     fireEvent.change(screen.getByTestId("track-radius"), { target: { value: "LHR" } });
     line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
-    expect(line.description).toBe('COMPLETE SET OF 2" BRACKET MOUNT TRACK,  9FT HIGH,  LOW HEADROOM,  FULL ANGLE,  2" DOOR');
+    expect(line.description).toBe('COMPLETE  SET  OF  2"  BRACKET  MOUNT  TRACK,  9FT  HIGH,  LOW  HEADROOM,  FULL  ANGLE,  2"  DOOR');
     expect(line.rate).toBe(289.5);
     // Under 12' wide: no full angle.
     fireEvent.change(screen.getByTestId("track-width-ft"), { target: { value: "9" } });
     line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
-    expect(line.description).toBe('COMPLETE SET OF 2" BRACKET MOUNT TRACK,  9FT HIGH,  LOW HEADROOM,  2" DOOR');
+    expect(line.description).toBe('COMPLETE  SET  OF  2"  BRACKET  MOUNT  TRACK,  9FT  HIGH,  LOW  HEADROOM,  2"  DOOR');
     fireEvent.change(screen.getByTestId("track-width-ft"), { target: { value: "16" } });
     // Taller than any set: nothing stocked.
     fireEvent.change(screen.getByTestId("track-height-ft"), { target: { value: "10" } });
@@ -374,7 +374,7 @@ describe("seals paste the feet as the quantity (7/10/2026)", () => {
     expect(screen.getByTestId("parts-price").textContent).toBe("$1.25/ft"); // the price per foot, not the run's total
     const line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
     expect([line.qty, line.rate]).toEqual([50, 1.25]);
-    expect(line.description).toContain("BOTTOM T RUBBER");
+    expect(line.description).toContain("BOTTOM  T  RUBBER");
     expect(line.description).toContain("50FT"); // the description stays as it was
   });
 
@@ -386,10 +386,10 @@ describe("seals paste the feet as the quantity (7/10/2026)", () => {
     expect([...color.options].map((o) => o.value)).toEqual(["White", "Black", "Brown"]);
     expect(color.value).toBe("White");
     fireEvent.change(screen.getByTestId("parts-feet"), { target: { value: "30" } });
-    expect((await copiedQbLine(screen.getByTestId("parts-copy-qb"))).description).toBe("WHITE JAMB SEAL,  30FT");
+    expect((await copiedQbLine(screen.getByTestId("parts-copy-qb"))).description).toBe("WHITE  JAMB  SEAL,  30FT");
     fireEvent.change(color, { target: { value: "Brown" } });
     const line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
-    expect(line.description).toBe("BROWN JAMB SEAL,  30FT");
+    expect(line.description).toBe("BROWN  JAMB  SEAL,  30FT");
     expect([line.qty, line.rate]).toEqual([30, 1.25]);                     // the same price in every colour
     // Only the jamb seal takes a colour.
     fireEvent.click(screen.getByTestId("pnav-back"));
@@ -429,7 +429,7 @@ describe("retainers measured in feet and inches (9/10/2026)", () => {
     fireEvent.change(screen.getByTestId("parts-feet"), { target: { value: "8" } });
     fireEvent.change(screen.getByTestId("parts-inches"), { target: { value: "6" } });
     const line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
-    expect(line.description).toContain("[1] - 9FT");
+    expect(line.description).toContain("[1]  -  9FT");
     expect(line.rate).toBeCloseTo(3.75 * 9, 2);
     // 8'0" is 8FT as before.
     fireEvent.change(screen.getByTestId("parts-inches"), { target: { value: "0" } });
@@ -451,7 +451,7 @@ describe("retainers measured in feet and inches (9/10/2026)", () => {
     fireEvent.change(screen.getByTestId("parts-feet"), { target: { value: "12" } });
     fireEvent.change(screen.getByTestId("parts-copy-qb-qty"), { target: { value: "3" } });
     const line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
-    expect(line).toEqual({ item: "PARTS", description: '2" PLASTIC U RETAINER WITH RUBBER,  [3] - 16FT', qty: 3, rate: 60 });
+    expect(line).toEqual({ item: "PARTS", description: '2"  PLASTIC  U  RETAINER  WITH  RUBBER,  [3]  -  16FT', qty: 3, rate: 60 });
   });
 
   it("counts the plastic L retainers and the struts the same way", async () => {
@@ -461,14 +461,14 @@ describe("retainers measured in feet and inches (9/10/2026)", () => {
     fireEvent.click(screen.getByText('2" L RETAINER').closest("button")!);
     fireEvent.change(screen.getByTestId("parts-feet"), { target: { value: "8" } });
     fireEvent.change(screen.getByTestId("parts-copy-qb-qty"), { target: { value: "2" } });
-    expect((await copiedQbLine(screen.getByTestId("parts-copy-qb"))).description).toBe('2" PLASTIC L RETAINER,  [2] - 8FT');
+    expect((await copiedQbLine(screen.getByTestId("parts-copy-qb"))).description).toBe('2"  PLASTIC  L  RETAINER,  [2]  -  8FT');
     cleanup();
     const struts = GROUP_TABS.find((t) => t.id === "struts")!;
     show(<PartsTool menu={struts.menu} categories={struts.categories} group="Struts" />);
     fireEvent.click(screen.getByTestId("page-standard-struts"));
     fireEvent.click(screen.getByText("12FT STRUT").closest("button")!);
     fireEvent.change(screen.getByTestId("parts-copy-qb-qty"), { target: { value: "4" } });
-    expect(await copiedQbLine(screen.getByTestId("parts-copy-qb"))).toEqual({ item: "PARTS", description: '2-1/4" GALVANIZED STRUT,  [4] - 12FT', qty: 4, rate: 29.95 });
+    expect(await copiedQbLine(screen.getByTestId("parts-copy-qb"))).toEqual({ item: "PARTS", description: '2-1/4"  GALVANIZED  STRUT,  [4]  -  12FT', qty: 4, rate: 29.95 });
   });
 
   it("gives lock bars the same feet-and-inches box, 1 to 18 ft, and writes the length on the line", async () => {
@@ -481,7 +481,7 @@ describe("retainers measured in feet and inches (9/10/2026)", () => {
     fireEvent.change(screen.getByTestId("parts-inches"), { target: { value: "6" } });
     expect(screen.queryByTestId("parts-feet-note")).toBeNull();
     const line = await copiedQbLine(screen.getByTestId("parts-copy-qb"));
-    expect(line).toEqual({ item: "PARTS", description: "9'6\" LOCKBAR ASSEMBLY", qty: 1, rate: 49.95 });
+    expect(line).toEqual({ item: "PARTS", description: "9'6\"  LOCKBAR  ASSEMBLY", qty: 1, rate: 49.95 });
     fireEvent.change(screen.getByTestId("parts-feet"), { target: { value: "19" } });
     expect(screen.getByTestId("parts-feet-error").textContent).toContain("1 to 18");
     expect(screen.queryByTestId("parts-copy-qb")).toBeNull();

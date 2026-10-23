@@ -74,18 +74,18 @@ describe("the Operators group: residential or commercial, belt / chain / side mo
     expect(quoted()).toBe("6690L, 7FT");
     expect(buttons()).toEqual(["7FT"]);                               // the other lengths collapse
     const line = await copiedQbLine(screen.getByTestId("op-copy-qb"));
-    expect(line.description).toBe("LIFTMASTER ELECTRIC OPERATOR MODEL 6690L,  7FT BELT RAIL");
+    expect(line.description).toBe("LIFTMASTER  ELECTRIC  OPERATOR  MODEL  6690L,  7FT  BELT  RAIL");
     // Another rail: open the lengths back up, press it.
     fireEvent.click(screen.getByTestId("op-rail-7"));
     expect(buttons()).toEqual(["7FT", "8FT", "10FT", "Head only"]);
     expect(quoted()).toBe("Nothing selected");
     fireEvent.click(screen.getByTestId("op-rail-10"));
     expect(quoted()).toBe("6690L, 10FT");
-    expect((await copiedQbLine(screen.getByTestId("op-copy-qb"))).description).toBe("LIFTMASTER ELECTRIC OPERATOR MODEL 6690L,  10FT BELT RAIL");
+    expect((await copiedQbLine(screen.getByTestId("op-copy-qb"))).description).toBe("LIFTMASTER  ELECTRIC  OPERATOR  MODEL  6690L,  10FT  BELT  RAIL");
     fireEvent.click(screen.getByTestId("op-rail-10"));
     fireEvent.click(screen.getByTestId("op-rail-head"));
     expect(quoted()).toBe("6690L, HEAD ONLY");
-    expect((await copiedQbLine(screen.getByTestId("op-copy-qb"))).description).toBe("LIFTMASTER ELECTRIC OPERATOR MODEL 6690L,  HEAD ONLY");
+    expect((await copiedQbLine(screen.getByTestId("op-copy-qb"))).description).toBe("LIFTMASTER  ELECTRIC  OPERATOR  MODEL  6690L,  HEAD  ONLY");
   });
 
   it("offers each model the rail lengths it comes in", () => {
@@ -108,7 +108,7 @@ describe("the Operators group: residential or commercial, belt / chain / side mo
     render(<OperatorsTool />);
     openOperators("Residential", "chain", "2240L", 10);
     const line = await copiedQbLine(screen.getByTestId("op-copy-qb"));
-    expect(line.description).toContain("2240L,  10FT CHAIN RAIL");
+    expect(line.description).toContain("2240L,  10FT  CHAIN  RAIL");
     expect(line.rate).toBe(435.95);
   });
 

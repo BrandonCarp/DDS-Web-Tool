@@ -75,9 +75,9 @@ describe("scanner tab — the cart", () => {
     await scan("222");
     const copied = await copyFrom(screen.getByTestId("scanner-qb"));
     expect(copied.split("\n")).toEqual([
-      'FASTENERS\t1/4" X 3/4" TEK,  BAG OF 100\t2\t10.95',
+      'FASTENERS\t1/4"  X  3/4"  TEK,  BAG  OF  100\t2\t10.95',
       "",
-      "PARTS\t1100-18 DRUMS\t1\t59.95",
+      "PARTS\t1100-18  DRUMS\t1\t59.95",
     ]);
   });
 

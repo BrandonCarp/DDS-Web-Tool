@@ -1631,6 +1631,7 @@ html, body { margin: 0; padding: 0; }
   .tool-shell .estsheet .es-lines th{border:1px solid #000;font-size:7pt;font-weight:400;padding:2pt 5pt;text-align:left}
   .tool-shell .estsheet .es-lines th.r,.tool-shell .estsheet .es-lines td.r{text-align:right}
   .tool-shell .estsheet .es-lines td{border-left:1px solid #000;border-right:1px solid #000;padding:5pt 5pt 2pt;vertical-align:top;font-size:8.5pt;line-height:1.4}
+  .tool-shell .estsheet .es-lines td.es-desc{white-space:pre-wrap}
   .tool-shell .estsheet .es-lines .es-fill td{height:300pt;border-bottom:1px solid #000}
   .tool-shell .estsheet .es-bottom{display:flex;justify-content:space-between;align-items:flex-end;margin-top:10pt}
   .tool-shell .estsheet .es-terms{font-size:7.5pt}
@@ -1735,6 +1736,9 @@ html, body { margin: 0; padding: 0; }
 .tool-shell .doorthumb-btn img { width: 120px; height: auto; display: block; border-radius: 3px; }
 .tool-shell .doorrow .btn { margin-left: auto; white-space: nowrap; }
 .tool-shell .modal.doorlb { max-width: min(92vw, 1000px); width: auto; }
+/* The quote card over the configurator while a window of its own is open: the
+   door picture's zoom above the door's pressable sections (Brandon, 23/10/2026). */
+.tool-shell .quote:has(.modal-scrim) { z-index: 70; }
 .tool-shell .modal.doorlb img { width: 100%; height: auto; display: block; border-radius: 4px; }
 .tool-shell .doorlb-foot { display: flex; align-items: center; gap: 10px; margin-top: 12px; font-size: 12.5px; color: var(--muted); }
 .tool-shell .doorlb-foot span { margin-right: auto; font-weight: 700; letter-spacing: .02em; }

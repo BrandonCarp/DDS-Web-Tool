@@ -75,6 +75,25 @@ const SO_C_ASSEMBLIES: ButtonOption<"door" | "section">[] = [
   { value: "section", label: "Sections", icon: "sections" },
 ];
 
+/** Complete door or replacement section, as larger buttons in a column — the stock commercial tab's own (Brandon, 23/10/2026). */
+function AssemblyButtons({ testid, options, value, onChange }: {
+  testid: string;
+  options: readonly ButtonOption<"door" | "section">[];
+  value: "door" | "section";
+  onChange: (v: "door" | "section") => void;
+}) {
+  return (
+    <div className="pnav-pages" role="radiogroup" aria-label="Assembly type">
+      {options.map((o) => (
+        <button key={o.value} type="button" role="radio" aria-checked={value === o.value} data-testid={`${testid}-${o.value}`}
+          className={`pnav-page${value === o.value ? " on" : ""}`} onClick={() => onChange(o.value)}>
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function soNumbers(series: string, model: string, kind: "door" | "section", priceStr: string) {
   const ser = SPECIAL[series];
   const list = parsePrice(priceStr);
@@ -470,6 +489,17 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
         : `${modelMember || modelGroup} ${kind === "section" ? "sections" : "door"}`
       : `${cMfr} ${cModel}${commercialSeriesOf(cModel) ? ` (${commercialSeriesOf(cModel)})` : ""} ${kind === "section" ? "sections" : "complete door"}`;
 
+  // What is picked so far, collapsed into the header: the order type, then the manufacturer and collection.
+  const picked = scope === "residential"
+    ? ["Residential", ...(series ? [rMfr, series] : [])]
+    : ["Commercial", ...(cSeries ? [cMfr, cSeries] : [])];
+  // Back opens the last pick again: the collection, then the order type.
+  function backOne() {
+    // a maker with one series picked it outright, so its Back opens the makers
+    if (scope === "residential" && series) { if (hasSingleSeries(rMfr)) setRMfr("Clopay"); pickSeries(""); resetGrid(); return; }
+    if (scope === "commercial" && cSeries) { pickCommSeries(""); return; }
+    pickScope("");
+  }
   function pickScope(v: "" | "residential" | "commercial") {
     setStep(1);
     setScope(v); setSeries(""); setModel(""); setCSeries(""); setCModel(""); setKind("door"); setPrice(""); resetGrid(); setSaved(false);
@@ -503,37 +533,36 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
       <section className="config-col">
         <div className="panel">
           <div className="step">
-            <div className="step-h">
-              <span className="step-n">{step}</span>
-              <h3>{step === 1 ? "Select your door" : "Configure"}</h3>
-              <span className="hint">Special order</span>
-            </div>
-            {/* Order type, manufacturer, collection and model are the step 1
-                choices. Once the counter is configuring, they come off screen —
-                Change door goes back — so the panel reads like the stock tabs. */}
-            {/* Residential or commercial first, then it greys out — the same
-                shape as the manufacturer on the stock tabs, where Clopay is
-                shown but not changeable once you are past it. */}
-            {step === 1 && (
-              <div className="field"><label className="lbl">Select order type <span className="req">*</span></label>
-                <div className="selectwrap">
-                  <select data-testid="so-scope" value={scope || ""} disabled={!!scope}
-                    onChange={(e) => pickScope(e.target.value as "residential" | "commercial")}>
-                    {!scope && <option value="">Select…</option>}
-                    <option value="residential">Residential</option>
-                    <option value="commercial">Commercial</option>
-                  </select>
+            {/* Residential or commercial first, as two buttons — the stock
+                commercial tab's own first choice (Brandon, 23/10/2026). Each
+                pick then collapses into the header — the order type, then the
+                manufacturer and collection once the collection is chosen —
+                and Back opens the last one again. Once the counter is
+                configuring they come off screen, so the panel reads like the
+                stock tabs. */}
+            {step === 1 && !scope ? (
+              <div className="ggroup">
+                <div className="ghdr">Special order</div>
+                <div className="gbody pnav-body">
+                  <div className="pnav stack">
+                    <div className="pnav-pages" role="group" aria-label="Residential or commercial">
+                      <button type="button" className="pnav-page" data-testid="so-scope-residential" onClick={() => pickScope("residential")}>Residential</button>
+                      <button type="button" className="pnav-page" data-testid="so-scope-commercial" onClick={() => pickScope("commercial")}>Commercial</button>
+                    </div>
+                  </div>
                 </div>
-                {scope && (
-                  <button type="button" className="linkbtn" data-testid="so-change-scope"
-                    onClick={() => { setScope(""); setSeries(""); setModel(""); setStep(1); }}>
-                    Change
-                  </button>
-                )}
+              </div>
+            ) : (
+              <div className="step-h">
+                {step === 1
+                  ? <button type="button" className="btn backbtn" data-testid="so-back-scope" onClick={backOne}>&lsaquo; Back</button>
+                  : <span className="step-n">{step}</span>}
+                <h3 data-testid="so-picked">{step === 1 ? picked.join(" › ") : "Configure"}</h3>
+                <span className="hint">Special order</span>
               </div>
             )}
 
-            {step === 1 && scope && (scope === "residential" ? (
+            {step === 1 && scope && (scope === "residential" ? (!series && (
               <>
                 <div className="field"><label className="lbl">Manufacturer <span className="req">*</span></label>
                   <div className="selectwrap">
@@ -563,30 +592,34 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
                   </div>
                 )}
               </>
-            ) : (
+            )) : (
               <>
-                <div className="field"><label className="lbl">Manufacturer <span className="req">*</span></label>
-                  <div className="selectwrap">
-                    <select value={cMfr} onChange={(e) => { setCMfr(e.target.value); setCSeries(""); setCModel(""); setSaved(false); }}>
-                      {Object.keys(SPECIAL_COMMERCIAL).map((m) => <option key={m} value={m}>{m}</option>)}
-                    </select>
-                  </div>
-                </div>
-                <div className="field"><label className="lbl">Collection / Series <span className="req">*</span></label>
-                  <div className="selectwrap">
-                    <select data-testid="so-comm-series" value={cSeries} onChange={(e) => pickCommSeries(e.target.value)}>
-                      <option value="">Select…</option>
-                      {/* The five daily models sit above the series. Each also
-                          appears inside its own series further down. */}
-                      {SPECIAL_COMMERCIAL_PINNED.map((m) => (
-                        <option key={`pin-${m}`} value={m}>{m}</option>
-                      ))}
-                      {SPECIAL_COMMERCIAL_SERIES.map((g) => (
-                        <option key={g.name} value={g.name}>{g.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
+                {!cSeries && (
+                  <>
+                    <div className="field"><label className="lbl">Manufacturer <span className="req">*</span></label>
+                      <div className="selectwrap">
+                        <select value={cMfr} onChange={(e) => { setCMfr(e.target.value); setCSeries(""); setCModel(""); setSaved(false); }}>
+                          {Object.keys(SPECIAL_COMMERCIAL).map((m) => <option key={m} value={m}>{m}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="field"><label className="lbl">Collection / Series <span className="req">*</span></label>
+                      <div className="selectwrap">
+                        <select data-testid="so-comm-series" value={cSeries} onChange={(e) => pickCommSeries(e.target.value)}>
+                          <option value="">Select…</option>
+                          {/* The five daily models sit above the series. Each also
+                              appears inside its own series further down. */}
+                          {SPECIAL_COMMERCIAL_PINNED.map((m) => (
+                            <option key={`pin-${m}`} value={m}>{m}</option>
+                          ))}
+                          {SPECIAL_COMMERCIAL_SERIES.map((g) => (
+                            <option key={g.name} value={g.name}>{g.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </>
+                )}
                 {/* A pinned pick names the model outright, so there is nothing
                     left to choose — showing its whole series with it selected
                     reads as an unanswered question. Only a series pick opens
@@ -630,8 +663,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
               {(md || flatMargin) && step === 1 && (
                 <div className="field">
                   <label className="lbl">Assembly type</label>
-                  <OptionButtons label="Assembly type" testid="so-assembly" options={SO_ASSEMBLIES} value={kind}
-                    onChange={(v) => { setKind(v); setSaved(false); }} />
+                  <AssemblyButtons testid="so-assembly" options={SO_ASSEMBLIES} value={kind} onChange={(v) => { setKind(v); setSaved(false); }} />
                 </div>
               )}
               {gridded && kind === "door" && step === 1 && (
@@ -949,8 +981,7 @@ export function SpecialTool({ openOn }: { openOn?: SearchPick } = {}) {
             <div className="step">
               <div className="step-h"><span className="step-n">2</span><h3>{cMfr} {cModel}</h3></div>
               <div className="field"><label className="lbl">Assembly type</label>
-                <OptionButtons label="Assembly type" testid="so-c-assembly" options={SO_C_ASSEMBLIES} value={kind}
-                  onChange={(v) => { setKind(v); setSaved(false); }} />
+                <AssemblyButtons testid="so-c-assembly" options={SO_C_ASSEMBLIES} value={kind} onChange={(v) => { setKind(v); setSaved(false); }} />
               </div>
               <div className="field">
                 <label className="lbl">Home owner surcharge</label>

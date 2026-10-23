@@ -4,7 +4,7 @@ import { useState } from "react";
 import { CopyButton, CopyPrice } from "./CopyButton";
 import { AddToCart } from "./Cart";
 import { copyExtrasFor, useCurrentUser, type CopyExtra } from "./CurrentUser";
-import { quickBooksRow } from "@/lib/pricing/data/quickbooks";
+import { estimateText, quickBooksRow } from "@/lib/pricing/data/quickbooks";
 import { withPieceCount } from "@/lib/pricing/data/part-pricing";
 import { QtyStepper } from "./QtyStepper";
 
@@ -89,11 +89,11 @@ export function CopyQuickBooks({
       />
     </span>
     {/* Some accounts also copy the pieces on their own (Aimee 6/10/2026,
-        doorsdirect 7/10/2026): the description in capitals, as QuickBooks gets
-        it; the quantity on the line; and the rate — through CopyPrice, so it
-        goes out as a bare number like every price copy. */}
+        doorsdirect 7/10/2026): the description in capitals and spaced as
+        QuickBooks gets it; the quantity on the line; and the rate — through
+        CopyPrice, so it goes out as a bare number like every price copy. */}
     {extras.includes("description") && (
-      <CopyButton text={line.replace(/[\t\r\n]+/g, " ").trim().toUpperCase()} label="Copy description" testId={`${testId}-desc`} />
+      <CopyButton text={estimateText(line).toUpperCase()} label="Copy description" testId={`${testId}-desc`} />
     )}
     {extras.includes("quantity") && <CopyButton text={String(n)} label="Copy quantity" testId={`${testId}-qtycopy`} />}
     {extras.includes("price") && <CopyPrice amount={rate} testId={`${testId}-price`} />}

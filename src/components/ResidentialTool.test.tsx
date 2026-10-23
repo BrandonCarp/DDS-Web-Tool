@@ -357,7 +357,7 @@ describe("residential tool — the quote card once priced", () => {
   it("still copies the whole line to QuickBooks", async () => {
     await priceIt();
     const line = await copiedQbLine(screen.getByTestId("copy-qb"));
-    expect(line.description).toBe("TEST DESCRIPTION");
+    expect(line.description).toBe("TEST  DESCRIPTION");
     expect(line.qty).toBe(1);
     expect(line.rate).toBe(100);
   });
@@ -372,6 +372,8 @@ describe("residential tool — framing, by model", () => {
     const expected: Record<string, string[]> = {
       T50S: [SHORT, "Inserts"],
       "4050": [SHORT, LONG, "Inserts"],
+      // the flush 4051 the same, worded the same (Brandon, 23/10/2026)
+      "4051": [SHORT, LONG, "Inserts"],
       "9130": [SHORT, LONG, "Inserts"],
       "4053": [LONG, "Inserts"],
       "9133": [LONG, "Inserts"],
@@ -443,7 +445,7 @@ describe("residential tool — vinyl molding", () => {
     expect(rows).toHaveLength(3);
     expect(rows[1]).toBe("");
     // White 9' x 7': one 9' header and two 7' legs — the pieces, never a price.
-    expect(rows[2].split("\t")).toEqual([QB_VINYL, "WHITE VINYL STOP MOLDING,  [1] - 9FT AND [2] - 7FT", "23", "0.95"]);
+    expect(rows[2].split("\t")).toEqual([QB_VINYL, "WHITE  VINYL  STOP  MOLDING,  [1]  -  9FT  AND  [2]  -  7FT", "23", "0.95"]);
   });
 
   it("can change its mind in the quote card", async () => {
@@ -467,13 +469,13 @@ describe("residential tool — vinyl molding", () => {
     const rows = (await copyFrom(screen.getByTestId("copy-qb"))).split("\n");
     // The bracket, then two struts the door's width — a 9'0" door takes the 9FT strut.
     expect(rows).toHaveLength(5);
-    expect(rows[2].split("\t")).toEqual([QB_PARTS, "ARB BRACKET", "1", "12.95"]);
-    expect(rows[4].split("\t")).toEqual([QB_PARTS, '2-1/4" GALVANIZED STRUT,  [2] - 9FT', "2", "17.95"]);
+    expect(rows[2].split("\t")).toEqual([QB_PARTS, "ARB  BRACKET", "1", "12.95"]);
+    expect(rows[4].split("\t")).toEqual([QB_PARTS, '2-1/4"  GALVANIZED  STRUT,  [2]  -  9FT', "2", "17.95"]);
     // Two doors: two brackets, four struts.
     fireEvent.change(document.getElementById("qty")!, { target: { value: "2" } });
     const twice = (await copyFrom(screen.getByTestId("copy-qb"))).split("\n");
-    expect(twice[2].split("\t")).toEqual([QB_PARTS, "ARB BRACKET", "2", "12.95"]);
-    expect(twice[4].split("\t")).toEqual([QB_PARTS, '2-1/4" GALVANIZED STRUT,  [4] - 9FT', "4", "17.95"]);
+    expect(twice[2].split("\t")).toEqual([QB_PARTS, "ARB  BRACKET", "2", "12.95"]);
+    expect(twice[4].split("\t")).toEqual([QB_PARTS, '2-1/4"  GALVANIZED  STRUT,  [4]  -  9FT', "4", "17.95"]);
   });
 
   it("never asks for a replacement section — its opening already has molding", async () => {

@@ -179,7 +179,7 @@ describe("the top bar", () => {
     const hit = find("4050").find((h) => h.textContent?.includes("Special order"))!;
     fireEvent.mouseDown(hit);
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Special Order");
-    expect((screen.getByTestId("so-series") as HTMLSelectElement).value).toBe("Premium Steel Collection");
+    expect(screen.getByTestId("so-picked").textContent).toBe("Residential › Clopay › Premium Steel Collection");
     expect((screen.getByTestId("so-model") as HTMLSelectElement).selectedOptions[0].textContent).toBe("4050");
     expect(screen.getByTestId("so-configure")).toBeTruthy();
   });
@@ -354,7 +354,7 @@ describe("the Disposals window (9/10/2026)", () => {
     expect(price("union", "single")).toBe("$40.00");
     expect(price("union", "double")).toBe("$80.00");
     const line = await copiedQbLine(screen.getByTestId("disposal-copy-qb"));
-    expect(line).toEqual({ item: "DISPOSAL", description: "DOUBLE DOOR DISPOSAL", qty: 1, rate: 80 });
+    expect(line).toEqual({ item: "DISPOSAL", description: "DOUBLE  DOOR  DISPOSAL", qty: 1, rate: 80 });
   });
 
   it("gives every account one Copy description, Copy quantity and Copy price, with no doubles", () => {
@@ -377,7 +377,7 @@ describe("the Disposals window (9/10/2026)", () => {
     expect((screen.getByTestId("disposal-qty") as HTMLInputElement).value).toBe("3");
     expect(screen.getByTestId("disposal-price").textContent).toBe("$75.00");
     const line = await copiedQbLine(screen.getByTestId("disposal-copy-qb"));
-    expect(line).toEqual({ item: "DISPOSAL", description: "DOUBLE DOOR DISPOSAL", qty: 3, rate: 75 });
+    expect(line).toEqual({ item: "DISPOSAL", description: "DOUBLE  DOOR  DISPOSAL", qty: 3, rate: 75 });
     fireEvent.click(screen.getByTestId("disposal-qty-minus"));
     fireEvent.click(screen.getByTestId("disposal-qty-minus"));
     fireEvent.click(screen.getByTestId("disposal-qty-minus")); // stops at 1

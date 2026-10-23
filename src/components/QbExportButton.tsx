@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { buildEstimateIif, QB_ITEMS } from "@/lib/qb/iif";
 import { useCustomerJob } from "@/components/CustomerJobFields";
+import { estimateText } from "@/lib/pricing/data/quickbooks";
 
 /** "QuickBooks file" button for the quote panel: downloads a one-estimate
  *  .iif that QuickBooks Desktop imports via File → Utilities → Import →
@@ -25,7 +26,7 @@ export function QbExportButton({
       rep: "TC",
       po: custPo,
       job: custJob,
-      lines: [{ item: QB_ITEMS[quoteType], desc: description.toUpperCase(), qty: Math.max(1, qty), rate }],
+      lines: [{ item: QB_ITEMS[quoteType], desc: estimateText(description).toUpperCase(), qty: Math.max(1, qty), rate }],
     });
     const blob = new Blob([iif], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
