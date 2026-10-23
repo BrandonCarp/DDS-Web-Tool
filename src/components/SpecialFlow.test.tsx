@@ -1539,11 +1539,17 @@ describe("special order — every door drawn, by its own chart and rules (Brando
     await fillOptions();
     expect(heights()).toEqual(["21″", "18″", "18″", "21″"]);
     expect(glazed()).toEqual(["4-1", "4-2", "4-3", "4-4"]);
-    expect(pickable()).toEqual(["door-section-4-pick", "door-section-3-pick"]);
+    expect(pickable()).toEqual(["door-section-4-pick", "door-section-3-pick", "door-section-2-pick"]);
     expect(label("4-1")).toBe('PLAIN SHORT 19-1/2" X 12"');
     expect(screen.getByTestId("door-panel-4-1-label-short").textContent).toBe("PLAIN SHORT");
     expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS IN THE TOP SECTION,  PLAIN SHORT 19-1\/2" X 12",  NO INSERTS/i);
+    // A special order may always take a second row (Brandon, 23/10/2026)…
     fireEvent.click(screen.getByTestId("door-section-3-pick"));
+    await settle();
+    expect(glazed()).toEqual(["4-1", "4-2", "4-3", "4-4", "3-1", "3-2", "3-3", "3-4"]);
+    expect((await copiedQbLine(screen.getByTestId("copy-qb"))).description).toMatch(/WINDOWS IN THE TOP AND THIRD SECTIONS,  PLAIN SHORT 19-1\/2" X 12",  NO INSERTS/i);
+    // …and the top row taken out leaves the third, a 21" with the 18" gone up.
+    fireEvent.click(screen.getByTestId("door-section-4-pick"));
     await settle();
     expect(heights()).toEqual(["18″", "21″", "18″", "21″"]);
     expect(glazed()).toEqual(["3-1", "3-2", "3-3", "3-4"]);

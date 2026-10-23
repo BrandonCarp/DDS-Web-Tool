@@ -105,6 +105,15 @@ describe("price route — option threading", () => {
     expect((await post(door({ style: "glass" }))).json.description).toContain("windows in the top section");
     expect((await post(door({ style: "glass", windowRow: "3" }))).json.description).toContain("windows in the top section");
   });
+
+  it("threads two rows of windows, numbers only (23/10/2026)", async () => {
+    const one = (await post(door({ style: "glass" }))).json;
+    const two = (await post(door({ style: "glass", windowRows: [4, 3] }))).json;
+    expect(two.description).toContain("windows in the top and third sections");
+    expect(two.unitPrice).toBeGreaterThan(one.unitPrice);
+    expect((await post(door({ style: "glass", windowRows: ["4", "3"] }))).json.description).toContain("windows in the top section");
+    expect((await post(door({ style: "glass", windowRows: "4,3" }))).json.description).toContain("windows in the top section");
+  });
 });
 
 describe("price route — sections", () => {

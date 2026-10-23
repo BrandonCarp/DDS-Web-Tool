@@ -244,6 +244,30 @@ describe("gridded door verbiage", () => {
     expect(d({ width: "9", style: "glass" })).toContain("single strength b grade windows in the top section, no inserts");
   });
 
+  it("takes two rows of windows at any height, never the bottom section, the second priced as the windows again (Brandon, 23/10/2026)", () => {
+    const q = (o: Partial<Parameters<typeof specialDoorQuote>[0]>) => specialDoorQuote({ ...SHEET, width: "9", style: "glass", ...o }).quote!;
+    const solid = specialDoorQuote({ ...SHEET, width: "9", style: "solid" }).quote!.base;
+    const one = q({});
+    const two = q({ windowRows: [4, 3] });
+    expect(two.description).toContain("windows in the top and third sections, no inserts");
+    expect(two.base).toBeCloseTo(one.base + (one.base - solid), 2);
+    expect(two.unitPrice).toBeCloseTo(one.unitPrice + (one.base - solid), 2);
+    // An 8'0" door too, on a special order.
+    const eight = q({ height: "8", windowRows: [5, 3] });
+    expect(eight.description).toContain("windows in the top and third sections");
+    expect(eight.base).toBeGreaterThan(q({ height: "8" }).base);
+    // Never the bottom; never more than two.
+    expect(q({ windowRows: [4, 1] }).description).toContain("windows in the top section, no inserts");
+    expect(q({ windowRows: [4, 3, 2] }).description).toContain("windows in the top and third sections");
+    // Solid takes none.
+    expect(specialDoorQuote({ ...SHEET, width: "9", style: "solid", windowRows: [4, 3] }).quote!.base).toBe(solid);
+    // A stocked door: the book's door and windows, the second row the sheet's windows.
+    const floored = (o: Partial<Parameters<typeof specialDoorQuote>[0]>) => specialDoorQuote({ ...base, width: "9", style: "glass", ...o }).quote!;
+    expect(floored({}).base).toBe(STOCK["9"]["7"].glass);
+    expect(floored({ windowRows: [4, 3] }).base).toBeCloseTo(STOCK["9"]["7"].glass + windows(4, 33), 2);
+    expect(floored({ style: "inserts", windesign: "509", windowRows: [4, 3] }).base).toBeCloseTo(STOCK["9"]["7"].inserts + windows(4, 49), 2);
+  });
+
   it("writes ten-inch widths correctly", () => {
     // "8.10" is 8 feet 10 inches, not 8.1 feet.
     expect(d({ width: "8.10" })).toContain(`8'10" x 7'0"`);

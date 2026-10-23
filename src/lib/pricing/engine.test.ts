@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { SPECIAL_DOORS } from "./data/special-doors";
 import { priceResidential, quoteResidential, quoteResidentialSection, quoteResidentialSectionsOnly, resolveSizeCode, tierForHeight, listModels } from "./engine";
 import { RESIDENTIAL_PRICES } from "./data/residential-prices";
 import { STOCK_PRICES } from "./data/stock-prices";
@@ -490,6 +491,30 @@ describe("the windows' row (Brandon, 22/10/2026): the top section, or the one un
     const under = quoteResidential("4050", dim(9, 0, 7, 0), { ...opts, windowRow: 3 });
     expect(under.unitPrice).toBe(top.unitPrice);
     expect(under.isStock).toBe(top.isStock);
+  });
+  it("takes two rows where the chart has two 21\" sections above the bottom one, the second priced as the special order prices a row of the windows (Brandon, 23/10/2026)", () => {
+    const solid = quoteResidential("4050", dim(9, 0, 7, 0), { ...opts, style: "solid" });
+    const one = quoteResidential("4050", dim(9, 0, 7, 0), opts);
+    const two = quoteResidential("4050", dim(9, 0, 7, 0), { ...opts, windowRows: [4, 3] });
+    expect(two.description).toContain("windows in the top and third sections, no inserts");
+    // CJ's Premium Steel sheet: four short single strength windows at 33 list each, lifted as the special order tab lifts them — not the book's add-on
+    const K = 0.99 / (1 - 0.0265);
+    const sheetRow = (n: number, list: number) => Math.round(Math.round(n * list * 0.776 * K * 100) / 100 / 0.57 * 100) / 100;
+    expect(two.unitPrice).toBeCloseTo(one.unitPrice + sheetRow(4, 33), 2);
+    expect(sheetRow(4, 33)).not.toBeCloseTo(one.unitPrice - solid.unitPrice, 2);
+    const ins = (rows?: number[]) => quoteResidential("4050", dim(9, 0, 7, 0), { ...opts, style: "inserts", windesign: "509", windowRows: rows }).unitPrice;
+    expect(ins([4, 3])).toBeCloseTo(ins() + sheetRow(4, 49), 2);
+    // a Value Steel door: the special order grid's glass over its solid door
+    const grid = SPECIAL_DOORS["T50S/T50L"]["7"]["9"];
+    const t = (rows?: number[]) => quoteResidential("T50S", dim(9, 0, 7, 0), { ...opts, windowRows: rows }).unitPrice;
+    expect(t([4, 3])).toBeCloseTo(t() + ((grid.glass as number) - (grid.solid as number)), 2);
+    expect(quoteResidential("4050", dim(9, 0, 7, 0), { ...opts, windowRows: [3, 2] }).description).toContain("windows in the third and second sections");
+    // An 8'0" door has one 21" section above the bottom one: one row, the first asked for.
+    const eight = quoteResidential("4050", dim(9, 0, 8, 0), { ...opts, windowRows: [5, 4] });
+    expect(eight.description).toContain("windows in the top section");
+    expect(eight.unitPrice).toBe(quoteResidential("4050", dim(9, 0, 8, 0), opts).unitPrice);
+    // Never the bottom section.
+    expect(quoteResidential("4050", dim(9, 0, 7, 0), { ...opts, windowRows: [1] }).description).toContain("windows in the top section");
   });
 });
 

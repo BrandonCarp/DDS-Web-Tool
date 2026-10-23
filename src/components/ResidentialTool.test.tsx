@@ -581,32 +581,42 @@ describe("residential tool — the windows' row on the door drawing (Brandon, 22
     return bodies[bodies.length - 1];
   }
 
-  it("draws a 4050 with windows as Clopay stacks it, the top row glass, and sends no row until the one under it is pressed", async () => {
+  it("draws a 4050 with windows as Clopay stacks it: any row but the bottom to press, two rows where the chart has two 21\" sections above the bottom one (Brandon, 23/10/2026)", async () => {
     await configure("4050");
     size("9", "7");
-    expect(screen.queryByTestId("door-diagram")).toBeNull(); // solid: nothing to place
+    expect(screen.queryByTestId("door-diagram")).toBeNull(); // solid: no window drawing
     glass();
     // 7'0": four sections, 21" each; short windows four across at 9'0".
     expect(sections()).toEqual(["door-section-4", "door-section-3", "door-section-2", "door-section-1"]);
     expect(screen.getByTestId("door-section-4-height").textContent).toBe("21″");
     expect(glazed()).toEqual(["4-1", "4-2", "4-3", "4-4"]);
-    // Only the top two rows can be pressed, as whole rows: no panel buttons, no ALL, no x.
-    expect(pickable()).toEqual(["door-section-4-pick", "door-section-3-pick"]);
+    // Every row but the bottom can be pressed, as whole rows: no panel buttons, no ALL, no x.
+    expect(pickable()).toEqual(["door-section-4-pick", "door-section-3-pick", "door-section-2-pick"]);
     expect(document.querySelector('[data-testid$="-add"]')).toBeNull();
     expect(document.querySelector('[data-testid$="-all"]')).toBeNull();
     expect(document.querySelector('[data-testid$="-remove"]')).toBeNull();
-    expect((await lastBody()).windowRow).toBeUndefined();
+    expect((await lastBody()).windowRows).toBeUndefined();
+    // Three 21" sections above the bottom one: a press adds a second row…
     fireEvent.click(screen.getByTestId("door-section-3-pick"));
+    expect(glazed()).toEqual(["4-1", "4-2", "4-3", "4-4", "3-1", "3-2", "3-3", "3-4"]);
+    expect((await lastBody()).windowRows).toEqual([4, 3]);
+    // …a third moves the first row picked, and a press on a row with windows takes them out.
+    fireEvent.click(screen.getByTestId("door-section-2-pick"));
+    expect(glazed()).toEqual(["3-1", "3-2", "3-3", "3-4", "2-1", "2-2", "2-3", "2-4"]);
+    fireEvent.click(screen.getByTestId("door-section-2-pick"));
     expect(glazed()).toEqual(["3-1", "3-2", "3-3", "3-4"]);
-    expect((await lastBody()).windowRow).toBe(3);
-    // A taller door keeps the row under the top: the fourth of five.
+    expect((await lastBody()).windowRows).toEqual([3]);
+    // An 8'0" door has one 21" section above the bottom one: one row, the row under the top kept.
     size("9", "8");
     expect(sections()).toHaveLength(5);
     expect(glazed()).toEqual(["4-1", "4-2", "4-3", "4-4"]);
-    expect((await lastBody()).windowRow).toBe(4);
+    expect((await lastBody()).windowRows).toEqual([4]);
+    fireEvent.click(screen.getByTestId("door-section-2-pick"));
+    expect(glazed()).toEqual(["2-1", "2-2", "2-3", "2-4"]);
+    expect(["5", "4", "3", "2", "1"].map((r) => screen.getByTestId(`door-section-${r}-height`).textContent)).toEqual(["18″", "18″", "18″", "21″", "21″"]);
     fireEvent.click(screen.getByTestId("door-section-5-pick"));
     expect(glazed()).toEqual(["5-1", "5-2", "5-3", "5-4"]);
-    expect((await lastBody()).windowRow).toBeUndefined();
+    expect((await lastBody()).windowRows).toBeUndefined();
   });
 
   it("draws the long window two across at 9'0\" and the short one four, and a 6'6\" door its 21-18-18-21 — 18-21-18-21 with the windows in the third", async () => {
@@ -652,8 +662,11 @@ describe("residential tool — the windows' row on the door drawing (Brandon, 22
     fireEvent.change(screen.getByTestId("windesign"), { target: { value: "509" } });
     expect(label()).toBe("Colonial 509 inserts");
     expect(screen.queryByTestId("door-panel-4-1-label-short")).toBeNull(); // a design has no size to drop
-    // The labels follow the row.
+    // The labels follow the rows: a second row, then the top one taken out.
     fireEvent.click(screen.getByTestId("door-section-3-pick"));
+    expect(label()).toBe("Colonial 509 inserts");
+    expect(screen.getByTestId("door-panel-3-2-label").textContent).toBe("Colonial 509 inserts");
+    fireEvent.click(screen.getByTestId("door-section-4-pick"));
     expect(label()).toBeNull();
     expect(screen.getByTestId("door-panel-3-2-label").textContent).toBe("Colonial 509 inserts");
     cleanup();

@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   CLASSIC_STACK, CLASSIC_STACK_MODELS, COACHMAN_STACK, ENERGY_STACK, GALLERY_STACK, GALLERY_STACK_MODELS, INDUSTRIAL_STACK,
   classicPanelsWide, classicStack, coachmanWindowsWide, commercialStack, doorStack, galleryPanelsWide, galleryStack, glazedStack,
+  glazedStackRows, maxWindowRows, pickWindowRow, windowRowsFrom, windowRowsPickable,
   rowsPickable, sectionOrdinal, stackFamily, stockGalleryStack, windowsWide,
 } from "./data/door-stacks";
 import { COMM_MATRIX_SIZES } from "./data/commercial-meta";
@@ -195,5 +196,37 @@ describe("door stacks — Clopay's stacking charts", () => {
 
   it("writes a section's number as the commercial line always has", () => {
     expect([1, 2, 3, 4, 5, 6, 10, 11].map(sectionOrdinal)).toEqual(["first", "second", "third", "fourth", "fifth", "sixth", "tenth", "11th"]);
+  });
+});
+
+describe("door stacks — two rows of windows (Brandon, 23/10/2026)", () => {
+  it("takes a row in any section but the bottom", () => {
+    expect(windowRowsPickable([21, 21, 21, 21])).toEqual([4, 3, 2]);
+    expect(windowRowsPickable([21, 18, 18, 18, 21])).toEqual([5, 4, 3, 2]);
+  });
+  it("takes two rows on a stock door only where the chart has two 21\" sections above the bottom one; a special order always", () => {
+    expect(maxWindowRows([21, 21, 21, 21], true)).toBe(2); // 7'0"
+    expect(maxWindowRows([21, 18, 18, 18, 21], true)).toBe(1); // 8'0"
+    expect(maxWindowRows([21, 18, 18, 21, 21], true)).toBe(2); // 8'3"
+    expect(maxWindowRows([18, 18, 18, 18, 18], true)).toBe(1); // 7'6"
+    expect(maxWindowRows([21, 18, 18, 18, 21], false)).toBe(2);
+  });
+  it("gives each row a 21\" where the chart has one to give, the top's first, never the bottom's", () => {
+    expect(glazedStackRows([21, 18, 18, 18, 21], [3])).toEqual([18, 18, 21, 18, 21]);
+    expect(glazedStackRows([21, 18, 18, 21, 21], [4, 3])).toEqual([18, 21, 21, 18, 21]);
+    expect(glazedStackRows([21, 18, 18, 21], [4, 3])).toEqual([21, 18, 18, 21]); // no 21 left to give
+    expect(glazedStackRows([21, 21, 21, 21], [4])).toEqual([21, 21, 21, 21]);
+  });
+  it("keeps the rows picked to the door, and a press adds, moves or takes out a row", () => {
+    expect(windowRowsFrom([0], [21, 21, 21, 21], 2)).toEqual([4]);
+    expect(windowRowsFrom([1, 3], [21, 21, 21, 21], 2)).toEqual([3]); // the bottom is never a row
+    expect(windowRowsFrom([], [21, 21, 21, 21], 2)).toEqual([4]);
+    expect(windowRowsFrom([0, 1], [21, 18, 18, 18, 21], 1)).toEqual([4]); // the latest kept
+    expect(pickWindowRow([0], [21, 21, 21, 21], 2, 3)).toEqual([0, 1]);
+    expect(pickWindowRow([0, 1], [21, 21, 21, 21], 2, 2)).toEqual([1, 2]);
+    expect(pickWindowRow([0, 1], [21, 21, 21, 21], 2, 4)).toEqual([1]);
+    expect(pickWindowRow([1], [21, 21, 21, 21], 2, 3)).toEqual([1]); // never the last row out
+    expect(pickWindowRow([0], [21, 18, 18, 18, 21], 1, 2)).toEqual([3]);
+    expect(pickWindowRow([0], [21, 21, 21, 21], 2, 1)).toEqual([0]); // not the bottom
   });
 });

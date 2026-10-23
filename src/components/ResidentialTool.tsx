@@ -13,9 +13,13 @@ import { COLORS, COLLECTIONS } from "@/lib/pricing/data/catalog-meta";
 import type { ParsedDoor } from "@/lib/pricing/data/parse-request";
 import { dataKey, modelSort } from "@/lib/pricing/model-groups";
 import { windowDesigns, designWidthCode, designClause, plainWindowsFor, shortWindowName, takesInserts, stockLongAllowed } from "@/lib/pricing/data/inserts";
-import { CLASSIC_STACK_MODELS, GALLERY_STACK_MODELS, classicPanelsWide, classicStack, galleryPanelsWide, glazedStack, stockGalleryStack } from "@/lib/pricing/data/door-stacks";
+import { CLASSIC_STACK_MODELS, GALLERY_STACK_MODELS, classicPanelsWide, classicStack, galleryPanelsWide, glazedStackRows, maxWindowRows, pickWindowRow, stockGalleryStack, windowRowsFrom, windowRowsPickable } from "@/lib/pricing/data/door-stacks";
 import { placeKey } from "@/lib/pricing/data/modern-steel";
 import { DoorDiagram } from "./DoorDiagram";
+import { DoorPicture } from "./DoorPicture";
+import DoorPreview from "./DoorPreview";
+import { windowKey } from "@/lib/pricing/data/door-images";
+import type { DoorPictureSpec } from "@/lib/pricing/data/door-layout";
 import { RES_SECTION_WIDTHS, sectionWidthLabel, SECTION_ONLY_MODELS, NO_GLASS_AT_18 } from "@/lib/pricing/data/res-section-meta";
 import { stockedWidths, stockedHeights, specialOrderHeights, sizeParts, sizeCode, stockedColors, solidOnlyHeight, torsionOnlyHeight, SECTION_STOCK_COLORS } from "@/lib/pricing/data/stock-colors";
 import { TRACK_MOUNTS, type TrackMount } from "@/lib/pricing/data/track-lift";
@@ -147,11 +151,13 @@ export function ResidentialTool({
   const [glass, setGlass] = useState("solid");
   const [framing, setFraming] = useState("plain");
   const [windesign, setWindesign] = useState("");
-  // The windows go in the top section unless the row under it is pressed on
-  // the door drawing (Brandon, 22/10/2026: the Premium and Value Steel doors
-  // take a whole row in the top section or the one under it, nothing else).
-  // Kept as "under the top" so a height change keeps the choice.
-  const [winUnderTop, setWinUnderTop] = useState(false);
+  // The rows of windows pressed on the door (Brandon, 22/10/2026 and
+  // 23/10/2026): the top section unless others are — any but the bottom on a
+  // Premium or Value Steel door, two rows at most. Counted down from the top
+  // (0 the top section) so a height change keeps the choice.
+  const [winRows, setWinRows] = useState<number[]>([0]);
+  // The plain window shown before Inserts was picked: the glass door stays up until a design is (Brandon, 23/10/2026).
+  const [lastPlain, setLastPlain] = useState("");
   // Vinyl molding for this door: a Yes/No in the quote card, No until
   // pressed — nothing asked (Brandon, 21/10/2026; it was a question on Get
   // price from 25/9/2026).
@@ -261,28 +267,51 @@ export function ResidentialTool({
   // The door drawn for its windows (22/10/2026): Clopay's stacking chart
   // for the height and its windows across for the width — long windows
   // where the window or the insert is a long one. On a Premium or Value
-  // Steel door the top two rows can be pressed; the windows fill the row
-  // pressed, the top one to start, and that row is a 21" section — the
-  // stock glass sections come 21" only — with the chart's 18" moved to the
-  // top where they trade. A Gallery door's windows stay in the top section.
+  // Steel door any row but the bottom can be pressed, up to two rows where
+  // the chart has two 21" sections above the bottom one (23/10/2026); the
+  // windows fill the rows pressed, the top one to start, and each is a 21"
+  // section — the stock glass sections come 21" only — with the chart's 18"
+  // moved up where they trade. A Gallery door's windows stay in the top section.
   const drawn = !sections && style !== "solid" && Number.isFinite(hf);
   const isClassic = drawn && CLASSIC_STACK_MODELS.has(model);
   // The stock 8'0" Gallery is a five-section door (stockGalleryStack).
   const chartStack = isClassic ? classicStack(hf, parseInt(heightIn, 10) || 0)
     : drawn && GALLERY_STACK_MODELS.has(model) ? stockGalleryStack(hf, parseInt(heightIn, 10) || 0) : null;
   // The Gallery's windows are the long window, the arch or a long insert: two across at 8' and 9', four at 16'.
-  const resLong = isGallery || (style === "inserts" ? wDesigns.find((d) => d.id === activeDesign)?.cat === "long" : /\bLONG\b/i.test(activeFraming));
+  // Inserts with no design picked yet show the glass door they replace.
+  const shownPlain = style === "inserts" && !activeDesign ? lastPlain : activeFraming;
+  const resLong = isGallery || (style === "inserts" && activeDesign ? wDesigns.find((d) => d.id === activeDesign)?.cat === "long" : /\bLONG\b/i.test(shownPlain));
   const resPanels = chartStack && Number.isFinite(wf)
     ? (isClassic ? classicPanelsWide : galleryPanelsWide)(wf, parseInt(widthIn, 10) || 0, resLong) : null;
   const resTop = chartStack?.length ?? 0;
-  const windowRow = isClassic && chartStack && winUnderTop ? resTop - 1 : undefined;
-  const resStack = chartStack ? (isClassic ? glazedStack(chartStack, windowRow ?? resTop) : chartStack) : null;
+  const rowMax = isClassic && chartStack ? maxWindowRows(chartStack, true) : 1;
+  const windowRows = isClassic && chartStack ? windowRowsFrom(winRows, chartStack, rowMax) : resTop ? [resTop] : [];
+  // The rows on the line and the price: none said where the windows are in the top section alone.
+  const rowsSentKey = isClassic && !(windowRows.length === 1 && windowRows[0] === resTop) ? windowRows.join(",") : "";
+  const resStack = chartStack ? (isClassic ? glazedStackRows(chartStack, windowRows) : chartStack) : null;
   const resWindows = resStack && resPanels
-    ? new Set(Array.from({ length: resPanels }, (_, i) => placeKey({ section: windowRow ?? resTop, panel: i + 1 }))) : null;
+    ? new Set(windowRows.flatMap((section) => Array.from({ length: resPanels }, (_, i) => placeKey({ section, panel: i + 1 })))) : null;
+  const resPickRows = new Set(isClassic && chartStack ? windowRowsPickable(chartStack) : []);
+  const pickRow = (section: number) => { if (chartStack) setWinRows(pickWindowRow(winRows, chartStack, rowMax, section)); };
   // What the windows are, on each one: the plain window by its order name,
   // or the insert design as the line words it.
   const resWindowLabel = style === "inserts" ? (designClause(activeDesign) ?? "Inserts")
     : activeFraming !== "plain" ? activeFraming : "Plain glass";
+  const resPictureWindow = style === "inserts" && !activeDesign
+    ? windowKey("glass", undefined, lastPlain && lastPlain !== "plain" ? lastPlain : undefined, model)
+    : windowKey(style, activeDesign, activeFraming === "insert" ? undefined : activeFraming, model);
+  // The door as it will look (Brandon, 23/10/2026): the drawing's door with
+  // its windows in their row, for the drawing's place and the quote card.
+  const resInches = Number.isFinite(wf) ? wf * 12 + (parseInt(widthIn, 10) || 0) : 0;
+  const resPictureStack = resStack ?? (sections || !Number.isFinite(hf) ? null
+    : CLASSIC_STACK_MODELS.has(model) ? classicStack(hf, parseInt(heightIn, 10) || 0)
+    : GALLERY_STACK_MODELS.has(model) ? stockGalleryStack(hf, parseInt(heightIn, 10) || 0) : null);
+  const resPicture: DoorPictureSpec | null = resPictureStack && resInches > 0 ? {
+    model, colour: color, widthIn: resInches, stack: resPictureStack,
+    window: resPictureWindow,
+    windowRows: windowRows.length ? windowRows : [resPictureStack.length],
+  } : null;
+  const resPictureLabel = `${widthFt}'${parseInt(widthIn, 10) || 0}" x ${heightFt}'${parseInt(heightIn, 10) || 0}" ${model} ${color}`;
 
   // The quote is only shown while it matches the CURRENT configuration; any
   // config change makes it stale, so the user must click "Get price" again.
@@ -320,7 +349,7 @@ export function ResidentialTool({
 
 
 
-  const cfgSig = JSON.stringify([model, widthFt, widthIn, heightFt, heightIn, style, color, track, trackMountUsed, spring, lock, activeDesign, activeFraming, windowRow, assemblyUsed, secKind, secHeight, activeSecWidth, secGlass, secLock, upgradedHardware, homeowner]);
+  const cfgSig = JSON.stringify([model, widthFt, widthIn, heightFt, heightIn, style, color, track, trackMountUsed, spring, lock, activeDesign, activeFraming, rowsSentKey, assemblyUsed, secKind, secHeight, activeSecWidth, secGlass, secLock, upgradedHardware, homeowner]);
   const result = resultRaw && resultSig === cfgSig ? resultRaw : null;
   const liveError = errorRaw && resultSig === cfgSig ? errorRaw : null;
 
@@ -397,7 +426,7 @@ export function ResidentialTool({
           style, color, track, spring, lock,
           windesign: activeDesign || undefined,
           plainWindow: style === "glass" && activeFraming !== "plain" ? activeFraming : undefined,
-          windowRow,
+          windowRows: rowsSentKey ? rowsSentKey.split(",").map(Number) : undefined,
           trackMount: mountAsked ? trackMountUsed : undefined,
             // Sections carry no hinges or rollers, so the flag never goes out
             // for them even if it was left on from a complete-door quote.
@@ -430,7 +459,7 @@ export function ResidentialTool({
       setResult(null);
       setResultSig(cfgSig);
     }
-  }, [model, widthFt, widthIn, heightFt, heightIn, style, color, track, trackMountUsed, mountAsked, spring, lock, activeDesign, wDesigns, windowRow, qty, cfgSig, sizeComplete, sections, secKind, secHeight, activeSecWidth, secGlass, secLock, custName, custPo, custJob]);
+  }, [model, widthFt, widthIn, heightFt, heightIn, style, color, track, trackMountUsed, mountAsked, spring, lock, activeDesign, wDesigns, rowsSentKey, qty, cfgSig, sizeComplete, sections, secKind, secHeight, activeSecWidth, secGlass, secLock, custName, custPo, custJob]);
 
   function onSeries(c: string) {
     setColl(c);
@@ -452,7 +481,7 @@ export function ResidentialTool({
     setHeightFt(""); setHeightIn("0");
     setSecKind("bt"); setSecHeight("18"); setSecWidth(""); setSecGlass("solid"); setSecLock("none");
     setColor("");
-    setGlass("solid"); setFraming("plain"); setWindesign(""); setWinUnderTop(false); setVinylOn(false); setOpBracket("none"); setStruts(0);
+    setGlass("solid"); setFraming("plain"); setWindesign(""); setWinRows([0]); setVinylOn(false); setOpBracket("none"); setStruts(0);
     setSpring("extension"); setTrack("r12"); setTrackMount("bracket"); setLock("none");
     setQty(1);
     setResult(null); setError(null); setSaved(false);
@@ -486,7 +515,7 @@ export function ResidentialTool({
   function clearAll() {
     setWidthFt(""); setWidthIn("0"); setHeightFt(""); setHeightIn("0");
     setSecKind("bt"); setSecHeight("18"); setSecWidth(""); setSecGlass("solid"); setSecLock("none");
-    setGlass("solid"); setFraming("plain"); setWindesign(""); setWinUnderTop(false); setVinylOn(false); setOpBracket("none"); setStruts(0);
+    setGlass("solid"); setFraming("plain"); setWindesign(""); setWinRows([0]); setVinylOn(false); setOpBracket("none"); setStruts(0);
     setSpring("extension"); setTrack("r12"); setTrackMount("bracket"); setLock("none"); setQty(1);
   }
 
@@ -702,7 +731,7 @@ export function ResidentialTool({
                 <div className="grow">
                   <label>Framing</label>
                   <div className="ctl selectwrap">
-                    <select data-testid="framing" value={activeFraming} onChange={(e) => setFraming(e.target.value)} disabled={glass === "solid" || !optionsOpen}>
+                    <select data-testid="framing" value={activeFraming} onChange={(e) => { if (activeFraming !== "insert") setLastPlain(activeFraming); setFraming(e.target.value); }} disabled={glass === "solid" || !optionsOpen}>
                       {framingOpts.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
                   </div>
@@ -846,15 +875,21 @@ export function ResidentialTool({
                 )}
               </div>
 
-              {/* The door with its windows, the row they are in pressable:
-                  the top section or the one under it (Brandon, 22/10/2026). */}
-              {resStack && resPanels && resWindows && (
+              {/* The door with its windows, the rows they are in pressable:
+                  any row but the bottom, up to two (Brandon, 22/10/2026 and
+                  23/10/2026); a solid door as it will look (23/10/2026). */}
+              {resStack && resPanels && resWindows ? (
                 <div className="ggroup gwide">
                   <div className="ghdr">Windows</div>
-                  <DoorDiagram stack={resStack} panels={resPanels} widthIn={wf * 12 + (parseInt(widthIn, 10) || 0)}
-                    windows={resWindows} pickRows={new Set(isClassic ? [resTop, resTop - 1] : [])} windowLabel={resWindowLabel} windowLabelShort={shortWindowName(resWindowLabel)}
-                    onPickRow={(section) => setWinUnderTop(section === resTop - 1)} />
+                  <DoorPicture spec={resPicture} alt={resPictureLabel} pickRows={resPickRows} onPickRow={pickRow}
+                    fallback={
+                      <DoorDiagram stack={resStack} panels={resPanels} widthIn={wf * 12 + (parseInt(widthIn, 10) || 0)}
+                        windows={resWindows} pickRows={resPickRows} windowLabel={resWindowLabel} windowLabelShort={shortWindowName(resWindowLabel)}
+                        onPickRow={pickRow} />
+                    } />
                 </div>
+              ) : !sections && optionsOpen && (
+                <DoorPicture spec={resPicture} alt={resPictureLabel} group="Door" fallback={null} />
               )}
             </div>
 
@@ -891,6 +926,11 @@ export function ResidentialTool({
                 <span className="tl">Door price (each)</span>
                 <span className="tv" data-testid="total">{fmt(unit)}</span>
               </div>
+              {/* The door as configured, to download for the customer; nothing
+                  where the door, colour or windows are not captured. */}
+              {!sections && (
+                <DoorPreview spec={resPicture} label={resPictureLabel} filename={`${model}-${widthFt}-${parseInt(widthIn, 10) || 0}x${heightFt}-${parseInt(heightIn, 10) || 0}-${color}`} />
+              )}
               {!sections && (
                 <div className="qtyrow vinylrow" data-testid="vinyl-row">
                   <label>Vinyl molding</label>

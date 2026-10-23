@@ -9,7 +9,7 @@ import { highLiftPrice, mountPhrase } from "./data/track-lift";
 import { ADDONS, ULTRAGRAIN, GRADE_RES, COLLECTIONS_RES } from "./data/addons";
 import { dataKey, expandModels, RESIDENTIAL_HIDDEN } from "./model-groups";
 import { DECORATIVE, windowDesigns, designClause, plainWindowsFor, stockLongAllowed } from "./data/inserts";
-import { CLASSIC_STACK_MODELS, classicStack, sectionOrdinal } from "./data/door-stacks";
+import { CLASSIC_STACK_MODELS, classicStack, maxWindowRows, sectionOrdinal } from "./data/door-stacks";
 import { specialDoorQuote } from "./data/special-door-pricing";
 import { specialOrderHeights } from "./data/stock-colors";
 import { RES_SECTIONS } from "./data/res-sections";
@@ -153,18 +153,26 @@ const STYLE_NAME: Record<WindowStyle, string> = {
 };
 /**
  * Which section the windows are in, as the line says it: "top" unless a row
- * under the top was picked on the door drawing (Brandon, 22/10/2026 — the
- * Premium and Value Steel doors take their windows in the top section or the
- * one under it: "windows in the third section" on a 7'0" door, "in the
- * fourth section" on an 8'0"). Rows are numbered from the floor up, as
- * Clopay numbers them; a row the door does not have, or its top row, reads
- * "top", so the line never names a section that is not there.
+ * under the top was picked on the door drawing (Brandon, 22/10/2026 — "windows
+ * in the third section" on a 7'0" door, "in the fourth section" on an 8'0"),
+ * and both where there are two rows (23/10/2026): "in the top and third
+ * sections". Rows are numbered from the floor up, as Clopay numbers them; a
+ * row the door does not have reads "top", so the line never names a section
+ * that is not there.
  */
-function windowSectionText(model: string, dim: Dimensions, row?: number): string {
-  if (!row || !Number.isInteger(row) || !CLASSIC_STACK_MODELS.has(model)) return "top";
+export function windowRowsOf(model: string, dim: Dimensions, opts: { windowRow?: number; windowRows?: number[] }, stock: boolean): number[] {
+  const stack = CLASSIC_STACK_MODELS.has(model) ? classicStack(dim.heightFt, dim.heightIn || 0) : null;
+  if (!stack) return [];
+  const asked = opts.windowRows?.length ? opts.windowRows : opts.windowRow ? [opts.windowRow] : [];
+  const rows = [...new Set(asked.filter((r) => Number.isInteger(r) && r >= 2 && r <= stack.length))].sort((a, b) => b - a);
+  return rows.slice(0, maxWindowRows(stack, stock));
+}
+
+function windowSectionText(dim: Dimensions, rows: number[]): string {
   const stack = classicStack(dim.heightFt, dim.heightIn || 0);
-  if (!stack || row < 1 || row >= stack.length) return "top";
-  return sectionOrdinal(row);
+  if (!rows.length || !stack) return "top section";
+  const name = (r: number) => (r === stack.length ? "top" : sectionOrdinal(r));
+  return rows.length > 1 ? `${rows.map(name).join(" and ")} sections` : `${name(rows[0])} section`;
 }
 
 /**
@@ -180,6 +188,36 @@ const SPECIAL_GROUP_OF: Record<string, string> = {
   "4050": "4050/4051/4053/4132", "4051": "4050/4051/4053/4132", "4053": "4050/4051/4053/4132",
   "9130": "9130/9131/9132/9133", "9133": "9130/9131/9132/9133",
 };
+/** …and the group each stock door that takes two rows of windows prices its second row off. */
+const WINDOW_ROW_GROUP_OF: Record<string, string> = { ...SPECIAL_GROUP_OF, T50S: "T50S/T50L", T52S: "T52S/T52L" };
+
+/** The windows the line names, as the special order tab takes them: the design valid at the width, the plain window the model has, long or short. */
+function specialWindows(model: string, widthCode: string, opts: QuoteOptions) {
+  const validDesigns = windowDesigns(model, opts.style, widthCode).map((d) => d.id);
+  const windesign = opts.style === "inserts" && opts.windesign && validDesigns.includes(opts.windesign) ? opts.windesign : undefined;
+  const plainWindow = opts.style === "glass" && opts.plainWindow && plainWindowsFor(model).includes(opts.plainWindow) ? opts.plainWindow : undefined;
+  const long = plainWindow ? /\bLONG\b/i.test(plainWindow) : !!windesign && DECORATIVE.some((d) => d.id === windesign && d.cat === "long");
+  return { windesign, plainWindow, long };
+}
+
+/**
+ * A second row of windows on a stock door (Brandon, 23/10/2026): a row of
+ * the same windows as the special order prices it — the sheet's windows, or
+ * the grid's glass over its solid door — whatever the book charges for the
+ * first. Null where the special order cannot price it.
+ */
+function secondRowPrice(model: string, dim: Dimensions, opts: QuoteOptions): number | null {
+  const group = WINDOW_ROW_GROUP_OF[model];
+  if (!group || opts.style === "solid") return null;
+  const width = sizeCode(dim.widthFt, dim.widthIn || 0);
+  const { windesign, plainWindow, long } = specialWindows(model, width, opts);
+  const r = specialDoorQuote({
+    model: group, variant: model, width, height: sizeCode(dim.heightFt, dim.heightIn || 0), color: opts.color,
+    style: opts.style, glassType: "ssb", panelStyle: long ? "long" : "short", windesign, plainWindow,
+    track: "r12", spring: "extension", lock: "none",
+  });
+  return r.quote?.windowRowPrice ?? null;
+}
 
 /**
  * A Premium Steel stock door past the floor's heights — 9'3" to 10'0"
@@ -197,15 +235,12 @@ function specialOrderPast(model: string, dim: Dimensions, opts: QuoteOptions): Q
   const wf = Math.trunc(dim.widthFt), wi = Math.trunc(dim.widthIn || 0);
   const widthCode = wi === 0 ? String(wf) : `${wf}.${wi}`;
   const size: SizeCode = { code: `${widthCode}x${height}`, widthCode, tier: "9", wf, wi, hf: Math.trunc(dim.heightFt), hi: Math.trunc(dim.heightIn || 0) };
-  const validDesigns = windowDesigns(model, opts.style, size.widthCode).map((d) => d.id);
-  const windesign = opts.style === "inserts" && opts.windesign && validDesigns.includes(opts.windesign) ? opts.windesign : undefined;
-  const plainWindow = opts.style === "glass" && opts.plainWindow && plainWindowsFor(model).includes(opts.plainWindow) ? opts.plainWindow : undefined;
-  const long = plainWindow ? /\bLONG\b/i.test(plainWindow) : !!windesign && DECORATIVE.some((d) => d.id === windesign && d.cat === "long");
+  const { windesign, plainWindow, long } = specialWindows(model, size.widthCode, opts);
   const r = specialDoorQuote({
     model: group, variant: model, width: sizeCode(dim.widthFt, dim.widthIn || 0), height, color: opts.color,
     style: opts.style, glassType: opts.style === "solid" ? undefined : "ssb", panelStyle: opts.style === "solid" ? undefined : long ? "long" : "short",
     windesign, plainWindow, track: opts.track, spring: opts.spring, lock: opts.lock,
-    trackMount: opts.trackMount, windowRow: opts.windowRow,
+    trackMount: opts.trackMount, windowRow: opts.windowRow, windowRows: opts.windowRows,
   });
   if (!r.quote) return null;
   const lines: QuoteLine[] = [{ name: "Special order door", value: r.quote.unitPrice }];
@@ -307,6 +342,14 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
 
   const lines = [];
   lines.push({ name: `Base door (${STYLE_NAME[opts.style]})`, value: triple[opts.style] });
+  // A second full row of windows (Brandon, 23/10/2026): priced as the special
+  // order prices a row of them; where it cannot be, the door has the one row.
+  let rowsOn = opts.style === "solid" ? [] : windowRowsOf(model, dim, opts, true);
+  if (rowsOn.length > 1) {
+    const row = secondRowPrice(model, dim, opts);
+    if (row != null) lines.push({ name: "Second row of windows", value: row, kind: "add" as const });
+    else rowsOn = rowsOn.slice(0, 1);
+  }
 
   // Premium-colour upcharge: single under 12' wide, double at 12' and over.
   // Driven by the model's PREMIUM_COLORS set rather than the literal string
@@ -410,7 +453,7 @@ export function quoteResidential(model: string, dim: Dimensions, opts: QuoteOpti
     const plain = opts.style === "glass" && opts.plainWindow && plainWindowsFor(model).includes(opts.plainWindow)
       ? ", " + opts.plainWindow.toLowerCase()
       : "";
-    winTxt = `${grade ? grade + " windows" : "windows"} in the ${windowSectionText(model, dim, opts.windowRow)} section${plain}${dn ? ", " + dn : ", no inserts"}`;
+    winTxt = `${grade ? grade + " windows" : "windows"} in the ${windowSectionText(dim, rowsOn)}${plain}${dn ? ", " + dn : ", no inserts"}`;
   }
   // Torsion springs say where they sit (Brandon, 21/10/2026): front, or rear
   // on a reverse low headroom track; galvanized the same with the word first.

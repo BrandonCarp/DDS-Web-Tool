@@ -81,6 +81,14 @@ export interface QuoteOptions {
    * Premium and Value Steel doors offer the top two (Brandon, 22/10/2026).
    */
   windowRow?: number;
+  /**
+   * The rows of windows, from the floor up, where there are two (Brandon,
+   * 23/10/2026): up to two full rows, never in the bottom section — on a
+   * stock door only where the chart has two 21" sections above the bottom
+   * one. Takes the place of `windowRow`; the second row is priced as the
+   * special order prices a row of the same windows.
+   */
+  windowRows?: number[];
 }
 
 /**

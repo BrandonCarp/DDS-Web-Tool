@@ -241,6 +241,72 @@ export function glazedStack(stack: readonly number[], row: number): readonly num
   return out;
 }
 
+/**
+ * The stack with each of the windows' rows a 21" section where the chart has
+ * one to give (Brandon, 22/10/2026: the stock glass sections come 21" only;
+ * 23/10/2026: up to two rows): an 18" row trades places with a 21" that has
+ * no windows — the top one first — and the bottom section keeps its own.
+ * Rows are numbered from the floor up; the stack runs top to bottom.
+ */
+export function glazedStackRows(stack: readonly number[], rows: readonly number[]): readonly number[] {
+  const n = stack.length;
+  const glazed = new Set(rows.map((r) => n - Math.trunc(r)).filter((i) => i >= 0 && i < n - 1));
+  const out = [...stack];
+  for (const i of [...glazed].sort((a, b) => a - b)) {
+    if (out[i] !== 18) continue;
+    const j = out.findIndex((h, k) => h === 21 && k < n - 1 && !glazed.has(k));
+    if (j < 0) continue;
+    out[i] = 21; out[j] = 18;
+  }
+  return out;
+}
+
+/**
+ * How many full rows of windows a Premium or Value Steel door takes
+ * (Brandon, 23/10/2026): never in the bottom section; two on a special
+ * order, and on a stock door only where the chart has two 21" sections
+ * above the bottom one (the stock glass sections come 21" only); one
+ * otherwise.
+ */
+export function maxWindowRows(stack: readonly number[], stock: boolean): number {
+  if (stack.length < 3) return 1;
+  if (!stock) return 2;
+  return stack.slice(0, -1).filter((h) => h === 21).length >= 2 ? 2 : 1;
+}
+
+/** The sections a row of windows can go in: any but the bottom, top first. */
+export function windowRowsPickable(stack: readonly number[]): number[] {
+  return Array.from({ length: Math.max(0, stack.length - 1) }, (_, i) => stack.length - i);
+}
+
+/**
+ * The rows picked, as rows from the floor up, top first: `offsets` count
+ * down from the top (0 the top section), so a pick survives a change of
+ * height. Kept to the door: none in the bottom section, the top where none
+ * is left, and no more than it takes — the latest picks kept.
+ */
+export function windowRowsFrom(offsets: readonly number[], stack: readonly number[], max: number): number[] {
+  const n = stack.length;
+  const valid = [...new Set(offsets.map(Math.trunc))].filter((o) => o >= 0 && o <= n - 2);
+  const kept = (valid.length ? valid : [0]).slice(-Math.max(1, max));
+  return kept.map((o) => n - o).sort((a, b) => b - a);
+}
+
+/**
+ * A press on a row: on a row with windows, takes them out (never the last
+ * row); on one without, puts them there — beside the row there already is
+ * where the door takes two, in place of the first picked where it is full.
+ * Returns the new offsets from the top.
+ */
+export function pickWindowRow(offsets: readonly number[], stack: readonly number[], max: number, section: number): number[] {
+  const n = stack.length;
+  const cur = windowRowsFrom(offsets, stack, max).map((r) => n - r);
+  const o = n - Math.trunc(section);
+  if (o < 0 || o > n - 2) return cur;
+  if (cur.includes(o)) return cur.length > 1 ? cur.filter((x) => x !== o) : cur;
+  return [...cur, o].slice(-Math.max(1, max));
+}
+
 /** The Gallery Steel 3 layer doors' sections, top to bottom; null off the chart. */
 export function galleryStack(heightFt: number, heightIn = 0): readonly number[] | null {
   return GALLERY_STACK[heightFt * 12 + heightIn] ?? null;
@@ -310,7 +376,7 @@ export function windowsWide(model: string, widthFt: number, widthIn: number, lon
   }
 }
 
-/** True where the windows may go in the top section or the one under it (the Premium and Value Steel doors); elsewhere the top section alone. */
+/** True where the windows may go in any section but the bottom, up to two rows (the Premium and Value Steel doors); elsewhere the top section alone. */
 export function rowsPickable(model: string): boolean {
   return stackFamily(model) === "classic";
 }

@@ -1838,3 +1838,16 @@ html, body { margin: 0; padding: 0; }
 /* A little room over the drawing's header. */
 .tool-shell .ddiag .plook { margin-top: 8px; }
 .tool-shell .ggroup.gwide { grid-column: 1 / -1; }
+/* The door picture in the drawing's place (23/10/2026): the real door, its
+   sections pressable over it as the drawing's are, each height at its right. */
+.tool-shell .ddiag.dpic { padding: 12px 52px 12px 64px; }
+.tool-shell .ddiag.dpic.rowpick, .tool-shell .ddiag.dpic.static { padding-left: 16px; }
+.tool-shell .dpic-door { position: relative; width: 100%; margin: 0 auto; border-radius: 4px; box-shadow: 0 6px 18px rgba(0,0,0,.28); }
+.tool-shell .dpic-door img { display: block; width: 100%; height: 100%; border-radius: 4px; }
+.tool-shell .dpic-hits { position: absolute; inset: 0; display: flex; flex-direction: column; }
+.tool-shell .dpic .dsec.pickable:not(.picked):hover .drow, .tool-shell .dpic .drow:focus-visible { border-color: var(--accent); background: rgba(255,255,255,.14); }
+/* Window by window on the picture (the Modern Steel doors): each panel a press, + where the pointer is, x on a window. */
+.tool-shell .dpic-row { display: flex; flex: 1 1 0; min-width: 0; }
+.tool-shell .dpic .dpanel + .dpanel { border-left: 0; box-shadow: none; }
+.tool-shell .dpic .dpanel:not(.on):hover { background: rgba(255,255,255,.16); }
+.tool-shell .dpic .dhint { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.7); }

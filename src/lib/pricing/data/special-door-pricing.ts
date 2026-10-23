@@ -35,7 +35,7 @@ import { dataKey, RESIDENTIAL_HIDDEN } from "../model-groups";
 import { STOCK_PRICES } from "./stock-prices";
 import { colorInStock } from "./stock-colors";
 import { designClause, designName, specialPlainWindowsFor, specialWindowDesigns } from "./inserts";
-import { doorStack, rowsPickable, sectionOrdinal } from "./door-stacks";
+import { doorStack, maxWindowRows, rowsPickable, sectionOrdinal } from "./door-stacks";
 import { describeModernWindows, modernFraming, modernGlassLabel, modernPanelsWide, modernPickerModel, modernStack, modernWindowCost, type WindowPlace } from "./modern-steel";
 import { designBuilt, designTakesWindows, hasDesigns, modelWithDesign, secondColorName, secondColorPricedAs } from "./door-designs";
 import { SPECIAL_DOORS } from "./special-doors";
@@ -85,6 +85,22 @@ export interface SpecialDoorInput {
    * it was pressed on the drawing (Brandon, 22/10/2026).
    */
   windowRow?: number;
+  /** Two rows of windows (Brandon, 23/10/2026): the rows from the floor up; a special order may always take two, never in the bottom section. */
+  windowRows?: number[];
+}
+
+/** The rows asked for, from the floor up, top first: none in the bottom section, two at most. */
+function windowRowsAsked(stack: readonly number[] | null, input: { windowRow?: number; windowRows?: number[] }): number[] {
+  if (!stack) return [];
+  const asked = input.windowRows?.length ? input.windowRows : input.windowRow ? [input.windowRow] : [];
+  return [...new Set(asked.filter((r) => Number.isInteger(r) && r >= 2 && r <= stack.length))].sort((a, b) => b - a).slice(0, maxWindowRows(stack, false));
+}
+
+/** "top section", "third section", "top and third sections". */
+function windowSectionWords(stack: readonly number[] | null, rows: number[]): string {
+  if (!stack || !rows.length) return "top section";
+  const name = (r: number) => (r === stack.length ? "top" : sectionOrdinal(r));
+  return rows.length > 1 ? `${rows.map(name).join(" and ")} sections` : `${name(rows[0])} section`;
 }
 
 export interface SpecialDoorQuote {
@@ -96,6 +112,12 @@ export interface SpecialDoorQuote {
   unitPrice: number;
   /** QuickBooks line text, worded exactly as a residential door is. */
   description: string;
+  /**
+   * A row of the door's windows as the special order prices it — its sheet's
+   * windows, or its grid's glass over its solid door — on a stocked door too:
+   * what a second row adds (Brandon, 23/10/2026). Absent on a solid door.
+   */
+  windowRowPrice?: number;
 }
 
 const TRACK_TEXT: Record<string, string> = {
@@ -613,6 +635,8 @@ export function specialDoorQuote(
   // that go on them, at the long band; short at the short band. The grid's own
   // glass columns are the short figures, so every such glass door re-prices here.
   const sheetPanel: PanelStyle = input.panelStyle ?? "short";
+  // A row of these windows as the special order prices it, stocked door or not.
+  let rowAdd: number | null = null;
   const modernPlaces = modern && style !== "solid" ? input.windowsAt ?? [] : [];
   const modernFramed = modern && style !== "solid" ? modernFraming(input.model, member, input.glassType, input.modernFraming) : null;
   if (modern && style !== "solid") {
@@ -642,16 +666,17 @@ export function specialDoorQuote(
     glassName = input.glassType && input.glassType !== "dsb" ? glassLabel(input.glassType) : null;
   } else if (sheet && style !== "solid" && typeof triple.solid === "number") {
     const glassId = input.glassType || baseGlassFor(input.model, series);
+    // The windows of the door priced — the whole-foot door's on an odd width —
+    // and the asked width's own where that door has none of this series.
+    const glassWidth = glassAdderSell(input.model, sheetPanel, priceWidth, glassId, false, series) == null ? input.width : priceWidth;
+    const add = glassAdderSell(input.model, sheetPanel, glassWidth, glassId, style === "inserts", series);
+    rowAdd = add;
     if (stocked && typeof stocked[style] === "number") {
       // The stocked door with the stock book's own windows — the grade its
       // GLASS and INSERTS columns were built from, short, in the top section —
       // is the stock book's figure, as the residential tab prices it.
       base = stocked[style] as number;
     } else {
-      // The windows of the door priced — the whole-foot door's on an odd width —
-      // and the asked width's own where that door has none of this series.
-      const glassWidth = glassAdderSell(input.model, sheetPanel, priceWidth, glassId, false, series) == null ? input.width : priceWidth;
-      const add = glassAdderSell(input.model, sheetPanel, glassWidth, glassId, style === "inserts", series);
       if (add == null) {
         return { reason: glassAdderSell(input.model, sheetPanel, glassWidth, glassId, false, series) == null
           ? `That glass is not priced on the ${sheetPanel} ${series} windows at this width — pick another glass.`
@@ -670,7 +695,25 @@ export function specialDoorQuote(
     if (add != null && typeof triple.solid === "number") {
       base = triple.solid + add;
       glassName = glassLabel(input.glassType);
+      rowAdd = add;
     }
+  }
+  // The grid's own glass: its GLASS or INSERTS column over its solid door — the grid's, not the stock book's.
+  if (rowAdd == null && style !== "solid" && !modern && !sectioned) {
+    const grid = tier[priceWidth];
+    const g = grid?.[style];
+    if (typeof g === "number" && typeof grid?.solid === "number" && g > grid.solid) rowAdd = Math.round((g - grid.solid) * 100) / 100;
+  }
+
+  // The windows' rows (Brandon, 22/10/2026 and 23/10/2026): the top section
+  // unless others were pressed on a Premium or Value Steel door's drawing;
+  // up to two, never the bottom. A second row is a row of the windows as the
+  // special order prices them, a stocked door's too.
+  const [shf, shi] = input.height.split(".").map(Number);
+  const rowStack = rowsPickable(member) ? doorStack(member, shf, shi ?? 0) : null;
+  const rows = windowRowsAsked(rowStack, input);
+  if (style !== "solid" && rows.length > 1 && rowAdd != null && rowAdd > 0) {
+    base = Math.round((base + rowAdd) * 100) / 100;
   }
 
   // The same adders a stock door gets, read from the same place. ADDONS keys
@@ -810,18 +853,15 @@ export function specialDoorQuote(
   // Which section the windows are in: "top" unless the row under the top was
   // picked on a Premium or Value Steel door's drawing (Brandon, 22/10/2026),
   // which the line names by Clopay's floor-up number.
-  const [shf, shi] = input.height.split(".").map(Number);
-  const rowStack = rowsPickable(member) ? doorStack(member, shf, shi ?? 0) : null;
-  const row = input.windowRow;
-  const sectionText = rowStack && row && Number.isInteger(row) && row >= 1 && row < rowStack.length ? sectionOrdinal(row) : "top";
+  const sectionText = windowSectionWords(rowStack, rows);
   const winText =
     style === "solid"
       ? "solid no windows"
       : modernWin
       ? modernWin
       : glassDesign
-      ? `${glassName ? glassName.toLowerCase() : grade || "single strength b grade"} windows in the ${sectionText} section${glassDesign}`
-      : `${glassName ? glassName.toLowerCase() : grade || "single strength b grade"} windows in the ${sectionText} section, ${plain}` +
+      ? `${glassName ? glassName.toLowerCase() : grade || "single strength b grade"} windows in the ${sectionText}${glassDesign}`
+      : `${glassName ? glassName.toLowerCase() : grade || "single strength b grade"} windows in the ${sectionText}, ${plain}` +
         (style === "inserts" && designId ? designClause(designId) : "no inserts");
   // Gallery, Bridgeport and Coachman doors carry the collection, as the stock tab
   // writes the Gallery ("CLOPAY GALLERY COLLECTION, MODEL GD1SU, ..." — Brandon, 8/10/2026).
@@ -852,7 +892,8 @@ export function specialDoorQuote(
     `${LOCK_TEXT[input.lock] ?? "no lock"}`;
 
   return {
-    quote: { base, unitPrice: Math.round((base + adders) * 100) / 100, description, torsionIncluded: torsionOnly },
+    quote: { base, unitPrice: Math.round((base + adders) * 100) / 100, description, torsionIncluded: torsionOnly,
+      ...(style !== "solid" && rowAdd != null && rowAdd > 0 ? { windowRowPrice: rowAdd } : {}) },
   };
 }
 
